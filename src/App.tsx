@@ -129,85 +129,121 @@ const CURRICULUM_DB: Record<string, Record<string, any[]>> = {
     ],
     "11": [
       {
-        topic: "Chương 1: Hàm số lượng giác và phương trình lượng giác",
-        duration: "7 tiết",
-        contextStudents: "Học sinh làm quen với các hàm số vòng tròn mở rộng.",
+        topic: "Chương 1 - §1. Góc lượng giác",
+        duration: "1 tiết",
+        contextStudents: "Học sinh bắt đầu khảo sát cấu trúc góc chuẩn hóa.",
         contextSchool: "Giáo cụ mô hình đường tròn lượng giác.",
-        objectivesKnowledge: "Học sinh nhận biết các hàm số lượng giác cơ bản; giải được phương trình lượng giác.",
-        objectivesCompetency: "Năng lực mô hình hóa toán học; giải quyết vấn đề.",
-        objectivesQuality: "Tư duy logic, cẩn thận."
+        objectivesKnowledge: "Nhận biết các khái niệm cơ bản về góc lượng giác, số đo của góc lượng giác, hệ thức Chasles và đường tròn lượng giác.",
+        objectivesCompetency: "Năng lực mô hình hóa Toán học, biểu diễn tọa độ góc.",
+        objectivesQuality: "Tư duy không gian phản biện và quy luật."
       },
       {
-        topic: "Chương 2: Dãy số. Cấp số cộng và cấp số nhân",
-        duration: "7 tiết",
-        contextStudents: "Học sinh hiểu quy luật dãy số.",
-        contextSchool: "Máy tính cầm tay, bảng tính.",
-        objectivesKnowledge: "Nắm khái niệm dãy số, công thức tổng quát và tính chất cấp số cộng, cấp số nhân.",
-        objectivesCompetency: "Tư duy tính toán, nhận biết tính quy luật.",
-        objectivesQuality: "Sự kiên nhẫn, tính hệ thống."
+        topic: "Chương 1 - §2. Giá trị lượng giác của một góc lượng giác",
+        duration: "1 tiết",
+        contextStudents: "Học sinh luyện tập giải quyết bài toán với bảng lượng giác.",
+        contextSchool: "Máy tính cầm tay khoa học fx-580 / fx-880.",
+        objectivesKnowledge: "Nhận biết khái niệm giá trị lượng giác. Mô tả được bảng giá trị LG thường gặp, hệ thức cơ bản, quan hệ đặc biệt (bù, phụ đoạn, đối, hơn kém pi). Giải quyết vấn đề thực tiễn gắn với GTLG.",
+        objectivesCompetency: "Thành thạo công cụ cầm tay, suy luận logic.",
+        objectivesQuality: "Cẩn thận trong tính toán định lượng."
       },
       {
-        topic: "Chương 3: Giới hạn. Hàm số liên tục",
-        duration: "6 tiết",
-        contextStudents: "Học sinh tiếp cận với khái niệm vô cực và sự liên tục.",
-        contextSchool: "Phần mềm hỗ trợ đồ thị.",
-        objectivesKnowledge: "Tính giới hạn dãy số, hàm số; xét tính liên tục của hàm số.",
-        objectivesCompetency: "Khả năng tư duy phân tích, lập luận Logic.",
+        topic: "Chương 1 - §3. Các công thức lượng giác",
+        duration: "2 tiết",
+        contextStudents: "Học sinh làm quen với các công thức biển đổi linh hoạt đại số.",
+        contextSchool: "Bảng chiếu slide công thức.",
+        objectivesKnowledge: "Mô tả và giải phương trình biến đổi: công thức cộng, góc nhân đôi, biến đổi tích thành tổng và tổng thành tích.",
+        objectivesCompetency: "Rèn luyện trí nhớ và khả năng thao tác đại số phức tạp.",
+        objectivesQuality: "Tỉ mỉ, quy trình từng bước."
+      },
+      {
+        topic: "Chương 1 - §4. Hàm số lượng giác và đồ thị",
+        duration: "2 tiết",
+        contextStudents: "Học sinh liên kết giữa biểu thức hàm số và đồ thị sóng.",
+        contextSchool: "Phần mềm đồ thị GeoGebra.",
+        objectivesKnowledge: "Định nghĩa hàm số chẵn lẻ, tuần hoàn. Vẽ đồ thị hàm y = sinx, y = cosx, y = tanx, y = cotx. Giải thích tập xác định, chu kì và khoảng biến thiên, vận dụng thực tế.",
+        objectivesCompetency: "Năng lực tư duy trực quan, đọc đồ thị hệ trục.",
+        objectivesQuality: "Tính cẩn thận vẽ hình, tôn trọng dữ liệu hàm."
+      },
+      {
+        topic: "Chương 1 - §5. Phương trình lượng giác cơ bản",
+        duration: "2 tiết",
+        contextStudents: "Học sinh giải quyết dứt điểm ẩn số vòng tròn lượng giác.",
+        contextSchool: "Bảng phụ, phiếu học tập, máy tính hệ.",
+        objectivesKnowledge: "Nhận biết công thức nghiệm phương trình LG cơ bản, tính nghiệm gần đúng bằng máy tính, vận dụng trực tiếp và giải toán thực tiễn (dao động điều hòa).",
+        objectivesCompetency: "Kỹ năng lập luận và giải quyết bài toán đại số.",
+        objectivesQuality: "Hệ thống và chặt chẽ Logic."
+      },
+      {
+        topic: "Chương 1 - Bài tập cuối chương I",
+        duration: "1 tiết",
+        contextStudents: "Học sinh hệ thống hóa lại toàn chương Hàm Số LG.",
+        contextSchool: "Tuyển tập đề cơ bản và phân loại.",
+        objectivesKnowledge: "Đáp ứng đầy đủ các yêu cầu cần đạt của bài 1, 2, 3, 4 và bài 5 trong chương.",
+        objectivesCompetency: "Năng lực giải quyết vấn đề tổng hợp và chuyển đổi linh hoạt.",
+        objectivesQuality: "Kiên trì và chịu áp lực bài tập khó."
+      },
+      {
+        topic: "Chương 2 - §1. Dãy số",
+        duration: "2 tiết",
+        contextStudents: "Học sinh cần nắm bắt quy luật tăng trưởng vô hạn của tập số.",
+        contextSchool: "Sơ đồ mạng lưới hoặc hệ thống mô phỏng tin học.",
+        objectivesKnowledge: "Nhận biết dãy số hữu hạn, vô hạn. Thể hiện cách cho dãy số bằng liệt kê, công thức truy hồi, công thức tổng quát. Nhận biết tính tăng, giảm, bị chặn.",
+        objectivesCompetency: "Năng lực phán đoán quy luật, tư duy diễn dịch.",
+        objectivesQuality: "Sáng tạo trong tư duy."
+      },
+      {
+        topic: "Chương 2 - §2. Cấp số cộng",
+        duration: "2 tiết",
+        contextStudents: "Học sinh quy nạp hệ số gia tăng tuyến tính.",
+        contextSchool: "Hình ảnh mô phỏng bậc thang, cấu trúc cấp xếp.",
+        objectivesKnowledge: "Nhận biết cấp số cộng, giải thích công thức số hạng tổng quát, tính tổng n số hạng, giải quyết các vấn đề liên quan thực tiễn.",
+        objectivesCompetency: "Khả năng rút gọn biểu thức, thống kê cộng sinh.",
+        objectivesQuality: "Khách quan, tìm hiểu thực tiễn Sinh học..."
+      },
+      {
+        topic: "Chương 2 - §3. Cấp số nhân",
+        duration: "2 tiết",
+        contextStudents: "Học sinh quy nạp hệ số nhân (lãi kép).",
+        contextSchool: "Biểu đồ hình cột theo luỹ thừa.",
+        objectivesKnowledge: "Nhận biết cấp số nhân, giải thích công thức số hạng tổng quát, tính tổng n số hạng, áp dụng giải quyết bài toán thực tế (Sinh học, lãi kép, dân số...).",
+        objectivesCompetency: "Nhạy cảm với số liệu tăng trưởng phi mã.",
+        objectivesQuality: "Kiểm chứng khoa học, tầm nhìn kinh tế."
+      },
+      {
+        topic: "Chương 2 - Bài tập cuối chương II",
+        duration: "1 tiết",
+        contextStudents: "Học sinh đánh giá nhận định toàn bộ mảng tính luật.",
+        contextSchool: "Phiếu khảo sát và hệ thống quizz.",
+        objectivesKnowledge: "Đáp ứng đầy đủ các mặt yêu cầu cần đạt của bài 1, bài 2 và bài 3 liên quan đến tính tuần tự và cấp số.",
+        objectivesCompetency: "Giải Toán bằng hệ phương trình hệ thống.",
+        objectivesQuality: "Vận dụng và sáng tạo logic."
+      },
+      {
+        topic: "Chương 3 - §1. Giới hạn của dãy số",
+        duration: "2 tiết",
+        contextStudents: "Học sinh tiếp cận tư duy hội tụ tiến tới x vô cùng.",
+        contextSchool: "Tài liệu chuyên đề và máy tính cầm tay phân loại.",
+        objectivesKnowledge: "Khái niệm giới hạn vô hạn, nhận biết giới hạn chuẩn và các định lý vô cực.",
+        objectivesCompetency: "Mô hình hóa giới hạn hội tụ lượng vô biên.",
+        objectivesQuality: "Kỷ luật khối óc toán học cận đại."
+      },
+      {
+        topic: "Chương 3 - §2. Giới hạn của hàm số và §3. Hàm số liên tục",
+        duration: "4 tiết",
+        contextStudents: "Học sinh phân biệt khái niệm không xác định và liên tục.",
+        contextSchool: "Phần mềm đồ thị.",
+        objectivesKnowledge: "Tính toán được giới hạn hàm số, xét tính hợp lệ của hàm liên tục trên điểm và khoảng.",
+        objectivesCompetency: "Khả năng phân tích đồ thị ngắt quãng, tính toán.",
         objectivesQuality: "Khoa học, khách quan."
       },
       {
-        topic: "Chương 4: Đường thẳng và mặt phẳng trong không gian. Quan hệ song song",
-        duration: "8 tiết",
-        contextStudents: "Học sinh chuyển từ không gian 2D sang 3D.",
-        contextSchool: "Mô hình khối đa diện.",
-        objectivesKnowledge: "Hiểu quan hệ song song trong không gian, giao tuyến, hình biểu diễn.",
-        objectivesCompetency: "Năng lực không gian, tưởng tượng hình học.",
-        objectivesQuality: "Sáng tạo, thực tế."
-      },
-      {
-        topic: "Chương 5: Các số đặc trưng đo xu thế trung tâm cho mẫu số liệu ghép nhóm",
-        duration: "4 tiết",
-        contextStudents: "Học sinh làm quen với xử lý thống kê nâng cao.",
-        contextSchool: "Phòng máy tính, Excel.",
-        objectivesKnowledge: "Tính được các số đặc trưng của mẫu số liệu ghép nhóm.",
-        objectivesCompetency: "Năng lực thống kê và giải quyết bài toán thực tế.",
+        topic: "Các Chương 4-9 Tổ hợp kiến thức (Hình, Thống kê, Mũ, Đạo hàm, Góc, Xác suất)",
+        duration: "30 tiết",
+        contextStudents: "Học sinh duy trì nhịp độ chương trình khung Bộ Giáo dục.",
+        contextSchool: "Thiết bị tính toán và mô hình trực quan.",
+        objectivesKnowledge: "Đạt chuẩn CTPT 2018 về Thống kê ghép nhóm, Không gian 3D, Đạo hàm vận tốc, Hàm lôgarit và Xác suất độc lập.",
+        objectivesCompetency: "Năng lực mô hình hóa Toán học, giải bài tập tổng quát và thực tiễn liên môn.",
         objectivesQuality: "Chính xác, tôn trọng dữ liệu."
-      },
-      {
-        topic: "Chương 6: Hàm số mũ và hàm số lôgarit",
-        duration: "6 tiết",
-        contextStudents: "Học sinh tìm hiểu sự liên kết mũ và lôgarit, tăng trưởng hàm.",
-        contextSchool: "Thiết bị tính toán thông minh.",
-        objectivesKnowledge: "Giải phương trình, bất phương trình mũ và logarit cơ bản.",
-        objectivesCompetency: "Giải quyết vấn đề tăng trưởng (lãi suất, phân rã).",
-        objectivesQuality: "Nhanh nhạy, chính xác."
-      },
-      {
-        topic: "Chương 7: Đạo hàm",
-        duration: "5 tiết",
-        contextStudents: "Học sinh tiếp cận đại lượng biến thiên, tốc độ tức thời.",
-        contextSchool: "Bảng hoặc TV liên kết máy tính.",
-        objectivesKnowledge: "Tính đạo hàm theo định nghĩa và công thức.",
-        objectivesCompetency: "Tư duy giải tích cơ bản.",
-        objectivesQuality: "Tỉ mỉ, hệ thống."
-      },
-      {
-        topic: "Chương 8: Quan hệ vuông góc trong không gian",
-        duration: "7 tiết",
-        contextStudents: "Học sinh mở rộng thêm kiến thức về hình chiếu, khoảng cách 3D.",
-        contextSchool: "Mô hình không gian trực quan.",
-        objectivesKnowledge: "Xác định góc, khoảng cách, chứng minh vuông góc.",
-        objectivesCompetency: "Lập luận hình học sâu.",
-        objectivesQuality: "Kỷ luật khối óc."
-      },
-      {
-        topic: "Chương 9: Xác suất",
-        duration: "4 tiết",
-        contextStudents: "Học sinh tính toán biến cố kết hợp ngẫu nhiên.",
-        contextSchool: "Xúc xắc, đồng xu.",
-        objectivesKnowledge: "Sử dụng quy tắc cộng, nhân xác suất cho biến cố độc lập.",
-        objectivesCompetency: "Đánh giá, dự đoán rủi ro.",
-        objectivesQuality: "Khách quan, tuân thủ dữ kiện thực tế."
       }
     ]
   },

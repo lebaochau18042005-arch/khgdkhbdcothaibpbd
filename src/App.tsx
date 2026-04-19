@@ -2032,7 +2032,7 @@ export default function App() {
           </div>
         </header>
 
-        <section className="flex-1 p-6 md:p-10 lg:p-16 max-w-7xl mx-auto w-full pb-32">
+        <section className="flex-1 p-4 md:p-6 lg:p-10 max-w-7xl mx-auto w-full pb-40 lg:pb-40">
           <div className="mb-6 mx-auto w-full max-w-3xl glass p-4 rounded-xl border border-red-500/20 bg-red-50/10 flex items-center justify-between">
             <div className="flex items-center gap-2 text-red-500">
               <AlertCircle className="w-5 h-5" />
@@ -3296,24 +3296,24 @@ export default function App() {
       </AnimatePresence>
 
       {/* Sticky Footer */}
-      <footer className="fixed bottom-0 left-0 w-full glass-dark py-5 px-10 z-50 border-t border-white/10 hidden lg:block">
+      <footer className="fixed bottom-0 left-0 w-full glass-dark py-2.5 px-6 z-50 border-t border-white/10 hidden lg:block">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_12px_rgba(52,211,153,0.9)]"></div>
-            <span className="text-[11px] text-white/50 font-black uppercase tracking-[0.25em]">Hệ thống bảo mật & Pháp lý BGDĐT</span>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_12px_rgba(52,211,153,0.9)]"></div>
+            <span className="text-[10px] text-white/50 font-black uppercase tracking-[0.2em]">Bảo mật & Pháp lý BGDĐT</span>
           </div>
-          <div className="flex items-center gap-12">
-            <div className="flex items-center gap-4 border-r border-white/10 pr-12">
-              <span className="text-[11px] text-white/20 uppercase tracking-[0.2em] font-black">Tác giả</span>
-              <p className="text-sm font-black text-blue-300 tracking-tight">Lê Thị Thái - THPT Bình Phú - Bình Dương</p>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 border-r border-white/10 pr-6">
+              <span className="text-[10px] text-white/20 uppercase tracking-[0.1em] font-black">Tác giả</span>
+              <p className="text-xs font-black text-blue-300 tracking-tight">Lê Thị Thái - THPT Bình Phú (Bình Dương)</p>
             </div>
             <a
               href="https://zalo.me/0916791779"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-[16px] text-[11px] font-black uppercase tracking-[0.15em] text-white hover:scale-105 active:scale-95 transition-all flex items-center gap-3 shadow-2xl shadow-blue-500/20 group"
+              className="px-6 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-[12px] text-[10px] font-black uppercase tracking-[0.1em] text-white hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-xl shadow-blue-500/20 group"
             >
-              <span className="bg-white/20 p-1 rounded-md group-hover:bg-white/30 transition-colors">Zalo</span> 0916791779
+              <span className="bg-white/20 p-1 rounded group-hover:bg-white/30 transition-colors">Zalo</span> 0916791779
             </a>
           </div>
         </div>

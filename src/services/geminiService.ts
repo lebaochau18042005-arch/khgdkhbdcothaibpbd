@@ -272,31 +272,34 @@ export const generateLessonPlan = async (input: LessonPlanInput) => {
 
     YÊU CẦU NỘI DUNG NGHIÊM NGẶT (CHUẨN CV 5512 và QĐ 3439):
 
-    I. MỤC TIÊU (Theo CV 5512 & QĐ 3439):
-    - Kiến thức: Nêu rõ kiến thức cốt lõi của môn học và kiến thức AI được tích hợp.
-    - Năng lực:
-      + Năng lực đặc thù môn học: (Theo chương trình 2018).
-      + Năng lực AI đặc thù: Phân tích rõ các thành phần năng lực AI tích hợp (NLa: Tư duy lấy con người làm trung tâm; NLb: Đạo đức AI; NLc: Kĩ thuật và ứng dụng; NLd: Thiết kế hệ thống). BẮT BUỘC liệt kê kèm theo mã chỉ báo theo cấp học giống chuẩn kế hoạch tổ chuyên môn (Ví dụ khối 10 là 10.A1.a, khối 12 là 12.A1.a... theo sát Khung 3439).
-      + Năng lực chung: Tự chủ, tự học; Giao tiếp, hợp tác; Giải quyết vấn đề và sáng tạo thông qua sử dụng công cụ AI.
-    - Phẩm chất: Chăm chỉ, trung thực (trung thực học thuật số), trách nhiệm (an toàn dữ liệu).
+    QUY TẮC THỰC THI NGHIÊM NGẶT (CRITICAL RULES):
+    1. KIỂM TRA ĐIỀU KIỆN TÍCH HỢP:
+       - Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không.
+       - Nếu bài học được xác định là "Không tích hợp": Hãy soạn giáo án thuần túy theo Công văn 5512, tuyệt đối không đưa nội dung AI vào (để trống mục Năng lực AI).
+       - Nếu bài học có "Tích hợp AI": Bắt buộc thêm một mục riêng biệt có tên "HOẠT ĐỘNG GIÁO DỤC AI" ngay trong phần nội dung tiến trình dạy học ở vị trí có điểm chạm.
+    2. MÔ TẢ CÔNG CỤ SỐ AI: Trong hoạt động có tích hợp, phải mô tả cụ thể việc sử dụng các công cụ AI (ChatGPT, Canva, chatbot...) để hỗ trợ học sinh đạt được năng lực tương ứng.
+    3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, phải ghi rõ mã chỉ báo năng lực AI từ QĐ 3439 (Ví dụ: 12.A1.a).
+    4. PHẢN BIỆN & BÁO ĐỘNG ĐỎ: BẮT BUỘC sử dụng thẻ <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai> để đánh dấu hoạt động trọng tâm có ứng dụng công nghệ AI.
 
-    II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU:
-    - Thiết bị & Học liệu truyền thống.
-    - Công cụ số và AI: Nêu rõ phương án triển khai (case study hoặc công cụ trực tiếp như ChatGPT, Gemini, Teachable Machine...) và các bộ dữ liệu/video liên quan.
+    I. MỤC TIÊU:
+    - Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
+    - Năng lực:
+      + Đặc thù môn học: Theo chương trình 2018.
+      + Năng lực AI đặc thù (Chỉ thêm nếu Có tích hợp AI): Phân tích rõ các thành phần NLa, NLb, NLc, NLd kèm mã chỉ báo (Ví dụ khối 12 là 12.A1.a).
+      + Năng lực chung: Tự chủ, tự học; Giao tiếp...
+    - Phẩm chất: Theo CV 5512.
+
+    II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU: Đảm bảo theo quy định 5512 (thêm Công cụ số AI nếu Có tích hợp).
 
     III. TIẾN TRÌNH DẠY HỌC (CHI TIẾT):
     ${LESSON_PLAN_STRICT_GUIDELINES}
     
-    Phân bổ 4 hoạt động:
-    1. Hoạt động 1: Mở đầu (Xác định vấn đề/Nhiệm vụ học tập)
-       - Mục tiêu: Khơi gợi hứng thú và xác định vấn đề bài học có liên quan đến AI.
-    2. Hoạt động 2: Hình thành kiến thức mới (Giải quyết vấn đề/Thiết kế giải pháp)
-       - Mục tiêu: HS nắm vững kiến thức môn học và mối liên hệ với năng lực AI.
-    3. Hoạt động 3: Luyện tập (Thực hành tích hợp kỹ năng AI)
-       - Mục tiêu: HS vận dụng kiến thức để thực hành cùng công cụ AI hoặc xử lý tình huống.
-       - GV hướng dẫn kỹ năng Prompt Engineering (Role-Context-Task) và HS thực hiện Kiểm chứng chéo (Cross-checking).
-    4. Hoạt động 4: Vận dụng (Dự án/Tranh biện về tác động xã hội và đạo đức AI)
-       - Mục tiêu: HS vận dụng kiến thức vào thực tiễn, đánh giá tác động đa chiều của AI.
+    Phân bổ 4 hoạt động chuẩn 5512:
+    1. Mở đầu (Xác định vấn đề).
+    2. Hình thành kiến thức mới.
+    3. Luyện tập (Các hoạt động không tích hợp soạn chuẩn 5512).
+    4. Vận dụng.
+    (LƯU Ý: Với bài học "Có tích hợp AI", phải lồng ghép khéo léo "HOẠT ĐỘNG GIÁO DỤC AI" kèm khai báo mã chỉ báo và thẻ [🚨 BÁO ĐỘNG ĐỎ] vào 1 trong 4 bước trên sao cho phù hợp).
 
     IV. KẾ HOẠCH ĐÁNH GIÁ:
     BẮT BUỘC thiết kế tiêu chí đánh giá kỹ năng tương tác với AI và khả năng phản biện. QUAN TRỌNG: Tại phần Bài kiểm tra ngắn (Quiz), BẮT BUỘC phải viết nội dung cụ thể của 2-3 câu hỏi trắc nghiệm (gồm câu hỏi, 4 đáp án A B C D và đáp án đúng) thay vì chỉ ghi chung chung là "có 5 câu hỏi".

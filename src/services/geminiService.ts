@@ -212,8 +212,8 @@ LƯU Ý TỐI QUAN TRỌNG CHUNG MÔN ĐỊA LÍ (TẤT CẢ CÁC KHỐI LỚP):
 const FORMATTING_INSTRUCTIONS = `
 YÊU CẦU ĐỊNH DẠNG VÀ TRÌNH BÀY (THỰC THI NGHIÊM NGẶT):
 1. Đối với Công thức (Toán, Vật lí, Hóa học):
-- Toàn bộ công thức toán học, biểu thức vật lí: Phải được viết dưới dạng mã LaTeX (đặt trong ký hiệu $ ... $ hoặc $$...$$) hoặc định dạng tương thích hoàn toàn với MathType.
-- Phương trình hóa học: Sử dụng đúng chỉ số dưới, chỉ số trên và các mũi tên phản ứng theo tiêu chuẩn quốc tế.
+- Toàn bộ công thức toán học, biểu thức vật lí: TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX (ví dụ các ký hiệu $ ... $ hoặc $$...$$, \sin, \cos). Hãy viết công thức theo cấu trúc văn bản thuần túy và thân thiện nhất với người đọc (Ví dụ: sin x = m).
+- Phương trình hóa học: Ghi rõ bằng văn bản (Ví dụ: H2O thay cho H_{2}O).
 2. Đối với Hình vẽ, Biểu đồ và Bản đồ:
 - Không được bỏ qua hình vẽ: Tại mỗi vị trí cần hình minh họa, biểu đồ hoặc sơ đồ, bạn phải đặt một thẻ giữ chỗ dạng: [CHÈN HÌNH VẼ/BIỂU ĐỒ: Mô tả chi tiết nội dung hình cần vẽ tại đây].
 - Mô tả kỹ thuật: Cung cấp các thông số kỹ thuật (ví dụ: Tọa độ điểm, phương trình đường cong, các nhãn ký hiệu trên trục Ox, Oy) để giáo viên dễ dàng vẽ lại bằng phần mềm chuyên dụng (GeoGebra, Chemdraw).
@@ -233,7 +233,7 @@ CHỈ THỊ THỰC THI NGHIÊM NGẶT CHO MỤC III. TIẾN TRÌNH DẠY HỌC (
    - Bước 2: Thực hiện nhiệm vụ: Mô tả cực kỳ chi tiết hành động của HS. HS suy nghĩ gì, thảo luận nhóm ra sao? Nếu dùng công cụ AI (ChatGPT, Gemini), HS sẽ nhập câu lệnh (Prompt) như thế nào? GV đi quan sát, theo dõi và có những hành động hỗ trợ nào khi HS gặp khó khăn?
    - Bước 3: Báo cáo, thảo luận: Chỉ đích danh cách thức GV chọn nhóm trình bày. HS lên bảng hoặc sử dụng máy chiếu trình bày sản phẩm học tập và kết quả do AI tạo ra như thế nào? Các HS/Nhóm khác đặt câu hỏi phản biện, tranh luận về độ chính xác của tài liệu hoặc của AI ra sao? (Đặc biệt nhấn mạnh việc Kiểm chứng chéo - Cross-checking kết quả AI).
    - Bước 4: Kết luận, nhận định: GV đánh giá cặn kẽ thái độ làm việc của HS. GV chốt lại ĐÚNG KIẾN THỨC TRỌNG TÂM (ghi nội dung chốt). Đánh giá mức độ thành thạo Năng lực số (NLa, NLb, NLc, NLd) và ý thức trách nhiệm (đạo đức AI) của học sinh. 
-4. Nếu nội dung liên quan đến môn Toán/Lý/Hóa, các câu hỏi/nhiệm vụ bắt buộc chứa công thức LaTeX chuẩn. 
+4. Nếu nội dung liên quan đến môn Toán/Lý/Hóa, TUYỆT ĐỐI KHÔNG ĐƯỢC SỬ DỤNG MÃ LATEX. Mọi nội dung câu hỏi/nhiệm vụ bắt buộc phải trình bày bằng văn bản trực quan thân thiện nhất (ví dụ: khối chóp S.ABCD, sin a + cos a = 1).
 5. Yêu cầu sản phẩm trả về: XUẤT SẮC, TOÀN DIỆN DIỆN, THẬT DÀI VÀ CỤ THỂ ĐẾN TỪNG CHI TIẾT SƯ PHẠM. Khối lượng chữ cho phần Tổ chức thực hiện phải rất lớn, mô phỏng đúng kịch bản của một giáo viên dạy giỏi cấp Quốc gia.
 `;
 

@@ -219,31 +219,310 @@ const CURRICULUM_DB: Record<string, Record<string, any[]>> = {
         objectivesQuality: "Vận dụng và sáng tạo logic."
       },
       {
+        topic: "Chương 4 - §1. Điểm, đường thẳng và mặt phẳng trong không gian",
+        duration: "3 tiết",
+        contextStudents: "Học sinh tiếp cận không gian 3 chiều qua trực quan.",
+        contextSchool: "Mô hình hình chiếu.",
+        objectivesKnowledge: "Tìm hiểu vị trí tương đối giữa mặt phẳng và đường.",
+        objectivesCompetency: "Tư duy không gian 3D cốt lõi.",
+        objectivesQuality: "Hiểu biết đa chiều."
+      },
+      {
+        topic: "Chương 4 - §2. Hai đường thẳng song song",
+        duration: "3 tiết",
+        contextStudents: "Học sinh đối chiếu khái niệm song song giữa 2D và 3D.",
+        contextSchool: "Vật thể góc chuẩn.",
+        objectivesKnowledge: "Điều kiện và định lý hai đường thẳng chéo / song song.",
+        objectivesCompetency: "Kỹ năng dựng hình biểu diễn.",
+        objectivesQuality: "Tỉ mỉ, kỷ luật."
+      },
+      {
+        topic: "Chương 4 - §3. Đường thẳng và mặt phẳng song song",
+        duration: "3 tiết",
+        contextStudents: "Học sinh quan sát giao tuyến giữa đường và trục mặt.",
+        contextSchool: "Tài liệu in và máy vi tính.",
+        objectivesKnowledge: "Giải quyết bài toán chứng minh đường thẳng song song mặt phẳng.",
+        objectivesCompetency: "Khả năng phân tích hệ quả logic.",
+        objectivesQuality: "Trung thực trong lập luận Toán."
+      },
+      {
+        topic: "Chương 4 - §4. Hai mặt phẳng song song",
+        duration: "3 tiết",
+        contextStudents: "Học sinh phát triển tiếp kiến thức từ hai đường.",
+        contextSchool: "Mô hình bìa cứng hộp.",
+        objectivesKnowledge: "Điều kiện và tính chất hệ hai mặt song song. Giải bài tập khoảng cách.",
+        objectivesCompetency: "Lập sơ đồ tư duy giải nhanh.",
+        objectivesQuality: "Tự chủ và làm việc nhóm."
+      },
+      {
+        topic: "Chương 4 - §5. Phép chiếu song song",
+        duration: "3 tiết",
+        contextStudents: "Học sinh ứng dụng phép chiếu tạo hình trên trục tọa độ.",
+        contextSchool: "Ánh sáng máy chiếu minh họa.",
+        objectivesKnowledge: "Trình bày cách dựng ảnh qua phép chiếu, tính chất tỷ lệ bản đồ.",
+        objectivesCompetency: "Minh họa hệ trục trực quan.",
+        objectivesQuality: "Tư duy kiến trúc hệ."
+      },
+      {
+        topic: "Chương 4 - Bài tập cuối chương IV",
+        duration: "1 tiết",
+        contextStudents: "Học sinh củng cố chương song song trong không gian.",
+        contextSchool: "Tài liệu kiểm tra.",
+        objectivesKnowledge: "Kết nối lý thuyết và thực hành giải Toán chương IV.",
+        objectivesCompetency: "Chuyển giao năng lực mô hình.",
+        objectivesQuality: "Chuẩn xác logic."
+      },
+      {
         topic: "Chương 3 - §1. Giới hạn của dãy số",
         duration: "2 tiết",
         contextStudents: "Học sinh tiếp cận tư duy hội tụ tiến tới x vô cùng.",
         contextSchool: "Tài liệu chuyên đề và máy tính cầm tay phân loại.",
-        objectivesKnowledge: "Khái niệm giới hạn vô hạn, nhận biết giới hạn chuẩn và các định lý vô cực.",
-        objectivesCompetency: "Mô hình hóa giới hạn hội tụ lượng vô biên.",
-        objectivesQuality: "Kỷ luật khối óc toán học cận đại."
+        objectivesKnowledge: "Khái niệm giới hạn vô hạn, nhận biết giới hạn chuẩn và định lý.",
+        objectivesCompetency: "Mô hình hóa lượng vô biên.",
+        objectivesQuality: "Kỷ luật khối óc cận đại."
       },
       {
-        topic: "Chương 3 - §2. Giới hạn của hàm số và §3. Hàm số liên tục",
-        duration: "4 tiết",
-        contextStudents: "Học sinh phân biệt khái niệm không xác định và liên tục.",
+        topic: "Kiểm tra giữa kì 1",
+        duration: "2 tiết",
+        contextStudents: "Đánh giá chuẩn năng lực giữa kì.",
+        contextSchool: "Giấy thi THPT chuẩn.",
+        objectivesKnowledge: "Đánh giá kỹ năng từ chương 1 lượng giác và dãy số.",
+        objectivesCompetency: "Hoàn thiện tự nhận thức.",
+        objectivesQuality: "Cạnh tranh lành mạnh."
+      },
+      {
+        topic: "Chương 3 - §2. Giới hạn của hàm số",
+        duration: "2 tiết",
+        contextStudents: "Học sinh định lượng tiệm cận đồ thị.",
         contextSchool: "Phần mềm đồ thị.",
-        objectivesKnowledge: "Tính toán được giới hạn hàm số, xét tính hợp lệ của hàm liên tục trên điểm và khoảng.",
-        objectivesCompetency: "Khả năng phân tích đồ thị ngắt quãng, tính toán.",
+        objectivesKnowledge: "Xét miền giới hạn trái và phải.",
+        objectivesCompetency: "Kỹ năng tính tay đại lượng vi sai.",
+        objectivesQuality: "Khách quan, sáng suốt."
+      },
+      {
+        topic: "Chương 3 - §3. Hàm số liên tục",
+        duration: "2 tiết",
+        contextStudents: "Học sinh định danh đồ thị liền mạch.",
+        contextSchool: "Dữ liệu đo đạc.",
+        objectivesKnowledge: "Xét tính liên tục, điểm gián đoạn của hàm phân thức.",
+        objectivesCompetency: "Nhận diện bằng mắt và tính toán phân kỳ.",
         objectivesQuality: "Khoa học, khách quan."
       },
       {
-        topic: "Các Chương 4-9 Tổ hợp kiến thức (Hình, Thống kê, Mũ, Đạo hàm, Góc, Xác suất)",
-        duration: "30 tiết",
-        contextStudents: "Học sinh duy trì nhịp độ chương trình khung Bộ Giáo dục.",
-        contextSchool: "Thiết bị tính toán và mô hình trực quan.",
-        objectivesKnowledge: "Đạt chuẩn CTPT 2018 về Thống kê ghép nhóm, Không gian 3D, Đạo hàm vận tốc, Hàm lôgarit và Xác suất độc lập.",
-        objectivesCompetency: "Năng lực mô hình hóa Toán học, giải bài tập tổng quát và thực tiễn liên môn.",
-        objectivesQuality: "Chính xác, tôn trọng dữ liệu."
+        topic: "Chương 3 - Bài tập cuối chương III",
+        duration: "1 tiết",
+        contextStudents: "Học sinh ổn định phần giới hạn Giải Tích.",
+        contextSchool: "Bài tập chuyên sâu.",
+        objectivesKnowledge: "Vận dụng tổng hợp giới hạn hàm phân nhánh.",
+        objectivesCompetency: "Thành thạo lập luận.",
+        objectivesQuality: "Kỷ luật cao."
+      },
+      {
+        topic: "Chương 5 - §1. Số trung bình và mốt của dữ liệu ghép nhóm",
+        duration: "3 tiết",
+        contextStudents: "Học sinh xử lý thống kê nâng cao.",
+        contextSchool: "Phòng máy tính Excel.",
+        objectivesKnowledge: "Xác định các số trung tâm trên bảng mẫu tần số.",
+        objectivesCompetency: "Thống kê dữ liệu xác thực.",
+        objectivesQuality: "Tôn trọng dữ liệu."
+      },
+      {
+        topic: "Chương 5 - §2. Trung vị và tứ phân vị của dữ liệu ghép nhóm",
+        duration: "3 tiết",
+        contextStudents: "Học sinh học cách xác định vị trí phân bố dữ liệu.",
+        contextSchool: "Công cụ tính bảng điện tử.",
+        objectivesKnowledge: "Sử dụng độ lệch chuẩn và tứ phân vị đo lường.",
+        objectivesCompetency: "Đọc chỉ số.",
+        objectivesQuality: "Khách quan, hệ thống."
+      },
+      {
+        topic: "Hoạt động TH&TN - §1. Hàm lượng giác bằng GeoGebra & §2. Cấp số nhân dự báo dân số",
+        duration: "2 tiết",
+        contextStudents: "Học sinh áp dụng kiến thức đa chiều vào ngoại khóa.",
+        contextSchool: "Trạm trải nghiệm.",
+        objectivesKnowledge: "Sử dụng CNTT để đồ họa hoá, và dự báo tài chính/dân số.",
+        objectivesCompetency: "Năng lực thích ứng và mô phỏng số học.",
+        objectivesQuality: "Yêu thích khoa học ứng dụng."
+      },
+      {
+        topic: "Ôn thi và Thi học kì 1",
+        duration: "5 tiết",
+        contextStudents: "Học sinh chuẩn hóa khung khối đầu kỉ.",
+        contextSchool: "Phòng KT.",
+        objectivesKnowledge: "Ôn tập 5 chương đầu môn Giải Tích & Hình 11.",
+        objectivesCompetency: "Tự chủ quản lý thời gian.",
+        objectivesQuality: "Công bằng, áp lực tốt."
+      },
+      {
+        topic: "Chương 6 - §1. Phép tính lũy thừa",
+        duration: "2 tiết",
+        contextStudents: "Học sinh tính toán giá trị bậc cao.",
+        contextSchool: "Máy tính fx-880.",
+        objectivesKnowledge: "Thực hiện phép tính cơ số thực.",
+        objectivesCompetency: "Rèn cấu trúc tính tay.",
+        objectivesQuality: "Rõ ràng chính xác."
+      },
+      {
+        topic: "Chương 6 - §2. Phép tính logarit",
+        duration: "2 tiết",
+        contextStudents: "Học sinh nghịch đảo hệ số biến thiên.",
+        contextSchool: "Máy tính bảng / fx.",
+        objectivesKnowledge: "Định nghĩa logarit và các hệ quả cơ số.",
+        objectivesCompetency: "Năng lực biểu diễn toán chuyên sâu.",
+        objectivesQuality: "Tiếp thu cái mới."
+      },
+      {
+        topic: "Chương 6 - §3. Hàm số mũ, hàm số logarit",
+        duration: "2 tiết",
+        contextStudents: "Học sinh khảo sát đồ thị hai chiều đối xứng.",
+        contextSchool: "Giáo cụ mô tả đồ thị.",
+        objectivesKnowledge: "Vẽ đồ thị tăng trưởng và suy giảm mũ/log.",
+        objectivesCompetency: "Nhận biết biểu diễn tăng biên.",
+        objectivesQuality: "Khoa học, minh họa tốt."
+      },
+      {
+        topic: "Chương 6 - §4. Phương trình, bất phương trình mũ và logarit",
+        duration: "2 tiết",
+        contextStudents: "Học sinh giải phương trình bằng biến đổi.",
+        contextSchool: "Bảng đen và thước đo.",
+        objectivesKnowledge: "Thành lập công thức giải bất phương trình chuyên môn.",
+        objectivesCompetency: "Tư duy thuật toán.",
+        objectivesQuality: "Tỉ mỉ tính toán."
+      },
+      {
+        topic: "Chương 6 - Bài tập cuối chương VI",
+        duration: "1 tiết",
+        contextStudents: "Học sinh vượt qua bài toán thực tế sinh lãi.",
+        contextSchool: "Đề Test.",
+        objectivesKnowledge: "Chữa bài và vận dụng thực tế cho hàm số.",
+        objectivesCompetency: "Ra quyết định.",
+        objectivesQuality: "Đừng vội vã."
+      },
+      {
+        topic: "Hoạt động TH&TN - §2. Ứng dụng logarit đo độ pH",
+        duration: "2 tiết",
+        contextStudents: "Học sinh giao tiếp liên môn Hóa - Toán.",
+        contextSchool: "Phòng thí nghiệm bộ môn.",
+        objectivesKnowledge: "Sử dụng độ kiềm để chứng minh logarit nồng độ nguyên tử.",
+        objectivesCompetency: "Thực hành liên kết đa năng.",
+        objectivesQuality: "Hiểu biết thực thể sống."
+      },
+      {
+        topic: "Chương 8 - §1. Hai đường thẳng vuông góc",
+        duration: "2 tiết",
+        contextStudents: "Học sinh định nghĩa tính giao trực giao.",
+        contextSchool: "Sợi dây và hệ dóng.",
+        objectivesKnowledge: "Góc giữa hai vector góc không gian 3D.",
+        objectivesCompetency: "Hệ quy chiếu chuẩn mực.",
+        objectivesQuality: "Công tâm, trung thực giải hệ."
+      },
+      {
+        topic: "Chương 8 - §2. Đường thẳng vuông góc với mặt phẳng",
+        duration: "3 tiết",
+        contextStudents: "Học sinh nghiên cứu yếu tố pháp tuyến.",
+        contextSchool: "Mô hình đa diện trục.",
+        objectivesKnowledge: "Chứng minh đường cao hình khối chóp lăng trụ.",
+        objectivesCompetency: "Toán học không gian tiên tiến.",
+        objectivesQuality: "Khoa học sắc thái."
+      },
+      {
+        topic: "Chương 8 - §3. Hai mặt phẳng vuông góc",
+        duration: "3 tiết",
+        contextStudents: "Học sinh ứng dụng làm khối mô hình.",
+        contextSchool: "Hộp bìa góc vuông.",
+        objectivesKnowledge: "Chứng minh góc nhị diện 90 độ.",
+        objectivesCompetency: "Mô phỏng kiến trúc vi mô.",
+        objectivesQuality: "Hiểu sâu logic vật lý."
+      },
+      {
+        topic: "Chương 8 - §4. Khoảng cách trong không gian",
+        duration: "3 tiết",
+        contextStudents: "Học sinh hạ góc chiếu khoảng cách vuông.",
+        contextSchool: "Hình ảnh phác thảo vẽ.",
+        objectivesKnowledge: "Khoảng cách từ điểm tới mặt, từ 2 đường chéo nhau.",
+        objectivesCompetency: "Đỉnh cao tư duy toán không gian.",
+        objectivesQuality: "Kỹ tính tuyệt đối."
+      },
+      {
+        topic: "Chương 8 - §5. Góc giữa đường thẳng và mặt phẳng. Góc nhị diện",
+        duration: "4 tiết",
+        contextStudents: "Học sinh tạo góc giữa khối.",
+        contextSchool: "Bộ thước đo không gian chuyên biệt.",
+        objectivesKnowledge: "Đo lường tính chất hệ trục.",
+        objectivesCompetency: "Kết nối vật học.",
+        objectivesQuality: "Tính sáng tạo kiến trúc."
+      },
+      {
+        topic: "Chương 8 - Bài tập cuối chương VIII",
+        duration: "1 tiết",
+        contextStudents: "Học sinh rèn qua trắc nghiệm khối tròn hình.",
+        contextSchool: "Phiếu tổng kết kiến thức.",
+        objectivesKnowledge: "Tổng kết HHKG quy quy mô lớn.",
+        objectivesCompetency: "Ghi nhớ hệ thống.",
+        objectivesQuality: "Chịu đựng độ cực khó môn Hình."
+      },
+      {
+        topic: "Chương 7 - §1. Đạo hàm",
+        duration: "3 tiết",
+        contextStudents: "Học sinh tiến nhập giải tích đạo hàm cao cấp.",
+        contextSchool: "Chuyển động mô phỏng máy vi tính.",
+        objectivesKnowledge: "Nắm được định nghĩa, các quy tắc tính đạo hàm vận tốc tức thời, vi phân.",
+        objectivesCompetency: "Năng lực lập luận cơ sở đạo hàm giới hạn.",
+        objectivesQuality: "Trách nhiệm, tỉ mỉ logic vi mô."
+      },
+      {
+        topic: "Chương 7 - §2. Các quy tắc tính đạo hàm",
+        duration: "5 tiết",
+        contextStudents: "Học sinh vận dụng công thức tính nhanh đạo hàm hàm hợp.",
+        contextSchool: "Bảng biểu đạo hàm.",
+        objectivesKnowledge: "Thành thạo chuỗi công thức suy luận đạo hàm lượng giác, phân thức.",
+        objectivesCompetency: "Làm việc nhanh nhẹn tốc độ.",
+        objectivesQuality: "Rõ ràng chính xác cao độ."
+      },
+      {
+        topic: "Chương 7 - Bài tập cuối chương VII",
+        duration: "1 tiết",
+        contextStudents: "Học sinh làm quen giải bài tập vi phân tiếp tuyến.",
+        contextSchool: "Mô tả đường viền vi phân.",
+        objectivesKnowledge: "Học viết phương trình tiếp tuyến gốc.",
+        objectivesCompetency: "Giao thoa trực quan và định lượng.",
+        objectivesQuality: "Hiệu năng chuẩn mực."
+      },
+      {
+        topic: "Kiểm tra giữa học kì 2",
+        duration: "2 tiết",
+        contextStudents: "Học sinh rèn kĩ năng làm bài kiểm tra giữa phần II.",
+        contextSchool: "Bài Test tự luận + TN khách quan.",
+        objectivesKnowledge: "Khảo sát Logarit, Mũ, HHKG...",
+        objectivesCompetency: "Đọc hiểu đề chuyên môn.",
+        objectivesQuality: "Tránh cẩu thả gian lận."
+      },
+      {
+        topic: "Chương 9 - §1. Biến cố giao và quy tắc nhân xác suất",
+        duration: "2 tiết",
+        contextStudents: "Học sinh tính toán sự kiện trùng nhau ngẫu nhiên.",
+        contextSchool: "Đồng xu ngẫu nhiên và bóng bi rổ.",
+        objectivesKnowledge: "Sử dụng quy tắc phép nhân các biến cố trong mô hình.",
+        objectivesCompetency: "Đánh giá, dự đoán rủi ro phân phối chuẩn.",
+        objectivesQuality: "Khách quan, tuân thủ dữ kiện thực tế."
+      },
+      {
+        topic: "Chương 9 - §2. Biến cố hợp và quy tắc cộng xác suất",
+        duration: "3 tiết",
+        contextStudents: "Học sinh mở rộng vùng đánh giá biến cố ngẫu nhiên đa hệ.",
+        contextSchool: "Bài tập chọn lọc sinh ngẫu nhiên.",
+        objectivesKnowledge: "Làm rõ khác biệt cộng/nhân xác suất, tính P hợp.",
+        objectivesCompetency: "Giao tiếp lập luận Toán giải tích 2.",
+        objectivesQuality: "Tuyệt đối không cảm tính."
+      },
+      {
+        topic: "Hoạt động TH&TN - §1. Vẽ hình khối bằng GeoGebra, làm kính 3D quan sát ảnh nổi",
+        duration: "4 tiết",
+        contextStudents: "Học sinh chế tạo mô hình ảo ảnh hologram - 3D.",
+        contextSchool: "Phòng lab tin học + máy in 3D.",
+        objectivesKnowledge: "Áp dụng tư duy HHKG vector trên trình vẽ.",
+        objectivesCompetency: "Thực hành hệ thống mô phỏng, vận động công nghệ sinh đa cực năng lực STEM.",
+        objectivesQuality: "Yêu thích kỹ thuật kiến trúc phần mềm cao."
       }
     ]
   },

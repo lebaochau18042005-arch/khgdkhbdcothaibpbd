@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "title": "Dữ liệu Lịch sử Việt Nam cho Skill Sử",
+    "version": "1.0.0",
+    "source": "Tổng hợp từ EdCore, History, vis-timeline",
+    "language": "vi",
+    "last_updated": "2026-04-08"
+  },
+
+  "timeline_overview": {
+    "name": "Lịch sử Việt Nam qua các thời kỳ",
+    "description": "Tổng quan các mốc quan trọng từ thời dựng nước đến hiện đại",
+    "periods": [
+      {
+        "name": "Thời kỳ Hồng Bàng",
+        "start": -2879,
+        "end": -258,
+        "color": "#8B4513",
+        "key_events": ["Vua Hùng dựng nước Văn Lang", "Sơn Tinh Thủy Tinh", "Bánh chưng bánh dày"]
+      },
+      {
+        "name": "Bắc thuộc & Đấu tranh giành Độc lập",
+        "start": -207,
+        "end": 938,
+        "color": "#696969",
+        "key_events": ["Khởi nghĩa Hai Bà Trưng (40)", "Khởi nghĩa Lý Bí (544)", "Ngô Quyền - Trận Bạch Đằng (938)"]
+      },
+      {
+        "name": "Thời kỳ Phong kiến Độc lập",
+        "start": 938,
+        "end": 1858,
+        "color": "#FFD700",
+        "key_events": [
+          "Nhà Đinh - Thống nhất giang sơn (968)",
+          "Nhà Lý - Dời đô Thăng Long (1010)",
+          "Nhà Trần - 3 lần thắng Nguyên Mông",
+          "Khởi nghĩa Lam Sơn - Lê Lợi (1418-1427)",
+          "Quang Trung đại phá quân Thanh (1789)"
+        ]
+      },
+      {
+        "name": "Thời kỳ Pháp thuộc",
+        "start": 1858,
+        "end": 1945,
+        "color": "#4B0082",
+        "key_events": ["Pháp tấn công Đà Nẵng (1858)", "Phong trào Cần Vương", "Thành lập ĐCSVN (1930)"]
+      },
+      {
+        "name": "Cách mạng & Kháng chiến",
+        "start": 1945,
+        "end": 1975,
+        "color": "#FF0000",
+        "key_events": ["CMT8 & Tuyên ngôn Độc lập (1945)", "Điện Biên Phủ (1954)", "Thống nhất (1975)"]
+      },
+      {
+        "name": "Xây dựng & Đổi mới",
+        "start": 1975,
+        "end": 2026,
+        "color": "#228B22",
+        "key_events": ["Đổi mới kinh tế (1986)", "Gia nhập WTO (2007)", "Hội nhập quốc tế"]
+      }
+    ]
+  },
+
+  "quiz_templates": {
+    "timeline_order": {
+      "description": "Sắp xếp sự kiện theo thứ tự thời gian",
+      "difficulty_levels": {
+        "easy": { "event_count": 3, "same_period": true },
+        "medium": { "event_count": 5, "same_period": false },
+        "hard": { "event_count": 7, "same_period": false }
+      }
+    },
+    "who_am_i": {
+      "description": "Đoán nhân vật lịch sử qua mô tả",
+      "template": "Tôi là ai? {clue_1}. {clue_2}. {clue_3}."
+    },
+    "map_locate": {
+      "description": "Chỉ vị trí sự kiện trên bản đồ",
+      "map_center": [16.0, 106.0],
+      "zoom": 6
+    },
+    "cause_effect": {
+      "description": "Nối nguyên nhân - kết quả",
+      "template": "Sự kiện nào là nguyên nhân/kết quả của {event}?"
+    }
+  }
+}

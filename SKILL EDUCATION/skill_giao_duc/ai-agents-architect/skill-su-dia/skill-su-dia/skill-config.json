@@ -1,0 +1,128 @@
+{
+  "skill": {
+    "name": "Skill Sử-Địa",
+    "version": "1.0.0",
+    "description": "Skill giáo dục Lịch sử và Địa lý Việt Nam - Tổng hợp từ các repository giáo dục mã nguồn mở",
+    "author": "Tổng hợp từ EdCore, Geography, History, Leafmap, OrbisGIS, GeoLearn-AR, vis-timeline",
+    "language": "vi",
+    "subjects": ["su", "dia"]
+  },
+
+  "sources": {
+    "history-main": {
+      "description": "AI-powered 3D Globe for historical research",
+      "tech": ["Next.js", "React", "Mapbox GL", "Supabase", "Valyu DeepResearch"],
+      "used_for": ["3D globe", "historical research", "database schema"]
+    },
+    "EdCore-main": {
+      "description": "AR History Education Microservice",
+      "tech": ["Spring Boot", "Angular", "Keycloak", "Kafka"],
+      "used_for": ["AR experience", "gamification", "auth", "microservice architecture"]
+    },
+    "geography-master": {
+      "description": "Adaptive Learning Geography (slepemapy.cz)",
+      "tech": ["Django", "AngularJS", "PostgreSQL", "proso framework"],
+      "used_for": ["adaptive learning", "flashcards", "map practice", "A/B testing"]
+    },
+    "vis-timeline-master": {
+      "description": "Interactive Timeline Visualization",
+      "tech": ["JavaScript", "vis-data", "moment.js"],
+      "used_for": ["timeline visualization", "event display"]
+    },
+    "leafmap-master": {
+      "description": "Python Geospatial Analysis & Mapping",
+      "tech": ["Python", "Leaflet", "ipyleaflet", "GeoJSON"],
+      "used_for": ["map configuration", "basemaps", "GIS analysis"]
+    },
+    "orbisgis-master": {
+      "description": "Open Source GIS (CNRS France)",
+      "tech": ["Java", "PostGIS", "H2GIS", "JTS"],
+      "used_for": ["spatial queries", "GIS tools", "PostGIS integration"]
+    },
+    "GeoLearn-AR-main": {
+      "description": "AR Geography Learning",
+      "tech": ["EchoAR", "Google Maps", "Typeform"],
+      "used_for": ["geography AR experience", "QR-based learning"]
+    }
+  },
+
+  "database": {
+    "type": "PostgreSQL",
+    "extensions": ["PostGIS", "uuid-ossp"],
+    "schemas": [
+      "database/schemas/001_users.sql",
+      "database/schemas/002_history.sql",
+      "database/schemas/003_geography.sql",
+      "database/schemas/004_learning.sql"
+    ],
+    "seeds": [
+      "database/seeds/001_authorities.sql",
+      "database/seeds/002_historical_periods.sql",
+      "database/seeds/003_historical_events.sql",
+      "database/seeds/004_historical_figures.sql",
+      "database/seeds/005_geo_categories.sql",
+      "database/seeds/006_geo_places.sql",
+      "database/seeds/007_geo_flashcards.sql",
+      "database/seeds/008_badges.sql"
+    ]
+  },
+
+  "modules": {
+    "su": {
+      "timeline": "su/timeline/timeline-config.js",
+      "research": "su/research/research-service.js",
+      "ar": "su/ar-experience/ar-config.js",
+      "quiz": "su/quiz/history-quiz-engine.js",
+      "data": "su/data/vietnam-history-data.json"
+    },
+    "dia": {
+      "map": "dia/map/map-config.js",
+      "adaptive": "dia/adaptive-learning/adaptive-engine.js",
+      "gis": "dia/gis/gis-tools.js",
+      "ar": "dia/ar-experience/geo-ar-config.js",
+      "quiz": "dia/quiz/geography-quiz-engine.js",
+      "data": "dia/data/vietnam-geography-data.json"
+    },
+    "shared": {
+      "fsrs": "shared/utils/fsrs.js",
+      "auth": "shared/auth/auth-service.js"
+    }
+  },
+
+  "tech_stack": {
+    "frontend": {
+      "framework": ["React/Next.js", "Angular"],
+      "maps": ["Leaflet", "Mapbox GL JS"],
+      "timeline": ["vis-timeline"],
+      "ar": ["AR.js", "A-Frame", "WebXR"],
+      "charts": ["D3.js", "Recharts"]
+    },
+    "backend": {
+      "framework": ["Node.js/Express", "Django", "Spring Boot"],
+      "database": ["PostgreSQL + PostGIS"],
+      "cache": ["Redis", "Memcached"],
+      "auth": ["Supabase Auth", "Keycloak", "JWT"]
+    },
+    "ai_ml": {
+      "research": ["Valyu DeepResearch", "OpenAI"],
+      "adaptive": ["IRT (Item Response Theory)", "FSRS"],
+      "nlp": ["NLTK", "SpaCy"]
+    }
+  },
+
+  "environment": {
+    "required": [
+      "DATABASE_URL",
+      "NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN"
+    ],
+    "optional": [
+      "RESEARCH_API_URL",
+      "RESEARCH_API_KEY",
+      "AR_CLOUD_API_URL",
+      "AR_CLOUD_API_KEY",
+      "AUTH_MODE",
+      "SUPABASE_URL",
+      "SUPABASE_KEY"
+    ]
+  }
+}

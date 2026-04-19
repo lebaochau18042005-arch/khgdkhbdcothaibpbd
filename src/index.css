@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-sidebar: #1E293B;
+  --color-brand-accent: #38BDF8;
+  --color-brand-bg: #F4F7F9;
+  --color-brand-muted: #64748B;
+  --color-brand-dark: #2D3436;
+  
+  /* Overriding standard colors to Hex to fix html2pdf/oklch issue */
+  --color-red-50: #FEF2F2;
+  --color-red-100: #FEE2E2;
+  --color-red-500: #EF4444;
+  --color-red-600: #DC2626;
+  
+  --color-sky-50: #F0F9FF;
+  --color-sky-100: #E0F2FE;
+  --color-sky-700: #0369A1;
+  
+  --color-blue-600: #2563EB;
+  
+  --color-indigo-50: #EEF2FF;
+  --color-indigo-600: #4F46E5;
+  --color-indigo-700: #4338CA;
+  
+  --color-emerald-50: #ECFDF5;
+  --color-emerald-500: #10B981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+
+  --color-slate-50: #F8FAFC;
+  --color-slate-100: #F1F5F9;
+  --color-slate-200: #E2E8F0;
+  --color-slate-300: #CBD5E1;
+  --color-slate-400: #94A3B8;
+  --color-slate-500: #64748B;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1E293B;
+  --color-slate-900: #0F172A;
+  
+  --shadow-brand: 0 4px 20px rgba(0, 0, 0, 0.05);
+  
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-lg;
+  }
+  
+  .glass-dark {
+    @apply bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-xl;
+  }
+
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto;
+    gap: 1.5rem;
+  }
+
+  /* Responsive Bento Grid */
+  @media (max-width: 1024px) {
+    .bento-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .bento-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply min-h-screen bg-indigo-950 text-slate-900 selection:bg-indigo-200 selection:text-indigo-900;
+    background-image: radial-gradient(circle at top left, var(--color-indigo-700), transparent),
+                      radial-gradient(circle at bottom right, var(--color-indigo-900), transparent);
+    background-attachment: fixed;
+  }
+}

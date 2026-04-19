@@ -1,0 +1,133 @@
+{
+  "metadata": {
+    "title": "Dữ liệu Địa lý Việt Nam cho Skill Địa",
+    "version": "1.0.0",
+    "source": "Tổng hợp từ Geography, Leafmap, OrbisGIS, GeoLearn-AR",
+    "language": "vi",
+    "last_updated": "2026-04-08"
+  },
+
+  "vietnam_overview": {
+    "name": "Việt Nam",
+    "official_name": "Cộng hòa Xã hội Chủ nghĩa Việt Nam",
+    "capital": "Hà Nội",
+    "area_km2": 331212,
+    "population": 100000000,
+    "coordinates": { "lat": 16.4637, "lng": 107.5909 },
+    "bounds": {
+      "north": 23.3924,
+      "south": 8.1790,
+      "east": 109.4643,
+      "west": 102.1448
+    },
+    "borders": ["Trung Quốc", "Lào", "Campuchia"],
+    "coastline_km": 3260,
+    "highest_point": { "name": "Fansipan", "elevation_m": 3143 },
+    "largest_city": { "name": "TP. Hồ Chí Minh", "population": 9500000 },
+    "time_zone": "UTC+7"
+  },
+
+  "regions": [
+    {
+      "name": "Đồng bằng sông Hồng",
+      "name_en": "Red River Delta",
+      "provinces": ["Hà Nội", "Hải Phòng", "Vĩnh Phúc", "Bắc Ninh", "Hải Dương", "Hưng Yên", "Thái Bình", "Hà Nam", "Nam Định", "Ninh Bình"],
+      "characteristics": ["Đồng bằng phù sa", "Mật độ dân số cao", "Trung tâm chính trị"],
+      "center": { "lat": 20.9, "lng": 106.1 }
+    },
+    {
+      "name": "Trung du và Miền núi phía Bắc",
+      "name_en": "Northern Midlands and Mountains",
+      "provinces": ["Hà Giang", "Cao Bằng", "Lào Cai", "Bắc Kạn", "Lạng Sơn", "Tuyên Quang", "Yên Bái", "Thái Nguyên", "Phú Thọ", "Bắc Giang", "Quảng Ninh", "Điện Biên", "Lai Châu", "Sơn La", "Hòa Bình"],
+      "characteristics": ["Địa hình núi cao", "Đa dạng dân tộc", "Khoáng sản"],
+      "center": { "lat": 22.0, "lng": 105.0 }
+    },
+    {
+      "name": "Bắc Trung Bộ và Duyên hải miền Trung",
+      "name_en": "North Central and Central Coast",
+      "provinces": ["Thanh Hóa", "Nghệ An", "Hà Tĩnh", "Quảng Bình", "Quảng Trị", "Thừa Thiên Huế", "Đà Nẵng", "Quảng Nam", "Quảng Ngãi", "Bình Định", "Phú Yên", "Khánh Hòa", "Ninh Thuận", "Bình Thuận"],
+      "characteristics": ["Duyên hải hẹp", "Thiên tai thường xuyên", "Di sản văn hóa"],
+      "center": { "lat": 16.0, "lng": 107.5 }
+    },
+    {
+      "name": "Tây Nguyên",
+      "name_en": "Central Highlands",
+      "provinces": ["Kon Tum", "Gia Lai", "Đắk Lắk", "Đắk Nông", "Lâm Đồng"],
+      "characteristics": ["Cao nguyên bazan", "Cà phê, cao su", "Văn hóa Tây Nguyên"],
+      "center": { "lat": 13.5, "lng": 108.0 }
+    },
+    {
+      "name": "Đông Nam Bộ",
+      "name_en": "Southeast",
+      "provinces": ["TP. Hồ Chí Minh", "Bình Dương", "Đồng Nai", "Bà Rịa-Vũng Tàu", "Bình Phước", "Tây Ninh"],
+      "characteristics": ["Trung tâm kinh tế", "Công nghiệp", "Đô thị hóa cao"],
+      "center": { "lat": 11.0, "lng": 106.8 }
+    },
+    {
+      "name": "Đồng bằng sông Cửu Long",
+      "name_en": "Mekong River Delta",
+      "provinces": ["Long An", "Tiền Giang", "Bến Tre", "Trà Vinh", "Vĩnh Long", "Đồng Tháp", "An Giang", "Kiên Giang", "Cần Thơ", "Hậu Giang", "Sóc Trăng", "Bạc Liêu", "Cà Mau"],
+      "characteristics": ["Vựa lúa lớn nhất", "Trái cây", "Thủy sản"],
+      "center": { "lat": 10.0, "lng": 105.5 }
+    }
+  ],
+
+  "major_rivers": [
+    { "name": "Sông Hồng", "length_km": 1149, "origin": "Vân Nam, Trung Quốc", "mouth": "Vịnh Bắc Bộ" },
+    { "name": "Sông Mê Kông", "length_km": 4350, "origin": "Tây Tạng", "mouth": "Biển Đông" },
+    { "name": "Sông Đà", "length_km": 910, "origin": "Vân Nam, Trung Quốc", "mouth": "Hợp lưu sông Hồng" },
+    { "name": "Sông Mã", "length_km": 512, "origin": "Điện Biên", "mouth": "Vịnh Bắc Bộ" },
+    { "name": "Sông Cả (Lam)", "length_km": 531, "origin": "Lào", "mouth": "Vịnh Bắc Bộ" },
+    { "name": "Sông Đồng Nai", "length_km": 586, "origin": "Lâm Đồng", "mouth": "Biển Đông" }
+  ],
+
+  "major_mountains": [
+    { "name": "Fansipan", "elevation_m": 3143, "range": "Hoàng Liên Sơn", "province": "Lào Cai" },
+    { "name": "Phu Si Lung", "elevation_m": 3076, "range": "Hoàng Liên Sơn", "province": "Lai Châu" },
+    { "name": "Ngọc Linh", "elevation_m": 2598, "range": "Ngọc Linh", "province": "Kon Tum" },
+    { "name": "Bạch Mã", "elevation_m": 1450, "range": "Trường Sơn", "province": "Thừa Thiên Huế" },
+    { "name": "Langbiang", "elevation_m": 2167, "range": "Trường Sơn", "province": "Lâm Đồng" }
+  ],
+
+  "unesco_sites": [
+    { "name": "Vịnh Hạ Long", "type": "natural", "year": 1994, "province": "Quảng Ninh" },
+    { "name": "Phong Nha - Kẻ Bàng", "type": "natural", "year": 2003, "province": "Quảng Bình" },
+    { "name": "Quần thể di tích Cố đô Huế", "type": "cultural", "year": 1993, "province": "Thừa Thiên Huế" },
+    { "name": "Phố cổ Hội An", "type": "cultural", "year": 1999, "province": "Quảng Nam" },
+    { "name": "Thánh địa Mỹ Sơn", "type": "cultural", "year": 1999, "province": "Quảng Nam" },
+    { "name": "Hoàng thành Thăng Long", "type": "cultural", "year": 2010, "province": "Hà Nội" },
+    { "name": "Thành nhà Hồ", "type": "cultural", "year": 2011, "province": "Thanh Hóa" },
+    { "name": "Quần thể danh thắng Tràng An", "type": "mixed", "year": 2014, "province": "Ninh Bình" }
+  ],
+
+  "map_contexts": [
+    {
+      "slug": "viet-nam",
+      "name": "Bản đồ Việt Nam",
+      "center": [16.0583, 105.8542],
+      "zoom": 6,
+      "practice_types": ["province", "city", "river", "mountain"]
+    },
+    {
+      "slug": "dong-nam-a",
+      "name": "Bản đồ Đông Nam Á",
+      "center": [5.0, 110.0],
+      "zoom": 4,
+      "practice_types": ["country", "capital", "sea"]
+    },
+    {
+      "slug": "chau-a",
+      "name": "Bản đồ Châu Á",
+      "center": [35.0, 100.0],
+      "zoom": 3,
+      "practice_types": ["country", "capital", "river", "mountain"]
+    },
+    {
+      "slug": "the-gioi",
+      "name": "Bản đồ Thế giới",
+      "center": [20.0, 0.0],
+      "zoom": 2,
+      "practice_types": ["continent", "country", "ocean"]
+    }
+  ]
+}

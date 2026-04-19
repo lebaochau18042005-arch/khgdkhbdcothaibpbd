@@ -426,7 +426,8 @@ export const generateEducationalPlan = async (subject: string, grade: string, pr
          + Phương án triển khai: Sử dụng tình huống giả định, nghiên cứu tình huống (case study) hay có công cụ AI trực tiếp.
          + Học liệu/công cụ cụ thể: Các bài báo, video phân tích, các bộ dữ liệu giả định, hoặc tên phần mềm/nền tảng AI sẽ sử dụng.
        - Địa điểm dạy học: Lớp học, phòng máy tính, thư viện...
-       - Định hướng năng lực số: Cụ thể hóa mã YCCĐ AI (Khung 3439) và cách thức tích hợp AI vào bài học đó. [Mã chuẩn: Khối.Mạch.Chỉ báo].
+       - Định hướng năng lực số: Cụ thể hóa mã YCCĐ AI (Khung 3439). QUY TẮC MÃ: Ký tự phân cấp cuối cùng BẮT BUỘC VIẾT THƯỜNG (Ví dụ: 10.A.a1, 11.B.b2, 12.C.c1). Tuyệt đối không viết hoa toàn bộ như 11.C.C1.
+       - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \sin, \cos) trong bảng này. Các công thức toán/lý/hóa phải chuyển thành text thường dễ đọc nhất (vd: y = sin x).
 
     2. NGUYÊN TẮC TÍCH HỢP (Theo 8334/BGDĐT-GDPT):
        - Rà soát toàn bộ bài học trong chương trình.
@@ -492,8 +493,9 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
     3. Ánh xạ Năng lực:
        - Mục tiêu bài học (lessonGoal): PHẢI MÔ TẢ CHI TIẾT ĐỦ CÁC NỘI DUNG: Kiến thức (HS nắm vững vấn đề gì?); Năng lực (bao gồm Năng lực chung và Năng lực đặc thù môn học được cụ thể hóa bằng hành động); Phẩm chất (Các phẩm chất cần hình thành).
        - Số tiết (periods): Số lượng tiết học dự kiến cho bài học này.
-       - Năng lực AI (aiCompetency): Phải làm rõ các chỉ báo trong YCCĐ. Mã chuẩn phải ghi theo cấu trúc [Khối].[Mạch].[Chỉ báo] (Ví dụ: 10.A.A1, 11.B.B2, 12.C.C1). Mỗi gạch đầu dòng trong CV 3439 là một chỉ báo nhỏ.
+       - Năng lực AI (aiCompetency): Phải làm rõ chỉ báo trong YCCĐ. QUY TẮC KÝ HIỆU CHUẨN: Ký hiệu phân loại cấp cuối BẮT BUỘC VIẾT THƯỜNG (Ví dụ: 10.A.a1, 11.B.b2, 12.C.c1). TUYỆT ĐỐI KHÔNG viết hoa chữ cái thứ 2 như 11.C.C1.
        - Mạch nội dung AI: 
+         - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \sin, \cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường thẳng thắn (Ví dụ: y = sin x).
          * NLa (A): Tư duy lấy con người làm trung tâm.
          * NLb (B): Đạo đức và trách nhiệm xã hội.
          * NLc (C): Kỹ thuật và ứng dụng.

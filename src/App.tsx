@@ -126,6 +126,89 @@ const CURRICULUM_DB: Record<string, Record<string, any[]>> = {
         objectivesCompetency: "Năng lực giải quyết vấn đề toán học.",
         objectivesQuality: "Cẩn thận trong tính toán."
       }
+    ],
+    "11": [
+      {
+        topic: "Chương 1: Hàm số lượng giác và phương trình lượng giác",
+        duration: "7 tiết",
+        contextStudents: "Học sinh làm quen với các hàm số vòng tròn mở rộng.",
+        contextSchool: "Giáo cụ mô hình đường tròn lượng giác.",
+        objectivesKnowledge: "Học sinh nhận biết các hàm số lượng giác cơ bản; giải được phương trình lượng giác.",
+        objectivesCompetency: "Năng lực mô hình hóa toán học; giải quyết vấn đề.",
+        objectivesQuality: "Tư duy logic, cẩn thận."
+      },
+      {
+        topic: "Chương 2: Dãy số. Cấp số cộng và cấp số nhân",
+        duration: "7 tiết",
+        contextStudents: "Học sinh hiểu quy luật dãy số.",
+        contextSchool: "Máy tính cầm tay, bảng tính.",
+        objectivesKnowledge: "Nắm khái niệm dãy số, công thức tổng quát và tính chất cấp số cộng, cấp số nhân.",
+        objectivesCompetency: "Tư duy tính toán, nhận biết tính quy luật.",
+        objectivesQuality: "Sự kiên nhẫn, tính hệ thống."
+      },
+      {
+        topic: "Chương 3: Giới hạn. Hàm số liên tục",
+        duration: "6 tiết",
+        contextStudents: "Học sinh tiếp cận với khái niệm vô cực và sự liên tục.",
+        contextSchool: "Phần mềm hỗ trợ đồ thị.",
+        objectivesKnowledge: "Tính giới hạn dãy số, hàm số; xét tính liên tục của hàm số.",
+        objectivesCompetency: "Khả năng tư duy phân tích, lập luận Logic.",
+        objectivesQuality: "Khoa học, khách quan."
+      },
+      {
+        topic: "Chương 4: Đường thẳng và mặt phẳng trong không gian. Quan hệ song song",
+        duration: "8 tiết",
+        contextStudents: "Học sinh chuyển từ không gian 2D sang 3D.",
+        contextSchool: "Mô hình khối đa diện.",
+        objectivesKnowledge: "Hiểu quan hệ song song trong không gian, giao tuyến, hình biểu diễn.",
+        objectivesCompetency: "Năng lực không gian, tưởng tượng hình học.",
+        objectivesQuality: "Sáng tạo, thực tế."
+      },
+      {
+        topic: "Chương 5: Các số đặc trưng đo xu thế trung tâm cho mẫu số liệu ghép nhóm",
+        duration: "4 tiết",
+        contextStudents: "Học sinh làm quen với xử lý thống kê nâng cao.",
+        contextSchool: "Phòng máy tính, Excel.",
+        objectivesKnowledge: "Tính được các số đặc trưng của mẫu số liệu ghép nhóm.",
+        objectivesCompetency: "Năng lực thống kê và giải quyết bài toán thực tế.",
+        objectivesQuality: "Chính xác, tôn trọng dữ liệu."
+      },
+      {
+        topic: "Chương 6: Hàm số mũ và hàm số lôgarit",
+        duration: "6 tiết",
+        contextStudents: "Học sinh tìm hiểu sự liên kết mũ và lôgarit, tăng trưởng hàm.",
+        contextSchool: "Thiết bị tính toán thông minh.",
+        objectivesKnowledge: "Giải phương trình, bất phương trình mũ và logarit cơ bản.",
+        objectivesCompetency: "Giải quyết vấn đề tăng trưởng (lãi suất, phân rã).",
+        objectivesQuality: "Nhanh nhạy, chính xác."
+      },
+      {
+        topic: "Chương 7: Đạo hàm",
+        duration: "5 tiết",
+        contextStudents: "Học sinh tiếp cận đại lượng biến thiên, tốc độ tức thời.",
+        contextSchool: "Bảng hoặc TV liên kết máy tính.",
+        objectivesKnowledge: "Tính đạo hàm theo định nghĩa và công thức.",
+        objectivesCompetency: "Tư duy giải tích cơ bản.",
+        objectivesQuality: "Tỉ mỉ, hệ thống."
+      },
+      {
+        topic: "Chương 8: Quan hệ vuông góc trong không gian",
+        duration: "7 tiết",
+        contextStudents: "Học sinh mở rộng thêm kiến thức về hình chiếu, khoảng cách 3D.",
+        contextSchool: "Mô hình không gian trực quan.",
+        objectivesKnowledge: "Xác định góc, khoảng cách, chứng minh vuông góc.",
+        objectivesCompetency: "Lập luận hình học sâu.",
+        objectivesQuality: "Kỷ luật khối óc."
+      },
+      {
+        topic: "Chương 9: Xác suất",
+        duration: "4 tiết",
+        contextStudents: "Học sinh tính toán biến cố kết hợp ngẫu nhiên.",
+        contextSchool: "Xúc xắc, đồng xu.",
+        objectivesKnowledge: "Sử dụng quy tắc cộng, nhân xác suất cho biến cố độc lập.",
+        objectivesCompetency: "Đánh giá, dự đoán rủi ro.",
+        objectivesQuality: "Khách quan, tuân thủ dữ kiện thực tế."
+      }
     ]
   },
   "Tin học": {

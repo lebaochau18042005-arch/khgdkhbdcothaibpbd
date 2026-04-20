@@ -370,6 +370,8 @@ export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: strin
       `
       Đóng vai trò là chuyên gia giáo dục, hãy phân tích Phụ lục Phân phối chương trình đính kèm (PDF).
       Nhiệm vụ: Bóc tách danh sách các bài học (hoặc chủ đề), thời lượng (số tiết), và thời điểm dạy (vd: Tuần 1).
+      LỆNH CỰC KỲ QUAN TRỌNG: TUYỆT ĐỐI KHÔNG ĐƯỢC LƯỢC BỎ, BỎ SÓT LÀM MẤT BẤT KỲ BÀI HỌC NÀO. BẮT BUỘC TRÍCH XUẤT ĐẦY ĐỦ TOÀN BỘ 100% CÁC BÀI HỌC TỪ ĐẦU ĐẾN KẾT THÚC FILE.
+      Nếu file chứa 70 bài, bạn phải xuất đủ 70 JSON objects. Làm mất dữ liệu là vi phạm kỷ luật cực nặng.
       Phớt lờ các thông tin thừa như tên trường, quốc hiệu, chữ ký. Bắt đầu ngay từ danh sách bài học. Dồn các tiết tự học/kiểm tra chung thành 1 bài nếu có.
       Trọng tâm là tên bài học phải ĐẦY ĐỦ chính xác từng chữ như trong file gốc.
       `,
@@ -383,12 +385,14 @@ export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: strin
   } else {
     prompt = `
       Đóng vai trò là chuyên gia giáo dục, hãy phân tích Phụ lục Phân phối chương trình.
-      Dưới đây là văn bản thô bóc tách từ file Phân phối chương trình do giáo viên cung cấp:
-      """${rawText.substring(0, 18000)}"""
+      Dưới đây là TOÀN BỘ văn bản thô bóc tách từ file Phân phối chương trình do giáo viên cung cấp:
+      """${rawText.substring(0, 300000)}"""
 
       Nhiệm vụ: Bóc tách danh sách các bài học (hoặc chủ đề), thời lượng (số tiết), và thời điểm dạy (vd: Tuần 1).
-      Phớt lờ các thông tin thừa như tên trường, quốc hiệu, chữ ký. Bắt đầu ngay từ danh sách bài học. Dồn các tiết tự học/kiểm tra chung thành 1 bài nếu có.
-      Trọng tâm là tên bài học phải ĐẦY ĐỦ chính xác từng chữ như trong file gốc.
+      LỆNH CỰC KỲ QUAN TRỌNG: TUYỆT ĐỐI KHÔNG ĐƯỢC LƯỢC BỎ, BỎ SÓT LÀM MẤT BẤT KỲ BÀI HỌC NÀO. BẮT BUỘC TRÍCH XUẤT ĐẦY ĐỦ TOÀN BỘ BÀI HỌC TỪ ĐẦU ĐẾN CUỐI.
+      NẾU FILE CÓ 100 BÀI, BẠN PHẢI TRẢ VỀ DỮ LIỆU CỦA 100 BÀI. LÀM MẤT DỮ LIỆU LÀ VI PHẠM KỶ LUẬT SƯ PHẠM.
+      Phớt lờ các thông tin thừa như tên trường, chữ ký. Bắt đầu ngay từ danh sách.
+      Trọng tâm là tên bài học phải chính xác từng chữ như file gốc.
     `;
   }
 
@@ -629,7 +633,9 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
     
     ${curriculumConstraint}
 
-    2. Cấu trúc bảng Phân phối chương trình:
+    2. LỆNH CỰC KỲ QUAN TRỌNG VỀ ĐỘ DÀI: TUYỆT ĐỐI KHÔNG ĐƯỢC BỎ SÓT LÀM MẤT BÀI HỌC NÀO TRONG CHƯƠNG TRÌNH HOẶC DỮ LIỆU ĐƯỢC CẤP. JSON TRẢ VỀ PHẢI ĐẦY ĐỦ 100% SỐ BÀI HỌC TỪ ĐẦU ĐẾN CUỐI CỦA 1 NĂM HỌC. NẾU CÓ 80 BÀI, PHẢI TRẢ ĐỦ 80 ITEMS TRONG ARRAY JSON. KHÔNG ĐƯỢC RÚT GỌN TÓM TẮT.
+
+    3. Cấu trúc bảng Phân phối chương trình:
        - Thứ tự tiết: Số thứ tự tiết học.
        - Bài học: Tên bài học theo chương trình.
        - Số tiết: Số lượng tiết dành cho bài học đó.
@@ -642,12 +648,12 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
        - Định hướng năng lực số: Cụ thể hóa mã YCCĐ AI (Khung 3439). QUY TẮC MÃ: KHỐI LỚP.NỘI DUNG(A/B/C/D).CHỦ ĐỀ(A1/B1).YCCĐ_SỐ(1/2/3) (Ví dụ: 10.A.A1.1, 11.C.C2.3). TUYỆT ĐỐI tuân thủ dấu chấm phân tách và định dạng này.
        - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \sin, \cos) trong bảng này. Các công thức toán/lý/hóa phải chuyển thành text thường dễ đọc nhất (vd: y = sin x).
 
-    2. NGUYÊN TẮC TÍCH HỢP (Theo 8334/BGDĐT-GDPT):
+    4. NGUYÊN TẮC TÍCH HỢP (Theo 8334/BGDĐT-GDPT):
        - Rà soát toàn bộ bài học trong chương trình.
        - KHÔNG tích hợp dàn trải hoặc khiên cưỡng. Chỉ thực hiện khi có "điểm chạm" logic và tự nhiên giữa kiến thức môn học và năng lực AI.
        - Nếu bài nào không phù hợp để tích hợp, tại cột "YCCĐ AI" và "Mục tiêu tích hợp AI" ghi rõ: "Không tích hợp".
 
-    3. Định dạng đầu ra: Trình bày dưới dạng JSON Array các đối tượng.
+    5. Định dạng đầu ra: Trình bày dưới dạng JSON Array các đối tượng.
   `;
 
   try {
@@ -704,7 +710,7 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
     ${englishConstraint}
 
     Nhiệm vụ cụ thể:
-    1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề/bài học trong chương trình GDPT 2018 của môn này. KHÔNG ĐƯỢC bỏ sót bài nào.
+    1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề/bài học trong chương trình GDPT 2018 (hoặc Dữ liệu tùy chỉnh do giáo viên cấp) của môn này. LỆNH VỀ ĐỘ DÀI TỐI ĐA: TUYỆT ĐỐI KHÔNG ĐƯỢC LƯỢC BỎ BẤT KỲ BÀI NÀO ĐỂ LÀM MẤT DỮ LIỆU. NẾU BẠN NHẬN ĐƯỢC 70 BÀI VÀO, PHẢI TRẢ VỀ MẢNG JSON CÓ ĐÚNG 70 BÀI RÕ RÀNG. LÀM MẤT SẼ BỊ PHẠT!
     2. Đánh giá khả năng tích hợp AI:
        - Với mỗi bài học, xác định xem có khả năng tích hợp AI dựa trên các tiêu chí: có nội dung phân tích xã hội, kinh tế, pháp luật hoặc có yếu tố dữ liệu, phương pháp nghiên cứu.
        - Nếu bài học PHÙ HỢP: Xác định mạch nội dung AI (NLa, NLb, NLc, NLd) và mục tiêu cụ thể.

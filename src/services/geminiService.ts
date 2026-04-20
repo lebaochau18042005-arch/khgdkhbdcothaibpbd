@@ -211,30 +211,36 @@ LƯU Ý TỐI QUAN TRỌNG CHUNG MÔN ĐỊA LÍ (TẤT CẢ CÁC KHỐI LỚP):
 
 const FORMATTING_INSTRUCTIONS = `
 YÊU CẦU ĐỊNH DẠNG VÀ TRÌNH BÀY (THỰC THI NGHIÊM NGẶT):
-1. Đối với Công thức (Toán, Vật lí, Hóa học):
-- Toàn bộ công thức toán học, biểu thức vật lí: TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX (ví dụ các ký hiệu $ ... $ hoặc $$...$$, \sin, \cos). Hãy viết công thức theo cấu trúc văn bản thuần túy và thân thiện nhất với người đọc (Ví dụ: sin x = m).
-- Phương trình hóa học: Ghi rõ bằng văn bản (Ví dụ: H2O thay cho H_{2}O).
+1. Đối với Công thức (Toán, Vật lí, Hóa học, Sinh học):
+- Ưu tiên sử dụng định dạng bảng biểu chuyên nghiệp.
+- VUI LÒNG cấu trúc và Dùng LaTeX cho mọi công thức Toán/Lý/Hóa/Sinh theo chuẩn học thuật (dùng để giáo viên gõ MathType dễ dàng).
 2. Đối với Hình vẽ, Biểu đồ và Bản đồ:
-- Không được bỏ qua hình vẽ: Tại mỗi vị trí cần hình minh họa, biểu đồ hoặc sơ đồ, bạn phải đặt một thẻ giữ chỗ dạng: [CHÈN HÌNH VẼ/BIỂU ĐỒ: Mô tả chi tiết nội dung hình cần vẽ tại đây].
-- Mô tả kỹ thuật: Cung cấp các thông số kỹ thuật (ví dụ: Tọa độ điểm, phương trình đường cong, các nhãn ký hiệu trên trục Ox, Oy) để giáo viên dễ dàng vẽ lại bằng phần mềm chuyên dụng (GeoGebra, Chemdraw).
-3. Đối với Bảng biểu và Sơ đồ tư duy:
-- Sử dụng định dạng bảng chuẩn.
-- Các sơ đồ tiến trình hoặc sơ đồ tư duy phải được trình bày theo dạng danh sách phân cấp (bullet points lồng nhau) để dễ dàng chuyển đổi sang SmartArt.
-4. Quy chuẩn trình bày:
-- Cấu trúc: Phải tuân thủ đúng các mục của Công văn 5512 (I. Mục tiêu, II. Thiết bị, III. Tiến trình, IV. Đánh giá) và Quyết định 3439 (Tích hợp NLa, NLb, NLc, NLd).
+- Mô tả trực quan chi tiết cho các hình vẽ/biểu đồ để GV dễ chèn ảnh (VD: [CHÈN HÌNH VẼ: Trục tọa độ Oxy, vẽ parabol y=x^2 và đường thẳng y=2x cắt nhau...]).
+3. Đối với Bảng biểu và Sơ đồ:
+- Sử dụng định dạng bảng chuẩn Markdown.
+- Các sơ đồ tiến trình phải được trình bày phân cấp rõ ràng.
 `;
 
 const LESSON_PLAN_STRICT_GUIDELINES = `
-CHỈ THỊ THỰC THI NGHIÊM NGẶT CHO MỤC III. TIẾN TRÌNH DẠY HỌC (CHUẨN CÔNG VĂN 5512 & QĐ 3439):
-1. Thiết kế đúng và đủ 4 hoạt động theo cấu trúc chuẩn CV 5512 (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-2. Với MỖI hoạt động, bạn phải đảm bảo có 4 thành tố: Mục tiêu, Nội dung, Sản phẩm, Tổ chức thực hiện. Các mục này phải mô tả THẬT CHI TIẾT CỤ THỂ, tuyệt đối không viết chung chung kiểu "GV yêu cầu HS làm bài".
-3. TRỌNG TÂM CHI TIẾT Ở PHẦN "TỔ CHỨC THỰC HIỆN" (BẮT BUỘC có đủ 4 bước, mỗi bước phải rất dài và có chiều sâu sư phạm tối thiểu 100-200 từ):
-   - Bước 1: Giao nhiệm vụ học tập: Ghi RÕ RÀNG lời dẫn dắt của Giáo viên (GV) trong ngoặc kép ("..."). Liệt kê cụ thể từng yêu cầu, câu hỏi GV đặt ra, tài liệu hoặc công cụ AI (theo QĐ 3439) được giao cho Học sinh (HS) là gì?
-   - Bước 2: Thực hiện nhiệm vụ: Mô tả cực kỳ chi tiết hành động của HS. HS suy nghĩ gì, thảo luận nhóm ra sao? Nếu dùng công cụ AI (ChatGPT, Gemini), HS sẽ nhập câu lệnh (Prompt) như thế nào? GV đi quan sát, theo dõi và có những hành động hỗ trợ nào khi HS gặp khó khăn?
-   - Bước 3: Báo cáo, thảo luận: Chỉ đích danh cách thức GV chọn nhóm trình bày. HS lên bảng hoặc sử dụng máy chiếu trình bày sản phẩm học tập và kết quả do AI tạo ra như thế nào? Các HS/Nhóm khác đặt câu hỏi phản biện, tranh luận về độ chính xác của tài liệu hoặc của AI ra sao? (Đặc biệt nhấn mạnh việc Kiểm chứng chéo - Cross-checking kết quả AI).
-   - Bước 4: Kết luận, nhận định: GV đánh giá cặn kẽ thái độ làm việc của HS. GV chốt lại ĐÚNG KIẾN THỨC TRỌNG TÂM (ghi nội dung chốt). Đánh giá mức độ thành thạo Năng lực số (NLa, NLb, NLc, NLd) và ý thức trách nhiệm (đạo đức AI) của học sinh. 
-4. Nếu nội dung liên quan đến môn Toán/Lý/Hóa, TUYỆT ĐỐI KHÔNG ĐƯỢC SỬ DỤNG MÃ LATEX. Mọi nội dung câu hỏi/nhiệm vụ bắt buộc phải trình bày bằng văn bản trực quan thân thiện nhất (ví dụ: khối chóp S.ABCD, sin a + cos a = 1).
-5. Yêu cầu sản phẩm trả về: XUẤT SẮC, TOÀN DIỆN DIỆN, THẬT DÀI VÀ CỤ THỂ ĐẾN TỪNG CHI TIẾT SƯ PHẠM. Khối lượng chữ cho phần Tổ chức thực hiện phải rất lớn, mô phỏng đúng kịch bản của một giáo viên dạy giỏi cấp Quốc gia.
+# QUY TẮC THỰC THI "KỊCH BẢN CHI TIẾT" (CV 5512 + QĐ 3439)
+
+1. BÁM SÁT HỌC LIỆU: Trích xuất 100% kiến thức từ tài liệu/đề bài cung cấp. Chỉ bổ sung Năng lực AI và các mô phỏng trực quan.
+2. TIÊU ĐỀ HOẠT ĐỘNG CÁ NHÂN HÓA: Không đặt tên chung chung (như Hoạt động 1, Hoạt động 2). Phải gắn tên hoạt động với nội dung bài học. Đặt tên hay, hấp dẫn. Ví dụ: Thay vì "Hoạt động 1: Khởi động", hãy viết "Hoạt động 1: Giải mã bí ẩn về vị trí địa lí Châu Âu".
+
+MỖI HOẠT ĐỘNG TRONG 4 HOẠT ĐỘNG (Xác định vấn đề -> Hình thành kiến thức -> Luyện tập -> Vận dụng) PHẢI ĐẢM BẢO CHI TIẾT TUYỆT ĐỐI NHƯ SAU:
+a. Mục tiêu: Ghi rõ kiến thức/kỹ năng/năng lực AI đạt được.
+b. Nội dung: Nhiệm vụ cụ thể (đọc mục nào, quan sát hình nào, trả lời câu hỏi gì).
+c. Sản phẩm: SẢN PHẨM DỰ KIẾN CỤ THỂ, KHÔNG ghi chung chung là "vở ghi". Phải mô tả rõ diện mạo sản phẩm là bảng thông tin, sơ đồ tư duy có mấy nhánh, đoạn văn phản biện, hay bài test trắc nghiệm (Ví dụ: "Bản đồ tư duy gồm 3 nhánh chính về...", "Kết quả trả lời trên Quizizz thiết kế ra sao").
+d. Tổ chức thực hiện (Mô tả kịch bản siêu chi tiết GV - HS):
+   - Bước 1: Chuyển giao nhiệm vụ: GV sử dụng lệnh/câu hỏi cụ thể gì (nằm trong ngoặc kép)? Cung cấp phiếu học tập/dữ liệu gì (mô tả nội dung phiếu)? HS tiếp nhận và chuẩn bị như thế nào?
+   - Bước 2: Thực hiện nhiệm vụ: HS làm việc cá nhân/nhóm chi tiết ra sao? (Mô tả các bước HS xử lý dữ liệu). GV theo dõi, gợi mở bằng câu hỏi phụ tại các điểm khó như thế nào?
+   - Bước 3: Báo cáo, thảo luận: Cách thức HS trình bày (trên bảng/Tivi/Padlet)? Các nhóm khác nhận xét, phản biện dựa trên tiêu chí nào? Đoạn hội thoại mẫu phản biện.
+   - Bước 4: Kết luận, nhận định: GV chuẩn hóa kiến thức bằng những ý chính nội dung nào (GHI RÕ NỘI DUNG CHỐT KIẾN THỨC)? Đánh giá thái độ và kết quả làm việc của HS.
+
+🚨 ĐẶC BIỆT: MỤC "HOẠT ĐỘNG GIÁO DỤC AI"
+Nếu hoạt động có tích hợp AI, BẮT BUỘC CHÈN THẺ CẢNH BÁO MÀU ĐỎ: <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai>.
+Nêu rõ mã chỉ báo năng lực AI từ QĐ 3439/8439 (vd 11.A1.a).
+Mô tả chi tiết: GV hướng dẫn HS dùng công cụ AI gì để hỗ trợ giải quyết nội dung bài học đó. HS thực hiện các thao tác kỹ thuật Prompt kỹ sư gì trên công cụ AI.
 `;
 
 export interface LessonPlanInput {
@@ -250,11 +256,99 @@ export interface LessonPlanInput {
   additionalNotes?: string;
   useLaTeX?: boolean;
   detailDrawings?: boolean;
+  existingRawText?: string;
+  aiIntegrationOptions?: any[];
 }
+
+export const analyzeExistingPlan = async (fileText: string) => {
+  const prompt = `
+    Đóng vai trò chuyên gia giáo dục phân tích Kế hoạch bài dạy (Giáo án) của Giáo viên.
+    Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo viên.
+    
+    Hãy rà soát và cho tôi biết:
+    1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện cơ sở vật chất, Các mục tiêu hiện tại).
+    2. Các hoạt động cốt yếu trong giáo án (Thường là Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
+    3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí (2 hoạt động) TỐT NHẤT có thể lồng ghép 2 năng lực AI (chọn từ NLa, NLb, NLc, NLd) sao cho phù hợp tự nhiên nhất.
+    
+    VĂN BẢN GIÁO ÁN:
+    ${fileText.substring(0, 15000)} // Giới hạn một phần để chống tràn
+
+    Định dạng đầu ra JSON bắt buộc:
+    {
+      "subject": "Tên môn",
+      "grade": "Khối lớp",
+      "topic": "Tên bài",
+      "duration": "Thời lượng",
+      "contextStudents": "Đặc điểm học sinh (từ tóm tắt)",
+      "contextSchool": "Điều kiện CSVC",
+      "objectivesKnowledge": "Tóm tắt mục tiêu kiến thức",
+      "objectivesCompetency": "Tóm tắt mục tiêu năng lực",
+      "objectivesQuality": "Tóm tắt phẩm chất",
+      "aiSuggestions": [
+        {
+          "activityName": "Tên hoạt động gợi ý (vd: Hoạt động Luyện tập)",
+          "suggestedAI": "NLa",
+          "reason": "Lý do vì sao phù hợp lồng ghép vào đây",
+          "action": "Nếu lồng ghép thì HS sẽ làm gì với AI ở hoạt động này?"
+        }
+      ]
+    }
+  `;
+
+  try {
+    return await callGeminiWithFallback(prompt, {
+      type: Type.OBJECT,
+      properties: {
+        subject: { type: Type.STRING },
+        grade: { type: Type.STRING },
+        topic: { type: Type.STRING },
+        duration: { type: Type.STRING },
+        contextStudents: { type: Type.STRING },
+        contextSchool: { type: Type.STRING },
+        objectivesKnowledge: { type: Type.STRING },
+        objectivesCompetency: { type: Type.STRING },
+        objectivesQuality: { type: Type.STRING },
+        aiSuggestions: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              activityName: { type: Type.STRING },
+              suggestedAI: { type: Type.STRING },
+              reason: { type: Type.STRING },
+              action: { type: Type.STRING }
+            },
+            required: ["activityName", "suggestedAI", "reason", "action"]
+          }
+        }
+      },
+      required: ["subject", "grade", "topic", "duration", "aiSuggestions"]
+    });
+  } catch (err) {
+    console.error("Error analyzing plan:", err);
+    throw err;
+  }
+};
+
 
 export const generateLessonPlan = async (input: LessonPlanInput) => {
   const formattingNeed = input.useLaTeX || input.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(input.subject);
   const englishConstraint = (input.subject === "Tiếng Anh" || input.subject.toLowerCase().includes("english")) ? "\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung giáo án (kịch bản GV-HS, mục tiêu, nội dung...) PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
+
+  const rawTextConstraint = input.existingRawText
+    ? `
+    LỆNH ĐẶC BIỆT TỐI CAO: BẠN PHẢI NÂNG CẤP GIÁO ÁN GỐC CỦA GIÁO VIÊN BIÊN SOẠN SẴN!
+    Dưới đây là văn bản thô bóc tách từ Giáo án gốc:
+    """${input.existingRawText.substring(0, 15000)}"""
+    
+    YÊU CẦU:
+    1. Bạn phải TÔN TRỌNG TỐI ĐA các hoạt động, cấu trúc, phương pháp và văn phong hiện có của giáo viên trong file gốc. KHÔNG ĐƯỢC sinh ra nội dung hoàn toàn mới ở những phần không liên quan.
+    2. Nâng cấp (viết lại) hoặc chèn thêm nội dung AI vào các điểm chạm được yêu cầu cụ thể sau:
+       ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
+    3. Ở những hoạt động được yêu cầu tích hợp, hãy biến đổi/nâng cấp hoạt động đó để đạt được chỉ báo AI, thêm công cụ số AI vào mục thiết bị, và dùng thẻ <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai> như quy định.
+    4. Vẫn phải xuất định dạng JSON cấu trúc chuẩn CV 5512.
+    `
+    : "";
 
   const prompt = `
     Vai trò: Bạn là một Chuyên gia Giáo dục hàng đầu quốc gia, là người xét duyệt giáo án thi giáo viên giỏi xuất sắc. Bạn am hiểu sâu sắc Chương trình GDPT 2018, Công văn 5512/BGDĐT-GDTrH và Khung giáo dục Trí tuệ nhân tạo (AI) theo Quyết định 3439/QĐ-BGDĐT. 
@@ -264,6 +358,8 @@ export const generateLessonPlan = async (input: LessonPlanInput) => {
     Lớp: ${input.grade} - Thời lượng: ${input.duration}
     Hoàn cảnh học sinh: ${input.contextStudents || "Học sinh có khả năng tiếp thu trung bình - khá"}
     Điều kiện trường lớp: ${input.contextSchool || "Lớp học có máy chiếu và kết nối internet cơ bản"}
+
+    ${rawTextConstraint}
 
     ${AI_SUBJECT_GUIDELINES}
     ${CURRICULUM_DATA}
@@ -411,7 +507,7 @@ export const generateEducationalPlan = async (subject: string, grade: string, pr
     1. TUÂN THỦ CHƯƠNG TRÌNH GDPT 2018 (VÀ TT 17/2025 CHO MÔN ĐỊA LÍ): 
        - LƯU Ý MÔN ĐỊA LÍ: TUYỆT ĐỐI tuân thủ danh mục bài học theo Thông tư 17/2025/TT-BGDĐT (điều chỉnh tên bài, thứ tự chương trình của môn Địa Lí theo TT mới nhất).
        - Đối với các môn còn lại: Sử dụng chính xác tên các bài học theo phân phối chương trình chuẩn.
-       - ĐỐI VỚI CÁC MÔN HỌC CHUNG (Toán, Văn, Anh, Lí, Hóa, Sinh, Sử, Địa...): Nội dung và tên bài học là GIỐNG NHAU trên toàn quốc theo các bộ sách (Kết nối tri thức, Chân trời sáng tạo, Cánh diều). TUYỆT ĐỐI KHÔNG sử dụng yếu tố địa phương (${province}) để thay đổi tên bài học của các môn này.
+       - ĐỐI VỚI TẤT CẢ CÁC MÔN CÒN LẠI: Nội dung, trật tự và tên bài học BẮT BUỘC PHẢI KHỚP TUYỆT ĐỐI VỚI BỘ SÁCH "KẾT NỐI TRI THỨC VỚI CUỘC SỐNG" của NXB Giáo dục Việt Nam. TUYỆT ĐỐI KHÔNG sử dụng yếu tố địa phương (${province}) để thay đổi tên bài học của các môn này.
        - ĐỐI VỚI MÔN GIÁO DỤC ĐỊA PHƯƠNG: Chỉ trong trường hợp này mới sử dụng nội dung đặc thù của ${province}.
     
     ${CURRICULUM_DATA}

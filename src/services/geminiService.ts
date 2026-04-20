@@ -560,7 +560,10 @@ Lớp: ${input.grade} - Thời lượng: ${input.duration}
     Lưu ý riêng về độ tuổi(Nếu là khối 6, 7, 8, 9): Giáo án CẦN TĂNG CƯỜNG thực hành, thao tác trực quan, và trò chơi hóa(gamification).Hạn chế những câu hỏi thảo luận mang tính triết học nặng nề của cấp 3.
 
     ${AI_SUBJECT_GUIDELINES}
-    ${QD3439_FULL_FRAMEWORK}
+    QUY TẮC MÃ CHỈ BÁO NĂNG LỰC AI (QĐ 3439): Định dạng KHỐI.MẠCH.CHỦ_ĐỀ.SỐ (vd: 10.A.A1.1).
+    4 Mạch: A=Tư duy con người, B=Đạo đức AI, C=Kỹ thuật/Ứng dụng, D=Thiết kế hệ thống.
+    Chủ đề: A1(Nhận biết AI), A2(Ra quyết định), B1(Đạo đức thiết kế), B2(Tác động xã hội), C1(Công cụ AI), C2(Học máy), D1(Tư duy hệ thống), D2(Dự án AI).
+    THCS (6-9): Ưu tiên A1, B1, C1. THPT (10-12): Khai thác đủ 4 mạch từ A đến D.
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
 

@@ -60,11 +60,8 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
 const AI_SUBJECT_GUIDELINES = `
 Dưới đây là Khung mạch nội dung tích hợp AI cho từng môn học theo CV 3439:
 - Ngữ văn: Trọng tâm NLa, NLb, NLc. Nội dung: Lên dàn ý, tóm tắt tư liệu, phân tích thi pháp, dịch thuật. Thảo luận: Sáng tác Người vs AI, bản quyền, phong cách cá nhân, tác động đến ngôn ngữ.
-- Lịch sử: Trọng tâm NLa, NLb, NLc. Nội dung: Tổng hợp tư liệu đa nguồn, dòng thời gian tương tác, giả thuyết lịch sử. Thảo luận: Độ tin cậy, thiên kiến trong nguồn AI, tác động của CMCN đến tiến trình lịch sử.
-- Địa lí: Trọng tâm NLa, NLb, NLc. Nội dung: Phân tích Big Data khí hậu/dân cư, mô hình hóa biến đổi khí hậu, hỗ trợ quy hoạch. Thảo luận: Trách nhiệm đạo đức trong giám sát, công bằng tài nguyên dựa trên dự báo AI.
-- GD KT & Pháp luật: Trọng tâm NLa, NLb. Nội dung: So sánh mô hình kinh tế/pháp luật, phân tích xu hướng thị trường lao động. Thảo luận: Tác động tự động hóa, vấn đề pháp lý mới, quyền riêng tư và bảo vệ dữ liệu.
-- Toán: Trọng tâm NLa (hỗ trợ bởi NLc, NLd). Nội dung: Giải bài toán tối ưu, trực quan hóa hàm số/hình học, phân tích dữ liệu thống kê. Thảo luận: Vai trò tư duy chứng minh con người, giới hạn của mô hình AI.
-- Nhóm KHTN (Lý, Hóa, Sinh): Trọng tâm NLa, NLb, NLc. Nội dung: Phân tích dữ liệu thí nghiệm, mô phỏng phản ứng và quá trình sinh học. Thảo luận: Giới hạn AI trong khám phá khoa học, đạo đức sinh học, vũ khí tự động.
+- Tích hợp Khoa học tự nhiên (Lý, Hóa, Sinh): Trọng tâm NLa, NLb, NLc. Nội dung: Phân tích dữ liệu thí nghiệm, mô phỏng phản ứng và sinh thái thực tế. Thảo luận: Giới hạn AI trong khoa học.
+- Tích hợp Lịch sử & Địa lí: Trọng tâm NLa, NLb, NLc. Nội dung: Phân tích Big Data dân cư, tạo timeline sự kiện động. Thảo luận: Tính công bằng tài nguyên và thiên kiến thuật toán.
 - Công nghệ: Trọng tâm NLa, NLb (hỗ trợ bởi NLc, NLd). Nội dung: Hệ thống AI trong nông nghiệp, sản xuất, thiết kế. Thảo luận: Đạo đức trong thiết kế công nghệ, tác động xã hội của tự động hóa, tính bền vững.
 - Hoạt động TN, Hướng nghiệp: Trọng tâm NLa, NLb. Nội dung: Thay đổi thị trường lao động, kỹ năng cốt lõi của con người, trách nhiệm xã hội.
 - Ngoại ngữ: Trọng tâm NLb, NLc. Nội dung: Luyện phát âm, giao tiếp chatbot, dịch thuật, cá nhân hóa học tập. Thảo luận: Đánh giá dịch máy, vai trò văn hóa và ngữ cảnh.
@@ -472,6 +469,7 @@ KIÊN QUYẾT BẢO TỒN:
     Lớp: ${input.grade} - Thời lượng: ${input.duration}
     Hoàn cảnh học sinh: ${input.contextStudents || "Học sinh có khả năng tiếp thu trung bình - khá"}
     Điều kiện trường lớp: ${input.contextSchool || "Lớp học có máy chiếu và kết nối internet cơ bản"}
+    Lưu ý riêng về độ tuổi (Nếu là khối 6, 7, 8, 9): Giáo án CẦN TĂNG CƯỜNG thực hành, thao tác trực quan, và trò chơi hóa (gamification). Hạn chế những câu hỏi thảo luận mang tính triết học nặng nề của cấp 3.
 
     ${AI_SUBJECT_GUIDELINES}
     ${CURRICULUM_DATA}

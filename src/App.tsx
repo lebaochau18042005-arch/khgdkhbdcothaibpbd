@@ -41,7 +41,7 @@ import UpgradePlan from "./components/UpgradePlan";
 
 type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "upgrade-plan";
 
-const SUBJECTS = [
+const SUBJECTS_THPT = [
   "Toán học",
   "Ngữ văn",
   "Tiếng Anh",
@@ -59,7 +59,22 @@ const SUBJECTS = [
   "Giáo dục địa phương"
 ];
 
-const GRADES = ["10", "11", "12"];
+const SUBJECTS_THCS = [
+  "Toán học",
+  "Ngữ văn",
+  "Tiếng Anh",
+  "Khoa học tự nhiên",
+  "Lịch sử và Địa lí",
+  "Giáo dục công dân",
+  "Tin học",
+  "Công nghệ",
+  "Giáo dục thể chất",
+  "Hoạt động trải nghiệm, hướng nghiệp",
+  "Giáo dục địa phương"
+];
+
+
+const GRADES = ["6", "7", "8", "9", "10", "11", "12"];
 
 const PROVINCES = [
   "Hà Nội (Thành phố)", "TP. Hồ Chí Minh (Thành phố)", "Hải Phòng (Thành phố)", "Đà Nẵng (Thành phố)", "Cần Thơ (Thành phố)", "Thừa Thiên Huế (Thành phố)",
@@ -1017,7 +1032,7 @@ export default function App() {
                             onChange={(e) => handleSubjectOrGradeChange(e.target.value, lessonPlanInput.grade)}
                           >
                             <option value="">-- Chọn môn học --</option>
-                            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                            {(["6", "7", "8", "9"].includes(lessonPlanInput.grade) ? SUBJECTS_THCS : SUBJECTS_THPT).map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-brand-accent transition-colors">
                             <ChevronRight className="w-4 h-4 rotate-90" />
@@ -1607,7 +1622,7 @@ export default function App() {
                             onChange={(e) => setEduPlanInput({ ...eduPlanInput, subject: e.target.value })}
                           >
                             <option value="">-- Chọn môn học --</option>
-                            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                            {(["6", "7", "8", "9"].includes(eduPlanInput.grade) ? SUBJECTS_THCS : SUBJECTS_THPT).map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-brand-accent transition-colors">
                             <ChevronRight className="w-4 h-4 rotate-90" />
@@ -1637,9 +1652,7 @@ export default function App() {
                           value={eduPlanInput.grade}
                           onChange={(e) => setEduPlanInput({ ...eduPlanInput, grade: e.target.value })}
                         >
-                          <option value="10">Lớp 10</option>
-                          <option value="11">Lớp 11</option>
-                          <option value="12">Lớp 12</option>
+                          {GRADES.map(g => <option key={g} value={g}>Lớp {g}</option>)}
                         </select>
                       </div>
 
@@ -1822,7 +1835,7 @@ export default function App() {
                             onChange={(e) => setEduPlanInput({ ...eduPlanInput, subject: e.target.value })}
                           >
                             <option value="">-- Chọn môn học --</option>
-                            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                            {(["6", "7", "8", "9"].includes(eduPlanInput.grade) ? SUBJECTS_THCS : SUBJECTS_THPT).map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-emerald-500 transition-colors">
                             <ChevronRight className="w-4 h-4 rotate-90" />

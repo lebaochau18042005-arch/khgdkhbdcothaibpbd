@@ -10,6 +10,8 @@ import { TinHoc } from './curriculum/tinHoc';
 import { GDKTPL } from './curriculum/gdktpl';
 import { CongNghe } from './curriculum/congNghe';
 import { Others } from './curriculum/others';
+import { KhoaHocTuNhien } from './curriculum/khtn';
+import { LichSuDiaLy } from './curriculum/lichSuDiaLy';
 
 export const CURRICULUM_DB: Record<string, Record<string, any[]>> = {
     "Toán học": ToanHoc,
@@ -23,5 +25,8 @@ export const CURRICULUM_DB: Record<string, Record<string, any[]>> = {
     "Tin học": TinHoc,
     "Giáo dục kinh tế và pháp luật": GDKTPL,
     "Công nghệ": CongNghe,
+    "Khoa học tự nhiên": KhoaHocTuNhien,
+    "Lịch sử và Địa lí": LichSuDiaLy,
+    "Giáo dục công dân": GDKTPL,
     ...Others
 };

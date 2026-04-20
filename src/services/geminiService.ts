@@ -561,7 +561,6 @@ Lớp: ${input.grade} - Thời lượng: ${input.duration}
 
     ${AI_SUBJECT_GUIDELINES}
     ${QD3439_FULL_FRAMEWORK}
-    ${CURRICULUM_DATA}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
 

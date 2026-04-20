@@ -337,29 +337,34 @@ export const generateLessonPlan = async (input: LessonPlanInput) => {
 
   const rawTextConstraint = input.existingRawText
     ? `
-    LỆNH ĐẶC BIỆT TỐI CAO: BẠN PHẢI NÂNG CẤP GIÁO ÁN GỐC CỦA GIÁO VIÊN BIÊN SOẠN SẴN!
-    Dưới đây là văn bản thô bóc tách từ Giáo án gốc:
-    """${input.existingRawText.substring(0, 15000)}"""
-    
-    YÊU CẦU:
-    1. Bạn phải TÔN TRỌNG TỐI ĐA các hoạt động, cấu trúc, phương pháp và văn phong hiện có của giáo viên trong file gốc. KHÔNG ĐƯỢC sinh ra nội dung hoàn toàn mới ở những phần không liên quan.
-    2. Nâng cấp (viết lại) hoặc chèn thêm nội dung AI vào các điểm chạm được yêu cầu cụ thể sau:
-       ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
-    3. Ở những hoạt động được yêu cầu tích hợp, hãy biến đổi/nâng cấp hoạt động đó để đạt được chỉ báo AI, thêm công cụ số AI vào mục thiết bị, và dùng thẻ <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai> như quy định.
-    4. Vẫn phải xuất định dạng JSON cấu trúc chuẩn CV 5512.
-    `
+🚨🚨🚨 CHẾ ĐỘ NÂNG CẤP GIÁO ÁN GỐC — ƯU TIÊN TỐI CAO 🚨🚨🚨
+
+NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu. Bạn phải NÂNG CẤP giáo án gốc sau đây của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM/CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
+
+VĂN BẢN GIÁO ÁN GỐC CỦA GIÁO VIÊN (BẮT BUỘC BẢO TOÀN):
+"""
+${input.existingRawText.substring(0, 18000)}
+"""
+
+ĐIỂM CHẠM AI CẦN TÍCH HỢP (chỉ chỉnh sửa những hoạt động này):
+${JSON.stringify(input.aiIntegrationOptions, null, 2)}
+
+QUY TẮC BẮT BUỘC:
+1. ĐỘ BẢO TOÀN 100%: Mọi bài tập, câu hỏi, ví dụ, nội dung kiến thức, và sequence hoạt động của giáo viên PHẢI được giữ nguyên trong JSON đầu ra — không được xóa, không được thay bằng nội dung khác.
+2. CHỈ THÊM, KHÔNG XÓA: Ở hoạt động được yêu cầu tích hợp, hãy CHÈN THÊM phần AI vào cuối hoặc giữa nội dung hiện có, không được viết lại hoàn toàn.
+3. DẤU HIỆU NHẬN BIẾT: Mọi đoạn mới thêm vào phải có thẻ <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai> và ghi rõ mã chỉ báo từ QĐ 3439.
+4. JSON OUTPUT: Vẫn phải xuất đúng cấu trúc JSON KHBD chuẩn CV 5512.
+`
     : "";
 
   const prompt = `
-    Vai trò: Bạn là một Chuyên gia Giáo dục hàng đầu quốc gia, là người xét duyệt giáo án thi giáo viên giỏi xuất sắc. Bạn am hiểu sâu sắc Chương trình GDPT 2018, Công văn 5512/BGDĐT-GDTrH và Khung giáo dục Trí tuệ nhân tạo (AI) theo Quyết định 3439/QĐ-BGDĐT. 
-    Lệnh đặc biệt: Hãy soạn một Giáo án (Kế hoạch bài dạy) SIÊU CHI TIẾT, thật sự chuyên sâu, logic, chặt chẽ, cụ thể từng lời nói và hành động mô phỏng thực tế lớp học cho:
+    ${input.existingRawText ? rawTextConstraint : `Vai trò: Bạn là một Chuyên gia Giáo dục hàng đầu quốc gia, là người xét duyệt giáo án thi giáo viên giỏi xuất sắc. Bạn am hiểu sâu sắc Chương trình GDPT 2018, Công văn 5512/BGDĐT-GDTrH và Khung giáo dục Trí tuệ nhân tạo (AI) theo Quyết định 3439/QĐ-BGDĐT. 
+    Lệnh đặc biệt: Hãy soạn một Giáo án (Kế hoạch bài dạy) SIÊU CHI TIẾT, thật sự chuyên sâu, logic, chặt chẽ, cụ thể từng lời nói và hành động mô phỏng thực tế lớp học cho:`}
     Môn học: ${input.subject}
     Tên bài dạy: ${input.topic}
     Lớp: ${input.grade} - Thời lượng: ${input.duration}
     Hoàn cảnh học sinh: ${input.contextStudents || "Học sinh có khả năng tiếp thu trung bình - khá"}
     Điều kiện trường lớp: ${input.contextSchool || "Lớp học có máy chiếu và kết nối internet cơ bản"}
-
-    ${rawTextConstraint}
 
     ${AI_SUBJECT_GUIDELINES}
     ${CURRICULUM_DATA}

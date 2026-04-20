@@ -15,7 +15,7 @@ const getFallbackModels = (startModel: string) => {
   return modelsToTry;
 };
 
-const callGeminiWithFallback = async (prompt: string, responseSchema: any) => {
+const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) {
     throw new Error('API_KEY_REQUIRED');
@@ -257,13 +257,48 @@ export interface LessonPlanInput {
   useLaTeX?: boolean;
   detailDrawings?: boolean;
   existingRawText?: string;
+  existingPdfBase64?: string;
   aiIntegrationOptions?: any[];
 }
 
-export const analyzeExistingPlan = async (fileText: string) => {
-  const prompt = `
-    Đóng vai trò chuyên gia giáo dục phân tích Kế hoạch bài dạy (Giáo án) của Giáo viên.
-    Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo viên.
+export const analyzeExistingPlan = async (fileText: string, pdfBase64?: string) => {
+  let prompt: any;
+  if (pdfBase64) {
+    prompt = [
+      `
+      Đóng vai trò chuyên gia giáo dục phân tích Kế hoạch bài dạy đính kèm dưới dạng PDF.
+      Hãy rà soát và cho tôi biết:
+      1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện cơ sở vật chất, Các mục tiêu hiện tại).
+      2. Các hoạt động cốt yếu trong giáo án (Thường là Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
+      3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí (2 hoạt động) TỐT NHẤT có thể lồng ghép 2 năng lực AI (chọn từ NLa, NLb, NLc, NLd) sao cho phù hợp tự nhiên nhất.
+      
+      Định dạng đầu ra JSON bắt buộc:
+      {
+        "subject": "Tên môn",
+        "grade": "Khối lớp",
+        "topic": "Tên bài",
+        "duration": "Thời lượng",
+        "contextStudents": "Đặc điểm học sinh (từ tóm tắt)",
+        "contextSchool": "Điều kiện CSVC",
+        "objectivesKnowledge": "Tóm tắt mục tiêu kiến thức",
+        "objectivesCompetency": "Tóm tắt mục tiêu năng lực",
+        "objectivesQuality": "Tóm tắt phẩm chất",
+        "aiSuggestions": [
+          {
+            "activityName": "Tên hoạt động gợi ý (vd: Hoạt động Luyện tập)",
+            "suggestedAI": "NLa",
+            "reason": "Lý do vì sao phù hợp lồng ghép vào đây",
+            "action": "Nếu lồng ghép thì HS sẽ làm gì với AI ở hoạt động này?"
+          }
+        ]
+      }
+      `,
+      { inlineData: { mimeType: "application/pdf", data: pdfBase64 } }
+    ];
+  } else {
+    prompt = `
+      Đóng vai trò chuyên gia giáo dục phân tích Kế hoạch bài dạy (Giáo án) của Giáo viên.
+      Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo viên.
     
     Hãy rà soát và cho tôi biết:
     1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện cơ sở vật chất, Các mục tiêu hiện tại).
@@ -294,6 +329,7 @@ export const analyzeExistingPlan = async (fileText: string) => {
       ]
     }
   `;
+  }
 
   try {
     return await callGeminiWithFallback(prompt, {
@@ -330,16 +366,34 @@ export const analyzeExistingPlan = async (fileText: string) => {
   }
 };
 
-export const parseCurriculumAppendix = async (rawText: string) => {
-  const prompt = `
-    Đóng vai trò là chuyên gia giáo dục, hãy phân tích Phụ lục Phân phối chương trình.
-    Dưới đây là văn bản thô bóc tách từ file Phân phối chương trình do giáo viên cung cấp:
-    """${rawText.substring(0, 18000)}"""
+export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: string) => {
+  let prompt: any;
+  if (pdfBase64) {
+    prompt = [
+      `
+      Đóng vai trò là chuyên gia giáo dục, hãy phân tích Phụ lục Phân phối chương trình đính kèm (PDF).
+      Nhiệm vụ: Bóc tách danh sách các bài học (hoặc chủ đề), thời lượng (số tiết), và thời điểm dạy (vd: Tuần 1).
+      Phớt lờ các thông tin thừa như tên trường, quốc hiệu, chữ ký. Bắt đầu ngay từ danh sách bài học. Dồn các tiết tự học/kiểm tra chung thành 1 bài nếu có.
+      Trọng tâm là tên bài học phải ĐẦY ĐỦ chính xác từng chữ như trong file gốc.
+      `,
+      {
+        inlineData: {
+          mimeType: "application/pdf",
+          data: pdfBase64
+        }
+      }
+    ];
+  } else {
+    prompt = `
+      Đóng vai trò là chuyên gia giáo dục, hãy phân tích Phụ lục Phân phối chương trình.
+      Dưới đây là văn bản thô bóc tách từ file Phân phối chương trình do giáo viên cung cấp:
+      """${rawText.substring(0, 18000)}"""
 
-    Nhiệm vụ: Bóc tách danh sách các bài học (hoặc chủ đề), thời lượng (số tiết), và thời điểm dạy (vd: Tuần 1).
-    Phớt lờ các thông tin thừa như tên trường, quốc hiệu, chữ ký. Bắt đầu ngay từ danh sách bài học. Dồn các tiết tự học/kiểm tra chung thành 1 bài nếu có.
-    Trọng tâm là tên bài học phải ĐẦY ĐỦ chính xác từng chữ như trong file gốc.
-  `;
+      Nhiệm vụ: Bóc tách danh sách các bài học (hoặc chủ đề), thời lượng (số tiết), và thời điểm dạy (vd: Tuần 1).
+      Phớt lờ các thông tin thừa như tên trường, quốc hiệu, chữ ký. Bắt đầu ngay từ danh sách bài học. Dồn các tiết tự học/kiểm tra chung thành 1 bài nếu có.
+      Trọng tâm là tên bài học phải ĐẦY ĐỦ chính xác từng chữ như trong file gốc.
+    `;
+  }
 
   try {
     return await callGeminiWithFallback(prompt, {
@@ -364,8 +418,33 @@ export const generateLessonPlan = async (input: LessonPlanInput) => {
   const formattingNeed = input.useLaTeX || input.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(input.subject);
   const englishConstraint = (input.subject === "Tiếng Anh" || input.subject.toLowerCase().includes("english")) ? "\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung giáo án (kịch bản GV-HS, mục tiêu, nội dung...) PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
 
-  const rawTextConstraint = input.existingRawText
-    ? `
+  let finalPromptContents: any = ``;
+  if (input.existingPdfBase64) {
+    const p1 = `
+🚨🚨🚨 CHẾ ĐỘ NÂNG CẤP GIÁO ÁN GỐC TỪ FILE PDF — ƯU TIÊN TỐI CAO 🚨🚨🚨
+
+NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu. Bạn phải NÂNG CẤP giáo án xuất ra từ File PDF ĐÍNH KÈM của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM/CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
+
+ĐIỂM CHẠM AI CẦN TÍCH HỢP (chỉ chỉnh sửa những hoạt động này):
+${JSON.stringify(input.aiIntegrationOptions, null, 2)}
+
+KIÊN QUYẾT BẢO TỒN: 
+1. Không cắt bớt phần Mở đầu, Hình thành KT mới, Luyện tập, Vận dụng mà giáo viên đã viết.
+2. Không tự động bịa đặt các câu hỏi hay kết luận trừ khi có liên quan trực tiếp tới Công cụ AI.
+3. Khi bạn được lệnh tích hợp AI ở một Hoạt động nào đó, chỉ viết thêm đúng phần <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP NĂNG LỰC AI]</ai> mô tả chi tiết tại đó với lời văn của mình, CÒN LẠI DỮ LIỆU CŨ PHẢI SAO CHÉP Y HỆT.
+`;
+    finalPromptContents = [
+      p1,
+      {
+        inlineData: {
+          mimeType: "application/pdf",
+          data: input.existingPdfBase64
+        }
+      }
+    ];
+  } else {
+    finalPromptContents = input.existingRawText
+      ? `
 🚨🚨🚨 CHẾ ĐỘ NÂNG CẤP GIÁO ÁN GỐC — ƯU TIÊN TỐI CAO 🚨🚨🚨
 
 NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu. Bạn phải NÂNG CẤP giáo án gốc sau đây của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM/CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
@@ -378,17 +457,16 @@ ${input.existingRawText.substring(0, 18000)}
 ĐIỂM CHẠM AI CẦN TÍCH HỢP (chỉ chỉnh sửa những hoạt động này):
 ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 
-QUY TẮC BẮT BUỘC:
-1. ĐỘ BẢO TOÀN 100%: Mọi bài tập, câu hỏi, ví dụ, nội dung kiến thức, và sequence hoạt động của giáo viên PHẢI được giữ nguyên trong JSON đầu ra — không được xóa, không được thay bằng nội dung khác.
-2. CHỈ THÊM, KHÔNG XÓA: Ở hoạt động được yêu cầu tích hợp, hãy CHÈN THÊM phần AI vào cuối hoặc giữa nội dung hiện có, không được viết lại hoàn toàn.
-3. DẤU HIỆU NHẬN BIẾT: Mọi đoạn mới thêm vào phải có thẻ <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai> và ghi rõ mã chỉ báo từ QĐ 3439.
-4. JSON OUTPUT: Vẫn phải xuất đúng cấu trúc JSON KHBD chuẩn CV 5512.
-`
-    : "";
+KIÊN QUYẾT BẢO TỒN: 
+1. Không cắt bớt phần Mở đầu, Hình thành KT mới, Luyện tập, Vận dụng mà giáo viên đã viết.
+2. Không tự động bịa đặt các câu hỏi hay kết luận trừ khi có liên quan trực tiếp tới Công cụ AI.
+3. Khi bạn được lệnh tích hợp AI ở một Hoạt động nào đó, chỉ viết thêm đúng phần <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP NĂNG LỰC AI]</ai> mô tả chi tiết tại đó với lời văn của mình, CÒN LẠI DỮ LIỆU CŨ PHẢI SAO CHÉP Y HỆT.
+` : ``;
+  }
 
-  const prompt = `
-    ${input.existingRawText ? rawTextConstraint : `Vai trò: Bạn là một Chuyên gia Giáo dục hàng đầu quốc gia, là người xét duyệt giáo án thi giáo viên giỏi xuất sắc. Bạn am hiểu sâu sắc Chương trình GDPT 2018, Công văn 5512/BGDĐT-GDTrH và Khung giáo dục Trí tuệ nhân tạo (AI) theo Quyết định 3439/QĐ-BGDĐT. 
-    Lệnh đặc biệt: Hãy soạn một Giáo án (Kế hoạch bài dạy) SIÊU CHI TIẾT, thật sự chuyên sâu, logic, chặt chẽ, cụ thể từng lời nói và hành động mô phỏng thực tế lớp học cho:`}
+  const basePrompt = `
+    Vai trò: Bạn là một Chuyên gia Giáo dục hàng đầu quốc gia, là người xét duyệt giáo án thi giáo viên giỏi xuất sắc. Bạn am hiểu sâu sắc Chương trình GDPT 2018, Công văn 5512/BGDĐT-GDTrH và Khung giáo dục Trí tuệ nhân tạo (AI) theo Quyết định 3439/QĐ-BGDĐT. 
+    Lệnh đặc biệt: Hãy soạn một Giáo án (Kế hoạch bài dạy) SIÊU CHI TIẾT, thật sự chuyên sâu, logic, chặt chẽ, cụ thể từng lời nói và hành động mô phỏng thực tế lớp học cho:
     Môn học: ${input.subject}
     Tên bài dạy: ${input.topic}
     Lớp: ${input.grade} - Thời lượng: ${input.duration}

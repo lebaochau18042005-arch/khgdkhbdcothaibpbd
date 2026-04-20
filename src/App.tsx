@@ -265,11 +265,26 @@ export default function App() {
     setCustomCurriculumData(null);
 
     try {
-      const buffer = await uploadedFile.arrayBuffer();
-      const resultObj = await mammoth.extractRawText({ arrayBuffer: buffer });
-      const text = resultObj.value;
+      const isPdf = uploadedFile.type === "application/pdf" || uploadedFile.name.toLowerCase().endsWith(".pdf");
+      let data: any;
 
-      const data = await parseCurriculumAppendix(text);
+      if (isPdf) {
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64String = (reader.result as string).split(',')[1];
+            resolve(base64String);
+          };
+          reader.readAsDataURL(uploadedFile);
+        });
+        data = await parseCurriculumAppendix("", base64);
+      } else {
+        const buffer = await uploadedFile.arrayBuffer();
+        const resultObj = await mammoth.extractRawText({ arrayBuffer: buffer });
+        const text = resultObj.value;
+        data = await parseCurriculumAppendix(text);
+      }
+
       setCustomCurriculumData(data);
       alert(`🎉 Đã nạp thành công Phụ lục Chương trình (${data.length} bài học).\nHệ thống sẽ sử dụng danh sách này làm lõi (bỏ qua mặc định).`);
     } catch (err) {
@@ -1877,8 +1892,8 @@ export default function App() {
                         <div className="flex items-center gap-3">
                           <label className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed ${customCurriculumData ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-600"} cursor-pointer transition-all`}>
                             {isParsingCurriculum ? <Loader2 className="w-4 h-4 animate-spin" /> : (customCurriculumData ? <CheckCircle2 className="w-4 h-4" /> : <FileText className="w-4 h-4" />)}
-                            <span className="text-xs font-bold">{isParsingCurriculum ? "Đang rà soát và bóc tách..." : (customCurriculumData ? `Đã nạp ${customCurriculumData.length} bài học. Chọn file khác?` : "Chọn file DOCX từ máy tính")}</span>
-                            <input type="file" className="hidden" accept=".docx" onChange={handleCurriculumUpload} disabled={isParsingCurriculum} />
+                            <span className="text-xs font-bold">{isParsingCurriculum ? "Đang rà soát và bóc tách..." : (customCurriculumData ? `Đã nạp ${customCurriculumData.length} bài học. Chọn file khác?` : "Chọn file DOCX / PDF từ máy tính")}</span>
+                            <input type="file" className="hidden" accept=".docx, .pdf" onChange={handleCurriculumUpload} disabled={isParsingCurriculum} />
                           </label>
                           {customCurriculumData && (
                             <button onClick={() => setCustomCurriculumData(null)} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors border border-red-200" title="Xóa phụ lục lập tức lấy lại mặc định">

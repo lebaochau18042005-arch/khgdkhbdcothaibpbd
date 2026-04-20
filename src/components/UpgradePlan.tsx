@@ -8,6 +8,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
     const [step, setStep] = useState(1);
     const [file, setFile] = useState<File | null>(null);
     const [rawText, setRawText] = useState("");
+    const [pdfBase64, setPdfBase64] = useState("");
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<any>(null);
     const [selectedIntegrations, setSelectedIntegrations] = useState<any[]>([]);
@@ -25,19 +26,38 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
         setIsAnalyzing(true);
 
         try {
-            const buffer = await uploadedFile.arrayBuffer();
-            const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-            const text = result.value;
-            setRawText(text);
+            const isPdf = uploadedFile.type === "application/pdf" || uploadedFile.name.toLowerCase().endsWith(".pdf");
+            let analysis;
 
-            const analysis = await analyzeExistingPlan(text);
+            if (isPdf) {
+                const base64 = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const base64String = (reader.result as string).split(',')[1];
+                        resolve(base64String);
+                    };
+                    reader.readAsDataURL(uploadedFile);
+                });
+
+                setPdfBase64(base64);
+                setRawText("");
+                analysis = await analyzeExistingPlan("", base64);
+            } else {
+                const buffer = await uploadedFile.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+                const text = result.value;
+                setRawText(text);
+                setPdfBase64("");
+
+                analysis = await analyzeExistingPlan(text);
+            }
+
             setAnalysisResult(analysis);
-
             setSelectedIntegrations(analysis.aiSuggestions || []);
             setStep(2);
         } catch (err) {
             console.error(err);
-            alert("Đã xảy ra lỗi khi bóc tách file hoặc rà soát AI. Vui lòng kiểm tra lại định dạng file (hỗ trợ .docx) và API Key.");
+            alert("Đã xảy ra lỗi khi bóc tách file hoặc rà soát AI. Vui lòng kiểm tra lại định dạng file (hỗ trợ .docx, .pdf) và API Key.");
         } finally {
             setIsAnalyzing(false);
         }
@@ -63,6 +83,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             objectivesCompetency: analysisResult.objectivesCompetency || "",
             objectivesQuality: analysisResult.objectivesQuality || "",
             existingRawText: rawText,
+            existingPdfBase64: pdfBase64,
             aiIntegrationOptions: selectedIntegrations
         });
     };
@@ -95,13 +116,13 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                                         <UploadCloud className="w-8 h-8" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-medium text-slate-800">Kéo thả giáo án DOCX vào đây</h3>
-                                        <p className="text-sm text-slate-500 mt-1">Hệ thống hỗ trợ file Word biên soạn thuần.</p>
+                                        <h3 className="text-lg font-medium text-slate-800">Kéo thả giáo án DOCX hoặc PDF vào đây</h3>
+                                        <p className="text-sm text-slate-500 mt-1">Hệ thống hỗ trợ file Word biên soạn thuần, và cả PDF.</p>
                                     </div>
                                     <label className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm cursor-pointer transition-colors font-medium">
                                         <FileText className="w-4 h-4" />
                                         <span>Chọn file từ máy tính</span>
-                                        <input type="file" className="hidden" accept=".docx" onChange={handleFileUpload} />
+                                        <input type="file" className="hidden" accept=".docx, .pdf" onChange={handleFileUpload} />
                                     </label>
                                 </div>
                             )}

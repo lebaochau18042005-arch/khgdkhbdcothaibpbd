@@ -7,6 +7,8 @@ import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 // @ts-ignore
 import html2pdf from "html2pdf.js";
+// @ts-ignore
+import * as mammoth from "mammoth";
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle, HeadingLevel, VerticalAlign } from "docx";
 import { saveAs } from "file-saver";
 import {
@@ -30,9 +32,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Settings,
-  Zap
+  Zap,
+  UploadCloud,
+  Trash2
 } from "lucide-react";
-import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateCompetencyEvaluation, LessonPlanInput } from "./services/geminiService";
+import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateCompetencyEvaluation, parseCurriculumAppendix, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
 
 type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "upgrade-plan";
@@ -74,6 +78,8 @@ export default function App() {
   const [result, setResult] = useState<any>(null);
   const [evaluationResult, setEvaluationResult] = useState<any>(null);
   const [departmentPlanRef, setDepartmentPlanRef] = useState<any[] | null>(null);
+  const [customCurriculumData, setCustomCurriculumData] = useState<any[] | null>(null);
+  const [isParsingCurriculum, setIsParsingCurriculum] = useState(false);
   const [province, setProvince] = useState("TP. Hồ Chí Minh (Thành phố)");
   const [showSettings, setShowSettings] = useState(false);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
@@ -232,13 +238,46 @@ export default function App() {
     setLoading(true);
     setResult(null);
     try {
-      const data = await generateDepartmentPlan(eduPlanInput.subject, eduPlanInput.grade, province, { useLaTeX: eduPlanInput.useLaTeX, detailDrawings: eduPlanInput.detailDrawings });
+      const data = await generateDepartmentPlan(eduPlanInput.subject, eduPlanInput.grade, province, {
+        useLaTeX: eduPlanInput.useLaTeX,
+        detailDrawings: eduPlanInput.detailDrawings,
+        customCurriculumData: customCurriculumData || undefined
+      });
       setResult({ type: "kh-tcm", data });
       setDepartmentPlanRef(data);
     } catch (err) {
       alert("Có lỗi xảy ra khi tạo kế hoạch tổ chuyên môn. Vui lòng thử lại.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCurriculumUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFile = e.target.files?.[0];
+    if (!uploadedFile) return;
+
+    if (!apiKey.trim()) {
+      alert("Vui lòng nhập API Key ở phần Cài đặt trước khi tải phụ lục.");
+      return;
+    }
+
+    setIsParsingCurriculum(true);
+    setCustomCurriculumData(null);
+
+    try {
+      const buffer = await uploadedFile.arrayBuffer();
+      const resultObj = await mammoth.extractRawText({ arrayBuffer: buffer });
+      const text = resultObj.value;
+
+      const data = await parseCurriculumAppendix(text);
+      setCustomCurriculumData(data);
+      alert(`🎉 Đã nạp thành công Phụ lục Chương trình (${data.length} bài học).\nHệ thống sẽ sử dụng danh sách này làm lõi (bỏ qua mặc định).`);
+    } catch (err) {
+      console.error(err);
+      alert("Đã xảy ra lỗi khi bóc tách file. Vui lòng kiểm tra định dạng (.docx).");
+    } finally {
+      setIsParsingCurriculum(false);
+      e.target.value = ''; // Reset
     }
   };
 
@@ -1826,6 +1865,27 @@ export default function App() {
                           />
                           <span className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.05em] group-hover:text-emerald-600 transition-colors">Mô tả chi tiết hình vẽ</span>
                         </label>
+                      </div>
+
+                      <div className="pt-4 border-t border-slate-100 mt-4 space-y-4">
+                        <div className="space-y-1">
+                          <h4 className="text-[11px] font-extrabold text-brand-sidebar uppercase tracking-widest flex items-center gap-2">
+                            <UploadCloud className="w-4 h-4 text-emerald-500" /> Tải lên Phụ lục Chương trình (Tùy chọn)
+                          </h4>
+                          <p className="text-[10px] text-slate-500 font-medium leading-relaxed">Bỏ qua dữ liệu mặc định 2018 và sử dụng danh sách bài học của bạn. Hệ thống sẽ tự động dùng AI để phân tích và chuẩn hóa phân phối nội dung của bạn thành Khung KHTCM.</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <label className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed ${customCurriculumData ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-600"} cursor-pointer transition-all`}>
+                            {isParsingCurriculum ? <Loader2 className="w-4 h-4 animate-spin" /> : (customCurriculumData ? <CheckCircle2 className="w-4 h-4" /> : <FileText className="w-4 h-4" />)}
+                            <span className="text-xs font-bold">{isParsingCurriculum ? "Đang rà soát và bóc tách..." : (customCurriculumData ? `Đã nạp ${customCurriculumData.length} bài học. Chọn file khác?` : "Chọn file DOCX từ máy tính")}</span>
+                            <input type="file" className="hidden" accept=".docx" onChange={handleCurriculumUpload} disabled={isParsingCurriculum} />
+                          </label>
+                          {customCurriculumData && (
+                            <button onClick={() => setCustomCurriculumData(null)} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors border border-red-200" title="Xóa phụ lục lập tức lấy lại mặc định">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <button

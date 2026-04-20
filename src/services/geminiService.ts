@@ -330,6 +330,35 @@ export const analyzeExistingPlan = async (fileText: string) => {
   }
 };
 
+export const parseCurriculumAppendix = async (rawText: string) => {
+  const prompt = `
+    Đóng vai trò là chuyên gia giáo dục, hãy phân tích Phụ lục Phân phối chương trình.
+    Dưới đây là văn bản thô bóc tách từ file Phân phối chương trình do giáo viên cung cấp:
+    """${rawText.substring(0, 18000)}"""
+
+    Nhiệm vụ: Bóc tách danh sách các bài học (hoặc chủ đề), thời lượng (số tiết), và thời điểm dạy (vd: Tuần 1).
+    Phớt lờ các thông tin thừa như tên trường, quốc hiệu, chữ ký. Bắt đầu ngay từ danh sách bài học. Dồn các tiết tự học/kiểm tra chung thành 1 bài nếu có.
+    Trọng tâm là tên bài học phải ĐẦY ĐỦ chính xác từng chữ như trong file gốc.
+  `;
+
+  try {
+    return await callGeminiWithFallback(prompt, {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          lessonName: { type: Type.STRING, description: "Tên chính xác của bài học, chủ đề hoặc tiết kiểm tra" },
+          periods: { type: Type.NUMBER, description: "Số tiết học dành cho bài/chủ đề này" },
+          timing: { type: Type.STRING, description: "Thời điểm định hướng (Ví dụ: Tuần 1, Tuần 2-3). Nếu không rõ, ghi rỗng." }
+        },
+        required: ["lessonName", "periods", "timing"]
+      }
+    });
+  } catch (error) {
+    console.error("Error parsing curriculum:", error);
+    throw error;
+  }
+};
 
 export const generateLessonPlan = async (input: LessonPlanInput) => {
   const formattingNeed = input.useLaTeX || input.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(input.subject);
@@ -379,14 +408,14 @@ QUY TẮC BẮT BUỘC:
        - Nếu bài học được xác định là "Không tích hợp": Hãy soạn giáo án thuần túy theo Công văn 5512, tuyệt đối không đưa nội dung AI vào (để trống mục Năng lực AI).
        - Nếu bài học có "Tích hợp AI": Bắt buộc thêm một mục riêng biệt có tên "HOẠT ĐỘNG GIÁO DỤC AI" ngay trong phần nội dung tiến trình dạy học ở vị trí có điểm chạm.
     2. MÔ TẢ CÔNG CỤ SỐ AI: Trong hoạt động có tích hợp, phải mô tả cụ thể việc sử dụng các công cụ AI (ChatGPT, Canva, chatbot...) để hỗ trợ học sinh đạt được năng lực tương ứng.
-    3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, phải ghi rõ mã chỉ báo năng lực AI từ QĐ 3439 (Ví dụ: 12.A1.a).
+    3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ (Ví dụ: 10.A.A1.1).
     4. PHẢN BIỆN & BÁO ĐỘNG ĐỎ: BẮT BUỘC sử dụng thẻ <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai> để đánh dấu hoạt động trọng tâm có ứng dụng công nghệ AI.
 
     I. MỤC TIÊU:
     - Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
     - Năng lực:
       + Đặc thù môn học: Theo chương trình 2018.
-      + Năng lực AI đặc thù (Chỉ thêm nếu Có tích hợp AI): Phân tích rõ các thành phần NLa, NLb, NLc, NLd kèm mã chỉ báo (Ví dụ khối 12 là 12.A1.a).
+      + Năng lực AI đặc thù (Chỉ thêm nếu Có tích hợp AI): Phân tích rõ các NLa, NLb, NLc, NLd kèm mã chỉ báo chuẩn (Ví dụ KHỐI LỚP.NỘI DUNG.CHỦ ĐỀ.YCCĐ: 11.B.B1.2).
       + Năng lực chung: Tự chủ, tự học; Giao tiếp...
     - Phẩm chất: Theo CV 5512.
 
@@ -457,7 +486,7 @@ QUY TẮC BẮT BUỘC:
                   type: Type.OBJECT,
                   properties: {
                     stepName: { type: Type.STRING, description: "Tên bước (Bắt buộc theo thứ tự: Bước 1: Chuyển giao nhiệm vụ; Bước 2: Thực hiện nhiệm vụ; Bước 3: Báo cáo, thảo luận; Bước 4: Kết luận, nhận định)" },
-                    teacherStudentActivities: { type: Type.STRING, description: "Kịch bản GV-HS SIÊU CHI TIẾT (100-250 từ). Lệnh bắt buộc: Phần nội dung chốt kiến thức/kết luận của giáo viên PHẢI được bọc trong thẻ <bold>...</bold> để in đậm. Phần nội dung nào tích hợp AI (ví dụ Prompt, hướng dẫn kỹ năng, chỉ báo 12.A1.a...) PHẢI được bọc trong thẻ <ai>...</ai> để bôi đỏ." },
+                    teacherStudentActivities: { type: Type.STRING, description: "Kịch bản GV-HS SIÊU CHI TIẾT (100-250 từ). Lệnh bắt buộc: Phần nội dung chốt kiến thức/kết luận của giáo viên PHẢI được bọc trong thẻ <bold>...</bold> để in đậm. Phần nội dung nào tích hợp AI (ví dụ Prompt, hướng dẫn kỹ năng, chỉ báo 10.A.A1.1...) PHẢI được bọc trong thẻ <ai>...</ai> để bôi đỏ." },
                     expectedProduct: { type: Type.STRING, description: "Dự kiến sản phẩm (Chi tiết kết quả mong đợi)" },
                   },
                   required: ["stepName", "teacherStudentActivities", "expectedProduct"],
@@ -485,9 +514,16 @@ QUY TẮC BẮT BUỘC:
   }
 };
 
-export const generateEducationalPlan = async (subject: string, grade: string, province?: string, referencePlan?: any[], options?: { useLaTeX?: boolean, detailDrawings?: boolean }) => {
+export const generateEducationalPlan = async (subject: string, grade: string, province?: string, referencePlan?: any[], options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[] }) => {
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
+
+  const curriculumConstraint = options?.customCurriculumData
+    ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
+${JSON.stringify(options.customCurriculumData, null, 2)}
+LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. KHÔNG SỬ DỤNG DỮ LIỆU MẶC ĐỊNH KHÁC.`
+    : CURRICULUM_DATA;
+
   const referencePrompt = referencePlan
     ? `DỰA TRÊN KẾ HOẠCH TỔ CHUYÊN MÔN SAU ĐÂY ĐỂ ĐỒNG NHẤT NỘI DUNG (BẮT BUỘC):
        ${JSON.stringify(referencePlan.map(i => ({ bài: i.lessonName, mục_tiêu: i.lessonGoal, ai: i.aiCompetency })), null, 2)}
@@ -504,7 +540,7 @@ export const generateEducationalPlan = async (subject: string, grade: string, pr
     ${referencePrompt}
     
     ${AI_SUBJECT_GUIDELINES}
-    ${CURRICULUM_DATA}
+    ${curriculumConstraint}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
 
@@ -515,7 +551,7 @@ export const generateEducationalPlan = async (subject: string, grade: string, pr
        - ĐỐI VỚI TẤT CẢ CÁC MÔN CÒN LẠI: Nội dung, trật tự và tên bài học BẮT BUỘC PHẢI KHỚP TUYỆT ĐỐI VỚI BỘ SÁCH "KẾT NỐI TRI THỨC VỚI CUỘC SỐNG" của NXB Giáo dục Việt Nam. TUYỆT ĐỐI KHÔNG sử dụng yếu tố địa phương (${province}) để thay đổi tên bài học của các môn này.
        - ĐỐI VỚI MÔN GIÁO DỤC ĐỊA PHƯƠNG: Chỉ trong trường hợp này mới sử dụng nội dung đặc thù của ${province}.
     
-    ${CURRICULUM_DATA}
+    ${curriculumConstraint}
 
     2. Cấu trúc bảng Phân phối chương trình:
        - Thứ tự tiết: Số thứ tự tiết học.
@@ -527,7 +563,7 @@ export const generateEducationalPlan = async (subject: string, grade: string, pr
          + Phương án triển khai: Sử dụng tình huống giả định, nghiên cứu tình huống (case study) hay có công cụ AI trực tiếp.
          + Học liệu/công cụ cụ thể: Các bài báo, video phân tích, các bộ dữ liệu giả định, hoặc tên phần mềm/nền tảng AI sẽ sử dụng.
        - Địa điểm dạy học: Lớp học, phòng máy tính, thư viện...
-       - Định hướng năng lực số: Cụ thể hóa mã YCCĐ AI (Khung 3439). QUY TẮC MÃ: Ký tự phân cấp cuối cùng BẮT BUỘC VIẾT THƯỜNG (Ví dụ: 10.A.a1, 11.B.b2, 12.C.c1). Tuyệt đối không viết hoa toàn bộ như 11.C.C1.
+       - Định hướng năng lực số: Cụ thể hóa mã YCCĐ AI (Khung 3439). QUY TẮC MÃ: KHỐI LỚP.NỘI DUNG(A/B/C/D).CHỦ ĐỀ(A1/B1).YCCĐ_SỐ(1/2/3) (Ví dụ: 10.A.A1.1, 11.C.C2.3). TUYỆT ĐỐI tuân thủ dấu chấm phân tách và định dạng này.
        - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \sin, \cos) trong bảng này. Các công thức toán/lý/hóa phải chuyển thành text thường dễ đọc nhất (vd: y = sin x).
 
     2. NGUYÊN TẮC TÍCH HỢP (Theo 8334/BGDĐT-GDPT):
@@ -569,9 +605,15 @@ export const generateEducationalPlan = async (subject: string, grade: string, pr
   }
 };
 
-export const generateDepartmentPlan = async (subject: string, grade: string, province?: string, options?: { useLaTeX?: boolean, detailDrawings?: boolean }) => {
+export const generateDepartmentPlan = async (subject: string, grade: string, province?: string, options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[] }) => {
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
+
+  const curriculumConstraint = options?.customCurriculumData
+    ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
+${JSON.stringify(options.customCurriculumData, null, 2)}
+LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này. KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.`
+    : CURRICULUM_DATA;
   const prompt = `
     Bạn là một Chuyên gia xây dựng chương trình giáo dục. Hãy giúp tôi lập Kế hoạch giáo dục tổ chuyên môn tích hợp nội dung giáo dục AI cho môn: ${subject}, lớp: ${grade}${subject === "Giáo dục địa phương" && province ? `, tại địa phương: ${province}` : ""}.
     
@@ -580,7 +622,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
     2. ĐỐI VỚI MÔN ĐỊA LÍ: TUYỆT ĐỐI BẮT BUỘC tuân thủ danh mục bài học theo Thông tư 17/2025/TT-BGDĐT (ưu tiên TT 17/2025 nếu có sai lệch với dữ liệu cũ).
     3. Nếu là các môn học khác (Toán, Văn...): Phải sử dụng tên bài học TRÙNG KHỚP 100% với Chương trình GDPT 2018 và SGK hiện hành. 
     
-    ${CURRICULUM_DATA}
+    ${curriculumConstraint}
     
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
@@ -594,7 +636,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
     3. Ánh xạ Năng lực:
        - Mục tiêu bài học (lessonGoal): PHẢI MÔ TẢ CHI TIẾT ĐỦ CÁC NỘI DUNG: Kiến thức (HS nắm vững vấn đề gì?); Năng lực (bao gồm Năng lực chung và Năng lực đặc thù môn học được cụ thể hóa bằng hành động); Phẩm chất (Các phẩm chất cần hình thành).
        - Số tiết (periods): Số lượng tiết học dự kiến cho bài học này.
-       - Năng lực AI (aiCompetency): Phải làm rõ chỉ báo trong YCCĐ. QUY TẮC KÝ HIỆU CHUẨN: Ký hiệu phân loại cấp cuối BẮT BUỘC VIẾT THƯỜNG (Ví dụ: 10.A.a1, 11.B.b2, 12.C.c1). TUYỆT ĐỐI KHÔNG viết hoa chữ cái thứ 2 như 11.C.C1.
+       - Năng lực AI (aiCompetency): Làm rõ chỉ báo trong YCCĐ. QUY TẮC KÝ HIỆU CHUẨN: KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ (Ví dụ: 10.A.A1.1 HOẶC 12.B.B1.2). TUYỆT ĐỐI tuân thủ bắt buộc định dạng này, trong đó Số thứ tự ứng với từng gạch đầu dòng trong quy định QĐ 3439.
        - Mạch nội dung AI: 
          - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \sin, \cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường thẳng thắn (Ví dụ: y = sin x).
          * NLa (A): Tư duy lấy con người làm trung tâm.

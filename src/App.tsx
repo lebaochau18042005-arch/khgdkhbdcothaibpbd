@@ -281,30 +281,42 @@ export default function App() {
 
     try {
       const isPdf = uploadedFile.type === "application/pdf" || uploadedFile.name.toLowerCase().endsWith(".pdf");
+      const isDocx = uploadedFile.name.toLowerCase().endsWith(".docx") || uploadedFile.name.toLowerCase().endsWith(".doc");
       let data: any;
 
       if (isPdf) {
-        const base64 = await new Promise<string>((resolve) => {
+        const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => {
-            const base64String = (reader.result as string).split(',')[1];
-            resolve(base64String);
+            const result = reader.result as string;
+            const base64String = result.split(',')[1];
+            if (base64String) resolve(base64String);
+            else reject(new Error("Không thể đọc file PDF"));
           };
+          reader.onerror = () => reject(new Error("Lỗi FileReader khi đọc PDF"));
           reader.readAsDataURL(uploadedFile);
         });
         data = await parseCurriculumAppendix("", base64);
-      } else {
+      } else if (isDocx) {
         const buffer = await uploadedFile.arrayBuffer();
         const resultObj = await mammoth.extractRawText({ arrayBuffer: buffer });
         const text = resultObj.value;
+        if (!text || text.trim().length < 50) throw new Error("File Word không có nội dung hoặc đọc bị trống. Hãy kiểm tra lại file.");
         data = await parseCurriculumAppendix(text);
+      } else {
+        throw new Error(`Định dạng file "${uploadedFile.name}" không được hỗ trợ. Chỉ chấp nhận .docx, .doc và .pdf.`);
+      }
+
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        throw new Error("AI không trích xuất được bài học nào. File có thể không phải Phụ lục Chương trình hoặc bị mã hóa.");
       }
 
       setCustomCurriculumData(data);
       alert(`🎉 Đã nạp thành công Phụ lục Chương trình (${data.length} bài học).\nHệ thống sẽ sử dụng danh sách này làm lõi (bỏ qua mặc định).`);
-    } catch (err) {
-      console.error(err);
-      alert("Đã xảy ra lỗi khi bóc tách file. Vui lòng kiểm tra định dạng (.docx).");
+    } catch (err: any) {
+      console.error("[CurriculumUpload Error]", err);
+      const message = err?.message || "Lỗi không xác định";
+      alert(`❌ Lỗi bóc tách file: ${message}`);
     } finally {
       setIsParsingCurriculum(false);
       e.target.value = ''; // Reset

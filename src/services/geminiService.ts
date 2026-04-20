@@ -218,89 +218,6 @@ YÊU CẦU ĐỊNH DẠNG VÀ TRÌNH BÀY (THỰC THI NGHIÊM NGẶT):
 - Các sơ đồ tiến trình phải được trình bày phân cấp rõ ràng.
 `;
 
-const QD3439_FULL_FRAMEWORK = `
-=== KHUNG CHỈ BÁO NĂNG LỰC AI ĐẦY ĐỦ THEO QĐ 3439/QĐ-BGDĐT (BẮT BUỘC THAM CHIẾU) ===
-QUY TẮC MÃ CHUẨN: [KHỐI].[NỘI DUNG].[CHỦ ĐỀ].[SỐ THỨ TỰ]  VD: 10.A.A1.1
-
---- MẠCH A: TƯ DUY LẤY CON NGƯỜI LÀM TRUNG TÂM (Human-Centered AI Thinking) ---
-Chủ đề A1 - Nhận biết và cảm thông:
-  10.A.A1.1 - Nhận biết những yếu tố ảnh hưởng đến sự phát triển của AI trong xã hội
-  10.A.A1.2 - Đánh giá tác động của AI đến cộng đồng và cá nhân
-  10.A.A1.3 - Phân tích vai trò của con người TRONG và NGOÀI các hệ thống AI
-  11.A.A1.1 - So sánh quan điểm của các bên liên quan về ứng dụng AI
-  11.A.A1.2 - Xây dựng lập luận bảo vệ quyền lợi người dùng trong hệ thống AI
-  12.A.A1.1 - Tổng hợp, phân tích và đề xuất giải pháp AI ưu tiên phúc lợi con người
-  12.A.A1.2 - Thiết kế nguyên tắc tư duy lấy con người làm trung tâm cho dự án AI cụ thể
-
-Chủ đề A2 - Ra quyết định và phản tư:
-  10.A.A2.1 - Xác định những hạn chế và rủi ro trong quá trình ra quyết định của AI
-  10.A.A2.2 - So sánh cách ra quyết định của con người và AI trong cùng tình huống
-  11.A.A2.1 - Phân tích quy trình kiểm soát và điều chỉnh quyết định AI bởi con người
-  11.A.A2.2 - Thiết kế tiêu chí đánh giá chất lượng quyết định của hệ thống AI
-  12.A.A2.1 - Đề xuất mô hình phân chia trách nhiệm giữa AI và con người
-
---- MẠCH B: ĐẠO ĐỨC AI VÀ TRÁCH NHIỆM XÃ HỘI (AI Ethics & Social Responsibility) ---
-Chủ đề B1 - Đạo đức trong thiết kế và sử dụng AI:
-  10.B.B1.1 - Nhận biết các vấn đề đạo đức cơ bản trong phát triển và sử dụng AI
-  10.B.B1.2 - Thảo luận về quyền riêng tư, bảo mật dữ liệu và sự đồng ý (consent)
-  10.B.B1.3 - Phân tích tình huống thực tế vi phạm đạo đức AI
-  11.B.B1.1 - Đánh giá tính công bằng và tránh thiên vị (bias) trong dữ liệu và thuật toán
-  11.B.B1.2 - Nghiên cứu tình huống: Trách nhiệm pháp lý khi AI gây hậu quả
-  11.B.B1.3 - Xây dựng bộ quy tắc đạo đức AI cho một tình huống giả định
-  12.B.B1.1 - Thiết kế khung đạo đức AI cho tổ chức/dự án cụ thể
-  12.B.B1.2 - Phân tích chính sách AI toàn cầu và đề xuất thích ứng tại Việt Nam
-
-Chủ đề B2 - Tác động xã hội và môi trường:
-  10.B.B2.1 - Nhận biết tác động của AI đến thị trường lao động và nghề nghiệp
-  10.B.B2.2 - Phân tích tác động môi trường của các hệ thống AI quy mô lớn
-  11.B.B2.1 - Đánh giá bất bình đẳng số và giải pháp tiếp cận AI công bằng
-  11.B.B2.2 - Xây dựng chiến lược ứng phó với sự thay đổi nghề nghiệp do AI
-  12.B.B2.1 - Đề xuất chính sách tái đào tạo lao động trong bối cảnh AI hóa
-  12.B.B2.2 - Đánh giá tổng thể tác động ESG (Môi trường - Xã hội - Quản trị) của AI
-
---- MẠCH C: KỸ THUẬT VÀ ỨNG DỤNG AI (AI Techniques & Applications) ---
-Chủ đề C1 - Nhận biết và phân loại công cụ AI:
-  10.C.C1.1 - Nhận biết các loại hình AI phổ biến (Sinh ảnh, Chatbot, Nhận diện, Dự báo)
-  10.C.C1.2 - Sử dụng công cụ tìm kiếm thông tin và tóm tắt bằng AI có kiểm chứng
-  10.C.C1.3 - Đánh giá độ tin cậy và giới hạn của kết quả AI tạo ra
-  11.C.C1.1 - Phân tích quy trình xử lý ngôn ngữ tự nhiên (NLP) trong các ứng dụng
-  11.C.C1.2 - Thực hành thiết kế Prompt kỹ thuật số để khai thác AI hiệu quả
-  11.C.C1.3 - Ứng dụng AI trong phân tích dữ liệu và trực quan hóa thông tin
-  12.C.C1.1 - Thiết kế luồng làm việc tích hợp nhiều công cụ AI để giải quyết bài toán thực tế
-  12.C.C1.2 - Đánh giá hiệu năng và chi phí khi triển khai AI trong tổ chức/dự án
-
-Chủ đề C2 - Học máy và dữ liệu:
-  10.C.C2.1 - Nhận biết khái niệm học máy cơ bản (đầu vào, đầu ra, huấn luyện)
-  10.C.C2.2 - Phân tích vai trò của dữ liệu trong chất lượng mô hình AI
-  11.C.C2.1 - Thực hành thu thập, làm sạch và phân tích dữ liệu cho bài toán AI đơn giản
-  11.C.C2.2 - So sánh các phương pháp học máy phổ biến (có giám sát, không giám sát)
-  11.C.C2.3 - Nhận diện overfitting và underfitting trong mô hình học máy
-  12.C.C2.1 - Thiết kế và đánh giá mô hình học máy cho bài toán thực tế
-  12.C.C2.2 - Phân tích tính minh bạch (Explainability) của mô hình AI
-
---- MẠCH D: GIẢI QUYẾT VẤN ĐỀ VÀ THIẾT KẾ HỆ THỐNG AI (AI System Design) ---
-Chủ đề D1 - Tư duy hệ thống và thiết kế vòng lặp:
-  10.D.D1.1 - Nhận biết các thành phần cơ bản của một hệ thống AI (Dữ liệu - Mô hình - Giao diện)
-  10.D.D1.2 - Phân tích vòng phản hồi (feedback loop) trong hệ thống AI
-  11.D.D1.1 - Thiết kế sơ đồ kiến trúc hệ thống AI cho bài toán đơn giản
-  11.D.D1.2 - Đánh giá tính bền vững và khả năng mở rộng của hệ thống AI
-  12.D.D1.1 - Thiết kế và triển khai nguyên mẫu (prototype) giải pháp AI tích hợp
-
-Chủ đề D2 - Dự án và sản phẩm AI:
-  10.D.D2.1 - Xác định vấn đề thực tế có thể giải quyết bằng AI
-  10.D.D2.2 - Phác thảo yêu cầu và tiêu chí chấp nhận (acceptance criteria) cho giải pháp AI
-  11.D.D2.1 - Lập kế hoạch dự án AI theo vòng đời phát triển phần mềm (SDLC)
-  11.D.D2.2 - Xây dựng và kiểm thử nguyên mẫu ứng dụng AI nhỏ
-  12.D.D2.1 - Hoàn thiện, trình bày và phản biện dự án AI trước hội đồng đánh giá
-  12.D.D2.2 - Đề xuất hướng cải tiến và phát triển bền vững cho giải pháp AI
-
-=== LƯU Ý ĐẶC BIỆT CHO THCS (Khối 6, 7, 8, 9) ===
-Đối với học sinh THCS, sử dụng mã theo dạng: 6.A.A1.1, 7.B.B1.2, 8.C.C1.1, 9.D.D1.1
-Nội dung tập trung vào: Nhận biết, trải nghiệm, và ứng dụng AI cơ bản.
-Tránh các chỉ báo thiết kế hệ thống phức tạp (D2, C2 nâng cao).
-Ưu tiên: A1 (nhận biết AI), B1 (sử dụng AI an toàn), C1 (sử dụng công cụ AI cơ bản).
-`;
-
 const LESSON_PLAN_STRICT_GUIDELINES = `
 # QUY TẮC THỰC THI "KỊCH BẢN CHI TIẾT" (CV 5512 + QĐ 3439)
 
@@ -319,10 +236,9 @@ d. Tổ chức thực hiện (Mô tả kịch bản siêu chi tiết GV - HS):
 
 🚨 ĐẶC BIỆT: MỤC "HOẠT ĐỘNG GIÁO DỤC AI"
 Nếu hoạt động có tích hợp AI, BẮT BUỘC CHÈN THẺ CẢNH BÁO MÀU ĐỎ: <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai>.
-Nêu rõ mã chỉ báo năng lực AI từ QĐ 3439 (ví dụ: 10.A.A1.1, 11.B.B1.2, 12.C.C2.1). THAM CHIẾU CHÍNH XÁC TỪ BẢNG QD3439_FULL_FRAMEWORK.
+Nêu rõ mã chỉ báo năng lực AI từ QĐ 3439/8439 (vd 11.A1.a).
 Mô tả chi tiết: GV hướng dẫn HS dùng công cụ AI gì để hỗ trợ giải quyết nội dung bài học đó. HS thực hiện các thao tác kỹ thuật Prompt kỹ sư gì trên công cụ AI.
 `;
-
 
 export interface LessonPlanInput {
   subject: string;
@@ -349,67 +265,67 @@ export const analyzeExistingPlan = async (fileText: string, pdfBase64?: string) 
       `
       Đóng vai trò chuyên gia giáo dục phân tích Kế hoạch bài dạy đính kèm dưới dạng PDF.
       Hãy rà soát và cho tôi biết:
-1. Thông tin chung của bài học(Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện cơ sở vật chất, Các mục tiêu hiện tại).
-      2. Các hoạt động cốt yếu trong giáo án(Thường là Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-      3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa.Chỉ ra 2 vị trí(2 hoạt động) TỐT NHẤT có thể lồng ghép 2 năng lực AI(chọn từ NLa, NLb, NLc, NLd) sao cho phù hợp tự nhiên nhất.
+      1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện cơ sở vật chất, Các mục tiêu hiện tại).
+      2. Các hoạt động cốt yếu trong giáo án (Thường là Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
+      3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí (2 hoạt động) TỐT NHẤT có thể lồng ghép 2 năng lực AI (chọn từ NLa, NLb, NLc, NLd) sao cho phù hợp tự nhiên nhất.
       
       Định dạng đầu ra JSON bắt buộc:
-{
-  "subject": "Tên môn",
-    "grade": "Khối lớp",
-      "topic": "Tên bài",
+      {
+        "subject": "Tên môn",
+        "grade": "Khối lớp",
+        "topic": "Tên bài",
         "duration": "Thời lượng",
-          "contextStudents": "Đặc điểm học sinh (từ tóm tắt)",
-            "contextSchool": "Điều kiện CSVC",
-              "objectivesKnowledge": "Tóm tắt mục tiêu kiến thức",
-                "objectivesCompetency": "Tóm tắt mục tiêu năng lực",
-                  "objectivesQuality": "Tóm tắt phẩm chất",
-                    "aiSuggestions": [
-                      {
-                        "activityName": "Tên hoạt động gợi ý (vd: Hoạt động Luyện tập)",
-                        "suggestedAI": "NLa",
-                        "reason": "Lý do vì sao phù hợp lồng ghép vào đây",
-                        "action": "Nếu lồng ghép thì HS sẽ làm gì với AI ở hoạt động này?"
-                      }
-                    ]
-}
-`,
+        "contextStudents": "Đặc điểm học sinh (từ tóm tắt)",
+        "contextSchool": "Điều kiện CSVC",
+        "objectivesKnowledge": "Tóm tắt mục tiêu kiến thức",
+        "objectivesCompetency": "Tóm tắt mục tiêu năng lực",
+        "objectivesQuality": "Tóm tắt phẩm chất",
+        "aiSuggestions": [
+          {
+            "activityName": "Tên hoạt động gợi ý (vd: Hoạt động Luyện tập)",
+            "suggestedAI": "NLa",
+            "reason": "Lý do vì sao phù hợp lồng ghép vào đây",
+            "action": "Nếu lồng ghép thì HS sẽ làm gì với AI ở hoạt động này?"
+          }
+        ]
+      }
+      `,
       { inlineData: { mimeType: "application/pdf", data: pdfBase64 } }
     ];
   } else {
     prompt = `
-      Đóng vai trò chuyên gia giáo dục phân tích Kế hoạch bài dạy(Giáo án) của Giáo viên.
+      Đóng vai trò chuyên gia giáo dục phân tích Kế hoạch bài dạy (Giáo án) của Giáo viên.
       Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo viên.
     
     Hãy rà soát và cho tôi biết:
-1. Thông tin chung của bài học(Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện cơ sở vật chất, Các mục tiêu hiện tại).
-    2. Các hoạt động cốt yếu trong giáo án(Thường là Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-    3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa.Chỉ ra 2 vị trí(2 hoạt động) TỐT NHẤT có thể lồng ghép 2 năng lực AI(chọn từ NLa, NLb, NLc, NLd) sao cho phù hợp tự nhiên nhất.
+    1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện cơ sở vật chất, Các mục tiêu hiện tại).
+    2. Các hoạt động cốt yếu trong giáo án (Thường là Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
+    3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí (2 hoạt động) TỐT NHẤT có thể lồng ghép 2 năng lực AI (chọn từ NLa, NLb, NLc, NLd) sao cho phù hợp tự nhiên nhất.
     
     VĂN BẢN GIÁO ÁN:
     ${fileText.substring(0, 15000)} // Giới hạn một phần để chống tràn
 
     Định dạng đầu ra JSON bắt buộc:
-{
-  "subject": "Tên môn",
-    "grade": "Khối lớp",
+    {
+      "subject": "Tên môn",
+      "grade": "Khối lớp",
       "topic": "Tên bài",
-        "duration": "Thời lượng",
-          "contextStudents": "Đặc điểm học sinh (từ tóm tắt)",
-            "contextSchool": "Điều kiện CSVC",
-              "objectivesKnowledge": "Tóm tắt mục tiêu kiến thức",
-                "objectivesCompetency": "Tóm tắt mục tiêu năng lực",
-                  "objectivesQuality": "Tóm tắt phẩm chất",
-                    "aiSuggestions": [
-                      {
-                        "activityName": "Tên hoạt động gợi ý (vd: Hoạt động Luyện tập)",
-                        "suggestedAI": "NLa",
-                        "reason": "Lý do vì sao phù hợp lồng ghép vào đây",
-                        "action": "Nếu lồng ghép thì HS sẽ làm gì với AI ở hoạt động này?"
-                      }
-                    ]
-}
-`;
+      "duration": "Thời lượng",
+      "contextStudents": "Đặc điểm học sinh (từ tóm tắt)",
+      "contextSchool": "Điều kiện CSVC",
+      "objectivesKnowledge": "Tóm tắt mục tiêu kiến thức",
+      "objectivesCompetency": "Tóm tắt mục tiêu năng lực",
+      "objectivesQuality": "Tóm tắt phẩm chất",
+      "aiSuggestions": [
+        {
+          "activityName": "Tên hoạt động gợi ý (vd: Hoạt động Luyện tập)",
+          "suggestedAI": "NLa",
+          "reason": "Lý do vì sao phù hợp lồng ghép vào đây",
+          "action": "Nếu lồng ghép thì HS sẽ làm gì với AI ở hoạt động này?"
+        }
+      ]
+    }
+  `;
   }
 
   try {
@@ -452,11 +368,9 @@ export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: strin
   if (pdfBase64) {
     prompt = [
       `
-      Đóng vai trò là chuyên gia giáo dục, hãy phân tích Phụ lục Phân phối chương trình đính kèm(PDF).
-      Nhiệm vụ: Bóc tách danh sách các bài học(hoặc chủ đề), thời lượng(số tiết), và thời điểm dạy(vd: Tuần 1).
-      LỆNH CỰC KỲ QUAN TRỌNG: TUYỆT ĐỐI KHÔNG ĐƯỢC LƯỢC BỎ, BỎ SÓT LÀM MẤT BẤT KỲ BÀI HỌC NÀO.BẮT BUỘC TRÍCH XUẤT ĐẦY ĐỦ TOÀN BỘ 100 % CÁC BÀI HỌC TỪ ĐẦU ĐẾN KẾT THÚC FILE.
-      Nếu file chứa 70 bài, bạn phải xuất đủ 70 JSON objects.Làm mất dữ liệu là vi phạm kỷ luật cực nặng.
-      Phớt lờ các thông tin thừa như tên trường, quốc hiệu, chữ ký.Bắt đầu ngay từ danh sách bài học.Dồn các tiết tự học / kiểm tra chung thành 1 bài nếu có.
+      Đóng vai trò là chuyên gia giáo dục, hãy phân tích Phụ lục Phân phối chương trình đính kèm (PDF).
+      Nhiệm vụ: Bóc tách danh sách các bài học (hoặc chủ đề), thời lượng (số tiết), và thời điểm dạy (vd: Tuần 1).
+      Phớt lờ các thông tin thừa như tên trường, quốc hiệu, chữ ký. Bắt đầu ngay từ danh sách bài học. Dồn các tiết tự học/kiểm tra chung thành 1 bài nếu có.
       Trọng tâm là tên bài học phải ĐẦY ĐỦ chính xác từng chữ như trong file gốc.
       `,
       {
@@ -469,14 +383,12 @@ export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: strin
   } else {
     prompt = `
       Đóng vai trò là chuyên gia giáo dục, hãy phân tích Phụ lục Phân phối chương trình.
-      Dưới đây là TOÀN BỘ văn bản thô bóc tách từ file Phân phối chương trình do giáo viên cung cấp:
-"""${rawText.substring(0, 300000)}"""
+      Dưới đây là văn bản thô bóc tách từ file Phân phối chương trình do giáo viên cung cấp:
+      """${rawText.substring(0, 18000)}"""
 
-      Nhiệm vụ: Bóc tách danh sách các bài học(hoặc chủ đề), thời lượng(số tiết), và thời điểm dạy(vd: Tuần 1).
-      LỆNH CỰC KỲ QUAN TRỌNG: TUYỆT ĐỐI KHÔNG ĐƯỢC LƯỢC BỎ, BỎ SÓT LÀM MẤT BẤT KỲ BÀI HỌC NÀO.BẮT BUỘC TRÍCH XUẤT ĐẦY ĐỦ TOÀN BỘ BÀI HỌC TỪ ĐẦU ĐẾN CUỐI.
-      NẾU FILE CÓ 100 BÀI, BẠN PHẢI TRẢ VỀ DỮ LIỆU CỦA 100 BÀI.LÀM MẤT DỮ LIỆU LÀ VI PHẠM KỶ LUẬT SƯ PHẠM.
-      Phớt lờ các thông tin thừa như tên trường, chữ ký.Bắt đầu ngay từ danh sách.
-      Trọng tâm là tên bài học phải chính xác từng chữ như file gốc.
+      Nhiệm vụ: Bóc tách danh sách các bài học (hoặc chủ đề), thời lượng (số tiết), và thời điểm dạy (vd: Tuần 1).
+      Phớt lờ các thông tin thừa như tên trường, quốc hiệu, chữ ký. Bắt đầu ngay từ danh sách bài học. Dồn các tiết tự học/kiểm tra chung thành 1 bài nếu có.
+      Trọng tâm là tên bài học phải ĐẦY ĐỦ chính xác từng chữ như trong file gốc.
     `;
   }
 
@@ -508,16 +420,16 @@ export const generateLessonPlan = async (input: LessonPlanInput) => {
     const p1 = `
 🚨🚨🚨 CHẾ ĐỘ NÂNG CẤP GIÁO ÁN GỐC TỪ FILE PDF — ƯU TIÊN TỐI CAO 🚨🚨🚨
 
-NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu.Bạn phải NÂNG CẤP giáo án xuất ra từ File PDF ĐÍNH KÈM của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM / CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
+NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu. Bạn phải NÂNG CẤP giáo án xuất ra từ File PDF ĐÍNH KÈM của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM/CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
 
-ĐIỂM CHẠM AI CẦN TÍCH HỢP(chỉ chỉnh sửa những hoạt động này):
+ĐIỂM CHẠM AI CẦN TÍCH HỢP (chỉ chỉnh sửa những hoạt động này):
 ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 
-KIÊN QUYẾT BẢO TỒN:
+KIÊN QUYẾT BẢO TỒN: 
 1. Không cắt bớt phần Mở đầu, Hình thành KT mới, Luyện tập, Vận dụng mà giáo viên đã viết.
 2. Không tự động bịa đặt các câu hỏi hay kết luận trừ khi có liên quan trực tiếp tới Công cụ AI.
-3. Khi bạn được lệnh tích hợp AI ở một Hoạt động nào đó, chỉ viết thêm đúng phần < ai > [🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP NĂNG LỰC AI] </ai> mô tả chi tiết tại đó với lời văn của mình, CÒN LẠI DỮ LIỆU CŨ PHẢI SAO CHÉP Y HỆT.
-  `;
+3. Khi bạn được lệnh tích hợp AI ở một Hoạt động nào đó, chỉ viết thêm đúng phần <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP NĂNG LỰC AI]</ai> mô tả chi tiết tại đó với lời văn của mình, CÒN LẠI DỮ LIỆU CŨ PHẢI SAO CHÉP Y HỆT.
+`;
     finalPromptContents = [
       p1,
       {
@@ -532,77 +444,75 @@ KIÊN QUYẾT BẢO TỒN:
       ? `
 🚨🚨🚨 CHẾ ĐỘ NÂNG CẤP GIÁO ÁN GỐC — ƯU TIÊN TỐI CAO 🚨🚨🚨
 
-NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu.Bạn phải NÂNG CẤP giáo án gốc sau đây của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM / CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
+NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu. Bạn phải NÂNG CẤP giáo án gốc sau đây của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM/CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
 
-VĂN BẢN GIÁO ÁN GỐC CỦA GIÁO VIÊN(BẮT BUỘC BẢO TOÀN):
+VĂN BẢN GIÁO ÁN GỐC CỦA GIÁO VIÊN (BẮT BUỘC BẢO TOÀN):
 """
 ${input.existingRawText.substring(0, 18000)}
 """
 
-ĐIỂM CHẠM AI CẦN TÍCH HỢP(chỉ chỉnh sửa những hoạt động này):
+ĐIỂM CHẠM AI CẦN TÍCH HỢP (chỉ chỉnh sửa những hoạt động này):
 ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 
-KIÊN QUYẾT BẢO TỒN:
+KIÊN QUYẾT BẢO TỒN: 
 1. Không cắt bớt phần Mở đầu, Hình thành KT mới, Luyện tập, Vận dụng mà giáo viên đã viết.
 2. Không tự động bịa đặt các câu hỏi hay kết luận trừ khi có liên quan trực tiếp tới Công cụ AI.
-3. Khi bạn được lệnh tích hợp AI ở một Hoạt động nào đó, chỉ viết thêm đúng phần < ai > [🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP NĂNG LỰC AI] </ai> mô tả chi tiết tại đó với lời văn của mình, CÒN LẠI DỮ LIỆU CŨ PHẢI SAO CHÉP Y HỆT.
-  ` : ``;
+3. Khi bạn được lệnh tích hợp AI ở một Hoạt động nào đó, chỉ viết thêm đúng phần <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP NĂNG LỰC AI]</ai> mô tả chi tiết tại đó với lời văn của mình, CÒN LẠI DỮ LIỆU CŨ PHẢI SAO CHÉP Y HỆT.
+` : ``;
   }
 
   const basePrompt = `
-    Vai trò: Bạn là một Chuyên gia Giáo dục hàng đầu quốc gia, là người xét duyệt giáo án thi giáo viên giỏi xuất sắc.Bạn am hiểu sâu sắc Chương trình GDPT 2018, Công văn 5512 / BGDĐT - GDTrH và Khung giáo dục Trí tuệ nhân tạo(AI) theo Quyết định 3439 / QĐ - BGDĐT. 
-    Lệnh đặc biệt: Hãy soạn một Giáo án(Kế hoạch bài dạy) SIÊU CHI TIẾT, thật sự chuyên sâu, logic, chặt chẽ, cụ thể từng lời nói và hành động mô phỏng thực tế lớp học cho:
+    Vai trò: Bạn là một Chuyên gia Giáo dục hàng đầu quốc gia, là người xét duyệt giáo án thi giáo viên giỏi xuất sắc. Bạn am hiểu sâu sắc Chương trình GDPT 2018, Công văn 5512/BGDĐT-GDTrH và Khung giáo dục Trí tuệ nhân tạo (AI) theo Quyết định 3439/QĐ-BGDĐT. 
+    Lệnh đặc biệt: Hãy soạn một Giáo án (Kế hoạch bài dạy) SIÊU CHI TIẾT, thật sự chuyên sâu, logic, chặt chẽ, cụ thể từng lời nói và hành động mô phỏng thực tế lớp học cho:
     Môn học: ${input.subject}
     Tên bài dạy: ${input.topic}
-Lớp: ${input.grade} - Thời lượng: ${input.duration}
+    Lớp: ${input.grade} - Thời lượng: ${input.duration}
     Hoàn cảnh học sinh: ${input.contextStudents || "Học sinh có khả năng tiếp thu trung bình - khá"}
     Điều kiện trường lớp: ${input.contextSchool || "Lớp học có máy chiếu và kết nối internet cơ bản"}
-    Lưu ý riêng về độ tuổi(Nếu là khối 6, 7, 8, 9): Giáo án CẦN TĂNG CƯỜNG thực hành, thao tác trực quan, và trò chơi hóa(gamification).Hạn chế những câu hỏi thảo luận mang tính triết học nặng nề của cấp 3.
+    Lưu ý riêng về độ tuổi (Nếu là khối 6, 7, 8, 9): Giáo án CẦN TĂNG CƯỜNG thực hành, thao tác trực quan, và trò chơi hóa (gamification). Hạn chế những câu hỏi thảo luận mang tính triết học nặng nề của cấp 3.
 
     ${AI_SUBJECT_GUIDELINES}
-    QUY TẮC MÃ CHỈ BÁO NĂNG LỰC AI (QĐ 3439): Định dạng KHỐI.MẠCH.CHỦ_ĐỀ.SỐ (vd: 10.A.A1.1).
-    4 Mạch: A=Tư duy con người, B=Đạo đức AI, C=Kỹ thuật/Ứng dụng, D=Thiết kế hệ thống.
-    Chủ đề: A1(Nhận biết AI), A2(Ra quyết định), B1(Đạo đức thiết kế), B2(Tác động xã hội), C1(Công cụ AI), C2(Học máy), D1(Tư duy hệ thống), D2(Dự án AI).
-    THCS (6-9): Ưu tiên A1, B1, C1. THPT (10-12): Khai thác đủ 4 mạch từ A đến D.
+    CHỈ BÁO QĐ 3439 - Định dạng bắt buộc: KHỐI.MẠCH.CHỦ_ĐỀ.SỐ (vd: 10.A.A1.1). Mạch: A=Tư duy con người, B=Đạo đức AI, C=Kỹ thuật, D=Thiết kế hệ thống. Chủ đề: A1/A2, B1/B2, C1/C2, D1/D2. THCS(6-9) ưu tiên A1,B1,C1.
+    ${CURRICULUM_DATA}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
 
-    YÊU CẦU NỘI DUNG NGHIÊM NGẶT(CHUẨN CV 5512 và QĐ 3439):
+    YÊU CẦU NỘI DUNG NGHIÊM NGẶT (CHUẨN CV 5512 và QĐ 3439):
 
-    QUY TẮC THỰC THI NGHIÊM NGẶT(CRITICAL RULES):
-1. KIỂM TRA ĐIỀU KIỆN TÍCH HỢP:
-- Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không.
-       - Nếu bài học được xác định là "Không tích hợp": Hãy soạn giáo án thuần túy theo Công văn 5512, tuyệt đối không đưa nội dung AI vào(để trống mục Năng lực AI).
+    QUY TẮC THỰC THI NGHIÊM NGẶT (CRITICAL RULES):
+    1. KIỂM TRA ĐIỀU KIỆN TÍCH HỢP:
+       - Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không.
+       - Nếu bài học được xác định là "Không tích hợp": Hãy soạn giáo án thuần túy theo Công văn 5512, tuyệt đối không đưa nội dung AI vào (để trống mục Năng lực AI).
        - Nếu bài học có "Tích hợp AI": Bắt buộc thêm một mục riêng biệt có tên "HOẠT ĐỘNG GIÁO DỤC AI" ngay trong phần nội dung tiến trình dạy học ở vị trí có điểm chạm.
-    2. MÔ TẢ CÔNG CỤ SỐ AI: Trong hoạt động có tích hợp, phải mô tả cụ thể việc sử dụng các công cụ AI(ChatGPT, Canva, chatbot...) để hỗ trợ học sinh đạt được năng lực tương ứng.
-    3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ(Ví dụ: 10.A.A1.1).
-    4. PHẢN BIỆN & BÁO ĐỘNG ĐỎ: BẮT BUỘC sử dụng thẻ < ai > [🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI] </ai> để đánh dấu hoạt động trọng tâm có ứng dụng công nghệ AI.
+    2. MÔ TẢ CÔNG CỤ SỐ AI: Trong hoạt động có tích hợp, phải mô tả cụ thể việc sử dụng các công cụ AI (ChatGPT, Canva, chatbot...) để hỗ trợ học sinh đạt được năng lực tương ứng.
+    3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ (Ví dụ: 10.A.A1.1).
+    4. PHẢN BIỆN & BÁO ĐỘNG ĐỎ: BẮT BUỘC sử dụng thẻ <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai> để đánh dấu hoạt động trọng tâm có ứng dụng công nghệ AI.
 
-I.MỤC TIÊU:
-- Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
+    I. MỤC TIÊU:
+    - Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
     - Năng lực:
-+ Đặc thù môn học: Theo chương trình 2018.
-  + Năng lực AI đặc thù(Chỉ thêm nếu Có tích hợp AI): Phân tích rõ các NLa, NLb, NLc, NLd kèm mã chỉ báo chuẩn(Ví dụ KHỐI LỚP.NỘI DUNG.CHỦ ĐỀ.YCCĐ: 11.B.B1.2).
+      + Đặc thù môn học: Theo chương trình 2018.
+      + Năng lực AI đặc thù (Chỉ thêm nếu Có tích hợp AI): Phân tích rõ các NLa, NLb, NLc, NLd kèm mã chỉ báo chuẩn (Ví dụ KHỐI LỚP.NỘI DUNG.CHỦ ĐỀ.YCCĐ: 11.B.B1.2).
       + Năng lực chung: Tự chủ, tự học; Giao tiếp...
-- Phẩm chất: Theo CV 5512.
+    - Phẩm chất: Theo CV 5512.
 
-II.THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU: Đảm bảo theo quy định 5512(thêm Công cụ số AI nếu Có tích hợp).
+    II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU: Đảm bảo theo quy định 5512 (thêm Công cụ số AI nếu Có tích hợp).
 
-  III.TIẾN TRÌNH DẠY HỌC(CHI TIẾT):
+    III. TIẾN TRÌNH DẠY HỌC (CHI TIẾT):
     ${LESSON_PLAN_STRICT_GUIDELINES}
     
     Phân bổ 4 hoạt động chuẩn 5512:
-1. Mở đầu(Xác định vấn đề).
+    1. Mở đầu (Xác định vấn đề).
     2. Hình thành kiến thức mới.
-    3. Luyện tập(Các hoạt động không tích hợp soạn chuẩn 5512).
+    3. Luyện tập (Các hoạt động không tích hợp soạn chuẩn 5512).
     4. Vận dụng.
-    (LƯU Ý: Với bài học "Có tích hợp AI", phải lồng ghép khéo léo "HOẠT ĐỘNG GIÁO DỤC AI" kèm khai báo mã chỉ báo và thẻ[🚨 BÁO ĐỘNG ĐỎ]vào 1 trong 4 bước trên sao cho phù hợp).
+    (LƯU Ý: Với bài học "Có tích hợp AI", phải lồng ghép khéo léo "HOẠT ĐỘNG GIÁO DỤC AI" kèm khai báo mã chỉ báo và thẻ [🚨 BÁO ĐỘNG ĐỎ] vào 1 trong 4 bước trên sao cho phù hợp).
 
-  IV.KẾ HOẠCH ĐÁNH GIÁ:
-    BẮT BUỘC thiết kế tiêu chí đánh giá kỹ năng tương tác với AI và khả năng phản biện.QUAN TRỌNG: Tại phần Bài kiểm tra ngắn(Quiz), BẮT BUỘC phải viết nội dung cụ thể của 2 - 3 câu hỏi trắc nghiệm(gồm câu hỏi, 4 đáp án A B C D và đáp án đúng) thay vì chỉ ghi chung chung là "có 5 câu hỏi".
+    IV. KẾ HOẠCH ĐÁNH GIÁ:
+    BẮT BUỘC thiết kế tiêu chí đánh giá kỹ năng tương tác với AI và khả năng phản biện. QUAN TRỌNG: Tại phần Bài kiểm tra ngắn (Quiz), BẮT BUỘC phải viết nội dung cụ thể của 2-3 câu hỏi trắc nghiệm (gồm câu hỏi, 4 đáp án A B C D và đáp án đúng) thay vì chỉ ghi chung chung là "có 5 câu hỏi".
 
-  V.PHỤ LỤC:
-    Gợi ý 3 - 5 mẫu lệnh Prompt cụ thể cho bài học này để HS thực hành.
+    V. PHỤ LỤC:
+    Gợi ý 3-5 mẫu lệnh Prompt cụ thể cho bài học này để HS thực hành.
 
     Định dạng đầu ra: JSON.
   `;
@@ -688,20 +598,20 @@ export const generateEducationalPlan = async (subject: string, grade: string, pr
   const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
 ${JSON.stringify(options.customCurriculumData, null, 2)}
-LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên.KHÔNG SỬ DỤNG DỮ LIỆU MẶC ĐỊNH KHÁC.`
+LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. KHÔNG SỬ DỤNG DỮ LIỆU MẶC ĐỊNH KHÁC.`
     : CURRICULUM_DATA;
 
   const referencePrompt = referencePlan
-    ? `DỰA TRÊN KẾ HOẠCH TỔ CHUYÊN MÔN SAU ĐÂY ĐỂ ĐỒNG NHẤT NỘI DUNG(BẮT BUỘC):
+    ? `DỰA TRÊN KẾ HOẠCH TỔ CHUYÊN MÔN SAU ĐÂY ĐỂ ĐỒNG NHẤT NỘI DUNG (BẮT BUỘC):
        ${JSON.stringify(referencePlan.map(i => ({ bài: i.lessonName, mục_tiêu: i.lessonGoal, ai: i.aiCompetency })), null, 2)}
        
        Yêu cầu: Bạn phải giữ nguyên tên các bài học và mục tiêu AI đã có trong kế hoạch tổ chuyên môn ở trên.`
     : "";
 
   const prompt = `
-    Hãy đóng vai một chuyên gia giáo dục THPT tại Việt Nam.Xây dựng "Khung kế hoạch giáo dục của giáo viên"(Phân phối chương trình cả năm) cho:
-- Môn: ${subject}
-- Lớp: ${grade}
+    Hãy đóng vai một chuyên gia giáo dục THPT tại Việt Nam. Xây dựng "Khung kế hoạch giáo dục của giáo viên" (Phân phối chương trình cả năm) cho:
+    - Môn: ${subject}
+    - Lớp: ${grade}
     ${subject === "Giáo dục địa phương" && province ? `- Địa phương (Tỉnh/Thành phố): ${province}` : ""}
     
     ${referencePrompt}
@@ -712,35 +622,33 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
     ${englishConstraint}
 
     YÊU CẦU QUAN TRỌNG VỀ ĐỘ CHÍNH XÁC:
-1. TUÂN THỦ CHƯƠNG TRÌNH GDPT 2018(VÀ TT 17 / 2025 CHO MÔN ĐỊA LÍ):
-- LƯU Ý MÔN ĐỊA LÍ: TUYỆT ĐỐI tuân thủ danh mục bài học theo Thông tư 17 / 2025 / TT - BGDĐT(điều chỉnh tên bài, thứ tự chương trình của môn Địa Lí theo TT mới nhất).
+    1. TUÂN THỦ CHƯƠNG TRÌNH GDPT 2018 (VÀ TT 17/2025 CHO MÔN ĐỊA LÍ): 
+       - LƯU Ý MÔN ĐỊA LÍ: TUYỆT ĐỐI tuân thủ danh mục bài học theo Thông tư 17/2025/TT-BGDĐT (điều chỉnh tên bài, thứ tự chương trình của môn Địa Lí theo TT mới nhất).
        - Đối với các môn còn lại: Sử dụng chính xác tên các bài học theo phân phối chương trình chuẩn.
-       - ĐỐI VỚI TẤT CẢ CÁC MÔN CÒN LẠI: Nội dung, trật tự và tên bài học BẮT BUỘC PHẢI KHỚP TUYỆT ĐỐI VỚI BỘ SÁCH "KẾT NỐI TRI THỨC VỚI CUỘC SỐNG" của NXB Giáo dục Việt Nam.TUYỆT ĐỐI KHÔNG sử dụng yếu tố địa phương(${province}) để thay đổi tên bài học của các môn này.
+       - ĐỐI VỚI TẤT CẢ CÁC MÔN CÒN LẠI: Nội dung, trật tự và tên bài học BẮT BUỘC PHẢI KHỚP TUYỆT ĐỐI VỚI BỘ SÁCH "KẾT NỐI TRI THỨC VỚI CUỘC SỐNG" của NXB Giáo dục Việt Nam. TUYỆT ĐỐI KHÔNG sử dụng yếu tố địa phương (${province}) để thay đổi tên bài học của các môn này.
        - ĐỐI VỚI MÔN GIÁO DỤC ĐỊA PHƯƠNG: Chỉ trong trường hợp này mới sử dụng nội dung đặc thù của ${province}.
     
     ${curriculumConstraint}
 
-2. LỆNH CỰC KỲ QUAN TRỌNG VỀ ĐỘ DÀI: TUYỆT ĐỐI KHÔNG ĐƯỢC BỎ SÓT LÀM MẤT BÀI HỌC NÀO TRONG CHƯƠNG TRÌNH HOẶC DỮ LIỆU ĐƯỢC CẤP.JSON TRẢ VỀ PHẢI ĐẦY ĐỦ 100 % SỐ BÀI HỌC TỪ ĐẦU ĐẾN CUỐI CỦA 1 NĂM HỌC.NẾU CÓ 80 BÀI, PHẢI TRẢ ĐỦ 80 ITEMS TRONG ARRAY JSON.KHÔNG ĐƯỢC RÚT GỌN TÓM TẮT.
-
-    3. Cấu trúc bảng Phân phối chương trình:
-- Thứ tự tiết: Số thứ tự tiết học.
+    2. Cấu trúc bảng Phân phối chương trình:
+       - Thứ tự tiết: Số thứ tự tiết học.
        - Bài học: Tên bài học theo chương trình.
        - Số tiết: Số lượng tiết dành cho bài học đó.
-       - Thời điểm: Tuần hoặc tháng thực hiện(Ví dụ: Tuần 1).
+       - Thời điểm: Tuần hoặc tháng thực hiện (Ví dụ: Tuần 1).
        - Thiết bị dạy học: Các thiết bị truyền thống cần thiết.
-       - Công cụ số và AI(BẮT BUỘC): Bám sát định hướng CV 3439:
-+ Phương án triển khai: Sử dụng tình huống giả định, nghiên cứu tình huống(case study) hay có công cụ AI trực tiếp.
-         + Học liệu / công cụ cụ thể: Các bài báo, video phân tích, các bộ dữ liệu giả định, hoặc tên phần mềm / nền tảng AI sẽ sử dụng.
+       - Công cụ số và AI (BẮT BUỘC): Bám sát định hướng CV 3439:
+         + Phương án triển khai: Sử dụng tình huống giả định, nghiên cứu tình huống (case study) hay có công cụ AI trực tiếp.
+         + Học liệu/công cụ cụ thể: Các bài báo, video phân tích, các bộ dữ liệu giả định, hoặc tên phần mềm/nền tảng AI sẽ sử dụng.
        - Địa điểm dạy học: Lớp học, phòng máy tính, thư viện...
-- Định hướng năng lực số: Cụ thể hóa mã YCCĐ AI(Khung 3439).QUY TẮC MÃ: KHỐI LỚP.NỘI DUNG(A / B / C / D).CHỦ ĐỀ(A1 / B1).YCCĐ_SỐ(1 / 2 / 3)(Ví dụ: 10.A.A1.1, 11.C.C2.3).TUYỆT ĐỐI tuân thủ dấu chấm phân tách và định dạng này.
-       - ĐỊNH DẠNG VĂN BẢN(RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \sin, \cos) trong bảng này.Các công thức toán / lý / hóa phải chuyển thành text thường dễ đọc nhất(vd: y = sin x).
+       - Định hướng năng lực số: Cụ thể hóa mã YCCĐ AI (Khung 3439). QUY TẮC MÃ: KHỐI LỚP.NỘI DUNG(A/B/C/D).CHỦ ĐỀ(A1/B1).YCCĐ_SỐ(1/2/3) (Ví dụ: 10.A.A1.1, 11.C.C2.3). TUYỆT ĐỐI tuân thủ dấu chấm phân tách và định dạng này.
+       - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \sin, \cos) trong bảng này. Các công thức toán/lý/hóa phải chuyển thành text thường dễ đọc nhất (vd: y = sin x).
 
-    4. NGUYÊN TẮC TÍCH HỢP(Theo 8334 / BGDĐT - GDPT):
-- Rà soát toàn bộ bài học trong chương trình.
-       - KHÔNG tích hợp dàn trải hoặc khiên cưỡng.Chỉ thực hiện khi có "điểm chạm" logic và tự nhiên giữa kiến thức môn học và năng lực AI.
+    2. NGUYÊN TẮC TÍCH HỢP (Theo 8334/BGDĐT-GDPT):
+       - Rà soát toàn bộ bài học trong chương trình.
+       - KHÔNG tích hợp dàn trải hoặc khiên cưỡng. Chỉ thực hiện khi có "điểm chạm" logic và tự nhiên giữa kiến thức môn học và năng lực AI.
        - Nếu bài nào không phù hợp để tích hợp, tại cột "YCCĐ AI" và "Mục tiêu tích hợp AI" ghi rõ: "Không tích hợp".
 
-    5. Định dạng đầu ra: Trình bày dưới dạng JSON Array các đối tượng.
+    3. Định dạng đầu ra: Trình bày dưới dạng JSON Array các đối tượng.
   `;
 
   try {
@@ -781,47 +689,47 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
   const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
 ${JSON.stringify(options.customCurriculumData, null, 2)}
-LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên.Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này.KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.`
+LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này. KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.`
     : CURRICULUM_DATA;
   const prompt = `
-    Bạn là một Chuyên gia xây dựng chương trình giáo dục.Hãy giúp tôi lập Kế hoạch giáo dục tổ chuyên môn tích hợp nội dung giáo dục AI cho môn: ${subject}, lớp: ${grade}${subject === "Giáo dục địa phương" && province ? `, tại địa phương: ${province}` : ""}.
+    Bạn là một Chuyên gia xây dựng chương trình giáo dục. Hãy giúp tôi lập Kế hoạch giáo dục tổ chuyên môn tích hợp nội dung giáo dục AI cho môn: ${subject}, lớp: ${grade}${subject === "Giáo dục địa phương" && province ? `, tại địa phương: ${province}` : ""}.
     
     YÊU CẦU QUAN TRỌNG VỀ TÊN BÀI HỌC VÀ CHƯƠNG TRÌNH:
-1. Nếu là môn "Giáo dục địa phương": Phải bám sát chương trình của ${province}.
-2. ĐỐI VỚI MÔN ĐỊA LÍ: TUYỆT ĐỐI BẮT BUỘC tuân thủ danh mục bài học theo Thông tư 17 / 2025 / TT - BGDĐT(ưu tiên TT 17 / 2025 nếu có sai lệch với dữ liệu cũ).
-    3. Nếu là các môn học khác(Toán, Văn...): Phải sử dụng tên bài học TRÙNG KHỚP 100 % với Chương trình GDPT 2018 và SGK hiện hành.
-
-  ${curriculumConstraint}
+    1. Nếu là môn "Giáo dục địa phương": Phải bám sát chương trình của ${province}.
+    2. ĐỐI VỚI MÔN ĐỊA LÍ: TUYỆT ĐỐI BẮT BUỘC tuân thủ danh mục bài học theo Thông tư 17/2025/TT-BGDĐT (ưu tiên TT 17/2025 nếu có sai lệch với dữ liệu cũ).
+    3. Nếu là các môn học khác (Toán, Văn...): Phải sử dụng tên bài học TRÙNG KHỚP 100% với Chương trình GDPT 2018 và SGK hiện hành. 
+    
+    ${curriculumConstraint}
     
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
 
     Nhiệm vụ cụ thể:
-1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề / bài học trong chương trình GDPT 2018(hoặc Dữ liệu tùy chỉnh do giáo viên cấp) của môn này.LỆNH VỀ ĐỘ DÀI TỐI ĐA: TUYỆT ĐỐI KHÔNG ĐƯỢC LƯỢC BỎ BẤT KỲ BÀI NÀO ĐỂ LÀM MẤT DỮ LIỆU.NẾU BẠN NHẬN ĐƯỢC 70 BÀI VÀO, PHẢI TRẢ VỀ MẢNG JSON CÓ ĐÚNG 70 BÀI RÕ RÀNG.LÀM MẤT SẼ BỊ PHẠT!
-2. Đánh giá khả năng tích hợp AI:
-- Với mỗi bài học, xác định xem có khả năng tích hợp AI dựa trên các tiêu chí: có nội dung phân tích xã hội, kinh tế, pháp luật hoặc có yếu tố dữ liệu, phương pháp nghiên cứu.
-       - Nếu bài học PHÙ HỢP: Xác định mạch nội dung AI(NLa, NLb, NLc, NLd) và mục tiêu cụ thể.
+    1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề/bài học trong chương trình GDPT 2018 của môn này. KHÔNG ĐƯỢC bỏ sót bài nào.
+    2. Đánh giá khả năng tích hợp AI:
+       - Với mỗi bài học, xác định xem có khả năng tích hợp AI dựa trên các tiêu chí: có nội dung phân tích xã hội, kinh tế, pháp luật hoặc có yếu tố dữ liệu, phương pháp nghiên cứu.
+       - Nếu bài học PHÙ HỢP: Xác định mạch nội dung AI (NLa, NLb, NLc, NLd) và mục tiêu cụ thể.
        - Nếu bài học KHÔNG PHÙ HỢP: Ghi rõ "Không tích hợp" vào các cột liên quan đến AI để tránh việc tích hợp khiên cưỡng.
     3. Ánh xạ Năng lực:
-- Mục tiêu bài học(lessonGoal): PHẢI MÔ TẢ CHI TIẾT ĐỦ CÁC NỘI DUNG: Kiến thức(HS nắm vững vấn đề gì ?); Năng lực(bao gồm Năng lực chung và Năng lực đặc thù môn học được cụ thể hóa bằng hành động); Phẩm chất(Các phẩm chất cần hình thành).
-       - Số tiết(periods): Số lượng tiết học dự kiến cho bài học này.
-       - Năng lực AI(aiCompetency): Làm rõ chỉ báo trong YCCĐ.QUY TẮC KÝ HIỆU CHUẨN: KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ(Ví dụ: 10.A.A1.1 HOẶC 12.B.B1.2).TUYỆT ĐỐI tuân thủ bắt buộc định dạng này, trong đó Số thứ tự ứng với từng gạch đầu dòng trong quy định QĐ 3439.
-  - Mạch nội dung AI:
-- ĐỊNH DẠNG VĂN BẢN(RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \sin, \cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI.Các công thức toán / lý / hóa phải được viết dưới dạng văn bản thường thẳng thắn(Ví dụ: y = sin x).
-         * NLa(A): Tư duy lấy con người làm trung tâm.
-         * NLb(B): Đạo đức và trách nhiệm xã hội.
-         * NLc(C): Kỹ thuật và ứng dụng.
-         * NLd(D): Giải quyết vấn đề và thiết kế hệ thống.
+       - Mục tiêu bài học (lessonGoal): PHẢI MÔ TẢ CHI TIẾT ĐỦ CÁC NỘI DUNG: Kiến thức (HS nắm vững vấn đề gì?); Năng lực (bao gồm Năng lực chung và Năng lực đặc thù môn học được cụ thể hóa bằng hành động); Phẩm chất (Các phẩm chất cần hình thành).
+       - Số tiết (periods): Số lượng tiết học dự kiến cho bài học này.
+       - Năng lực AI (aiCompetency): Làm rõ chỉ báo trong YCCĐ. QUY TẮC KÝ HIỆU CHUẨN: KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ (Ví dụ: 10.A.A1.1 HOẶC 12.B.B1.2). TUYỆT ĐỐI tuân thủ bắt buộc định dạng này, trong đó Số thứ tự ứng với từng gạch đầu dòng trong quy định QĐ 3439.
+       - Mạch nội dung AI: 
+         - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \sin, \cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường thẳng thắn (Ví dụ: y = sin x).
+         * NLa (A): Tư duy lấy con người làm trung tâm.
+         * NLb (B): Đạo đức và trách nhiệm xã hội.
+         * NLc (C): Kỹ thuật và ứng dụng.
+         * NLd (D): Giải quyết vấn đề và thiết kế hệ thống.
        * Lưu ý: Đối với các môn ngoài Tin học, ưu tiên trọng tâm vào NLa và NLb. 
     4. Xây dựng kế hoạch: Đảm bảo nội dung tích hợp không làm thay đổi nội dung cốt lõi của môn học.
 
     Định dạng đầu ra: JSON Array các đối tượng với các trường sau:
-- lessonName: Tên bài học / Chủ đề theo chương trình hiện hành.
-    - lessonGoal: Mục tiêu bài học chi tiết(Kiến thức, Năng lực, Phẩm chất).
-    - periods: Số tiết(Ví dụ: "2 tiết").
-    - aiCompetency: Năng lực AI tích hợp(Ví dụ: NLb - Đạo đức AI).
-    - aiObjective: Mục tiêu giáo dục AI cụ thể(Làm rõ các chỉ báo trong YCCĐ, ví dụ: 10.A.A1).
-    - implementationForm: Hình thức triển khai(Lồng ghép / Chuyên đề / Ngoại khóa).
+    - lessonName: Tên bài học/Chủ đề theo chương trình hiện hành.
+    - lessonGoal: Mục tiêu bài học chi tiết (Kiến thức, Năng lực, Phẩm chất).
+    - periods: Số tiết (Ví dụ: "2 tiết").
+    - aiCompetency: Năng lực AI tích hợp (Ví dụ: NLb - Đạo đức AI).
+    - aiObjective: Mục tiêu giáo dục AI cụ thể (Làm rõ các chỉ báo trong YCCĐ, ví dụ: 10.A.A1).
+    - implementationForm: Hình thức triển khai (Lồng ghép/Chuyên đề/Ngoại khóa).
   `;
 
   try {
@@ -848,7 +756,7 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
 
 export const generateCompetencyEvaluation = async (lessonPlan: any) => {
   const prompt = `
-    Dựa trên Kế hoạch bài dạy(KHBD) sau đây, hãy thiết kế một "Hệ thống đánh giá năng lực" chi tiết theo Công văn 3439 / BGDĐT và Chương trình GDPT 2018.
+    Dựa trên Kế hoạch bài dạy (KHBD) sau đây, hãy thiết kế một "Hệ thống đánh giá năng lực" chi tiết theo Công văn 3439/BGDĐT và Chương trình GDPT 2018.
     
     Tên bài: ${lessonPlan.title}
     Mục tiêu kiến thức: ${JSON.stringify(lessonPlan.objectives.knowledge)}
@@ -856,13 +764,13 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
     Mục tiêu AI: ${JSON.stringify(lessonPlan.objectives.aiSpecific)}
     
     Yêu cầu hệ thống đánh giá bao gồm:
-1. TIÊU CHÍ ĐÁNH GIÁ(Rubrics): Thiết kế bảng Rubric cho ít nhất 3 năng lực cốt lõi được thể hiện trong bài dạy(bao gồm năng lực chung và năng lực đặc thù môn học / năng lực AI).Mỗi năng lực cần có các mức độ đạt được(VD: Mức 1: Chưa đạt; Mức 2: Đạt; Mức 3: Khá; Mức 4: Tốt).
-2. CÔNG CỤ ĐÁNH GIÁ THƯỜNG XUYÊN: Thiết kế các câu hỏi trắc nghiệm, câu hỏi tự luận ngắn hoặc bảng kiểm(Checklist) dùng trong quá trình dạy học để đánh giá tiến trình của học sinh.
-    3. CÔNG CỤ ĐÁNH GIÁ ĐỊNH KỲ: Thiết kế một bài tập / dự án nhỏ hoặc câu hỏi tổng hợp nhằm đánh giá mức độ đạt được mục tiêu sau khi kết thúc bài học.
+    1. TIÊU CHÍ ĐÁNH GIÁ (Rubrics): Thiết kế bảng Rubric cho ít nhất 3 năng lực cốt lõi được thể hiện trong bài dạy (bao gồm năng lực chung và năng lực đặc thù môn học/năng lực AI). Mỗi năng lực cần có các mức độ đạt được (VD: Mức 1: Chưa đạt; Mức 2: Đạt; Mức 3: Khá; Mức 4: Tốt).
+    2. CÔNG CỤ ĐÁNH GIÁ THƯỜNG XUYÊN: Thiết kế các câu hỏi trắc nghiệm, câu hỏi tự luận ngắn hoặc bảng kiểm (Checklist) dùng trong quá trình dạy học để đánh giá tiến trình của học sinh.
+    3. CÔNG CỤ ĐÁNH GIÁ ĐỊNH KỲ: Thiết kế một bài tập/dự án nhỏ hoặc câu hỏi tổng hợp nhằm đánh giá mức độ đạt được mục tiêu sau khi kết thúc bài học.
     4. HƯỚNG DẪN NHẬN XÉT: Các mẫu nhận xét tự luận phù hợp với từng mức độ năng lực.
 
-    LƯU Ý: Phải có các tiêu chí cụ thể đánh giá "Năng lực AI"(NLa - NLd) đã được xác định trong bài dạy.
-    LƯU Ý QUAN TRỌNG VỀ NGÔN NGỮ: Bắt buộc kết quả trả về PHẢI ĐỒNG NHẤT 100 % với ngôn ngữ của đầu vào.Nếu Tên bài hoặc mục tiêu được viết bằng Tiếng Anh, TOÀN BỘ nội dung Rubric, Câu hỏi, Checklists và Đánh giá phải được viết 100 % bằng Tiếng Anh(English).
+    LƯU Ý: Phải có các tiêu chí cụ thể đánh giá "Năng lực AI" (NLa - NLd) đã được xác định trong bài dạy.
+    LƯU Ý QUAN TRỌNG VỀ NGÔN NGỮ: Bắt buộc kết quả trả về PHẢI ĐỒNG NHẤT 100% với ngôn ngữ của đầu vào. Nếu Tên bài hoặc mục tiêu được viết bằng Tiếng Anh, TOÀN BỘ nội dung Rubric, Câu hỏi, Checklists và Đánh giá phải được viết 100% bằng Tiếng Anh (English).
     
     Định dạng đầu ra: JSON.
   `;

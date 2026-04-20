@@ -412,8 +412,30 @@ export default function App() {
             ...d.assessment.flatMap((a: string) => a.split('\n').filter((l: string) => l.trim()).map((line: string) => new Paragraph({ children: parseMarkdownToTextRunsDocx(`- ${line.trim()}`), indent: { left: 720 } }))),
 
             new Paragraph({ children: [new TextRun({ text: t("V. PHỤ LỤC"), bold: true, size: 24 })], spacing: { before: 200, after: 100 } }),
-            new Paragraph({ children: [new TextRun({ text: `${t("Mẫu Prompt:")} ${d.appendix.prompts.join(", ")}` })] }),
-            new Paragraph({ children: [new TextRun({ text: t("Bảng kiểm:"), bold: true })] }),
+            new Paragraph({ children: [new TextRun({ text: t("Mẫu Prompt:"), bold: true })], spacing: { before: 100, after: 60 } }),
+            ...d.appendix.prompts.flatMap((prompt: string, idx: number) => {
+              // Try to split "Prompt X (Tên): Nội dung"
+              const match = prompt.match(/^(Prompt\s*\d+[^:]*:?)\s*(.*)$/is);
+              if (match) {
+                return [
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: `${idx + 1}. ${match[1].trim()}`, bold: true }),
+                    ],
+                    indent: { left: 360 },
+                    spacing: { before: 100 }
+                  }),
+                  new Paragraph({
+                    children: [new TextRun({ text: match[2].trim(), italics: true, color: "1E3A5F" })],
+                    indent: { left: 720 },
+                    spacing: { after: 80 }
+                  })
+                ];
+              }
+              // Fallback: render as plain indented paragraph
+              return [new Paragraph({ children: parseMarkdownToTextRunsDocx(`${idx + 1}. ${prompt}`), indent: { left: 360 }, spacing: { before: 80 } })];
+            }),
+            new Paragraph({ children: [new TextRun({ text: t("Bảng kiểm:"), bold: true })], spacing: { before: 200, after: 60 } }),
             ...d.appendix.checklist.flatMap((c: string) => c.split('\n').filter((l: string) => l.trim()).map((line: string) => new Paragraph({ children: parseMarkdownToTextRunsDocx(`- ${line.trim()}`), indent: { left: 720 } })))
           ]
         }]

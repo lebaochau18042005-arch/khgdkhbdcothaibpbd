@@ -27,9 +27,24 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
     const currentModel = modelsToTry[i];
     try {
       const ai = new GoogleGenAI({ apiKey: apiKey });
+      // Build contents in the correct Gemini SDK format
+      let contents: any[];
+      if (typeof prompt === 'string') {
+        contents = [{ role: 'user', parts: [{ text: prompt }] }];
+      } else if (Array.isArray(prompt)) {
+        // Multi-part prompt (e.g. text + PDF inlineData)
+        const parts = prompt.map((p: any) =>
+          typeof p === 'string' ? { text: p } : p
+        );
+        contents = [{ role: 'user', parts }];
+      } else {
+        // Already a Content object array
+        contents = prompt;
+      }
+
       const response = await ai.models.generateContent({
         model: currentModel,
-        contents: prompt,
+        contents,
         config: {
           responseMimeType: "application/json",
           responseSchema: responseSchema,

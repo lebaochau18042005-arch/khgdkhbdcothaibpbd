@@ -212,8 +212,8 @@ LƯU Ý TỐI QUAN TRỌNG CHUNG MÔN ĐỊA LÍ (TẤT CẢ CÁC KHỐI LỚP):
 const FORMATTING_INSTRUCTIONS = `
 YÊU CẦU ĐỊNH DẠNG VÀ TRÌNH BÀY (THỰC THI NGHIÊM NGẶT):
 1. Đối với Công thức (Toán, Vật lí, Hóa học, Sinh học):
-- Ưu tiên sử dụng định dạng bảng biểu chuyên nghiệp.
-- VUI LÒNG cấu trúc và Dùng LaTeX cho mọi công thức Toán/Lý/Hóa/Sinh theo chuẩn học thuật (dùng để giáo viên gõ MathType dễ dàng).
+- TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX (các ký hiệu $ ... $, $$...$$, \\sin, \\frac, \\sqrt). Viết công thức theo dạng văn bản thuần túy thân thiện nhất (Ví dụ: sin x, căn bậc hai của a, S = a x b, H2O).
+- Phương trình hóa học: ghi ký hiệu nguyên tố và chỉ số thường (VD: H2O, CO2, CaCO3).
 2. Đối với Hình vẽ, Biểu đồ và Bản đồ:
 - Mô tả trực quan chi tiết cho các hình vẽ/biểu đồ để GV dễ chèn ảnh (VD: [CHÈN HÌNH VẼ: Trục tọa độ Oxy, vẽ parabol y=x^2 và đường thẳng y=2x cắt nhau...]).
 3. Đối với Bảng biểu và Sơ đồ:

@@ -203,8 +203,17 @@ export default function App() {
     try {
       const data = await generateLessonPlan(lessonPlanInput);
       setResult({ type: "khbd", data });
-    } catch (err) {
-      alert("Có lỗi xảy ra khi tạo kế hoạch bài dạy. Vui lòng thử lại.");
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("QUOTA_EXHAUSTED")) {
+        alert("❌ API Key đã hết hạn mức sử dụng miễn phí hôm nay. Vui lòng thử lại sau 24h hoặc đổi API key khác.");
+      } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
+        alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
+        setShowSettings(true);
+      } else {
+        alert(`❌ Lỗi khi tạo giáo án: ${msg || "Lỗi không xác định. Vui lòng thử lại."}`);
+      }
+      console.error("[KHBD Error]", err);
     } finally {
       setLoading(false);
     }

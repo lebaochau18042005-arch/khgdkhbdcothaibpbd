@@ -45,6 +45,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
         generationConfig: {
           responseMimeType: 'application/json',
           responseSchema: responseSchema,
+          maxOutputTokens: 8192,
         },
       };
 
@@ -395,61 +396,73 @@ export const analyzeExistingPlan = async (fileText: string, pdfBase64?: string) 
 };
 
 export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: string) => {
-  let prompt: any;
-  if (pdfBase64) {
-    prompt = [
-      `
-      Bạn là chuyên gia phân phối chương trình giáo dục. Hãy phân tích Phụ lục Phân phối chương trình đính kèm (PDF).
+  const apiKey = localStorage.getItem('GEMINI_API_KEY');
+  if (!apiKey) throw new Error('API_KEY_REQUIRED');
+  const model = localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
 
-      QUY TẮc BẮc BUOC (THỰC THI NGHÊM NGẶT):
-      1. BẮc BUOC bóc tách TUẤT CẢ bài học có trong bảng (không được bỏ sót bài nào).
-      2. Mỗi hàng trong bảng là một bài riêng biệt - TUYETỆT ĐỐI không gộp nhiều bài thành một.
-      3. Tuyệt đối không tự rút gọn, tóm tắt, hay bỏ qua bất kỳ bài nào dù ngắn.
-      4. Giữ nguyên tên bài học chính xác từng chữ như trong file gốc.
-      5. Phớt lờ các thông tin thừa (trang tiêu đề, quốc hiệu, chữ ký).
-      6. Nếu một tiết kiểm tra / kỳ thi xuất hiện nhiều lần liên tiếp đưới tên giống hệt nhau thì mới được gộp lại.
-      `,
-      {
-        inlineData: {
-          mimeType: "application/pdf",
-          data: pdfBase64
-        }
-      }
+  const instruction = `Bạn là chuyên gia phân phối chương trình giáo dục.
+
+QUY TẮC BẮT BUỘC (THỰC THI NGHIÊM NGẶT):
+1. BẮT BUỘC bóc tách TẤT CẢ bài học có trong nội dung (KHÔNG ĐƯỢC bỏ sót bài nào, dù ngắn hay dài).
+2. Mỗi bài học / chủ đề / tiết kiểm tra là một object riêng biệt trong mảng JSON.
+3. TUYỆT ĐỐI không gộp nhiều bài thành một, không rút gọn, không tóm tắt.
+4. Giữ nguyên tên bài học chính xác từng chữ như trong gốc.
+5. Bỏ qua thông tin tiêu đề trang, quốc hiệu, chữ ký cán bộ.
+6. Chỉ gộp nếu một tiết kiểm tra xuất hiện nhiều lần liên tiếp với tên GIỐNG HỆT nhau.
+
+Trả về ĐÚNG định dạng JSON array (không có markdown, không có giải thích):
+[{"lessonName":"Tên bài","periods":2,"timing":"Tuần 1"},...]`;
+
+  let parts: any[];
+  if (pdfBase64) {
+    parts = [
+      { text: instruction + '\n\nHãy phân tích PDF đính kèm và trích xuất toàn bộ danh sách bài học.' },
+      { inlineData: { mimeType: 'application/pdf', data: pdfBase64 } }
     ];
   } else {
-    prompt = `
-      Bạn là chuyên gia phân phối chương trình giáo dục. Hãy phân tích Phụ lục Phân phối Chương trình dưới đây.
-      VĂN BẢN GỐC:
-      """${rawText.substring(0, 20000)}"""
-
-      QUY TẮc BẮc BUOC (THỰC THI NGHÊM NGẶT):
-      1. BẮc BUOC bóc tách TUẤT CẢ bài học có trong văn bản (không được bỏ sót bài nào).
-      2. Mỗi dòng/mục bài học là một phần tử riêng trong JSON - TUYETỆT ĐỐI không gộp nhiều bài thành một.
-      3. Tuyệt đối không tự rút gọn, tóm tắt, hay bỏ bài nào dù ngắn.
-      4. Giữ nguyên tên bài học chính xác từng chữ như trong văn bản gốc.
-      5. Phớt lờ thông tin trang tiêu đề, chữ ký, quốc hiệu.
-      6. Nếu một tiết kiểm tra xuất hiện nhiều lần liên tiếp dưới tên giống hệt nhau mới được gộp lại.
-    `;
+    parts = [{ text: instruction + `\n\nVĂN BẢN GỐC:\n"""\n${rawText.substring(0, 25000)}\n"""` }];
   }
+
+  // Use raw text mode (no responseSchema) to avoid array truncation
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        maxOutputTokens: 8192,
+        temperature: 0,
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
+    if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
+    throw new Error(`HTTP ${res.status}: ${err}`);
+  }
+
+  const json = await res.json();
+  const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('AI trả về phản hồi rỗng khi phân tích phụ lục.');
 
   try {
-    return await callGeminiWithFallback(prompt, {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          lessonName: { type: Type.STRING, description: "Tên chính xác của bài học, chủ đề hoặc tiết kiểm tra" },
-          periods: { type: Type.NUMBER, description: "Số tiết học dành cho bài/chủ đề này" },
-          timing: { type: Type.STRING, description: "Thời điểm định hướng (Ví dụ: Tuần 1, Tuần 2-3). Nếu không rõ, ghi rỗng." }
-        },
-        required: ["lessonName", "periods", "timing"]
-      }
-    });
-  } catch (error) {
-    console.error("Error parsing curriculum:", error);
-    throw error;
+    const parsed = JSON.parse(text);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('Không trích xuất được bài học nào từ file này.');
+    }
+    return parsed;
+  } catch {
+    // Try to extract JSON array from text if wrapped in markdown
+    const match = text.match(/\[[\s\S]*\]/);
+    if (match) return JSON.parse(match[0]);
+    throw new Error('Không thể đọc dữ liệu JSON từ phản hồi AI.');
   }
 };
+
 
 export const generateLessonPlan = async (input: LessonPlanInput) => {
   const formattingNeed = input.useLaTeX || input.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(input.subject);

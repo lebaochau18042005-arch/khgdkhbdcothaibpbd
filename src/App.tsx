@@ -99,6 +99,8 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
   const [aiModel, setAiModel] = useState(() => localStorage.getItem("GEMINI_MODEL") || "gemini-3-flash-preview");
+  const [apiTestResult, setApiTestResult] = useState<string | null>(null);
+  const [apiTesting, setApiTesting] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
 
@@ -2115,6 +2117,29 @@ export default function App() {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Test API Connection */}
+              <div className="pt-3">
+                <button
+                  onClick={async () => {
+                    const key = apiKey.trim();
+                    if (!key) { setApiTestResult('❌ Chưa nhập API key'); return; }
+                    setApiTesting(true); setApiTestResult(null);
+                    try {
+                      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}&pageSize=10`);
+                      const json = await res.json();
+                      if (!res.ok) { setApiTestResult(`❌ Lỗi: ${json?.error?.message || res.status}`); return; }
+                      const names = (json.models || []).map((m: any) => m.name.replace('models/', ''));
+                      setApiTestResult(`✅ Kết nối thành công! Models: ${names.slice(0, 5).join(', ')}`);
+                    } catch (e: any) { setApiTestResult(`❌ Lỗi mạng: ${e.message}`); }
+                    finally { setApiTesting(false); }
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors"
+                >
+                  {apiTesting ? '⏳ Đang kiểm tra...' : '🔍 Kiểm tra kết nối API'}
+                </button>
+                {apiTestResult && <p className="mt-2 text-xs px-1 text-slate-600 break-all">{apiTestResult}</p>}
               </div>
 
               <div className="flex gap-3 mt-8">

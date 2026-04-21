@@ -1,14 +1,17 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const getFallbackModels = (startModel: string) => {
+  // Models as of April 2026 - Gemini 3.x is production standard
   const models = [
+    'gemini-3-flash',
+    'gemini-3-flash-preview',
+    'gemini-3-pro-preview',
+    'gemini-3.1-pro-preview',
+    'gemini-2.5-flash',
     'gemini-2.5-flash-preview-04-17',
     'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-    'gemini-2.5-pro-preview-03-25',
   ];
-  // If startModel is in list, put it first; else prepend it for a one-time try
+  // Put user's chosen model first, then fallback through rest
   const deduplicated = [startModel, ...models.filter(m => m !== startModel)];
   return deduplicated;
 };

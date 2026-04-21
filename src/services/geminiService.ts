@@ -399,10 +399,15 @@ export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: strin
   if (pdfBase64) {
     prompt = [
       `
-      Đóng vai trò là chuyên gia giáo dục, hãy phân tích Phụ lục Phân phối chương trình đính kèm (PDF).
-      Nhiệm vụ: Bóc tách danh sách các bài học (hoặc chủ đề), thời lượng (số tiết), và thời điểm dạy (vd: Tuần 1).
-      Phớt lờ các thông tin thừa như tên trường, quốc hiệu, chữ ký. Bắt đầu ngay từ danh sách bài học. Dồn các tiết tự học/kiểm tra chung thành 1 bài nếu có.
-      Trọng tâm là tên bài học phải ĐẦY ĐỦ chính xác từng chữ như trong file gốc.
+      Bạn là chuyên gia phân phối chương trình giáo dục. Hãy phân tích Phụ lục Phân phối chương trình đính kèm (PDF).
+
+      QUY TẮc BẮc BUOC (THỰC THI NGHÊM NGẶT):
+      1. BẮc BUOC bóc tách TUẤT CẢ bài học có trong bảng (không được bỏ sót bài nào).
+      2. Mỗi hàng trong bảng là một bài riêng biệt - TUYETỆT ĐỐI không gộp nhiều bài thành một.
+      3. Tuyệt đối không tự rút gọn, tóm tắt, hay bỏ qua bất kỳ bài nào dù ngắn.
+      4. Giữ nguyên tên bài học chính xác từng chữ như trong file gốc.
+      5. Phớt lờ các thông tin thừa (trang tiêu đề, quốc hiệu, chữ ký).
+      6. Nếu một tiết kiểm tra / kỳ thi xuất hiện nhiều lần liên tiếp đưới tên giống hệt nhau thì mới được gộp lại.
       `,
       {
         inlineData: {
@@ -413,13 +418,17 @@ export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: strin
     ];
   } else {
     prompt = `
-      Đóng vai trò là chuyên gia giáo dục, hãy phân tích Phụ lục Phân phối chương trình.
-      Dưới đây là văn bản thô bóc tách từ file Phân phối chương trình do giáo viên cung cấp:
-      """${rawText.substring(0, 18000)}"""
+      Bạn là chuyên gia phân phối chương trình giáo dục. Hãy phân tích Phụ lục Phân phối Chương trình dưới đây.
+      VĂN BẢN GỐC:
+      """${rawText.substring(0, 20000)}"""
 
-      Nhiệm vụ: Bóc tách danh sách các bài học (hoặc chủ đề), thời lượng (số tiết), và thời điểm dạy (vd: Tuần 1).
-      Phớt lờ các thông tin thừa như tên trường, quốc hiệu, chữ ký. Bắt đầu ngay từ danh sách bài học. Dồn các tiết tự học/kiểm tra chung thành 1 bài nếu có.
-      Trọng tâm là tên bài học phải ĐẦY ĐỦ chính xác từng chữ như trong file gốc.
+      QUY TẮc BẮc BUOC (THỰC THI NGHÊM NGẶT):
+      1. BẮc BUOC bóc tách TUẤT CẢ bài học có trong văn bản (không được bỏ sót bài nào).
+      2. Mỗi dòng/mục bài học là một phần tử riêng trong JSON - TUYETỆT ĐỐI không gộp nhiều bài thành một.
+      3. Tuyệt đối không tự rút gọn, tóm tắt, hay bỏ bài nào dù ngắn.
+      4. Giữ nguyên tên bài học chính xác từng chữ như trong văn bản gốc.
+      5. Phớt lờ thông tin trang tiêu đề, chữ ký, quốc hiệu.
+      6. Nếu một tiết kiểm tra xuất hiện nhiều lần liên tiếp dưới tên giống hệt nhau mới được gộp lại.
     `;
   }
 

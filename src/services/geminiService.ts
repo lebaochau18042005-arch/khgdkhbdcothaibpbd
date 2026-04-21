@@ -1,13 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const getFallbackModels = (startModel: string) => {
-  // Confirmed working models (tested April 2026)
+  // Fallback order per LỆNH.md: 2.5-flash → 2.5-flash-8b (lite) → 2.0-flash (stable) → 2.5-pro
   const models = [
     'gemini-2.5-flash',
-    'gemini-2.5-pro',
+    'gemini-2.5-flash-8b',
     'gemini-2.0-flash',
     'gemini-2.0-flash-001',
-    'gemini-2.0-flash-lite-001',
+    'gemini-2.5-pro',
   ];
   const deduplicated = [startModel, ...models.filter(m => m !== startModel)];
   return deduplicated;
@@ -70,7 +70,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
       console.error(`Lỗi với model ${currentModel}:`, err);
 
       const isQuotaExhausted = err.message && (err.message.includes('QUOTA_EXHAUSTED') || err.message.includes('429') || err.message.includes('quota'));
-      const isApiKeyInvalid = err.message && (err.message.includes('API_KEY_INVALID') || err.message.includes('400') || err.message.includes('401'));
+      const isApiKeyInvalid = err.message && (err.message.startsWith('API_KEY_INVALID') || err.message.includes('401'));
       const isLastModel = i === modelsToTry.length - 1;
 
       if (isApiKeyInvalid) throw new Error('API_KEY_INVALID');
@@ -544,7 +544,7 @@ KIÊN QUYẾT BẢO TỒN:
   `;
 
   try {
-    return await callGeminiWithFallback(prompt, {
+    return await callGeminiWithFallback(finalPromptContents || basePrompt, {
       type: Type.OBJECT,
       properties: {
         title: { type: Type.STRING },
@@ -739,13 +739,15 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
     3. Ánh xạ Năng lực:
        - Mục tiêu bài học (lessonGoal): PHẢI MÔ TẢ CHI TIẾT ĐỦ CÁC NỘI DUNG: Kiến thức (HS nắm vững vấn đề gì?); Năng lực (bao gồm Năng lực chung và Năng lực đặc thù môn học được cụ thể hóa bằng hành động); Phẩm chất (Các phẩm chất cần hình thành).
        - Số tiết (periods): Số lượng tiết học dự kiến cho bài học này.
-       - Năng lực AI (aiCompetency): Làm rõ chỉ báo trong YCCĐ. QUY TẮC KÝ HIỆU CHUẨN: KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ (Ví dụ: 10.A.A1.1 HOẶC 12.B.B1.2). TUYỆT ĐỐI tuân thủ bắt buộc định dạng này, trong đó Số thứ tự ứng với từng gạch đầu dòng trong quy định QĐ 3439.
+       - Năng lực AI (aiCompetency): CHỈ TRẢ VỀ MÃ CHỈ BÁO theo QĐ 3439. QUY TẮC KÝ HIỆU CHUẨN: KHỐI.NỘI_DUNG.CHỦ_ĐỀ.SỐ (Ví dụ: 10.A.A1.1). TUYỆT ĐỐI KHÔNG VIẾT DÀI DÒNG VĂN TỰ Ở TRƯỜNG NÀY VÀ KHÔNG SỬ DỤNG MÃ LATEX. Nếu Không tích hợp thì ghi "Không tích hợp".
+       - Mục tiêu GD AI cụ thể (aiObjective): Mô tả chi tiết học sinh làm gì với AI trong bài này (Ví dụ: Dùng AI sinh ảnh để...). Nếu không tích hợp, ghi "Không".
+       - Thiết bị, Học liệu AI (aiEquipment): Đề xuất cụ thể tên phần mềm, nền tảng AI (Ví dụ: ChatGPT, Canva, Google Earth, Padlet, Chatbot Mô phỏng...) sẽ sử dụng cho bài này. Nếu Không tích hợp thì ghi "Không".
        - Mạch nội dung AI: 
-         - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \sin, \cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường thẳng thắn (Ví dụ: y = sin x).
-         * NLa (A): Tư duy lấy con người làm trung tâm.
-         * NLb (B): Đạo đức và trách nhiệm xã hội.
-         * NLc (C): Kỹ thuật và ứng dụng.
-         * NLd (D): Giải quyết vấn đề và thiết kế hệ thống.
+         - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.
+           * NLa (A): Tư duy lấy con người làm trung tâm.
+           * NLb (B): Đạo đức và trách nhiệm xã hội.
+           * NLc (C): Kỹ thuật và ứng dụng.
+           * NLd (D): Giải quyết vấn đề và thiết kế hệ thống.
        * Lưu ý: Đối với các môn ngoài Tin học, ưu tiên trọng tâm vào NLa và NLb. 
     4. Xây dựng kế hoạch: Đảm bảo nội dung tích hợp không làm thay đổi nội dung cốt lõi của môn học.
 
@@ -753,8 +755,8 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
     - lessonName: Tên bài học/Chủ đề theo chương trình hiện hành.
     - lessonGoal: Mục tiêu bài học chi tiết (Kiến thức, Năng lực, Phẩm chất).
     - periods: Số tiết (Ví dụ: "2 tiết").
-    - aiCompetency: Năng lực AI tích hợp (Ví dụ: NLb - Đạo đức AI).
-    - aiObjective: Mục tiêu giáo dục AI cụ thể (Làm rõ các chỉ báo trong YCCĐ, ví dụ: 10.A.A1).
+    - aiCompetency: Năng lực AI tích hợp (Ví dụ: 12.A.A1.1).
+    - aiObjective: Mục tiêu GD AI cụ thể (Làm rõ các chỉ báo trong YCCĐ CV 3439).
     - implementationForm: Hình thức triển khai (Lồng ghép/Chuyên đề/Ngoại khóa).
   `;
 
@@ -773,6 +775,7 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
         },
         required: ["lessonName", "lessonGoal", "periods", "aiCompetency", "aiObjective", "implementationForm"],
       },
+
     });
   } catch (error) {
     console.error("Error generating department plan:", error);

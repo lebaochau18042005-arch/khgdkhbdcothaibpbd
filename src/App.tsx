@@ -39,7 +39,22 @@ import {
 import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateCompetencyEvaluation, parseCurriculumAppendix, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
 
+// Add competency mapper utility function
+const mapAiCompetencyText = (code: string) => {
+  if (!code || code.toLowerCase().includes("không")) return "Không tích hợp";
+
+  let groupName = "";
+  if (/\.A\./i.test(code) || code.includes("NLa")) groupName = "Tư duy lấy con người làm trung tâm (NLa)";
+  else if (/\.B\./i.test(code) || code.includes("NLb")) groupName = "Đạo đức và trách nhiệm xã hội (NLb)";
+  else if (/\.C\./i.test(code) || code.includes("NLc")) groupName = "Kỹ thuật và ứng dụng (NLc)";
+  else if (/\.D\./i.test(code) || code.includes("NLd")) groupName = "Thiết kế hệ thống và GQVD (NLd)";
+  else return code; // return raw code if no match
+
+  return `${code} - ${groupName}`;
+};
+
 type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "upgrade-plan";
+
 
 const SUBJECTS_THPT = [
   "Toán học",
@@ -96,7 +111,7 @@ export default function App() {
   const [customCurriculumData, setCustomCurriculumData] = useState<any[] | null>(null);
   const [isParsingCurriculum, setIsParsingCurriculum] = useState(false);
   const [province, setProvince] = useState("TP. Hồ Chí Minh (Thành phố)");
-  const [showSettings, setShowSettings] = useState(false);
+  const [showSettings, setShowSettings] = useState(() => !localStorage.getItem("GEMINI_API_KEY"));
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
   const [aiModel, setAiModel] = useState(() => localStorage.getItem("GEMINI_MODEL") || "gemini-2.5-flash");
   const [apiTestResult, setApiTestResult] = useState<string | null>(null);
@@ -208,7 +223,8 @@ export default function App() {
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
-        alert("❌ API Key đã hết hạn mức sử dụng miễn phí hôm nay. Vui lòng thử lại sau 24h hoặc đổi API key khác.");
+        alert("❌ API Key đã hết hạn mức sử dụng miễn phí hôm nay.\n\n💡 Giải pháp:\n1. Dùng API key của tài khoản Gmail khác (vào https://aistudio.google.com/api-keys để lấy key mới)\n2. Hoặc chờ đến ngày mai để dùng tiếp key hiện tại.");
+        setShowSettings(true);
       } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
         alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
         setShowSettings(true);
@@ -231,8 +247,18 @@ export default function App() {
     try {
       const data = await generateCompetencyEvaluation(result.data);
       setEvaluationResult(data);
-    } catch (err) {
-      alert("Có lỗi xảy ra khi tạo hệ thống đánh giá. Vui lòng thử lại.");
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("QUOTA_EXHAUSTED")) {
+        alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+        setShowSettings(true);
+      } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
+        alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
+        setShowSettings(true);
+      } else {
+        alert(`❌ Lỗi khi tạo đánh giá năng lực: ${msg || "Lỗi không xác định. Vui lòng thử lại."}`);
+      }
+      console.error("[Evaluation Error]", err);
     } finally {
       setEvaluationLoading(false);
     }
@@ -249,8 +275,18 @@ export default function App() {
       const activeRef = customRef || (departmentPlanRef && departmentPlanRef[0]?.subject === eduPlanInput.subject && departmentPlanRef[0]?.grade === eduPlanInput.grade ? departmentPlanRef : null);
       const data = await generateEducationalPlan(eduPlanInput.subject, eduPlanInput.grade, province, activeRef || undefined, { useLaTeX: eduPlanInput.useLaTeX, detailDrawings: eduPlanInput.detailDrawings });
       setResult({ type: "khgd", data });
-    } catch (err) {
-      alert("Có lỗi xảy ra khi tạo kế hoạch giáo dục. Vui lòng thử lại.");
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("QUOTA_EXHAUSTED")) {
+        alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+        setShowSettings(true);
+      } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
+        alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
+        setShowSettings(true);
+      } else {
+        alert(`❌ Lỗi khi tạo kế hoạch giáo dục: ${msg || "Lỗi không xác định. Vui lòng thử lại."}`);
+      }
+      console.error("[KHGD Error]", err);
     } finally {
       setLoading(false);
     }
@@ -271,8 +307,18 @@ export default function App() {
       });
       setResult({ type: "kh-tcm", data });
       setDepartmentPlanRef(data);
-    } catch (err) {
-      alert("Có lỗi xảy ra khi tạo kế hoạch tổ chuyên môn. Vui lòng thử lại.");
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("QUOTA_EXHAUSTED")) {
+        alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+        setShowSettings(true);
+      } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
+        alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
+        setShowSettings(true);
+      } else {
+        alert(`❌ Lỗi khi tạo kế hoạch tổ chuyên môn: ${msg || "Lỗi không xác định. Vui lòng thử lại."}`);
+      }
+      console.error("[KHTCM Error]", err);
     } finally {
       setLoading(false);
     }
@@ -2003,46 +2049,53 @@ export default function App() {
                             <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-48">Tên bài học/Chủ đề</th>
                             <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest">Mục tiêu bài học (CT 2018)</th>
                             <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 text-center">Tiết</th>
-                            <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest w-40">Năng lực AI tích hợp</th>
+                            <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest w-48">Mục tiêu GD AI</th>
                             <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Mục tiêu GD AI cụ thể (3439)</th>
                             <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Hình thức triển khai</th>
                             <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-24 print:hidden text-center">Thao tác</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {result.data.map((item: any, i: number) => (
-                            <tr key={i} className={`border-b border-slate-50 hover:bg-slate-50 transition-colors align-top ${item.aiCompetency.includes("Không tích hợp") ? "opacity-60" : ""}`}>
-                              <td className="p-4 text-center font-bold text-slate-400">{i + 1}</td>
-                              <td className="p-4 font-bold text-brand-sidebar">{item.lessonName}</td>
-                              <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.lessonGoal}</td>
-                              <td className="p-4 text-center font-bold text-slate-600">{item.periods}</td>
-                              <td className={`p-4 font-bold ${item.aiCompetency.includes("Không tích hợp") ? "text-slate-400" : "text-red-600 bg-red-50/20"}`}>{item.aiCompetency}</td>
-                              <td className="p-4 text-red-700 font-bold leading-relaxed whitespace-pre-line text-[10px] bg-red-50/10 border-l border-red-100">{item.aiObjective}</td>
-                              <td className="p-4">
-                                <span className="inline-block px-2 py-1 rounded-full bg-slate-100 text-slate-600 font-bold text-[9px] uppercase">
-                                  {item.implementationForm}
-                                </span>
-                              </td>
-                              <td className="p-4 print:hidden text-center">
-                                <button
-                                  onClick={() => {
-                                    setEduPlanInput({
-                                      ...eduPlanInput,
-                                      subject: eduPlanInput.subject,
-                                      grade: eduPlanInput.grade
-                                    });
-                                    setMode("khgd-gen");
-                                    handleGenerateKHGD(result.data);
-                                  }}
-                                  className="mx-auto p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2 px-4"
-                                  title="Lập KH Giáo dục cá nhân"
-                                >
-                                  <Calendar className="w-3 h-3" />
-                                  <span className="text-[10px] uppercase font-bold">Hợp nhất sang KHGD Cá nhân</span>
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
+                          {result.data.map((item: any, i: number) => {
+                            const isNotIntegrated = !item.aiCompetency || item.aiCompetency.toLowerCase().includes("không");
+                            return (
+                              <tr key={i} className={`border-b border-slate-50 hover:bg-slate-50 transition-colors align-top ${isNotIntegrated ? "opacity-60" : ""}`}>
+                                <td className="p-4 text-center font-bold text-slate-400">{i + 1}</td>
+                                <td className="p-4 font-bold text-brand-sidebar">{item.lessonName}</td>
+                                <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.lessonGoal}</td>
+                                <td className="p-4 text-center font-bold text-slate-600">{item.periods}</td>
+                                <td className={`p-4 font-bold ${isNotIntegrated ? "text-slate-400" : "text-red-700 bg-red-50/20"} whitespace-pre-line text-[11px]`}>
+                                  {mapAiCompetencyText(item.aiCompetency)}
+                                </td>
+                                <td className="p-4 text-slate-700 font-medium leading-relaxed whitespace-pre-line text-[10px] border-l border-slate-100">
+                                  {isNotIntegrated ? "Không" : item.aiObjective}
+                                </td>
+                                <td className="p-4">
+                                  <span className={`inline-block px-2 py-1 rounded-full font-bold text-[9px] uppercase ${isNotIntegrated ? 'bg-slate-100 text-slate-500' : 'bg-red-100 text-red-600'}`}>
+                                    {isNotIntegrated ? "Chuẩn 5512" : (item.implementationForm || "Lồng ghép")}
+                                  </span>
+                                </td>
+                                <td className="p-4 print:hidden text-center">
+                                  <button
+                                    onClick={() => {
+                                      setEduPlanInput({
+                                        ...eduPlanInput,
+                                        subject: eduPlanInput.subject,
+                                        grade: eduPlanInput.grade
+                                      });
+                                      setMode("khgd-gen");
+                                      handleGenerateKHGD(result.data);
+                                    }}
+                                    className="mx-auto p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2 px-4"
+                                    title="Lập KH Giáo dục cá nhân"
+                                  >
+                                    <Calendar className="w-3 h-3" />
+                                    <span className="text-[10px] uppercase font-bold">Hợp nhất sang KHGD Cá nhân</span>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -2085,7 +2138,7 @@ export default function App() {
                     onChange={(e) => setApiKey(e.target.value)}
                   />
                   <p className="text-xs text-slate-500 italic mt-1">
-                    Bạn có thể lấy API Key miễn phí từ <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-indigo-500 font-bold hover:underline">Google AI Studio</a>.
+                    Bạn có thể lấy API Key miễn phí từ <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-indigo-500 font-bold hover:underline">Google AI Studio</a>.
                   </p>
                 </div>
 
@@ -2096,8 +2149,9 @@ export default function App() {
                   <div className="grid grid-cols-1 gap-3">
                     {[
                       { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", desc: "Tốc độ cực cao, thông minh (Khuyên dùng)" },
-                      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", desc: "Siêu trí tuệ, lý luận sâu sắc nhất" },
-                      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", desc: "Model tính ổn định cao nhất" }
+                      { id: "gemini-2.5-flash-8b", name: "Gemini 2.5 Flash Lite", desc: "Nhẹ, nhanh, tiết kiệm quota nhất" },
+                      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", desc: "Model tính ổn định cao nhất" },
+                      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", desc: "Siêu trí tuệ, lý luận sâu sắc nhất (Trả phí)" }
                     ].map(model => (
                       <div
                         key={model.id}

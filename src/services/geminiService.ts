@@ -26,7 +26,12 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
   if (typeof prompt === 'string') {
     parts = [{ text: prompt }];
   } else if (Array.isArray(prompt)) {
-    parts = prompt.map((p: any) => typeof p === 'string' ? { text: p } : p);
+    parts = prompt.map((p: any) => {
+      if (typeof p === 'string') return { text: p };
+      if (p.inlineData) return p; // PDF / image inline data — pass through as-is
+      if (p.text) return p;       // already a part object
+      return { text: String(p) };
+    });
   } else {
     parts = [prompt];
   }

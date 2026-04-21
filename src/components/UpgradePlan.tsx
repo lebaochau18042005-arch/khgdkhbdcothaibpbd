@@ -18,7 +18,16 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
         if (!uploadedFile) return;
 
         if (!apiKey) {
-            alert("Vui lòng nhập API Key ở phần Cài đặt trước khi rà soát.");
+            alert("⚠️ Vui lòng nhập API Key ở phần Cài đặt trước khi rà soát.");
+            e.target.value = "";
+            return;
+        }
+
+        const isPdf = uploadedFile.type === "application/pdf" || uploadedFile.name.toLowerCase().endsWith(".pdf");
+        const maxSizeMB = isPdf ? 10 : 20;
+        if (uploadedFile.size > maxSizeMB * 1024 * 1024) {
+            alert(`❌ File quá lớn (tối đa ${maxSizeMB}MB). Vui lòng nén file hoặc thử file DOCX thay thế.`);
+            e.target.value = "";
             return;
         }
 
@@ -30,12 +39,13 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             let analysis;
 
             if (isPdf) {
-                const base64 = await new Promise<string>((resolve) => {
+                const base64 = await new Promise<string>((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onloadend = () => {
                         const base64String = (reader.result as string).split(',')[1];
                         resolve(base64String);
                     };
+                    reader.onerror = () => reject(new Error("Không đọc được file PDF."));
                     reader.readAsDataURL(uploadedFile);
                 });
 
@@ -46,6 +56,9 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                 const buffer = await uploadedFile.arrayBuffer();
                 const result = await mammoth.extractRawText({ arrayBuffer: buffer });
                 const text = result.value;
+                if (!text || text.trim().length < 50) {
+                    throw new Error("Không bóc tách được nội dung từ file này. Hãy thử file DOCX khác.");
+                }
                 setRawText(text);
                 setPdfBase64("");
 
@@ -55,9 +68,17 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             setAnalysisResult(analysis);
             setSelectedIntegrations(analysis.aiSuggestions || []);
             setStep(2);
-        } catch (err) {
-            console.error(err);
-            alert("Đã xảy ra lỗi khi bóc tách file hoặc rà soát AI. Vui lòng kiểm tra lại định dạng file (hỗ trợ .docx, .pdf) và API Key.");
+        } catch (err: any) {
+            console.error("[UpgradePlan Error]", err);
+            const msg = err?.message || "";
+            if (msg.includes("QUOTA_EXHAUSTED")) {
+                alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+            } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
+                alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
+            } else {
+                alert(`❌ Lỗi khi xử lý file: ${msg || "File không được hỗ trợ hoặc bị hỏng. Thử lại với file DOCX."}`);
+            }
+            e.target.value = "";
         } finally {
             setIsAnalyzing(false);
         }

@@ -1,18 +1,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const getFallbackModels = (startModel: string) => {
-  const models = ['gemini-2.5-flash', 'gemini-3-flash-preview', 'gemini-3-pro-preview', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'];
-  const index = models.indexOf(startModel);
-  if (index === -1) return models;
-
-  // Return startModel followed by remaining models in order
-  const modelsToTry = [startModel];
-  for (const m of models) {
-    if (m !== startModel && !modelsToTry.includes(m)) {
-      modelsToTry.push(m);
-    }
-  }
-  return modelsToTry;
+  const models = [
+    'gemini-2.5-flash-preview-04-17',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-2.5-pro-preview-03-25',
+  ];
+  // If startModel is in list, put it first; else prepend it for a one-time try
+  const deduplicated = [startModel, ...models.filter(m => m !== startModel)];
+  return deduplicated;
 };
 
 const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
@@ -54,9 +52,13 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
       if (!res.ok) {
         const errText = await res.text();
         if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
-        if (res.status === 400 || res.status === 401 || res.status === 403) {
+        if (res.status === 401 || res.status === 403) {
           throw new Error(`API_KEY_INVALID: ${errText}`);
         }
+        if (res.status === 400 && (errText.includes('API_KEY') || errText.includes('API key'))) {
+          throw new Error(`API_KEY_INVALID: ${errText}`);
+        }
+        // 400 from invalid model name → try next model
         throw new Error(`HTTP ${res.status}: ${errText}`);
       }
 

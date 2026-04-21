@@ -20,17 +20,18 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
   if (!apiKey) {
     throw new Error('API_KEY_REQUIRED');
   }
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3-flash-preview';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
   for (let i = 0; i < modelsToTry.length; i++) {
     const currentModel = modelsToTry[i];
     try {
       const ai = new GoogleGenAI({ apiKey: apiKey });
-      // Build contents in the correct Gemini SDK format
-      let contents: any[];
+
+      // Build contents in the correct Gemini SDK v1.29 format
+      let contents: any;
       if (typeof prompt === 'string') {
-        contents = [{ role: 'user', parts: [{ text: prompt }] }];
+        contents = prompt; // SDK v1.29 accepts plain string directly
       } else if (Array.isArray(prompt)) {
         // Multi-part prompt (e.g. text + PDF inlineData)
         const parts = prompt.map((p: any) =>
@@ -38,7 +39,6 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
         );
         contents = [{ role: 'user', parts }];
       } else {
-        // Already a Content object array
         contents = prompt;
       }
 
@@ -48,9 +48,13 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
         config: {
           responseMimeType: "application/json",
           responseSchema: responseSchema,
+          automaticFunctionCalling: { disable: true },
         },
       });
-      return JSON.parse(response.text);
+
+      const text = response.text;
+      if (!text) throw new Error('AI trả về phản hồi rỗng.');
+      return JSON.parse(text);
     } catch (err: any) {
       console.error(`Lỗi với model ${currentModel}:`, err);
 

@@ -1,17 +1,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const getFallbackModels = (startModel: string) => {
-  // Models as of April 2026 - Gemini 3.x is production standard
+  // Confirmed working models (tested April 2026)
   const models = [
-    'gemini-3-flash',
-    'gemini-3-flash-preview',
-    'gemini-3-pro-preview',
-    'gemini-3.1-pro-preview',
     'gemini-2.5-flash',
-    'gemini-2.5-flash-preview-04-17',
+    'gemini-2.5-pro',
     'gemini-2.0-flash',
+    'gemini-2.0-flash-001',
+    'gemini-2.0-flash-lite-001',
   ];
-  // Put user's chosen model first, then fallback through rest
   const deduplicated = [startModel, ...models.filter(m => m !== startModel)];
   return deduplicated;
 };

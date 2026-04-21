@@ -98,7 +98,7 @@ export default function App() {
   const [province, setProvince] = useState("TP. Hồ Chí Minh (Thành phố)");
   const [showSettings, setShowSettings] = useState(false);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
-  const [aiModel, setAiModel] = useState(() => localStorage.getItem("GEMINI_MODEL") || "gemini-3-flash-preview");
+  const [aiModel, setAiModel] = useState(() => localStorage.getItem("GEMINI_MODEL") || "gemini-2.5-flash");
   const [apiTestResult, setApiTestResult] = useState<string | null>(null);
   const [apiTesting, setApiTesting] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -2095,9 +2095,9 @@ export default function App() {
                   </label>
                   <div className="grid grid-cols-1 gap-3">
                     {[
-                      { id: "gemini-3-flash-preview", name: "Gemini 3.0 Flash", desc: "Tốc độ cực cao, thông minh (Khuyên dùng)" },
-                      { id: "gemini-3-pro-preview", name: "Gemini 3.0 Pro", desc: "Siêu trí tuệ, lý luận sâu sắc nhất" },
-                      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", desc: "Model tính ổn định cao nhất" }
+                      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", desc: "Tốc độ cực cao, thông minh (Khuyên dùng)" },
+                      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", desc: "Siêu trí tuệ, lý luận sâu sắc nhất" },
+                      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", desc: "Model tính ổn định cao nhất" }
                     ].map(model => (
                       <div
                         key={model.id}

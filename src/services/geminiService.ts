@@ -398,7 +398,8 @@ export const analyzeExistingPlan = async (fileText: string, pdfBase64?: string) 
 export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: string) => {
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const model = localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
+  const modelsToTry = getFallbackModels(startModel);
 
   const instruction = `Bạn là chuyên gia phân phối chương trình giáo dục.
 
@@ -423,44 +424,61 @@ Trả về ĐÚNG định dạng JSON array (không có markdown, không có gi�
     parts = [{ text: instruction + `\n\nVĂN BẢN GỐC:\n"""\n${rawText.substring(0, 25000)}\n"""` }];
   }
 
-  // Use raw text mode (no responseSchema) to avoid array truncation
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        maxOutputTokens: 8192,
-        temperature: 0,
-      },
-    }),
-  });
+  const body = {
+    contents: [{ role: 'user', parts }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      maxOutputTokens: 8192,
+      temperature: 0,
+    },
+  };
 
-  if (!res.ok) {
-    const err = await res.text();
-    if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
-    if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
-    throw new Error(`HTTP ${res.status}: ${err}`);
-  }
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const currentModel = modelsToTry[i];
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
 
-  const json = await res.json();
-  const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('AI trả về phản hồi rỗng khi phân tích phụ lục.');
+      if (!res.ok) {
+        const errText = await res.text();
+        if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
+        if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
 
-  try {
-    const parsed = JSON.parse(text);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      throw new Error('Không trích xuất được bài học nào từ file này.');
+      const json = await res.json();
+      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('AI trả về phản hồi rỗng khi phân tích phụ lục.');
+
+      try {
+        const parsed = JSON.parse(text);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          throw new Error('Không trích xuất được bài học nào từ file này.');
+        }
+        return parsed;
+      } catch {
+        const match = text.match(/\[[\s\S]*\]/);
+        if (match) return JSON.parse(match[0]);
+        throw new Error('Không thể đọc dữ liệu JSON từ phản hồi AI.');
+      }
+    } catch (err: any) {
+      console.error(`[parseCurriculum] Lỗi với model ${currentModel}:`, err);
+      const isApiKeyInvalid = err.message?.startsWith('API_KEY_INVALID') || err.message?.includes('401');
+      const isQuota = err.message?.includes('QUOTA_EXHAUSTED');
+      const isLast = i === modelsToTry.length - 1;
+      if (isApiKeyInvalid) throw new Error('API_KEY_INVALID');
+      if (isLast) {
+        if (isQuota) throw new Error('QUOTA_EXHAUSTED');
+        throw err;
+      }
+      await new Promise(r => setTimeout(r, 1000));
     }
-    return parsed;
-  } catch {
-    // Try to extract JSON array from text if wrapped in markdown
-    const match = text.match(/\[[\s\S]*\]/);
-    if (match) return JSON.parse(match[0]);
-    throw new Error('Không thể đọc dữ liệu JSON từ phản hồi AI.');
   }
+  throw new Error('Tất cả models đều thất bại.');
 };
 
 

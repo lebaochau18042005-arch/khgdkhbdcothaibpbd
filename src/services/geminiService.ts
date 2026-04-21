@@ -23,54 +23,59 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
   const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
+  // Build parts array for the request
+  let parts: any[];
+  if (typeof prompt === 'string') {
+    parts = [{ text: prompt }];
+  } else if (Array.isArray(prompt)) {
+    parts = prompt.map((p: any) => typeof p === 'string' ? { text: p } : p);
+  } else {
+    parts = [prompt];
+  }
+
   for (let i = 0; i < modelsToTry.length; i++) {
     const currentModel = modelsToTry[i];
     try {
-      const ai = new GoogleGenAI({ apiKey: apiKey });
-
-      // Build contents in the correct Gemini SDK v1.29 format
-      let contents: any;
-      if (typeof prompt === 'string') {
-        contents = prompt; // SDK v1.29 accepts plain string directly
-      } else if (Array.isArray(prompt)) {
-        // Multi-part prompt (e.g. text + PDF inlineData)
-        const parts = prompt.map((p: any) =>
-          typeof p === 'string' ? { text: p } : p
-        );
-        contents = [{ role: 'user', parts }];
-      } else {
-        contents = prompt;
-      }
-
-      const response = await ai.models.generateContent({
-        model: currentModel,
-        contents,
-        config: {
-          responseMimeType: "application/json",
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const body: any = {
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          responseMimeType: 'application/json',
           responseSchema: responseSchema,
-          automaticFunctionCalling: { disable: true },
         },
+      };
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
 
-      const text = response.text;
+      if (!res.ok) {
+        const errText = await res.text();
+        if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
+        if (res.status === 400 || res.status === 401 || res.status === 403) {
+          throw new Error(`API_KEY_INVALID: ${errText}`);
+        }
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
+
+      const json = await res.json();
+      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error('AI trả về phản hồi rỗng.');
       return JSON.parse(text);
     } catch (err: any) {
       console.error(`Lỗi với model ${currentModel}:`, err);
 
-      const isQuotaExhausted = err.message && (err.message.includes('429') || err.message.includes('quota') || err.message.includes('RESOURCE_EXHAUSTED'));
-      const isApiKeyInvalid = err.message && (err.message.includes('API_KEY_INVALID') || err.message.includes('400'));
+      const isQuotaExhausted = err.message && (err.message.includes('QUOTA_EXHAUSTED') || err.message.includes('429') || err.message.includes('quota'));
+      const isApiKeyInvalid = err.message && (err.message.includes('API_KEY_INVALID') || err.message.includes('400') || err.message.includes('401'));
       const isLastModel = i === modelsToTry.length - 1;
 
-      if (isApiKeyInvalid) {
-        throw new Error('API_KEY_INVALID');
-      }
-
+      if (isApiKeyInvalid) throw new Error('API_KEY_INVALID');
       if (isLastModel) {
         if (isQuotaExhausted) throw new Error('QUOTA_EXHAUSTED');
         throw err;
       }
-      // Wait for 1 second before retrying
       await new Promise(r => setTimeout(r, 1000));
     }
   }

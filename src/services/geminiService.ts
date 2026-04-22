@@ -803,7 +803,7 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
        - Yêu cầu cần đạt CT 2018 (lessonGoal): Mô tả tóm tắt Kiến thức, Năng lực hướng tới của bài học đó (không cần quá dài, chỉ là trọng tâm cốt lõi).
        - Số tiết (periods): Số lượng tiết học.
        - Mục tiêu tích hợp (integratedObjective): Dựa vào nội dung bài học, mô tả rành mạch các mục tiêu AI (ví dụ: "- Nhận biết được một số cách AI hỗ trợ...", "- Hình thành thái độ...").
-       - Yêu cầu cần đạt 3439 (aiCompetency3439): Trích dẫn CHÍNH XÁC nội dung YCCĐ từ Phụ lục CV 3439 và thêm mã chỉ báo ở cuối. (Ví dụ: "- Giải thích được tại sao... (A1)"). Ghi "Không tích hợp" nếu bài không phù hợp.
+       - Yêu cầu cần đạt 3439 (aiCompetency3439): Trích dẫn CHÍNH XÁC nội dung YCCĐ từ Phụ lục CV 3439 VÀ BẮT BUỘC KÈM THEO mã chỉ báo ĐẦY ĐỦ ở cuối theo định dạng: (KHỐI.MẠCH.CHỦ_ĐỀ.SỐ). (Ví dụ: "- Giải thích được tại sao... (9.A.A1.1)" hoặc "(10.C.C1.2)"). TUYỆT ĐỐI KHÔNG CHỈ GHI "(A1)" HAY "(C1)". Ghi "Không tích hợp" nếu bài không phù hợp.
        - Ghi chú (notes): Lời khuyên hoặc hình thức triển khai tương ứng.
        
        - Mạch nội dung AI: 
@@ -821,7 +821,7 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
     - lessonGoal: Yêu cầu cần đạt CT 2018 (Trọng tâm cốt lõi: Kiến thức, Năng lực).
     - periods: Số tiết (Ví dụ: "2", "1").
     - integratedObjective: Mục tiêu tích hợp (Mô tả chi tiết các mục tiêu, hành động khi HS sử dụng AI. Trình bày bằng dấu gạch ngang đầu dòng. Ví dụ: "- Nhận biết được... - Hình thành thái độ...").
-    - aiCompetency3439: Yêu cầu cần đạt 3439 (Trích dẫn CHÍNH XÁC nội dung YCCĐ từ CV 3439 và thêm mã chỉ báo ở cuối. Ví dụ: "- Giải thích được tại sao... (A1)"). Ghi "Không tích hợp" nếu bài không phù hợp.
+    - aiCompetency3439: Yêu cầu cần đạt 3439 (Trích dẫn CHÍNH XÁC nội dung YCCĐ từ CV 3439 và thêm mã chỉ báo ĐẦY ĐỦ ở cuối. Ví dụ: "- Giải thích được tại sao... (9.C.C1.1)". KHÔNG CHỈ GHI "(A1)"). Ghi "Không tích hợp" nếu bài không phù hợp.
     - notes: Ghi chú (Các chú ý thêm hoặc hình thức triển khai).
   `;
 

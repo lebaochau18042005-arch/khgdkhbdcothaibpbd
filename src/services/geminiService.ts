@@ -800,6 +800,7 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
     3. Ánh xạ Năng lực:
        - Chủ đề (topic): Tóm tắt tên chủ đề hoặc chương lớn.
        - Nội dung (lessonContent): Đây là Tên bài học hoặc nội dung chi tiết. Lưu ý phải khớp 100% với danh sách gốc.
+       - Yêu cầu cần đạt CT 2018 (lessonGoal): Mô tả tóm tắt Kiến thức, Năng lực hướng tới của bài học đó (không cần quá dài, chỉ là trọng tâm cốt lõi).
        - Số tiết (periods): Số lượng tiết học.
        - Mục tiêu tích hợp (integratedObjective): Dựa vào nội dung bài học, mô tả rành mạch các mục tiêu AI (ví dụ: "- Nhận biết được một số cách AI hỗ trợ...", "- Hình thành thái độ...").
        - Yêu cầu cần đạt 3439 (aiCompetency3439): Trích dẫn CHÍNH XÁC nội dung YCCĐ từ Phụ lục CV 3439 và thêm mã chỉ báo ở cuối. (Ví dụ: "- Giải thích được tại sao... (A1)"). Ghi "Không tích hợp" nếu bài không phù hợp.
@@ -817,32 +818,82 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
     Định dạng đầu ra: JSON Array các đối tượng với các trường sau:
     - topic: Chủ đề (hoặc Chương). Nếu nhiều bài cùng 1 chủ đề, ghi tên chủ đề đó.
     - lessonContent: Nội dung bài học (Tên bài học hoặc nội dung trọng tâm).
+    - lessonGoal: Yêu cầu cần đạt CT 2018 (Trọng tâm cốt lõi: Kiến thức, Năng lực).
     - periods: Số tiết (Ví dụ: "2", "1").
     - integratedObjective: Mục tiêu tích hợp (Mô tả chi tiết các mục tiêu, hành động khi HS sử dụng AI. Trình bày bằng dấu gạch ngang đầu dòng. Ví dụ: "- Nhận biết được... - Hình thành thái độ...").
     - aiCompetency3439: Yêu cầu cần đạt 3439 (Trích dẫn CHÍNH XÁC nội dung YCCĐ từ CV 3439 và thêm mã chỉ báo ở cuối. Ví dụ: "- Giải thích được tại sao... (A1)"). Ghi "Không tích hợp" nếu bài không phù hợp.
     - notes: Ghi chú (Các chú ý thêm hoặc hình thức triển khai).
   `;
 
-  try {
-    return await callGeminiWithFallback(prompt, {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          topic: { type: Type.STRING },
-          lessonContent: { type: Type.STRING },
-          periods: { type: Type.STRING },
-          integratedObjective: { type: Type.STRING },
-          aiCompetency3439: { type: Type.STRING },
-          notes: { type: Type.STRING },
-        },
-        required: ["topic", "lessonContent", "periods", "integratedObjective", "aiCompetency3439", "notes"],
-      },
-    });
-  } catch (error) {
-    console.error("Error generating department plan:", error);
-    throw error;
+  const apiKey = localStorage.getItem('GEMINI_API_KEY');
+  if (!apiKey) throw new Error('API_KEY_REQUIRED');
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
+  const modelsToTry = getFallbackModels(startModel);
+
+  const parts = [{ text: prompt }];
+  const body = {
+    contents: [{ role: 'user', parts }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      maxOutputTokens: 8192,
+      temperature: 0,
+    },
+  };
+
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const currentModel = modelsToTry[i];
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
+        if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
+
+      const json = await res.json();
+      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('AI trả về phản hồi rỗng khi sinh kế hoạch.');
+
+      // Try extract array
+      let parsed: any = null;
+      try { parsed = JSON.parse(text); } catch { /* ignore */ }
+      if (parsed && !Array.isArray(parsed) && typeof parsed === 'object') {
+        const keys = Object.keys(parsed);
+        for (const k of keys) {
+          if (Array.isArray(parsed[k])) { parsed = parsed[k]; break; }
+        }
+      }
+      if (!Array.isArray(parsed)) {
+        const match = text.match(/\[[\s\S]*\]/);
+        if (match) try { parsed = JSON.parse(match[0]); } catch { /* ignore */ }
+      }
+
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        throw new Error(`Không trích xuất được kế hoạch. AI trả về: ${text.substring(0, 200)}`);
+      }
+      return parsed;
+
+    } catch (err: any) {
+      console.error(`[generateDepartmentPlan] Lỗi với model ${currentModel}:`, err);
+      const isApiKeyInvalid = err.message?.startsWith('API_KEY_INVALID') || err.message?.includes('401');
+      const isQuota = err.message?.includes('QUOTA_EXHAUSTED');
+      const isLast = i === modelsToTry.length - 1;
+      if (isApiKeyInvalid) throw new Error('API_KEY_INVALID');
+      if (isLast) {
+        if (isQuota) throw new Error('QUOTA_EXHAUSTED');
+        throw err;
+      }
+      await new Promise(r => setTimeout(r, 1500));
+    }
   }
+  throw new Error('Tất cả models đều thất bại.');
 };
 
 export const generateCompetencyEvaluation = async (lessonPlan: any) => {

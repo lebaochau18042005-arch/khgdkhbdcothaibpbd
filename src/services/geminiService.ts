@@ -798,11 +798,13 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
        - Nếu bài học PHÙ HỢP: Xác định mạch nội dung AI (NLa, NLb, NLc, NLd) và mục tiêu cụ thể.
        - Nếu bài học KHÔNG PHÙ HỢP: Ghi rõ "Không tích hợp" vào các cột liên quan đến AI để tránh việc tích hợp khiên cưỡng.
     3. Ánh xạ Năng lực:
-       - Mục tiêu bài học (lessonGoal): PHẢI MÔ TẢ CHI TIẾT ĐỦ CÁC NỘI DUNG: Kiến thức (HS nắm vững vấn đề gì?); Năng lực (bao gồm Năng lực chung và Năng lực đặc thù môn học được cụ thể hóa bằng hành động); Phẩm chất (Các phẩm chất cần hình thành).
-       - Số tiết (periods): Số lượng tiết học dự kiến cho bài học này.
-       - Năng lực AI (aiCompetency): CHỈ TRẢ VỀ MÃ CHỈ BÁO theo QĐ 3439. QUY TẮC KÝ HIỆU CHUẨN: KHỐI.NỘI_DUNG.CHỦ_ĐỀ.SỐ (Ví dụ: 10.A.A1.1). TUYỆT ĐỐI KHÔNG VIẾT DÀI DÒNG VĂN TỰ Ở TRƯỜNG NÀY VÀ KHÔNG SỬ DỤNG MÃ LATEX. Nếu Không tích hợp thì ghi "Không tích hợp".
-       - Mục tiêu GD AI cụ thể (aiObjective): Mô tả chi tiết học sinh làm gì với AI trong bài này (Ví dụ: Dùng AI sinh ảnh để...). Nếu không tích hợp, ghi "Không".
-       - Thiết bị, Học liệu AI (aiEquipment): Đề xuất cụ thể tên phần mềm, nền tảng AI (Ví dụ: ChatGPT, Canva, Google Earth, Padlet, Chatbot Mô phỏng...) sẽ sử dụng cho bài này. Nếu Không tích hợp thì ghi "Không".
+       - Chủ đề (topic): Tóm tắt tên chủ đề hoặc chương lớn.
+       - Nội dung (lessonContent): Đây là Tên bài học hoặc nội dung chi tiết. Lưu ý phải khớp 100% với danh sách gốc.
+       - Số tiết (periods): Số lượng tiết học.
+       - Mục tiêu tích hợp (integratedObjective): Dựa vào nội dung bài học, mô tả rành mạch các mục tiêu AI (ví dụ: "- Nhận biết được một số cách AI hỗ trợ...", "- Hình thành thái độ...").
+       - Yêu cầu cần đạt 3439 (aiCompetency3439): Trích dẫn CHÍNH XÁC nội dung YCCĐ từ Phụ lục CV 3439 và thêm mã chỉ báo ở cuối. (Ví dụ: "- Giải thích được tại sao... (A1)"). Ghi "Không tích hợp" nếu bài không phù hợp.
+       - Ghi chú (notes): Lời khuyên hoặc hình thức triển khai tương ứng.
+       
        - Mạch nội dung AI: 
          - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.
            * NLa (A): Tư duy lấy con người làm trung tâm.
@@ -813,12 +815,12 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
     4. Xây dựng kế hoạch: Đảm bảo nội dung tích hợp không làm thay đổi nội dung cốt lõi của môn học.
 
     Định dạng đầu ra: JSON Array các đối tượng với các trường sau:
-    - lessonName: Tên bài học/Chủ đề theo chương trình hiện hành.
-    - lessonGoal: Mục tiêu bài học chi tiết (Kiến thức, Năng lực, Phẩm chất).
-    - periods: Số tiết (Ví dụ: "2 tiết").
-    - aiCompetency: Năng lực AI tích hợp (Ví dụ: 12.A.A1.1).
-    - aiObjective: Mục tiêu GD AI cụ thể (Làm rõ các chỉ báo trong YCCĐ CV 3439).
-    - implementationForm: Hình thức triển khai (Lồng ghép/Chuyên đề/Ngoại khóa).
+    - topic: Chủ đề (hoặc Chương). Nếu nhiều bài cùng 1 chủ đề, ghi tên chủ đề đó.
+    - lessonContent: Nội dung bài học (Tên bài học hoặc nội dung trọng tâm).
+    - periods: Số tiết (Ví dụ: "2", "1").
+    - integratedObjective: Mục tiêu tích hợp (Mô tả chi tiết các mục tiêu, hành động khi HS sử dụng AI. Trình bày bằng dấu gạch ngang đầu dòng. Ví dụ: "- Nhận biết được... - Hình thành thái độ...").
+    - aiCompetency3439: Yêu cầu cần đạt 3439 (Trích dẫn CHÍNH XÁC nội dung YCCĐ từ CV 3439 và thêm mã chỉ báo ở cuối. Ví dụ: "- Giải thích được tại sao... (A1)"). Ghi "Không tích hợp" nếu bài không phù hợp.
+    - notes: Ghi chú (Các chú ý thêm hoặc hình thức triển khai).
   `;
 
   try {
@@ -827,16 +829,15 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
       items: {
         type: Type.OBJECT,
         properties: {
-          lessonName: { type: Type.STRING },
-          lessonGoal: { type: Type.STRING },
+          topic: { type: Type.STRING },
+          lessonContent: { type: Type.STRING },
           periods: { type: Type.STRING },
-          aiCompetency: { type: Type.STRING },
-          aiObjective: { type: Type.STRING },
-          implementationForm: { type: Type.STRING },
+          integratedObjective: { type: Type.STRING },
+          aiCompetency3439: { type: Type.STRING },
+          notes: { type: Type.STRING },
         },
-        required: ["lessonName", "lessonGoal", "periods", "aiCompetency", "aiObjective", "implementationForm"],
+        required: ["topic", "lessonContent", "periods", "integratedObjective", "aiCompetency3439", "notes"],
       },
-
     });
   } catch (error) {
     console.error("Error generating department plan:", error);

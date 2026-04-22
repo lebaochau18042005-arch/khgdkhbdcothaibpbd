@@ -636,7 +636,7 @@ export default function App() {
       const rows = [
         new TableRow({
           children: [
-            t("STT"), t("Tên bài học/Chủ đề"), t("Mục tiêu bài học"), t("Tiết"), t("Năng lực AI"), t("Mục tiêu GD AI"), t("Hình thức triển khai")
+            t("STT"), t("Chủ đề"), t("Nội dung"), t("Số tiết"), t("Mục tiêu tích hợp"), t("Yêu cầu cần đạt 3439"), t("Ghi chú")
           ].map(h => new TableCell({
             children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })], alignment: AlignmentType.CENTER })],
             verticalAlign: VerticalAlign.CENTER,
@@ -743,7 +743,7 @@ export default function App() {
     } else if (result.type === "khgd") {
       content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Định hướng năng lực số")}\n${result.data.map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.digitalCompetency}`).join("\n")}`;
     } else if (result.type === "kh-tcm") {
-      content = `${t("KẾ HOẠCH GIÁO DỤC TỔ CHUYÊN MÔN TÍCH HỢP AI")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n${t("Căn cứ QĐ 3439/QĐ-BGDĐT")}\n\n${t("STT")} | ${t("Tên bài học/Chủ đề")} | ${t("Mục tiêu bài học")} | ${t("Tiết")} | ${t("Năng lực AI")} | ${t("Mục tiêu GD AI")} | ${t("Hình thức triển khai")}\n${result.data.map((item: any, i: number) => `${i + 1} | ${item.lessonName} | ${item.lessonGoal} | ${item.periods} | ${item.aiCompetency} | ${item.aiObjective} | ${item.implementationForm}`).join("\n")}`;
+      content = `${t("KẾ HOẠCH GIÁO DỤC TỔ CHUYÊN MÔN TÍCH HỢP AI")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n${t("Căn cứ QĐ 3439/QĐ-BGDĐT")}\n\n${t("STT")} | ${t("Chủ đề")} | ${t("Nội dung")} | ${t("Số tiết")} | ${t("Mục tiêu tích hợp")} | ${t("Yêu cầu cần đạt 3439")} | ${t("Ghi chú")}\n${result.data.map((item: any, i: number) => `${i + 1} | ${item.topic} | ${item.lessonContent} | ${item.periods} | ${item.integratedObjective} | ${item.aiCompetency3439} | ${item.notes}`).join("\n")}`;
     }
 
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
@@ -2046,33 +2046,33 @@ export default function App() {
                         <thead>
                           <tr className="border-b-2 border-slate-100">
                             <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-12 text-center">STT</th>
-                            <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-48">Tên bài học/Chủ đề</th>
-                            <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest">Mục tiêu bài học (CT 2018)</th>
-                            <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 text-center">Tiết</th>
-                            <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest w-48">Mục tiêu GD AI</th>
-                            <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Mục tiêu GD AI cụ thể (3439)</th>
-                            <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Hình thức triển khai</th>
+                            <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Chủ đề</th>
+                            <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-48">Nội dung</th>
+                            <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 text-center">Số tiết</th>
+                            <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Mục tiêu tích hợp</th>
+                            <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Yêu cầu cần đạt 3439</th>
+                            <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Ghi chú</th>
                             <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-24 print:hidden text-center">Thao tác</th>
                           </tr>
                         </thead>
                         <tbody>
                           {result.data.map((item: any, i: number) => {
-                            const isNotIntegrated = !item.aiCompetency || item.aiCompetency.toLowerCase().includes("không");
+                            const isNotIntegrated = !item.aiCompetency3439 || item.aiCompetency3439.toLowerCase().includes("không");
                             return (
                               <tr key={i} className={`border-b border-slate-50 hover:bg-slate-50 transition-colors align-top ${isNotIntegrated ? "opacity-60" : ""}`}>
                                 <td className="p-4 text-center font-bold text-slate-400">{i + 1}</td>
-                                <td className="p-4 font-bold text-brand-sidebar">{item.lessonName}</td>
-                                <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.lessonGoal}</td>
+                                <td className="p-4 font-bold text-brand-sidebar">{item.topic || item.lessonName}</td>
+                                <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.lessonContent || item.lessonGoal}</td>
                                 <td className="p-4 text-center font-bold text-slate-600">{item.periods}</td>
-                                <td className={`p-4 font-bold ${isNotIntegrated ? "text-slate-400" : "text-red-700 bg-red-50/20"} whitespace-pre-line text-[11px]`}>
-                                  {mapAiCompetencyText(item.aiCompetency)}
+                                <td className="p-4 text-slate-700 font-medium leading-relaxed whitespace-pre-line text-[10px]">
+                                  {isNotIntegrated ? "Không" : (item.integratedObjective || item.aiObjective)}
                                 </td>
-                                <td className="p-4 text-slate-700 font-medium leading-relaxed whitespace-pre-line text-[10px] border-l border-slate-100">
-                                  {isNotIntegrated ? "Không" : item.aiObjective}
+                                <td className={`p-4 font-bold ${isNotIntegrated ? "text-slate-400" : "text-red-700 bg-red-50/20"} whitespace-pre-line text-[11px]`}>
+                                  {isNotIntegrated ? "Không" : (item.aiCompetency3439 || mapAiCompetencyText(item.aiCompetency))}
                                 </td>
                                 <td className="p-4">
                                   <span className={`inline-block px-2 py-1 rounded-full font-bold text-[9px] uppercase ${isNotIntegrated ? 'bg-slate-100 text-slate-500' : 'bg-red-100 text-red-600'}`}>
-                                    {isNotIntegrated ? "Chuẩn 5512" : (item.implementationForm || "Lồng ghép")}
+                                    {item.notes || item.implementationForm || (isNotIntegrated ? "Chuẩn 5512" : "Lồng ghép")}
                                   </span>
                                 </td>
                                 <td className="p-4 print:hidden text-center">

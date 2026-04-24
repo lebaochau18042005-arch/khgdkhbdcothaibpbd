@@ -4,9 +4,8 @@ const getFallbackModels = (startModel: string) => {
   // Fallback order per LỆNH.md: 2.5-flash → 2.5-flash-8b (lite) → 2.0-flash (stable) → 2.5-pro
   const models = [
     'gemini-2.5-flash',
-    'gemini-2.5-flash-8b',
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-001',
+    'gemini-3-flash-preview',
+    'gemini-2.5-flash-lite',
     'gemini-2.5-pro',
   ];
   const deduplicated = [startModel, ...models.filter(m => m !== startModel)];
@@ -45,7 +44,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
         generationConfig: {
           responseMimeType: 'application/json',
           responseSchema: responseSchema,
-          maxOutputTokens: 8192,
+          maxOutputTokens: 65536,
         },
       };
 
@@ -71,7 +70,12 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
       const json = await res.json();
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error('AI trả về phản hồi rỗng.');
-      return JSON.parse(text);
+      try {
+        return JSON.parse(text);
+      } catch (parseErr) {
+        console.error('[JSON Parse Error] Raw text (first 500 chars):', text?.substring(0, 500));
+        throw new Error(`Lỗi phân tích JSON từ AI (phản hồi có thể bị cắt ngắn). Vui lòng thử lại.`);
+      }
     } catch (err: any) {
       console.error(`Lỗi với model ${currentModel}:`, err);
 

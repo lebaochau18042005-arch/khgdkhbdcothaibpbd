@@ -2160,9 +2160,9 @@ export default function App() {
                       </label>
                       <div className="grid grid-cols-1 gap-3">
                         {[
-                          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", desc: "Tốc độ cực cao, thông minh (Khuyên dùng)" },
-                          { id: "gemini-2.5-flash-8b", name: "Gemini 2.5 Flash Lite", desc: "Nhẹ, nhanh, tiết kiệm quota nhất" },
-                          { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", desc: "Model tính ổn định cao nhất" },
+                          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", desc: "Tốc độ cực cao, thông minh (Mặc định - Khuyên dùng)" },
+                          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview", desc: "Thế hệ mới nhất, siêu nhanh và thông minh" },
+                          { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", desc: "Nhẹ, nhanh, tiết kiệm quota nhất" },
                           { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", desc: "Siêu trí tuệ, lý luận sâu sắc nhất (Trả phí)" }
                         ].map(model => (
                           <div

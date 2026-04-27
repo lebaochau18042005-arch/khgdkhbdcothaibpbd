@@ -292,6 +292,7 @@ export interface LessonPlanInput {
   existingRawText?: string;
   existingPdfBase64?: string;
   aiIntegrationOptions?: any[];
+  indicatorCode?: string;
 }
 
 export const analyzeExistingPlan = async (fileText: string, pdfBase64?: string) => {
@@ -560,10 +561,14 @@ KIÊN QUYẾT BẢO TỒN:
     Lớp: ${input.grade} - Thời lượng: ${input.duration}
     Hoàn cảnh học sinh: ${input.contextStudents || "Học sinh có khả năng tiếp thu trung bình - khá"}
     Điều kiện trường lớp: ${input.contextSchool || "Lớp học có máy chiếu và kết nối internet cơ bản"}
+    ${input.objectivesKnowledge ? `Mục tiêu kiến thức yêu cầu: ${input.objectivesKnowledge}` : ""}
+    ${input.objectivesCompetency ? `Mục tiêu năng lực yêu cầu: ${input.objectivesCompetency}` : ""}
+    ${input.objectivesQuality ? `Mục tiêu phẩm chất yêu cầu: ${input.objectivesQuality}` : ""}
     Lưu ý riêng về độ tuổi (Nếu là khối 6, 7, 8, 9): Giáo án CẦN TĂNG CƯỜNG thực hành, thao tác trực quan, và trò chơi hóa (gamification). Hạn chế những câu hỏi thảo luận mang tính triết học nặng nề của cấp 3.
 
     ${AI_SUBJECT_GUIDELINES}
     CHỈ BÁO QĐ 3439 - Định dạng bắt buộc: KHỐI.MẠCH.CHỦ_ĐỀ.SỐ (vd: 10.A.A1.1). Mạch: A=Tư duy con người, B=Đạo đức AI, C=Kỹ thuật, D=Thiết kế hệ thống. Chủ đề: A1/A2, B1/B2, C1/C2, D1/D2. THCS(6-9) ưu tiên A1,B1,C1.
+    ${input.indicatorCode ? `\nLỆNH TỐI CẤP LIÊN QUAN TỚI MÃ CHỈ BÁO: BÀI HỌC NÀY ĐÃ ĐƯỢC HỆ THỐNG GIAO NHIỆM VỤ LÀ "BẮT BUỘC TÍCH HỢP AI" VỚI MÃ CHỈ BÁO GỐC: ${input.indicatorCode}. BẠN PHẢI TUYỆT ĐỐI KHAI BÁO MỤC "Năng lực AI đặc thù" VỚI CHỈ BÁO NÀY (CÓ THỂ BỔ SUNG YCCĐ CHO PHÙ HỢP). KHÔNG ĐƯỢC PHÉP TRẢ VỀ "Không tích hợp".` : ""}
     ${CURRICULUM_DATA}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
@@ -572,9 +577,7 @@ KIÊN QUYẾT BẢO TỒN:
 
     QUY TẮC THỰC THI NGHIÊM NGẶT (CRITICAL RULES):
     1. KIỂM TRA ĐIỀU KIỆN TÍCH HỢP:
-       - Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không.
-       - Nếu bài học được xác định là "Không tích hợp": Hãy soạn giáo án thuần túy theo Công văn 5512, tuyệt đối không đưa nội dung AI vào (để trống mục Năng lực AI).
-       - Nếu bài học có "Tích hợp AI": Bắt buộc thêm một mục riêng biệt có tên "HOẠT ĐỘNG GIÁO DỤC AI" ngay trong phần nội dung tiến trình dạy học ở vị trí có điểm chạm.
+       - ${input.indicatorCode ? "ĐÃ ĐƯỢC CHỈ ĐỊNH LÀ BẮT BUỘC TÍCH HỢP. Bắt buộc thêm một mục riêng biệt có tên \"HOẠT ĐỘNG GIÁO DỤC AI\" ngay trong phần nội dung tiến trình dạy học ở vị trí có điểm chạm." : "Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không. Nếu không tích hợp thì để trống mục Năng lực AI. Nếu có tích hợp thì chèn HOẠT ĐỘNG GIÁO DỤC AI."}
     2. MÔ TẢ CÔNG CỤ SỐ AI: Trong hoạt động có tích hợp, phải mô tả cụ thể việc sử dụng các công cụ AI (ChatGPT, Canva, chatbot...) để hỗ trợ học sinh đạt được năng lực tương ứng.
     3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ (Ví dụ: 10.A.A1.1).
     4. PHẢN BIỆN & BÁO ĐỘNG ĐỎ: BẮT BUỘC sử dụng thẻ <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai> để đánh dấu hoạt động trọng tâm có ứng dụng công nghệ AI.
@@ -682,7 +685,7 @@ KIÊN QUYẾT BẢO TỒN:
   }
 };
 
-export const generateEducationalPlan = async (subject: string, grade: string, province?: string, referencePlan?: any[], options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[] }) => {
+export const generateEducationalPlan = async (subject: string, grade: string, province?: string, referencePlan?: any[], options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[], curriculumDbData?: any[] }) => {
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
 
@@ -690,7 +693,10 @@ export const generateEducationalPlan = async (subject: string, grade: string, pr
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
 ${JSON.stringify(options.customCurriculumData, null, 2)}
 LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. KHÔNG SỬ DỤNG DỮ LIỆU MẶC ĐỊNH KHÁC.`
-    : CURRICULUM_DATA;
+    : options?.curriculumDbData ? `DỮ LIỆU BÀI HỌC VÀ MÃ CHỈ BÁO AI BẮT BUỘC TỪ HỆ THỐNG:
+${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode })), null, 2)}
+LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài học và ĐẶC BIỆT LÀ MÃ CHỈ BÁO AI (indicatorCode) từ danh sách trên để phân bổ. TUYỆT ĐỐI KHÔNG ĐƯỢC BỊA MÃ KHÁC.`
+      : CURRICULUM_DATA;
 
   const referencePrompt = referencePlan
     ? `DỰA TRÊN KẾ HOẠCH TỔ CHUYÊN MÔN SAU ĐÂY ĐỂ ĐỒNG NHẤT NỘI DUNG (BẮT BUỘC):
@@ -773,7 +779,7 @@ LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tê
   }
 };
 
-export const generateDepartmentPlan = async (subject: string, grade: string, province?: string, options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[] }) => {
+export const generateDepartmentPlan = async (subject: string, grade: string, province?: string, options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[], curriculumDbData?: any[] }) => {
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
 
@@ -781,7 +787,10 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
 ${JSON.stringify(options.customCurriculumData, null, 2)}
 LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này. KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.`
-    : CURRICULUM_DATA;
+    : options?.curriculumDbData ? `DỮ LIỆU BÀI HỌC VÀ MÃ CHỈ BÁO AI BẮT BUỘC TỪ HỆ THỐNG:
+${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode })), null, 2)}
+LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100% với danh sách bài học trên. Tại cột "Yêu cầu cần đạt 3439" (aiCompetency3439), BẮT BUỘC phải chèn mã chỉ báo (indicatorCode) được cung cấp tương ứng. TUYỆT ĐỐI KHÔNG BỊA MÃ KHÁC HAY GHI LÀ "Không tích hợp" nều bài đó có mã chỉ báo.`
+      : CURRICULUM_DATA;
   const prompt = `
     Bạn là một Chuyên gia xây dựng chương trình giáo dục. Hãy giúp tôi lập Kế hoạch giáo dục tổ chuyên môn tích hợp nội dung giáo dục AI cho môn: ${subject}, lớp: ${grade}${subject === "Giáo dục địa phương" && province ? `, tại địa phương: ${province}` : ""}.
     

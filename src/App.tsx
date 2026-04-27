@@ -274,7 +274,11 @@ export default function App() {
     setResult(null);
     try {
       const activeRef = customRef || (departmentPlanRef && departmentPlanRef[0]?.subject === eduPlanInput.subject && departmentPlanRef[0]?.grade === eduPlanInput.grade ? departmentPlanRef : null);
-      const data = await generateEducationalPlan(eduPlanInput.subject, eduPlanInput.grade, province, activeRef || undefined, { useLaTeX: eduPlanInput.useLaTeX, detailDrawings: eduPlanInput.detailDrawings });
+      const data = await generateEducationalPlan(eduPlanInput.subject, eduPlanInput.grade, province, activeRef || undefined, {
+        useLaTeX: eduPlanInput.useLaTeX,
+        detailDrawings: eduPlanInput.detailDrawings,
+        curriculumDbData: (!customCurriculumData && province === "TP. Hồ Chí Minh (Thành phố)") ? CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade] : undefined
+      });
       setResult({ type: "khgd", data });
     } catch (err: any) {
       const msg = err?.message || "";
@@ -304,7 +308,8 @@ export default function App() {
       const data = await generateDepartmentPlan(eduPlanInput.subject, eduPlanInput.grade, province, {
         useLaTeX: eduPlanInput.useLaTeX,
         detailDrawings: eduPlanInput.detailDrawings,
-        customCurriculumData: customCurriculumData || undefined
+        customCurriculumData: customCurriculumData || undefined,
+        curriculumDbData: (!customCurriculumData && province === "TP. Hồ Chí Minh (Thành phố)") ? CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade] : undefined
       });
       setResult({ type: "kh-tcm", data });
       setDepartmentPlanRef(data);

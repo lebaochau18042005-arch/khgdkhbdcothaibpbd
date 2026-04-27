@@ -507,7 +507,7 @@ export const generateLessonPlan = async (input: LessonPlanInput) => {
   const formattingNeed = input.useLaTeX || input.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(input.subject);
   const englishConstraint = (input.subject === "Tiếng Anh" || input.subject.toLowerCase().includes("english")) ? "\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung giáo án (kịch bản GV-HS, mục tiêu, nội dung...) PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
 
-  let finalPromptContents: any = ``;
+  let finalPromptContents: any = "";
   if (input.existingPdfBase64) {
     const p1 = `
 🚨🚨🚨 CHẾ ĐỘ NÂNG CẤP GIÁO ÁN GỐC TỪ FILE PDF — ƯU TIÊN TỐI CAO 🚨🚨🚨
@@ -517,11 +517,13 @@ NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầ
 ĐIỂM CHẠM AI CẦN TÍCH HỢP (chỉ chỉnh sửa những hoạt động này):
 ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 
-KIÊN QUYẾT BẢO TỒN: 
-1. Không cắt bớt phần Mở đầu, Hình thành KT mới, Luyện tập, Vận dụng mà giáo viên đã viết.
-2. Không tự động bịa đặt các câu hỏi hay kết luận trừ khi có liên quan trực tiếp tới Công cụ AI.
-3. Khi bạn được lệnh tích hợp AI ở một Hoạt động nào đó, chỉ viết thêm đúng phần <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP NĂNG LỰC AI]</ai> mô tả chi tiết tại đó với lời văn của mình, CÒN LẠI DỮ LIỆU CŨ PHẢI SAO CHÉP Y HỆT.
-4. ĐỐI VỚI NĂNG LỰC AI BỔ SUNG: Ở mục \`aiSpecific\` trong JSON trả về, BẮT BUỘC mỗi chuỗi mục tiêu AI phải có MÃ CHỈ BÁO nằm chính xác trong ngoặc đơn ở cuối dòng. Ví dụ: "Sử dụng AI phân tích dữ liệu (${input.indicatorCode || input.grade + '.A.A1.1'})".
+KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI: 
+1. BẢO TOÀN NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại các hoạt động Mở đầu, Hình thành Kiến thức mới, Luyện tập, Vận dụng mà giáo viên đã cung cấp. Phải giữ nguyên văn dữ liệu cũ (copy-paste lại nội dung cũ).
+2. THÊM NĂNG LỰC & CÔNG CỤ SỐ: Tự động tổng hợp và thêm mục tiêu AI vào mục Năng Lực, thêm công cụ số AI vào mục "CÔNG CỤ SỐ AI".
+3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
+   - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
+4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
+5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, BẮT BUỘC mỗi dòng mục tiêu AI phải kết thúc bằng mã chỉ báo (Ví dụ: "Sử dụng ChatGPT lập bảng thông tin (${input.indicatorCode || input.grade + '.A.A1.1'})").
 `;
     finalPromptContents = [
       p1,
@@ -537,27 +539,29 @@ KIÊN QUYẾT BẢO TỒN:
       ? `
 🚨🚨🚨 CHẾ ĐỘ NÂNG CẤP GIÁO ÁN GỐC — ƯU TIÊN TỐI CAO 🚨🚨🚨
 
-NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu. Bạn phải NÂNG CẤP giáo án gốc sau đây của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM/CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
+NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu. Bạn phải NÂNG CẤP giáo án gốc sau đây của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM / CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
 
-VĂN BẢN GIÁO ÁN GỐC CỦA GIÁO VIÊN (BẮT BUỘC BẢO TOÀN):
+VĂN BẢN GIÁO ÁN GỐC CỦA GIÁO VIÊN(BẮT BUỘC BẢO TOÀN):
 """
 ${input.existingRawText.substring(0, 18000)}
 """
 
-ĐIỂM CHẠM AI CẦN TÍCH HỢP (chỉ chỉnh sửa những hoạt động này):
+ĐIỂM CHẠM AI CẦN TÍCH HỢP(chỉ chỉnh sửa những hoạt động này):
 ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 
-KIÊN QUYẾT BẢO TỒN: 
-1. Không cắt bớt phần Mở đầu, Hình thành KT mới, Luyện tập, Vận dụng mà giáo viên đã viết.
-2. Không tự động bịa đặt các câu hỏi hay kết luận trừ khi có liên quan trực tiếp tới Công cụ AI.
-3. Khi bạn được lệnh tích hợp AI ở một Hoạt động nào đó, chỉ viết thêm đúng phần <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP NĂNG LỰC AI]</ai> mô tả chi tiết tại đó với lời văn của mình, CÒN LẠI DỮ LIỆU CŨ PHẢI SAO CHÉP Y HỆT.
-4. ĐỐI VỚI NĂNG LỰC AI BỔ SUNG: Ở mục \`aiSpecific\` trong JSON trả về, BẮT BUỘC mỗi chuỗi mục tiêu AI phải có MÃ CHỈ BÁO nằm chính xác trong ngoặc đơn ở cuối dòng. Ví dụ: "Sử dụng AI phân tích dữ liệu (${input.indicatorCode || input.grade + '.A.A1.1'})".
-` : ``;
+KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
+1. BẢO TOÀN NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại các hoạt động Mở đầu, Hình thành Kiến thức mới, Luyện tập, Vận dụng mà giáo viên đã cung cấp. Phải giữ nguyên văn dữ liệu cũ (copy-paste lại nội dung cũ).
+2. THÊM NĂNG LỰC & CÔNG CỤ SỐ: Tự động tổng hợp và thêm mục tiêu AI vào mục Năng Lực, thêm công cụ số AI vào mục "CÔNG CỤ SỐ AI".
+3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
+   - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
+4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
+5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, BẮT BUỘC mỗi dòng mục tiêu AI phải kết thúc bằng mã chỉ báo (Ví dụ: "Sử dụng ChatGPT lập bảng thông tin (${input.indicatorCode || input.grade + '.A.A1.1'})").
+` : "";
   }
 
   const basePrompt = `
-    Vai trò: Bạn là một Chuyên gia Giáo dục hàng đầu quốc gia, là người xét duyệt giáo án thi giáo viên giỏi xuất sắc. Bạn am hiểu sâu sắc Chương trình GDPT 2018, Công văn 5512/BGDĐT-GDTrH và Khung giáo dục Trí tuệ nhân tạo (AI) theo Quyết định 3439/QĐ-BGDĐT. 
-    Lệnh đặc biệt: Hãy soạn một Giáo án (Kế hoạch bài dạy) SIÊU CHI TIẾT, thật sự chuyên sâu, logic, chặt chẽ, cụ thể từng lời nói và hành động mô phỏng thực tế lớp học cho:
+    Vai trò: Bạn là một Chuyên gia Giáo dục hàng đầu quốc gia, là người xét duyệt giáo án thi giáo viên giỏi xuất sắc.Bạn am hiểu sâu sắc Chương trình GDPT 2018, Công văn 5512 / BGDĐT - GDTrH và Khung giáo dục Trí tuệ nhân tạo(AI) theo Quyết định 3439 / QĐ - BGDĐT. 
+    Lệnh đặc biệt: Hãy soạn một Giáo án(Kế hoạch bài dạy) SIÊU CHI TIẾT, thật sự chuyên sâu, logic, chặt chẽ, cụ thể từng lời nói và hành động mô phỏng thực tế lớp học cho:
     Môn học: ${input.subject}
     Tên bài dạy: ${input.topic}
     Lớp: ${input.grade} - Thời lượng: ${input.duration}
@@ -566,49 +570,49 @@ KIÊN QUYẾT BẢO TỒN:
     ${input.objectivesKnowledge ? `Mục tiêu kiến thức yêu cầu: ${input.objectivesKnowledge}` : ""}
     ${input.objectivesCompetency ? `Mục tiêu năng lực yêu cầu: ${input.objectivesCompetency}` : ""}
     ${input.objectivesQuality ? `Mục tiêu phẩm chất yêu cầu: ${input.objectivesQuality}` : ""}
-    Lưu ý riêng về độ tuổi (Nếu là khối 6, 7, 8, 9): Giáo án CẦN TĂNG CƯỜNG thực hành, thao tác trực quan, và trò chơi hóa (gamification). Hạn chế những câu hỏi thảo luận mang tính triết học nặng nề của cấp 3.
+    Lưu ý riêng về độ tuổi(Nếu là khối 6, 7, 8, 9): Giáo án CẦN TĂNG CƯỜNG thực hành, thao tác trực quan, và trò chơi hóa(gamification).Hạn chế những câu hỏi thảo luận mang tính triết học nặng nề của cấp 3.
 
     ${AI_SUBJECT_GUIDELINES}
-    CHỈ BÁO QĐ 3439 - Định dạng bắt buộc: KHỐI_LỚP_HIỆN_TẠI.MẠCH.CHỦ_ĐỀ.SỐ (vd: ${input.grade}.A.A1.1). Mạch: A=Tư duy con người, B=Đạo đức AI, C=Kỹ thuật, D=Thiết kế hệ thống. Chủ đề: A1/A2, B1/B2, C1/C2, D1/D2. THCS(6-9) ưu tiên A1,B1,C1.
-    ${input.indicatorCode ? `\nLỆNH TỐI CẤP LIÊN QUAN TỚI MÃ CHỈ BÁO: BÀI HỌC NÀY ĐÃ ĐƯỢC HỆ THỐNG GIAO NHIỆM VỤ LÀ "BẮT BUỘC TÍCH HỢP AI" VỚI MÃ CHỈ BÁO GỐC: ${input.indicatorCode}. BẠN PHẢI TUYỆT ĐỐI KHAI BÁO MỤC "Năng lực AI đặc thù" VỚI CHỈ BÁO NÀY (CÓ THỂ BỔ SUNG YCCĐ CHO PHÙ HỢP). KHÔNG ĐƯỢC PHÉP TRẢ VỀ "Không tích hợp".` : ""}
+    CHỈ BÁO QĐ 3439 - Định dạng bắt buộc: KHỐI_LỚP_HIỆN_TẠI.MẠCH.CHỦ_ĐỀ.SỐ(vd: ${input.grade}.A.A1.1).Mạch: A = Tư duy con người, B = Đạo đức AI, C = Kỹ thuật, D = Thiết kế hệ thống.Chủ đề: A1 / A2, B1 / B2, C1 / C2, D1 / D2.THCS(6 - 9) ưu tiên A1, B1, C1.
+      ${input.indicatorCode ? `\nLỆNH TỐI CẤP LIÊN QUAN TỚI MÃ CHỈ BÁO: BÀI HỌC NÀY ĐÃ ĐƯỢC HỆ THỐNG GIAO NHIỆM VỤ LÀ "BẮT BUỘC TÍCH HỢP AI" VỚI MÃ CHỈ BÁO GỐC: ${input.indicatorCode}. BẠN PHẢI TUYỆT ĐỐI KHAI BÁO MỤC "Năng lực AI đặc thù" VỚI CHỈ BÁO NÀY (CÓ THỂ BỔ SUNG YCCĐ CHO PHÙ HỢP). KHÔNG ĐƯỢC PHÉP TRẢ VỀ "Không tích hợp".` : ""}
     ${CURRICULUM_DATA}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
 
-    YÊU CẦU NỘI DUNG NGHIÊM NGẶT (CHUẨN CV 5512 và QĐ 3439):
+    YÊU CẦU NỘI DUNG NGHIÊM NGẶT(CHUẨN CV 5512 và QĐ 3439):
 
-    QUY TẮC THỰC THI NGHIÊM NGẶT (CRITICAL RULES):
+    QUY TẮC THỰC THI NGHIÊM NGẶT(CRITICAL RULES):
     1. KIỂM TRA ĐIỀU KIỆN TÍCH HỢP:
-       - ${input.indicatorCode ? "ĐÃ ĐƯỢC CHỈ ĐỊNH LÀ BẮT BUỘC TÍCH HỢP. Bắt buộc thêm một mục riêng biệt có tên \"HOẠT ĐỘNG GIÁO DỤC AI\" ngay trong phần nội dung tiến trình dạy học ở vị trí có điểm chạm." : "Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không. Nếu không tích hợp thì để trống mục Năng lực AI. Nếu có tích hợp thì chèn HOẠT ĐỘNG GIÁO DỤC AI."}
-    2. MÔ TẢ CÔNG CỤ SỐ AI: Trong hoạt động có tích hợp, phải mô tả cụ thể việc sử dụng các công cụ AI (ChatGPT, Canva, chatbot...) để hỗ trợ học sinh đạt được năng lực tương ứng.
-    3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ (Ví dụ: ${input.grade}.A.A1.1). Tuyệt đối khối lớp phải khớp với ${input.grade}.
-    4. PHẢN BIỆN & BÁO ĐỘNG ĐỎ: BẮT BUỘC sử dụng thẻ <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai> để đánh dấu hoạt động trọng tâm có ứng dụng công nghệ AI.
+    - ${input.indicatorCode ? "ĐÃ ĐƯỢC CHỈ ĐỊNH LÀ BẮT BUỘC TÍCH HỢP. Bắt buộc thêm một mục riêng biệt có tên \"HOẠT ĐỘNG GIÁO DỤC AI\" ngay trong phần nội dung tiến trình dạy học ở vị trí có điểm chạm." : "Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không. Nếu không tích hợp thì để trống mục Năng lực AI. Nếu có tích hợp thì chèn HOẠT ĐỘNG GIÁO DỤC AI."}
+    2. MÔ TẢ CÔNG CỤ SỐ AI: Trong hoạt động có tích hợp, phải mô tả cụ thể việc sử dụng các công cụ AI(ChatGPT, Canva, chatbot...) để hỗ trợ học sinh đạt được năng lực tương ứng.
+    3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ(Ví dụ: ${input.grade}.A.A1.1).Tuyệt đối khối lớp phải khớp với ${input.grade}.
+    4. PHẢN BIỆN & BÁO ĐỘNG ĐỎ: BẮT BUỘC sử dụng thẻ < ai > [🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI] </ai> để đánh dấu hoạt động trọng tâm có ứng dụng công nghệ AI.
 
-    I. MỤC TIÊU:
+    I.MỤC TIÊU:
     - Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
     - Năng lực:
-      + Đặc thù môn học: Theo chương trình 2018.
-      + Năng lực AI đặc thù (Chỉ thêm nếu Có tích hợp AI): LỆNH TỐI CẤP: LƯU Ý RẰNG BẠN CHỈ TRẢ VỀ DỮ LIỆU DƯỚI DẠNG MẢNG STRING CHO MỤC NÀY, DO ĐÓ BẠN PHẢI NỐI TRỰC TIẾP MÃ CHỈ BÁO VÀO BÊN TRONG TỪNG CHUỖI ĐẦU RA! GHI RÕ MÃ VÀO CUỐI MỖI KẾT QUẢ. (Ví dụ chuỗi kết quả: "Học sinh suy luận bằng ChatGPT (${input.indicatorCode || input.grade + '.B.B1.2'})"). VIỆC BỎ QUÊN MÃ CHỈ BÁO SẼ LÀM HỎNG HỆ THỐNG.
+    + Đặc thù môn học: Theo chương trình 2018.
+      + Năng lực AI đặc thù(Chỉ thêm nếu Có tích hợp AI): LỆNH TỐI CẤP: LƯU Ý RẰNG BẠN CHỈ TRẢ VỀ DỮ LIỆU DƯỚI DẠNG MẢNG STRING CHO MỤC NÀY, DO ĐÓ BẠN PHẢI NỐI TRỰC TIẾP MÃ CHỈ BÁO VÀO BÊN TRONG TỪNG CHUỖI ĐẦU RA! GHI RÕ MÃ VÀO CUỐI MỖI KẾT QUẢ. (Ví dụ chuỗi kết quả: "Học sinh suy luận bằng ChatGPT (${input.indicatorCode || input.grade + '.B.B1.2'})").VIỆC BỎ QUÊN MÃ CHỈ BÁO SẼ LÀM HỎNG HỆ THỐNG.
       + Năng lực chung: Tự chủ, tự học; Giao tiếp...
     - Phẩm chất: Theo CV 5512.
 
-    II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU: Đảm bảo theo quy định 5512 (thêm Công cụ số AI nếu Có tích hợp).
+    II.THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU: Đảm bảo theo quy định 5512(thêm Công cụ số AI nếu Có tích hợp).
 
-    III. TIẾN TRÌNH DẠY HỌC (CHI TIẾT):
+      III.TIẾN TRÌNH DẠY HỌC(CHI TIẾT):
     ${LESSON_PLAN_STRICT_GUIDELINES}
     
     Phân bổ 4 hoạt động chuẩn 5512:
-    1. Mở đầu (Xác định vấn đề).
+    1. Mở đầu(Xác định vấn đề).
     2. Hình thành kiến thức mới.
-    3. Luyện tập (Các hoạt động không tích hợp soạn chuẩn 5512).
+    3. Luyện tập(Các hoạt động không tích hợp soạn chuẩn 5512).
     4. Vận dụng.
-    (LƯU Ý: Với bài học "Có tích hợp AI", phải lồng ghép khéo léo "HOẠT ĐỘNG GIÁO DỤC AI" kèm khai báo mã chỉ báo và thẻ [🚨 BÁO ĐỘNG ĐỎ] vào 1 trong 4 bước trên sao cho phù hợp).
+    (LƯU Ý: Với bài học "Có tích hợp AI", phải lồng ghép khéo léo "HOẠT ĐỘNG GIÁO DỤC AI" kèm khai báo mã chỉ báo và thẻ[🚨 BÁO ĐỘNG ĐỎ]vào 1 trong 4 bước trên sao cho phù hợp).
 
-    IV. KẾ HOẠCH ĐÁNH GIÁ:
-    BẮT BUỘC thiết kế tiêu chí đánh giá kỹ năng tương tác với AI và khả năng phản biện. QUAN TRỌNG: Tại phần Bài kiểm tra ngắn (Quiz), BẮT BUỘC phải viết nội dung cụ thể của 2-3 câu hỏi trắc nghiệm (gồm câu hỏi, 4 đáp án A B C D và đáp án đúng) thay vì chỉ ghi chung chung là "có 5 câu hỏi".
+      IV.KẾ HOẠCH ĐÁNH GIÁ:
+    BẮT BUỘC thiết kế tiêu chí đánh giá kỹ năng tương tác với AI và khả năng phản biện.QUAN TRỌNG: Tại phần Bài kiểm tra ngắn(Quiz), BẮT BUỘC phải viết nội dung cụ thể của 2 - 3 câu hỏi trắc nghiệm(gồm câu hỏi, 4 đáp án A B C D và đáp án đúng) thay vì chỉ ghi chung chung là "có 5 câu hỏi".
 
-    V. PHỤ LỤC:
-    Gợi ý 3-5 mẫu lệnh Prompt cụ thể cho bài học này để HS thực hành.
+      V.PHỤ LỤC:
+    Gợi ý 3 - 5 mẫu lệnh Prompt cụ thể cho bài học này để HS thực hành.
 
     Định dạng đầu ra: JSON.
   `;
@@ -694,21 +698,21 @@ export const generateEducationalPlan = async (subject: string, grade: string, pr
   const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
 ${JSON.stringify(options.customCurriculumData, null, 2)}
-LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. KHÔNG SỬ DỤNG DỮ LIỆU MẶC ĐỊNH KHÁC.`
+LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên.KHÔNG SỬ DỤNG DỮ LIỆU MẶC ĐỊNH KHÁC.`
     : options?.curriculumDbData ? `DỮ LIỆU BÀI HỌC VÀ MÃ CHỈ BÁO AI BẮT BUỘC TỪ HỆ THỐNG:
 ${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode })), null, 2)}
-LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài học và ĐẶC BIỆT LÀ MÃ CHỈ BÁO AI (indicatorCode) từ danh sách trên để phân bổ. TUYỆT ĐỐI KHÔNG ĐƯỢC BỊA MÃ KHÁC.`
+LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài học và ĐẶC BIỆT LÀ MÃ CHỈ BÁO AI(indicatorCode) từ danh sách trên để phân bổ.TUYỆT ĐỐI KHÔNG ĐƯỢC BỊA MÃ KHÁC.`
       : CURRICULUM_DATA;
 
   const referencePrompt = referencePlan
-    ? `DỰA TRÊN KẾ HOẠCH TỔ CHUYÊN MÔN SAU ĐÂY ĐỂ ĐỒNG NHẤT NỘI DUNG (BẮT BUỘC):
+    ? `DỰA TRÊN KẾ HOẠCH TỔ CHUYÊN MÔN SAU ĐÂY ĐỂ ĐỒNG NHẤT NỘI DUNG(BẮT BUỘC):
        ${JSON.stringify(referencePlan.map(i => ({ bài: i.lessonName, mục_tiêu: i.lessonGoal, ai: i.aiCompetency })), null, 2)}
        
        Yêu cầu: Bạn phải giữ nguyên tên các bài học và mục tiêu AI đã có trong kế hoạch tổ chuyên môn ở trên.`
     : "";
 
   const prompt = `
-    Hãy đóng vai một chuyên gia giáo dục THPT tại Việt Nam. Xây dựng "Khung kế hoạch giáo dục của giáo viên" (Phân phối chương trình cả năm) cho:
+    Hãy đóng vai một chuyên gia giáo dục THPT tại Việt Nam.Xây dựng "Khung kế hoạch giáo dục của giáo viên"(Phân phối chương trình cả năm) cho:
     - Môn: ${subject}
     - Lớp: ${grade}
     ${subject === "Giáo dục địa phương" && province ? `- Địa phương (Tỉnh/Thành phố): ${province}` : ""}
@@ -721,30 +725,30 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài 
     ${englishConstraint}
 
     YÊU CẦU QUAN TRỌNG VỀ ĐỘ CHÍNH XÁC:
-    1. TUÂN THỦ CHƯƠNG TRÌNH GDPT 2018 (VÀ TT 17/2025 CHO MÔN ĐỊA LÍ): 
-       - LƯU Ý MÔN ĐỊA LÍ: TUYỆT ĐỐI tuân thủ danh mục bài học theo Thông tư 17/2025/TT-BGDĐT (điều chỉnh tên bài, thứ tự chương trình của môn Địa Lí theo TT mới nhất).
+    1. TUÂN THỦ CHƯƠNG TRÌNH GDPT 2018(VÀ TT 17 / 2025 CHO MÔN ĐỊA LÍ):
+    - LƯU Ý MÔN ĐỊA LÍ: TUYỆT ĐỐI tuân thủ danh mục bài học theo Thông tư 17 / 2025 / TT - BGDĐT(điều chỉnh tên bài, thứ tự chương trình của môn Địa Lí theo TT mới nhất).
        - Đối với các môn còn lại: Sử dụng chính xác tên các bài học theo phân phối chương trình chuẩn.
-       - ĐỐI VỚI TẤT CẢ CÁC MÔN CÒN LẠI: Nội dung, trật tự và tên bài học BẮT BUỘC PHẢI KHỚP TUYỆT ĐỐI VỚI BỘ SÁCH "KẾT NỐI TRI THỨC VỚI CUỘC SỐNG" của NXB Giáo dục Việt Nam. TUYỆT ĐỐI KHÔNG sử dụng yếu tố địa phương (${province}) để thay đổi tên bài học của các môn này.
+       - ĐỐI VỚI TẤT CẢ CÁC MÔN CÒN LẠI: Nội dung, trật tự và tên bài học BẮT BUỘC PHẢI KHỚP TUYỆT ĐỐI VỚI BỘ SÁCH "KẾT NỐI TRI THỨC VỚI CUỘC SỐNG" của NXB Giáo dục Việt Nam.TUYỆT ĐỐI KHÔNG sử dụng yếu tố địa phương(${province}) để thay đổi tên bài học của các môn này.
        - ĐỐI VỚI MÔN GIÁO DỤC ĐỊA PHƯƠNG: Chỉ trong trường hợp này mới sử dụng nội dung đặc thù của ${province}.
     
     ${curriculumConstraint}
 
     2. Cấu trúc bảng Phân phối chương trình:
-       - Thứ tự tiết: Số thứ tự tiết học.
+    - Thứ tự tiết: Số thứ tự tiết học.
        - Bài học: Tên bài học theo chương trình.
        - Số tiết: Số lượng tiết dành cho bài học đó.
-       - Thời điểm: Tuần hoặc tháng thực hiện (Ví dụ: Tuần 1).
+       - Thời điểm: Tuần hoặc tháng thực hiện(Ví dụ: Tuần 1).
        - Thiết bị dạy học: Các thiết bị truyền thống cần thiết.
-       - Công cụ số và AI (BẮT BUỘC): Bám sát định hướng CV 3439:
-         + Phương án triển khai: Sử dụng tình huống giả định, nghiên cứu tình huống (case study) hay có công cụ AI trực tiếp.
-         + Học liệu/công cụ cụ thể: Các bài báo, video phân tích, các bộ dữ liệu giả định, hoặc tên phần mềm/nền tảng AI sẽ sử dụng.
+       - Công cụ số và AI(BẮT BUỘC): Bám sát định hướng CV 3439:
+    + Phương án triển khai: Sử dụng tình huống giả định, nghiên cứu tình huống(case study) hay có công cụ AI trực tiếp.
+         + Học liệu / công cụ cụ thể: Các bài báo, video phân tích, các bộ dữ liệu giả định, hoặc tên phần mềm / nền tảng AI sẽ sử dụng.
        - Địa điểm dạy học: Lớp học, phòng máy tính, thư viện...
-       - Định hướng năng lực số: Cụ thể hóa mã YCCĐ AI (Khung 3439). QUY TẮC MÃ: KHỐI LỚP.NỘI DUNG(A/B/C/D).CHỦ ĐỀ(A1/B1).YCCĐ_SỐ(1/2/3) (Ví dụ: 10.A.A1.1, 11.C.C2.3). TUYỆT ĐỐI tuân thủ dấu chấm phân tách và định dạng này.
-       - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \sin, \cos) trong bảng này. Các công thức toán/lý/hóa phải chuyển thành text thường dễ đọc nhất (vd: y = sin x).
+    - Định hướng năng lực số: Cụ thể hóa mã YCCĐ AI(Khung 3439).QUY TẮC MÃ: KHỐI LỚP.NỘI DUNG(A / B / C / D).CHỦ ĐỀ(A1 / B1).YCCĐ_SỐ(1 / 2 / 3)(Ví dụ: 10.A.A1.1, 11.C.C2.3).TUYỆT ĐỐI tuân thủ dấu chấm phân tách và định dạng này.
+       - ĐỊNH DẠNG VĂN BẢN(RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \sin, \cos) trong bảng này.Các công thức toán / lý / hóa phải chuyển thành text thường dễ đọc nhất(vd: y = sin x).
 
-    2. NGUYÊN TẮC TÍCH HỢP (Theo 8334/BGDĐT-GDPT):
-       - Rà soát toàn bộ bài học trong chương trình.
-       - KHÔNG tích hợp dàn trải hoặc khiên cưỡng. Chỉ thực hiện khi có "điểm chạm" logic và tự nhiên giữa kiến thức môn học và năng lực AI.
+    2. NGUYÊN TẮC TÍCH HỢP(Theo 8334 / BGDĐT - GDPT):
+    - Rà soát toàn bộ bài học trong chương trình.
+       - KHÔNG tích hợp dàn trải hoặc khiên cưỡng.Chỉ thực hiện khi có "điểm chạm" logic và tự nhiên giữa kiến thức môn học và năng lực AI.
        - Nếu bài nào không phù hợp để tích hợp, tại cột "YCCĐ AI" và "Mục tiêu tích hợp AI" ghi rõ: "Không tích hợp".
 
     3. Định dạng đầu ra: Trình bày dưới dạng JSON Array các đối tượng.
@@ -788,56 +792,56 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
   const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
 ${JSON.stringify(options.customCurriculumData, null, 2)}
-LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này. KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.`
+LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên.Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này.KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.`
     : options?.curriculumDbData ? `DỮ LIỆU BÀI HỌC VÀ MÃ CHỈ BÁO AI BẮT BUỘC TỪ HỆ THỐNG:
 ${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode })), null, 2)}
-LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100% với danh sách bài học trên. Tại cột "Yêu cầu cần đạt 3439" (aiCompetency3439), BẮT BUỘC phải chèn mã chỉ báo (indicatorCode) được cung cấp tương ứng. TUYỆT ĐỐI KHÔNG BỊA MÃ KHÁC HAY GHI LÀ "Không tích hợp" nều bài đó có mã chỉ báo.`
+LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với danh sách bài học trên.Tại cột "Yêu cầu cần đạt 3439"(aiCompetency3439), BẮT BUỘC phải chèn mã chỉ báo(indicatorCode) được cung cấp tương ứng.TUYỆT ĐỐI KHÔNG BỊA MÃ KHÁC HAY GHI LÀ "Không tích hợp" nều bài đó có mã chỉ báo.`
       : CURRICULUM_DATA;
   const prompt = `
-    Bạn là một Chuyên gia xây dựng chương trình giáo dục. Hãy giúp tôi lập Kế hoạch giáo dục tổ chuyên môn tích hợp nội dung giáo dục AI cho môn: ${subject}, lớp: ${grade}${subject === "Giáo dục địa phương" && province ? `, tại địa phương: ${province}` : ""}.
+    Bạn là một Chuyên gia xây dựng chương trình giáo dục.Hãy giúp tôi lập Kế hoạch giáo dục tổ chuyên môn tích hợp nội dung giáo dục AI cho môn: ${subject}, lớp: ${grade}${subject === "Giáo dục địa phương" && province ? `, tại địa phương: ${province}` : ""}.
     
     YÊU CẦU QUAN TRỌNG VỀ TÊN BÀI HỌC VÀ CHƯƠNG TRÌNH:
     1. Nếu là môn "Giáo dục địa phương": Phải bám sát chương trình của ${province}.
-    2. ĐỐI VỚI MÔN ĐỊA LÍ: TUYỆT ĐỐI BẮT BUỘC tuân thủ danh mục bài học theo Thông tư 17/2025/TT-BGDĐT (ưu tiên TT 17/2025 nếu có sai lệch với dữ liệu cũ).
-    3. Nếu là các môn học khác (Toán, Văn...): Phải sử dụng tên bài học TRÙNG KHỚP 100% với Chương trình GDPT 2018 và SGK hiện hành. 
-    
-    ${curriculumConstraint}
+    2. ĐỐI VỚI MÔN ĐỊA LÍ: TUYỆT ĐỐI BẮT BUỘC tuân thủ danh mục bài học theo Thông tư 17 / 2025 / TT - BGDĐT(ưu tiên TT 17 / 2025 nếu có sai lệch với dữ liệu cũ).
+    3. Nếu là các môn học khác(Toán, Văn...): Phải sử dụng tên bài học TRÙNG KHỚP 100 % với Chương trình GDPT 2018 và SGK hiện hành.
+
+      ${curriculumConstraint}
     
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
 
     Nhiệm vụ cụ thể:
-    1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề/bài học trong chương trình GDPT 2018 của môn này. KHÔNG ĐƯỢC bỏ sót bài nào.
+    1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề / bài học trong chương trình GDPT 2018 của môn này.KHÔNG ĐƯỢC bỏ sót bài nào.
     2. Đánh giá khả năng tích hợp AI:
-       - Với mỗi bài học, xác định xem có khả năng tích hợp AI dựa trên các tiêu chí: có nội dung phân tích xã hội, kinh tế, pháp luật hoặc có yếu tố dữ liệu, phương pháp nghiên cứu.
-       - Nếu bài học PHÙ HỢP: Xác định mạch nội dung AI (NLa, NLb, NLc, NLd) và mục tiêu cụ thể.
+    - Với mỗi bài học, xác định xem có khả năng tích hợp AI dựa trên các tiêu chí: có nội dung phân tích xã hội, kinh tế, pháp luật hoặc có yếu tố dữ liệu, phương pháp nghiên cứu.
+       - Nếu bài học PHÙ HỢP: Xác định mạch nội dung AI(NLa, NLb, NLc, NLd) và mục tiêu cụ thể.
        - Nếu bài học KHÔNG PHÙ HỢP: Ghi rõ "Không tích hợp" vào các cột liên quan đến AI để tránh việc tích hợp khiên cưỡng.
     3. Ánh xạ Năng lực:
-       - Chủ đề (topic): Tóm tắt tên chủ đề hoặc chương lớn.
-       - Nội dung (lessonContent): Đây là Tên bài học hoặc nội dung chi tiết. Lưu ý phải khớp 100% với danh sách gốc.
-       - Yêu cầu cần đạt CT 2018 (lessonGoal): Mô tả tóm tắt Kiến thức, Năng lực hướng tới của bài học đó (không cần quá dài, chỉ là trọng tâm cốt lõi).
-       - Số tiết (periods): Số lượng tiết học.
-       - Mục tiêu tích hợp (integratedObjective): Dựa vào nội dung bài học, mô tả rành mạch các mục tiêu AI (ví dụ: "- Nhận biết được một số cách AI hỗ trợ...", "- Hình thành thái độ...").
-       - Yêu cầu cần đạt 3439 (aiCompetency3439): Trích dẫn CHÍNH XÁC nội dung YCCĐ từ Phụ lục CV 3439 VÀ BẮT BUỘC KÈM THEO mã chỉ báo ĐẦY ĐỦ ở cuối theo định dạng: (KHỐI.MẠCH.CHỦ_ĐỀ.SỐ). (Ví dụ: "- Giải thích được tại sao... (9.A.A1.1)" hoặc "(10.C.C1.2)"). TUYỆT ĐỐI KHÔNG CHỈ GHI "(A1)" HAY "(C1)". Ghi "Không tích hợp" nếu bài không phù hợp.
-       - Ghi chú (notes): Lời khuyên hoặc hình thức triển khai tương ứng.
+    - Chủ đề(topic): Tóm tắt tên chủ đề hoặc chương lớn.
+       - Nội dung(lessonContent): Đây là Tên bài học hoặc nội dung chi tiết.Lưu ý phải khớp 100 % với danh sách gốc.
+       - Yêu cầu cần đạt CT 2018(lessonGoal): Mô tả tóm tắt Kiến thức, Năng lực hướng tới của bài học đó(không cần quá dài, chỉ là trọng tâm cốt lõi).
+       - Số tiết(periods): Số lượng tiết học.
+       - Mục tiêu tích hợp(integratedObjective): Dựa vào nội dung bài học, mô tả rành mạch các mục tiêu AI(ví dụ: "- Nhận biết được một số cách AI hỗ trợ...", "- Hình thành thái độ...").
+       - Yêu cầu cần đạt 3439(aiCompetency3439): Trích dẫn CHÍNH XÁC nội dung YCCĐ từ Phụ lục CV 3439 VÀ BẮT BUỘC KÈM THEO mã chỉ báo ĐẦY ĐỦ ở cuối theo định dạng: (KHỐI.MẠCH.CHỦ_ĐỀ.SỐ). (Ví dụ: "- Giải thích được tại sao... (9.A.A1.1)" hoặc "(10.C.C1.2)").TUYỆT ĐỐI KHÔNG CHỈ GHI "(A1)" HAY "(C1)".Ghi "Không tích hợp" nếu bài không phù hợp.
+       - Ghi chú(notes): Lời khuyên hoặc hình thức triển khai tương ứng.
        
-       - Mạch nội dung AI: 
-         - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX ($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.
-           * NLa (A): Tư duy lấy con người làm trung tâm.
-           * NLb (B): Đạo đức và trách nhiệm xã hội.
-           * NLc (C): Kỹ thuật và ứng dụng.
-           * NLd (D): Giải quyết vấn đề và thiết kế hệ thống.
+       - Mạch nội dung AI:
+    - ĐỊNH DẠNG VĂN BẢN(RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI.Các công thức toán / lý / hóa phải được viết dưới dạng văn bản thường.
+           * NLa(A): Tư duy lấy con người làm trung tâm.
+           * NLb(B): Đạo đức và trách nhiệm xã hội.
+           * NLc(C): Kỹ thuật và ứng dụng.
+           * NLd(D): Giải quyết vấn đề và thiết kế hệ thống.
        * Lưu ý: Đối với các môn ngoài Tin học, ưu tiên trọng tâm vào NLa và NLb. 
     4. Xây dựng kế hoạch: Đảm bảo nội dung tích hợp không làm thay đổi nội dung cốt lõi của môn học.
 
     Định dạng đầu ra: JSON Array các đối tượng với các trường sau:
-    - topic: Chủ đề (hoặc Chương). Nếu nhiều bài cùng 1 chủ đề, ghi tên chủ đề đó.
-    - lessonContent: Nội dung bài học (Tên bài học hoặc nội dung trọng tâm).
-    - lessonGoal: Yêu cầu cần đạt CT 2018 (Trọng tâm cốt lõi: Kiến thức, Năng lực).
-    - periods: Số tiết (Ví dụ: "2", "1").
-    - integratedObjective: Mục tiêu tích hợp (Mô tả chi tiết các mục tiêu, hành động khi HS sử dụng AI. Trình bày bằng dấu gạch ngang đầu dòng. Ví dụ: "- Nhận biết được... - Hình thành thái độ...").
-    - aiCompetency3439: Yêu cầu cần đạt 3439 (Trích dẫn CHÍNH XÁC nội dung YCCĐ từ CV 3439 và thêm mã chỉ báo ĐẦY ĐỦ ở cuối. Ví dụ: "- Giải thích được tại sao... (9.C.C1.1)". KHÔNG CHỈ GHI "(A1)"). Ghi "Không tích hợp" nếu bài không phù hợp.
-    - notes: Ghi chú (Các chú ý thêm hoặc hình thức triển khai).
+    - topic: Chủ đề(hoặc Chương).Nếu nhiều bài cùng 1 chủ đề, ghi tên chủ đề đó.
+    - lessonContent: Nội dung bài học(Tên bài học hoặc nội dung trọng tâm).
+    - lessonGoal: Yêu cầu cần đạt CT 2018(Trọng tâm cốt lõi: Kiến thức, Năng lực).
+    - periods: Số tiết(Ví dụ: "2", "1").
+    - integratedObjective: Mục tiêu tích hợp(Mô tả chi tiết các mục tiêu, hành động khi HS sử dụng AI.Trình bày bằng dấu gạch ngang đầu dòng.Ví dụ: "- Nhận biết được... - Hình thành thái độ...").
+    - aiCompetency3439: Yêu cầu cần đạt 3439(Trích dẫn CHÍNH XÁC nội dung YCCĐ từ CV 3439 và thêm mã chỉ báo ĐẦY ĐỦ ở cuối.Ví dụ: "- Giải thích được tại sao... (9.C.C1.1)".KHÔNG CHỈ GHI "(A1)").Ghi "Không tích hợp" nếu bài không phù hợp.
+    - notes: Ghi chú(Các chú ý thêm hoặc hình thức triển khai).
   `;
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');

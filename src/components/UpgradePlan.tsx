@@ -66,7 +66,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             }
 
             setAnalysisResult(analysis);
-            setSelectedIntegrations(analysis.aiSuggestions || []);
+            setSelectedIntegrations([]);
             setStep(2);
         } catch (err: any) {
             console.error("[UpgradePlan Error]", err);
@@ -105,7 +105,8 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             objectivesQuality: analysisResult.objectivesQuality || "",
             existingRawText: rawText,
             existingPdfBase64: pdfBase64,
-            aiIntegrationOptions: selectedIntegrations
+            aiIntegrationOptions: selectedIntegrations,
+            indicatorCode: analysisResult.grade ? `${analysisResult.grade}.A.A1.1` : undefined
         });
     };
 

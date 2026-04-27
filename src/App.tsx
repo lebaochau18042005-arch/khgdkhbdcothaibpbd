@@ -155,7 +155,8 @@ export default function App() {
     } else {
       setLessonPlanInput(prev => ({
         ...prev,
-        topic: lessonTitle
+        topic: lessonTitle,
+        indicatorCode: prev.grade ? `${prev.grade}.A.A1.1` : undefined
       }));
     }
   };
@@ -651,7 +652,7 @@ export default function App() {
         }),
         ...result.data.map((item: any, i: number) => new TableRow({
           children: [
-            i + 1, item.lessonName, item.lessonGoal, item.periods, item.aiCompetency, item.aiObjective, item.implementationForm
+            i + 1, item.topic, item.lessonContent, item.lessonGoal, item.periods, item.integratedObjective, item.aiCompetency3439, item.notes || ""
           ].map(v => new TableCell({ children: [new Paragraph({ text: String(v) })] }))
         }))
       ];

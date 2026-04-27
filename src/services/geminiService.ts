@@ -521,6 +521,7 @@ KIÊN QUYẾT BẢO TỒN:
 1. Không cắt bớt phần Mở đầu, Hình thành KT mới, Luyện tập, Vận dụng mà giáo viên đã viết.
 2. Không tự động bịa đặt các câu hỏi hay kết luận trừ khi có liên quan trực tiếp tới Công cụ AI.
 3. Khi bạn được lệnh tích hợp AI ở một Hoạt động nào đó, chỉ viết thêm đúng phần <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP NĂNG LỰC AI]</ai> mô tả chi tiết tại đó với lời văn của mình, CÒN LẠI DỮ LIỆU CŨ PHẢI SAO CHÉP Y HỆT.
+4. ĐỐI VỚI NĂNG LỰC AI BỔ SUNG: Ở mục \`aiSpecific\` trong JSON trả về, BẮT BUỘC mỗi chuỗi mục tiêu AI phải có MÃ CHỈ BÁO nằm chính xác trong ngoặc đơn ở cuối dòng. Ví dụ: "Sử dụng AI phân tích dữ liệu (${input.indicatorCode || input.grade + '.A.A1.1'})".
 `;
     finalPromptContents = [
       p1,
@@ -550,6 +551,7 @@ KIÊN QUYẾT BẢO TỒN:
 1. Không cắt bớt phần Mở đầu, Hình thành KT mới, Luyện tập, Vận dụng mà giáo viên đã viết.
 2. Không tự động bịa đặt các câu hỏi hay kết luận trừ khi có liên quan trực tiếp tới Công cụ AI.
 3. Khi bạn được lệnh tích hợp AI ở một Hoạt động nào đó, chỉ viết thêm đúng phần <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP NĂNG LỰC AI]</ai> mô tả chi tiết tại đó với lời văn của mình, CÒN LẠI DỮ LIỆU CŨ PHẢI SAO CHÉP Y HỆT.
+4. ĐỐI VỚI NĂNG LỰC AI BỔ SUNG: Ở mục \`aiSpecific\` trong JSON trả về, BẮT BUỘC mỗi chuỗi mục tiêu AI phải có MÃ CHỈ BÁO nằm chính xác trong ngoặc đơn ở cuối dòng. Ví dụ: "Sử dụng AI phân tích dữ liệu (${input.indicatorCode || input.grade + '.A.A1.1'})".
 ` : ``;
   }
 

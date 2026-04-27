@@ -586,7 +586,7 @@ KIÊN QUYẾT BẢO TỒN:
     - Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
     - Năng lực:
       + Đặc thù môn học: Theo chương trình 2018.
-      + Năng lực AI đặc thù (Chỉ thêm nếu Có tích hợp AI): Phân tích rõ các NLa, NLb, NLc, NLd kèm mã chỉ báo chuẩn (Ví dụ KHỐI LỚP.NỘI DUNG.CHỦ ĐỀ.YCCĐ: 11.B.B1.2).
+      + Năng lực AI đặc thù (Chỉ thêm nếu Có tích hợp AI): BẮT BUỘC liệt kê dưới dạng gạch đầu dòng các Năng lực AI phù hợp và BẮT BUỘC GHI RÕ MÃ CHỈ BÁO AI XUỐNG CUỐI MỖI DÒNG, MÃ NẰM TRONG NGOẶC ĐƠN. (Ví dụ: Học sinh suy luận bằng ChatGPT (${input.indicatorCode || '11.B.B1.2'})).
       + Năng lực chung: Tự chủ, tự học; Giao tiếp...
     - Phẩm chất: Theo CV 5512.
 

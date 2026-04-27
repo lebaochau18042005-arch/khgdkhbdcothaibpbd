@@ -567,7 +567,7 @@ KIÊN QUYẾT BẢO TỒN:
     Lưu ý riêng về độ tuổi (Nếu là khối 6, 7, 8, 9): Giáo án CẦN TĂNG CƯỜNG thực hành, thao tác trực quan, và trò chơi hóa (gamification). Hạn chế những câu hỏi thảo luận mang tính triết học nặng nề của cấp 3.
 
     ${AI_SUBJECT_GUIDELINES}
-    CHỈ BÁO QĐ 3439 - Định dạng bắt buộc: KHỐI.MẠCH.CHỦ_ĐỀ.SỐ (vd: 10.A.A1.1). Mạch: A=Tư duy con người, B=Đạo đức AI, C=Kỹ thuật, D=Thiết kế hệ thống. Chủ đề: A1/A2, B1/B2, C1/C2, D1/D2. THCS(6-9) ưu tiên A1,B1,C1.
+    CHỈ BÁO QĐ 3439 - Định dạng bắt buộc: KHỐI_LỚP_HIỆN_TẠI.MẠCH.CHỦ_ĐỀ.SỐ (vd: ${input.grade}.A.A1.1). Mạch: A=Tư duy con người, B=Đạo đức AI, C=Kỹ thuật, D=Thiết kế hệ thống. Chủ đề: A1/A2, B1/B2, C1/C2, D1/D2. THCS(6-9) ưu tiên A1,B1,C1.
     ${input.indicatorCode ? `\nLỆNH TỐI CẤP LIÊN QUAN TỚI MÃ CHỈ BÁO: BÀI HỌC NÀY ĐÃ ĐƯỢC HỆ THỐNG GIAO NHIỆM VỤ LÀ "BẮT BUỘC TÍCH HỢP AI" VỚI MÃ CHỈ BÁO GỐC: ${input.indicatorCode}. BẠN PHẢI TUYỆT ĐỐI KHAI BÁO MỤC "Năng lực AI đặc thù" VỚI CHỈ BÁO NÀY (CÓ THỂ BỔ SUNG YCCĐ CHO PHÙ HỢP). KHÔNG ĐƯỢC PHÉP TRẢ VỀ "Không tích hợp".` : ""}
     ${CURRICULUM_DATA}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
@@ -579,14 +579,14 @@ KIÊN QUYẾT BẢO TỒN:
     1. KIỂM TRA ĐIỀU KIỆN TÍCH HỢP:
        - ${input.indicatorCode ? "ĐÃ ĐƯỢC CHỈ ĐỊNH LÀ BẮT BUỘC TÍCH HỢP. Bắt buộc thêm một mục riêng biệt có tên \"HOẠT ĐỘNG GIÁO DỤC AI\" ngay trong phần nội dung tiến trình dạy học ở vị trí có điểm chạm." : "Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không. Nếu không tích hợp thì để trống mục Năng lực AI. Nếu có tích hợp thì chèn HOẠT ĐỘNG GIÁO DỤC AI."}
     2. MÔ TẢ CÔNG CỤ SỐ AI: Trong hoạt động có tích hợp, phải mô tả cụ thể việc sử dụng các công cụ AI (ChatGPT, Canva, chatbot...) để hỗ trợ học sinh đạt được năng lực tương ứng.
-    3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ (Ví dụ: 10.A.A1.1).
+    3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ (Ví dụ: ${input.grade}.A.A1.1). Tuyệt đối khối lớp phải khớp với ${input.grade}.
     4. PHẢN BIỆN & BÁO ĐỘNG ĐỎ: BẮT BUỘC sử dụng thẻ <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI]</ai> để đánh dấu hoạt động trọng tâm có ứng dụng công nghệ AI.
 
     I. MỤC TIÊU:
     - Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
     - Năng lực:
       + Đặc thù môn học: Theo chương trình 2018.
-      + Năng lực AI đặc thù (Chỉ thêm nếu Có tích hợp AI): BẮT BUỘC liệt kê dưới dạng gạch đầu dòng các Năng lực AI phù hợp và BẮT BUỘC GHI RÕ MÃ CHỈ BÁO AI XUỐNG CUỐI MỖI DÒNG, MÃ NẰM TRONG NGOẶC ĐƠN. (Ví dụ: Học sinh suy luận bằng ChatGPT (${input.indicatorCode || '11.B.B1.2'})).
+      + Năng lực AI đặc thù (Chỉ thêm nếu Có tích hợp AI): BẮT BUỘC liệt kê dưới dạng gạch đầu dòng các Năng lực AI phù hợp và BẮT BUỘC GHI RÕ MÃ CHỈ BÁO AI XUỐNG CUỐI MỖI DÒNG, MÃ NẰM TRONG NGOẶC ĐƠN. (Ví dụ: Học sinh suy luận bằng ChatGPT (${input.indicatorCode || input.grade + '.B.B1.2'})). LƯU Ý KHỐI LỚP PHẢI LÀ ${input.grade}.
       + Năng lực chung: Tự chủ, tự học; Giao tiếp...
     - Phẩm chất: Theo CV 5512.
 

@@ -586,7 +586,7 @@ KIÊN QUYẾT BẢO TỒN:
     - Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
     - Năng lực:
       + Đặc thù môn học: Theo chương trình 2018.
-      + Năng lực AI đặc thù (Chỉ thêm nếu Có tích hợp AI): BẮT BUỘC liệt kê dưới dạng gạch đầu dòng các Năng lực AI phù hợp và BẮT BUỘC GHI RÕ MÃ CHỈ BÁO AI XUỐNG CUỐI MỖI DÒNG, MÃ NẰM TRONG NGOẶC ĐƠN. (Ví dụ: Học sinh suy luận bằng ChatGPT (${input.indicatorCode || input.grade + '.B.B1.2'})). LƯU Ý KHỐI LỚP PHẢI LÀ ${input.grade}.
+      + Năng lực AI đặc thù (Chỉ thêm nếu Có tích hợp AI): LỆNH TỐI CẤP: LƯU Ý RẰNG BẠN CHỈ TRẢ VỀ DỮ LIỆU DƯỚI DẠNG MẢNG STRING CHO MỤC NÀY, DO ĐÓ BẠN PHẢI NỐI TRỰC TIẾP MÃ CHỈ BÁO VÀO BÊN TRONG TỪNG CHUỖI ĐẦU RA! GHI RÕ MÃ VÀO CUỐI MỖI KẾT QUẢ. (Ví dụ chuỗi kết quả: "Học sinh suy luận bằng ChatGPT (${input.indicatorCode || input.grade + '.B.B1.2'})"). VIỆC BỎ QUÊN MÃ CHỈ BÁO SẼ LÀM HỎNG HỆ THỐNG.
       + Năng lực chung: Tự chủ, tự học; Giao tiếp...
     - Phẩm chất: Theo CV 5512.
 
@@ -621,7 +621,7 @@ KIÊN QUYẾT BẢO TỒN:
           properties: {
             knowledge: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Mục tiêu về kiến thức" },
             subjectSpecific: { type: Type.ARRAY, items: { type: Type.STRING } },
-            aiSpecific: { type: Type.ARRAY, items: { type: Type.STRING } },
+            aiSpecific: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Mục tiêu Năng lực AI đặc thù. BẮT BUỘC QUAN TRỌNG: MỖI CHUỖI ĐẦU RA PHẢI CÓ MÃ CHỈ BÁO NẰM CHUẨN XÁC TRONG NGOẶC ĐƠN Ở ĐUÔI. Vd: 'Sử dụng AI phân tích XYZ (11.B.B1.2)'" },
             general: { type: Type.ARRAY, items: { type: Type.STRING } },
             qualities: { type: Type.ARRAY, items: { type: Type.STRING } },
           },

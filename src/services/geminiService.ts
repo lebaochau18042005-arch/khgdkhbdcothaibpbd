@@ -304,7 +304,7 @@ export const analyzeExistingPlan = async (fileText: string, pdfBase64?: string) 
       Hãy rà soát và cho tôi biết:
       1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện cơ sở vật chất, Các mục tiêu hiện tại).
       2. Các hoạt động cốt yếu trong giáo án (Thường là Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-      3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí (2 hoạt động) TỐT NHẤT có thể lồng ghép 2 năng lực AI (chọn từ NLa, NLb, NLc, NLd) sao cho phù hợp tự nhiên nhất.
+      3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí (2 hoạt động) TỐT NHẤT có thể lồng ghép hoạt động giáo dục AI (hướng đến các mã chỉ báo cụ thể).
       
       Định dạng đầu ra JSON bắt buộc:
       {
@@ -320,7 +320,7 @@ export const analyzeExistingPlan = async (fileText: string, pdfBase64?: string) 
         "aiSuggestions": [
           {
             "activityName": "Tên hoạt động gợi ý (vd: Hoạt động Luyện tập)",
-            "suggestedAI": "NLa",
+            "suggestedAI": "Mã chỉ báo AI chuẩn (BẮT BUỘC có dạng Khối.ChủĐề.ChỉBáo vd: 10.A1.a hoặc 11.A1.a)",
             "reason": "Lý do vì sao phù hợp lồng ghép vào đây",
             "action": "Nếu lồng ghép thì HS sẽ làm gì với AI ở hoạt động này?"
           }
@@ -337,7 +337,7 @@ export const analyzeExistingPlan = async (fileText: string, pdfBase64?: string) 
     Hãy rà soát và cho tôi biết:
     1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện cơ sở vật chất, Các mục tiêu hiện tại).
     2. Các hoạt động cốt yếu trong giáo án (Thường là Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-    3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí (2 hoạt động) TỐT NHẤT có thể lồng ghép 2 năng lực AI (chọn từ NLa, NLb, NLc, NLd) sao cho phù hợp tự nhiên nhất.
+    3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí (2 hoạt động) TỐT NHẤT có thể lồng ghép hoạt động giáo dục AI (hướng đến các mã chỉ báo cụ thể).
     
     VĂN BẢN GIÁO ÁN:
     ${fileText.substring(0, 15000)} // Giới hạn một phần để chống tràn
@@ -356,7 +356,7 @@ export const analyzeExistingPlan = async (fileText: string, pdfBase64?: string) 
       "aiSuggestions": [
         {
           "activityName": "Tên hoạt động gợi ý (vd: Hoạt động Luyện tập)",
-          "suggestedAI": "NLa",
+          "suggestedAI": "Mã chỉ báo AI chuẩn (BẮT BUỘC có dạng Khối.ChủĐề.ChỉBáo vd: 10.A1.a hoặc 11.A1.a)",
           "reason": "Lý do vì sao phù hợp lồng ghép vào đây",
           "action": "Nếu lồng ghép thì HS sẽ làm gì với AI ở hoạt động này?"
         }

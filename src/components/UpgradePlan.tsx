@@ -66,7 +66,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             }
 
             setAnalysisResult(analysis);
-            setSelectedIntegrations([]);
+            setSelectedIntegrations(analysis.aiSuggestions || []);
             setStep(2);
         } catch (err: any) {
             console.error("[UpgradePlan Error]", err);

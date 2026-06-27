@@ -174,7 +174,8 @@ export default function App() {
     objectivesQuality: "",
     additionalNotes: "",
     useLaTeX: false,
-    detailDrawings: false
+    detailDrawings: false,
+    socialIntegrations: []
   });
 
   // Edu Plan Form State
@@ -182,7 +183,8 @@ export default function App() {
     subject: "",
     grade: "10",
     useLaTeX: false,
-    detailDrawings: false
+    detailDrawings: false,
+    socialIntegrations: []
   });
 
   const highlightAI = (text: string) => {
@@ -278,7 +280,8 @@ export default function App() {
       const data = await generateEducationalPlan(eduPlanInput.subject, eduPlanInput.grade, province, activeRef || undefined, {
         useLaTeX: eduPlanInput.useLaTeX,
         detailDrawings: eduPlanInput.detailDrawings,
-        curriculumDbData: (!customCurriculumData && province === "TP. Hồ Chí Minh (Thành phố)") ? CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade] : undefined
+        curriculumDbData: (!customCurriculumData && province === "TP. Hồ Chí Minh (Thành phố)") ? (CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade] || CURRICULUM_DB["Địa lý"]?.[eduPlanInput.grade]) : undefined,
+        socialIntegrations: eduPlanInput.socialIntegrations
       });
       setResult({ type: "khgd", data });
     } catch (err: any) {
@@ -1276,6 +1279,37 @@ export default function App() {
                               onChange={(e) => setLessonPlanInput({ ...lessonPlanInput, additionalNotes: e.target.value })}
                             />
                           </div>
+
+                          <div className="space-y-3 pt-2">
+                            <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em] flex items-center gap-2">
+                              Tích hợp nội dung xã hội (TT 02/2025)
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {[
+                                { id: "Heritage", label: "Di sản" },
+                                { id: "DrugPrevention", label: "Ma túy" },
+                                { id: "Population", label: "Dân số" },
+                                { id: "Inclusive", label: "Hòa nhập" }
+                              ].map((item) => (
+                                <label key={item.id} className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-all">
+                                  <input
+                                    type="checkbox"
+                                    checked={lessonPlanInput.socialIntegrations?.includes(item.id)}
+                                    onChange={(e) => {
+                                      const current = lessonPlanInput.socialIntegrations || [];
+                                      if (e.target.checked) {
+                                        setLessonPlanInput({ ...lessonPlanInput, socialIntegrations: [...current, item.id] });
+                                      } else {
+                                        setLessonPlanInput({ ...lessonPlanInput, socialIntegrations: current.filter(id => id !== item.id) });
+                                      }
+                                    }}
+                                    className="w-3 h-3 rounded text-brand-accent focus:ring-brand-accent"
+                                  />
+                                  <span className="text-[10px] font-medium text-slate-600">{item.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
                           <button
                             onClick={handleGenerateKHBD}
                             disabled={!lessonPlanInput.subject || !lessonPlanInput.topic}
@@ -1740,7 +1774,6 @@ export default function App() {
                               {GRADES.map(g => <option key={g} value={g}>Lớp {g}</option>)}
                             </select>
                           </div>
-
                           <div className="grid grid-cols-2 gap-4 pt-2">
                             <label className="flex items-center gap-2 cursor-pointer group">
                               <input
@@ -1760,6 +1793,37 @@ export default function App() {
                               />
                               <span className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.05em] group-hover:text-indigo-600 transition-colors">Mô tả chi tiết hình vẽ</span>
                             </label>
+                          </div>
+
+                          <div className="space-y-3 pt-2">
+                            <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em] flex items-center gap-2">
+                              Tích hợp nội dung xã hội (TT 02/2025)
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {[
+                                { id: "Heritage", label: "Di sản" },
+                                { id: "DrugPrevention", label: "Ma túy" },
+                                { id: "Population", label: "Dân số" },
+                                { id: "Inclusive", label: "Hòa nhập" }
+                              ].map((item) => (
+                                <label key={item.id} className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-all">
+                                  <input
+                                    type="checkbox"
+                                    checked={eduPlanInput.socialIntegrations?.includes(item.id)}
+                                    onChange={(e) => {
+                                      const current = eduPlanInput.socialIntegrations || [];
+                                      if (e.target.checked) {
+                                        setEduPlanInput({ ...eduPlanInput, socialIntegrations: [...current, item.id] });
+                                      } else {
+                                        setEduPlanInput({ ...eduPlanInput, socialIntegrations: current.filter(id => id !== item.id) });
+                                      }
+                                    }}
+                                    className="w-3 h-3 rounded text-indigo-600 focus:ring-indigo-500"
+                                  />
+                                  <span className="text-[10px] font-medium text-slate-600">{item.label}</span>
+                                </label>
+                              ))}
+                            </div>
                           </div>
 
                           <button
@@ -2268,8 +2332,8 @@ export default function App() {
           body { background: white !important; }
         }
       `}</style>
-        </div>
-      </SignedIn>
+        </div >
+      </SignedIn >
       <SignedOut>
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
           <SignIn routing="hash" />

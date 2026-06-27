@@ -12,6 +12,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<any>(null);
     const [selectedIntegrations, setSelectedIntegrations] = useState<any[]>([]);
+    const [selectedSocialIntegrations, setSelectedSocialIntegrations] = useState<string[]>([]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const uploadedFile = e.target.files?.[0];
@@ -106,6 +107,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             existingRawText: rawText,
             existingPdfBase64: pdfBase64,
             aiIntegrationOptions: selectedIntegrations,
+            socialIntegrations: selectedSocialIntegrations,
             indicatorCode: analysisResult.grade ? `${analysisResult.grade}.A.A1.1` : undefined
         });
     };
@@ -167,6 +169,37 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                                         <Bot className="w-4 h-4" /> AI Đề xuất điểm chạm
                                     </h3>
                                     <p className="text-xs text-slate-600 mb-3">AI đã tìm ra một số hoạt động trong giáo án có thể lồng ghép KNL 3439.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-2">
+                                <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-blue-600" />
+                                    Tích hợp nội dung xã hội (TT 02/2025)
+                                </h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {[
+                                        { id: "Heritage", label: "Tích hợp Di sản" },
+                                        { id: "DrugPrevention", label: "Phòng chống Ma túy" },
+                                        { id: "Population", label: "Dân số & Phát triển" },
+                                        { id: "Inclusive", label: "Giáo dục Hòa nhập" }
+                                    ].map((item) => (
+                                        <label key={item.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-all">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedSocialIntegrations.includes(item.id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedSocialIntegrations([...selectedSocialIntegrations, item.id]);
+                                                    } else {
+                                                        setSelectedSocialIntegrations(selectedSocialIntegrations.filter(id => id !== item.id));
+                                                    }
+                                                }}
+                                                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                                            />
+                                            <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                                        </label>
+                                    ))}
                                 </div>
                             </div>
 

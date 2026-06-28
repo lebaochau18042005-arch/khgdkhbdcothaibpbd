@@ -229,6 +229,8 @@ export default function App() {
       if (msg.includes("QUOTA_EXHAUSTED")) {
         alert("❌ API Key đã hết hạn mức sử dụng miễn phí hôm nay.\n\n💡 Giải pháp:\n1. Dùng API key của tài khoản Gmail khác (vào https://aistudio.google.com/api-keys để lấy key mới)\n2. Hoặc chờ đến ngày mai để dùng tiếp key hiện tại.");
         setShowSettings(true);
+      } else if (msg.includes("MODEL_OVERLOADED")) {
+        alert("⚠️ Model Gemini đang quá tải tạm thời.\n\n💡 Hệ thống đã thử các model dự phòng. Vui lòng:\n1. Thử lại sau 30 giây\n2. Hoặc chọn model nhẹ hơn (Flash Lite) trong Cài đặt");
       } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
         alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
         setShowSettings(true);
@@ -256,6 +258,8 @@ export default function App() {
       if (msg.includes("QUOTA_EXHAUSTED")) {
         alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
         setShowSettings(true);
+      } else if (msg.includes("MODEL_OVERLOADED")) {
+        alert("⚠️ Model Gemini đang quá tải tạm thời. Vui lòng thử lại sau 30 giây.");
       } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
         alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
         setShowSettings(true);
@@ -289,6 +293,8 @@ export default function App() {
       if (msg.includes("QUOTA_EXHAUSTED")) {
         alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
         setShowSettings(true);
+      } else if (msg.includes("MODEL_OVERLOADED")) {
+        alert("⚠️ Model Gemini đang quá tải tạm thời. Vui lòng thử lại sau 30 giây.");
       } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
         alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
         setShowSettings(true);
@@ -322,6 +328,8 @@ export default function App() {
       if (msg.includes("QUOTA_EXHAUSTED")) {
         alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
         setShowSettings(true);
+      } else if (msg.includes("MODEL_OVERLOADED")) {
+        alert("⚠️ Model Gemini đang quá tải tạm thời. Vui lòng thử lại sau 30 giây.");
       } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
         alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
         setShowSettings(true);
@@ -2214,13 +2222,14 @@ export default function App() {
                       </label>
                       <input
                         type="password"
-                        placeholder="Nhập API Key hợp lệ..."
+                        placeholder="Nhập API Key (AIzaSy... hoặc AQ...)"
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-slate-700 bg-slate-50"
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
                       />
                       <p className="text-xs text-slate-500 italic mt-1">
                         Bạn có thể lấy API Key miễn phí từ <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-indigo-500 font-bold hover:underline">Google AI Studio</a>.
+                        API Key dạng <code className="bg-slate-100 px-1 rounded">AIzaSy...</code> hoặc <code className="bg-slate-100 px-1 rounded">AQ...</code> đều được hỗ trợ.
                       </p>
                     </div>
 

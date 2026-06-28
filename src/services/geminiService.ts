@@ -1,10 +1,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
+// --- Google AI Key Validation (per google-api skill) ---
+// Accepts both legacy AIzaSy... keys and new AQ... keys from Google AI Studio
+export const GOOGLE_AI_API_KEY_PATTERN = /^(?:AIzaSy|AQ)\S{8,}$/;
+export const isValidGoogleAiApiKey = (key: string): boolean =>
+  GOOGLE_AI_API_KEY_PATTERN.test(key.trim());
+
 const getFallbackModels = (startModel: string) => {
   // Fallback order per LỆNH.md: 2.5-flash → 2.5-flash-8b (lite) → 2.0-flash (stable) → 2.5-pro
   const models = [
     'gemini-2.5-flash',
-    'gemini-3-flash-preview',
+    'gemini-2.5-flash-lite-preview-06-17',
     'gemini-2.5-flash-lite',
     'gemini-2.5-pro',
   ];
@@ -56,7 +62,12 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
 
       if (!res.ok) {
         const errText = await res.text();
-        if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
+        if (res.status === 429 || errText.includes('RESOURCE_EXHAUSTED') || errText.toLowerCase().includes('quota')) {
+          throw new Error('QUOTA_EXHAUSTED');
+        }
+        if (res.status === 503 || errText.includes('UNAVAILABLE') || errText.toLowerCase().includes('overloaded') || errText.toLowerCase().includes('high demand')) {
+          throw new Error('MODEL_OVERLOADED');
+        }
         if (res.status === 401 || res.status === 403) {
           throw new Error(`API_KEY_INVALID: ${errText}`);
         }
@@ -79,16 +90,21 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
     } catch (err: any) {
       console.error(`Lỗi với model ${currentModel}:`, err);
 
-      const isQuotaExhausted = err.message && (err.message.includes('QUOTA_EXHAUSTED') || err.message.includes('429') || err.message.includes('quota'));
+      const isQuotaExhausted = err.message && (err.message.includes('QUOTA_EXHAUSTED') || err.message.includes('429') || err.message.toLowerCase().includes('quota'));
       const isApiKeyInvalid = err.message && (err.message.startsWith('API_KEY_INVALID') || err.message.includes('401'));
+      const isModelOverloaded = err.message && (err.message.includes('MODEL_OVERLOADED') || err.message.includes('503') || err.message.toLowerCase().includes('overloaded'));
       const isLastModel = i === modelsToTry.length - 1;
 
+      // Auth failures: stop immediately — key rotation won't help
       if (isApiKeyInvalid) throw new Error('API_KEY_INVALID');
+      // Quota exhausted: stop immediately at last model
       if (isLastModel) {
         if (isQuotaExhausted) throw new Error('QUOTA_EXHAUSTED');
+        if (isModelOverloaded) throw new Error('MODEL_OVERLOADED');
         throw err;
       }
-      await new Promise(r => setTimeout(r, 1000));
+      // Model overloaded: try next model, don't wait as long
+      await new Promise(r => setTimeout(r, isModelOverloaded ? 500 : 1000));
     }
   }
 };

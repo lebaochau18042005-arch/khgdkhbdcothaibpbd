@@ -122,19 +122,26 @@ Dưới đây là Khung mạch nội dung tích hợp AI cho từng môn học t
 `;
 
 const SOCIAL_INTEGRATION_GUIDELINES = `
-Dưới đây là Khung nội dung tích hợp theo Thông tư 02/2025/TT-BGDĐT và các quy định hiện hành:
-1. Tích hợp Di sản (Heritage):
+Dưới đây là Khung NỘI DUNG LỒNG GHÉP BẮT BUỘC theo quy định của Bộ GD&ĐT (đây là các nội dung lồng ghép RIÊNG BIỆT, KHÔNG phải Thông tư 02/2025 - TT02/2025 là Khung Năng lực số cho người học):
+
+LƯU Ý QUAN TRỌNG: Thông tư 02/2025/TT-BGDĐT quy định về Khung Năng lực số cho người học (kỹ năng sử dụng công nghệ số, AI). Các nội dung Di sản, Ma túy, Dân số dưới đây là NỘI DUNG LỒNG GHÉP theo các chương trình, kế hoạch riêng của Bộ GD&ĐT, KHÔNG thuộc TT02/2025.
+
+1. Giáo dục Di sản (Heritage):
+   - Căn cứ: Công văn 73/HD-BGDĐT về Giáo dục Di sản.
    - Mục tiêu: Giáo dục niềm tự hào dân tộc, ý thức bảo tồn và phát huy giá trị di sản văn hóa (vật thể và phi vật thể) của địa phương và quốc gia.
    - Nội dung: Kết nối kiến thức bài học với các di tích lịch sử, danh lam thắng cảnh, lễ hội, làng nghề truyền thống.
-2. Phòng chống Ma túy:
-   - Mục tiêu: Trang bị kiến thức về tác hại của ma túy, kỹ năng từ chối, phòng ngừa và trách nhiệm của học sinh trong việc xây dựng môi trường học đường sạch.
+2. Phòng chống Ma túy & Thuốc lá:
+   - Căn cứ: Chương trình Phòng chống Ma túy trong trường học theo Nghị định 116/2021 và Luật PCMT.
+   - Mục tiêu: Trang bị kiến thức về tác hại của ma túy, kỹ năng từ chối, phòng ngừa và trách nhiệm của học sinh.
    - Nội dung: Lồng ghép tác hại sinh học, tâm lý, pháp luật liên quan đến tệ nạn ma túy và thuốc lá điện tử.
-3. Dân số và Phát triển:
-   - Mục tiêu: Hiểu về mối quan hệ giữa dân số, môi trường và sự phát triển bền vững. Giáo dục sức khỏe sinh sản, bình đẳng giới và kế hoạch hóa gia đình.
+3. Dân số và Phát triển bền vững:
+   - Căn cứ: Chương trình Giáo dục Dân số - Sức khỏe sinh sản theo Quyết định 2013 của Chính phủ.
+   - Mục tiêu: Hiểu về mối quan hệ giữa dân số, môi trường và sự phát triển bền vững. Giáo dục SKSS, bình đẳng giới.
    - Nội dung: Phân tích dữ liệu dân cư, tác động của quy mô dân số đến chất lượng cuộc sống và an sinh xã hội.
 4. Giáo dục Hòa nhập (Inclusive Education):
-   - Mục tiêu: Đảm bảo quyền được học tập của mọi học sinh, bao gồm học sinh khuyết tật hoặc có hoàn cảnh đặc biệt. Xây dựng môi trường thân thiện, không rào cản.
-   - Nội dung: Thiết kế các hoạt động linh hoạt, đa dạng hóa phương thức tiếp cận (hình ảnh, âm thanh, vận động) để mọi học sinh đều có thể tham gia.
+   - Căn cứ: Thông tư 03/2018/TT-BGDĐT về Giáo dục Hòa nhập.
+   - Mục tiêu: Đảm bảo quyền được học tập của mọi học sinh, bao gồm học sinh khuyết tật hoặc có hoàn cảnh đặc biệt.
+   - Nội dung: Thiết kế các hoạt động linh hoạt, đa dạng hóa phương thức tiếp cận để mọi học sinh đều có thể tham gia.
 `;
 
 const CURRICULUM_DATA = `

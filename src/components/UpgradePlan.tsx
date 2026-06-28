@@ -27,7 +27,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
         if (files.length === 0) return;
 
         const newImages: TextbookImage[] = await Promise.all(
-            files.map(f => new Promise<TextbookImage>((resolve, reject) => {
+            files.map((f: File) => new Promise<TextbookImage>((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     const dataUrl = reader.result as string;
@@ -291,7 +291,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                                 <div className="space-y-3">
                                     <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                         <Users className="w-4 h-4 text-green-600" />
-                                        AI đề xuất Tích hợp xã hội (TT 02/2025) phù hợp với SGK mới
+                                        AI đề xuất Nội dung lồng ghép bắt buộc phù hợp với SGK mới
                                     </h3>
                                     <div className="space-y-2">
                                         {analysisResult.socialSuggestions.map((sug: any, idx: number) => (
@@ -311,14 +311,14 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                             <div className="space-y-4 pt-2">
                                 <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                     <Sparkles className="w-4 h-4 text-blue-600" />
-                                    Chọn thêm nội dung tích hợp xã hội (TT 02/2025)
+                                    Chọn Nội dung lồng ghép bắt buộc (Theo quy định Bộ GD&ĐT)
                                 </h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {[
-                                        { id: "Heritage", label: "Tích hợp Di sản" },
-                                        { id: "DrugPrevention", label: "Phòng chống Ma túy" },
-                                        { id: "Population", label: "Dân số & Phát triển" },
-                                        { id: "Inclusive", label: "Giáo dục Hòa nhập" }
+                                        { id: "Heritage", label: "🏛️ Giáo dục Di sản văn hóa" },
+                                        { id: "DrugPrevention", label: "🚫 Phòng chống Ma túy & Thuốc lá" },
+                                        { id: "Population", label: "👨‍👩‍👧 Dân số & Phát triển bền vững" },
+                                        { id: "Inclusive", label: "🤝 Giáo dục Hòa nhập" }
                                     ].map((item) => (
                                         <label key={item.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-all">
                                             <input

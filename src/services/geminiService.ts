@@ -275,15 +275,19 @@ LƯU Ý TỐI QUAN TRỌNG CHUNG MÔN ĐỊA LÍ(TẤT CẢ CÁC KHỐI LỚP): 
                                                                               `;
 
 const FORMATTING_INSTRUCTIONS = `
-YÊU CẦU ĐỊNH DẠNG VÀ TRÌNH BÀY(THỰC THI NGHIÊM NGẶT):
-1. Đối với Công thức(Toán, Vật lí, Hóa học, Sinh học):
-- TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX(các ký hiệu $ ...$, $$...$$, \\sin, \\frac, \\sqrt).Viết công thức theo dạng văn bản thuần túy thân thiện nhất(Ví dụ: sin x, căn bậc hai của a, S = a x b, H2O).
-- Phương trình hóa học: ghi ký hiệu nguyên tố và chỉ số thường(VD: H2O, CO2, CaCO3).
-2. Đối với Hình vẽ, Biểu đồ và Bản đồ:
-- Mô tả trực quan chi tiết cho các hình vẽ / biểu đồ để GV dễ chèn ảnh(VD: [CHÈN HÌNH VẼ: Trục tọa độ Oxy, vẽ parabol y = x ^ 2 và đường thẳng y = 2x cắt nhau...]).
-3. Đối với Bảng biểu và Sơ đồ:
+YÊU CẦU ĐỊNH DẠNG VÀ TRÌNH BÀY (THỰC THI NGHIÊM NGẶT):
+1. Đối với Công thức (Toán, Vật lí, Hóa học, Sinh học):
+- TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX. Viết công thức theo dạng văn bản thuần túy thân thiện nhất (Ví dụ: sin x, căn bậc hai của a, S = a x b, H2O).
+- Phương trình hóa học: ghi ký hiệu nguyên tố và chỉ số thường (VD: H2O, CO2, CaCO3).
+2. Đối với Hình vẽ, Biểu đồ và Bản đồ (MÔ TẢ CHI TIẾT ĐỂ HỆ THỐNG TỰ ĐỘNG BẢN VẼ):
+- Khi cần vẽ hình vẽ, bản đồ, biểu đồ hay sơ đồ minh họa cho bài học hoặc hoạt động, bạn BẮT BUỘC phải viết kẹp trong các thẻ dưới đây:
+  + Bản đồ địa lý: [Bản đồ: Tên tiêu đề nội dung bản đồ cần vẽ]
+  + Biểu đồ / Đồ thị số liệu: [Biểu đồ: Tên tiêu đề nội dung biểu đồ/đồ thị]
+  + Sơ đồ tư duy / Sơ đồ khối ý niệm: [Sơ đồ: Tên tiêu đề nội dung sơ đồ]
+  + Mô hình / Hình vẽ kỹ thuật / Thiết bị thực nghiệm: [Hình vẽ: Tên tiêu đề nội dung hình vẽ/thiết bị]
+- Không dùng kiểu định dạng nào khác ngoài 4 thẻ [Bản đồ: ...], [Biểu đồ: ...], [Sơ đồ: ...], [Hình vẽ: ...] để mô tả hình ảnh.
+3. Đối với Bảng biểu:
 - Sử dụng định dạng bảng chuẩn Markdown.
-- Các sơ đồ tiến trình phải được trình bày phân cấp rõ ràng.
 `;
 
 const LESSON_PLAN_STRICT_GUIDELINES = `

@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "motion/react";
 import html2pdf from "html2pdf.js";
 // @ts-ignore
 import * as mammoth from "mammoth";
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle, HeadingLevel, VerticalAlign } from "docx";
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle, HeadingLevel, VerticalAlign, ImageRun } from "docx";
 import { saveAs } from "file-saver";
 import {
   BookOpen,
@@ -101,6 +101,331 @@ const PROVINCES = [
 ];
 
 import { CURRICULUM_DB } from "./data/curriculumDb";
+
+// --- Canvas Graphics Drawers for DOCX Export (VN Standard) ---
+const base64ToUint8Array = (base64: string): Uint8Array => {
+  const binaryString = window.atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+};
+
+const createDrawingCanvas = (width = 600, height = 320) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, width, height);
+  }
+  return { canvas, ctx };
+};
+
+const drawMindmap = (title: string): Uint8Array => {
+  const { canvas, ctx } = createDrawingCanvas(600, 320);
+  if (!ctx) return new Uint8Array();
+
+  ctx.fillStyle = "#fafbfc";
+  ctx.fillRect(0, 0, 600, 320);
+  ctx.strokeStyle = "rgba(99, 102, 241, 0.05)";
+  ctx.lineWidth = 1;
+  for (let x = 0; x < 600; x += 20) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 320); ctx.stroke();
+  }
+  for (let y = 0; y < 320; y += 20) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(600, y); ctx.stroke();
+  }
+
+  const centerX = 300;
+  const centerY = 160;
+  const branches = [
+    { x: 120, y: 70, color: "#ef4444", text: "Nội dung chính 1" },
+    { x: 480, y: 70, color: "#3b82f6", text: "Nội dung chính 2" },
+    { x: 120, y: 250, color: "#10b981", text: "Ứng dụng & Thực hành" },
+    { x: 480, y: 250, color: "#f59e0b", text: "Tổng kết & Đánh giá" }
+  ];
+
+  branches.forEach(b => {
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.bezierCurveTo(centerX + (b.x - centerX) / 2, centerY, centerX + (b.x - centerX) / 2, b.y, b.x, b.y);
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    ctx.roundRect(b.x - 75, b.y - 18, 150, 36, 8);
+    ctx.fill();
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "bold 11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(b.text, b.x, b.y);
+  });
+
+  const grad = ctx.createLinearGradient(centerX - 95, centerY - 25, centerX + 95, centerY + 25);
+  grad.addColorStop(0, "#4f46e5");
+  grad.addColorStop(1, "#6366f1");
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.roundRect(centerX - 100, centerY - 25, 200, 50, 10);
+  ctx.fill();
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "bold 12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const words = title.split(" ");
+  if (words.length > 3) {
+    ctx.fillText(words.slice(0, 3).join(" "), centerX, centerY - 10);
+    ctx.fillText(words.slice(3).join(" "), centerX, centerY + 10);
+  } else {
+    ctx.fillText(title, centerX, centerY);
+  }
+
+  const base64 = canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
+  return base64ToUint8Array(base64);
+};
+
+const drawChart = (title: string): Uint8Array => {
+  const { canvas, ctx } = createDrawingCanvas(600, 320);
+  if (!ctx) return new Uint8Array();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, 600, 320);
+  ctx.strokeStyle = "#e2e8f0";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(20, 20, 560, 280);
+
+  ctx.fillStyle = "#1e293b";
+  ctx.font = "bold 13px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title || "Biểu đồ số liệu bài học", 300, 42);
+
+  ctx.strokeStyle = "#475569";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(80, 70);
+  ctx.lineTo(80, 250);
+  ctx.lineTo(520, 250);
+  ctx.stroke();
+
+  const barData = [40, 75, 90, 55, 85];
+  const labels = ["Mẫu 1", "Mẫu 2", "Mẫu 3", "Mẫu 4", "Mẫu 5"];
+  const colors = ["#4f46e5", "#06b6d4", "#10b981", "#f59e0b", "#ec4899"];
+
+  for (let i = 0; i < barData.length; i++) {
+    const x = 110 + i * 80;
+    const height = (barData[i] / 100) * 160;
+    const y = 250 - height;
+
+    const grad = ctx.createLinearGradient(x, y, x + 40, 250);
+    grad.addColorStop(0, colors[i]);
+    grad.addColorStop(1, colors[i] + "cc");
+    ctx.fillStyle = grad;
+
+    ctx.beginPath();
+    ctx.roundRect(x, y, 40, height, [4, 4, 0, 0]);
+    ctx.fill();
+
+    ctx.fillStyle = "#334155";
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`${barData[i]}%`, x + 20, y - 8);
+
+    ctx.fillStyle = "#475569";
+    ctx.font = "10px sans-serif";
+    ctx.fillText(labels[i], x + 20, 268);
+  }
+
+  ctx.strokeStyle = "rgba(71, 85, 105, 0.1)";
+  ctx.lineWidth = 1;
+  const values = [25, 50, 75, 100];
+  values.forEach(val => {
+    const y = 250 - (val / 100) * 160;
+    ctx.beginPath();
+    ctx.moveTo(80, y);
+    ctx.lineTo(520, y);
+    ctx.stroke();
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = "9px sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(`${val}%`, 72, y + 3);
+  });
+
+  const base64 = canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
+  return base64ToUint8Array(base64);
+};
+
+const drawGeographicalMap = (title: string): Uint8Array => {
+  const { canvas, ctx } = createDrawingCanvas(600, 320);
+  if (!ctx) return new Uint8Array();
+
+  ctx.fillStyle = "#e0f2fe";
+  ctx.fillRect(0, 0, 600, 320);
+
+  ctx.strokeStyle = "rgba(56, 189, 248, 0.4)";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  for (let x = 0; x < 600; x += 60) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 320); ctx.stroke();
+    ctx.fillStyle = "#0369a1";
+    ctx.font = "8px sans-serif";
+    ctx.fillText(`${100 + x / 12}°E`, x + 2, 312);
+  }
+  for (let y = 0; y < 320; y += 60) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(600, y); ctx.stroke();
+    ctx.fillStyle = "#0369a1";
+    ctx.font = "8px sans-serif";
+    ctx.fillText(`${25 - y / 15}°N`, 2, y - 2);
+  }
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = "#fef08a";
+  ctx.strokeStyle = "#eab308";
+  ctx.lineWidth = 1.5;
+
+  ctx.beginPath();
+  ctx.moveTo(180, 50);
+  ctx.lineTo(240, 60);
+  ctx.bezierCurveTo(260, 80, 240, 130, 220, 160);
+  ctx.bezierCurveTo(210, 180, 240, 200, 230, 230);
+  ctx.bezierCurveTo(220, 260, 180, 280, 160, 270);
+  ctx.bezierCurveTo(150, 260, 165, 240, 170, 220);
+  ctx.bezierCurveTo(180, 190, 160, 170, 150, 150);
+  ctx.bezierCurveTo(135, 120, 170, 70, 180, 50);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(380, 240, 8, 0, Math.PI * 2);
+  ctx.arc(320, 180, 5, 0, Math.PI * 2);
+  ctx.fill(); ctx.stroke();
+
+  ctx.strokeStyle = "#ef4444";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([2, 3]);
+  ctx.beginPath();
+  ctx.moveTo(180, 150);
+  ctx.quadraticCurveTo(280, 180, 320, 180);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const cx = 530, cy = 70;
+  ctx.strokeStyle = "#334155";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - 20); ctx.lineTo(cx, cy + 20);
+  ctx.moveTo(cx - 20, cy); ctx.lineTo(cx + 20, cy);
+  ctx.stroke();
+  ctx.font = "bold 9px sans-serif";
+  ctx.fillStyle = "#0f172a";
+  ctx.textAlign = "center";
+  ctx.fillText("N", cx, cy - 23);
+  ctx.fillText("S", cx, cy + 29);
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+  ctx.beginPath();
+  ctx.roundRect(15, 15, 320, 36, 6);
+  ctx.fill();
+  ctx.strokeStyle = "#cbd5e1";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = "#1e293b";
+  ctx.font = "bold 11px sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(title || "Bản đồ minh họa trong bài dạy", 25, 36);
+
+  ctx.strokeStyle = "#334155";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(480, 290);
+  ctx.lineTo(550, 290);
+  ctx.moveTo(480, 286); ctx.lineTo(480, 294);
+  ctx.moveTo(515, 286); ctx.lineTo(515, 294);
+  ctx.moveTo(550, 286); ctx.lineTo(550, 294);
+  ctx.stroke();
+  ctx.fillStyle = "#334155";
+  ctx.font = "8px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("0", 480, 280);
+  ctx.fillText("100 km", 550, 280);
+
+  const base64 = canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
+  return base64ToUint8Array(base64);
+};
+
+const drawSchematic = (title: string): Uint8Array => {
+  const { canvas, ctx } = createDrawingCanvas(600, 320);
+  if (!ctx) return new Uint8Array();
+
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(0, 0, 600, 320);
+
+  ctx.strokeStyle = "rgba(56, 189, 248, 0.15)";
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < 600; x += 15) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 320); ctx.stroke();
+  }
+  for (let y = 0; y < 320; y += 15) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(600, y); ctx.stroke();
+  }
+
+  ctx.strokeStyle = "#38bdf8";
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+  ctx.moveTo(150, 260); ctx.lineTo(250, 260);
+  ctx.moveTo(180, 260); ctx.lineTo(180, 100);
+  ctx.moveTo(180, 140); ctx.lineTo(240, 140);
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(56, 189, 248, 0.15)";
+  ctx.beginPath();
+  ctx.roundRect(220, 110, 40, 90, [0, 0, 12, 12]);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(236, 72, 153, 0.5)";
+  ctx.beginPath();
+  ctx.roundRect(222, 160, 36, 38, [0, 0, 10, 10]);
+  ctx.fill();
+
+  ctx.strokeStyle = "#38bdf8";
+  ctx.beginPath();
+  ctx.moveTo(215, 260);
+  ctx.lineTo(225, 230);
+  ctx.lineTo(255, 230);
+  ctx.lineTo(265, 260);
+  ctx.closePath();
+  ctx.stroke();
+
+  ctx.fillStyle = "#f97316";
+  ctx.beginPath();
+  ctx.moveTo(240, 230);
+  ctx.bezierCurveTo(230, 220, 235, 205, 240, 200);
+  ctx.bezierCurveTo(245, 205, 250, 220, 240, 230);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 11px Courier New";
+  ctx.textAlign = "center";
+  ctx.fillText(title || "SO DO THIET BI THUC NGHIEM / HINH VE", 300, 35);
+  ctx.strokeRect(20, 15, 560, 290);
+
+  const base64 = canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
+  return base64ToUint8Array(base64);
+};
+
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>("dashboard");
@@ -488,7 +813,7 @@ export default function App() {
       return dict[text] || text;
     };
 
-    const parseMarkdownToTextRunsDocx = (text: string) => {
+    const parseMarkdownToTextRunsDocx = (text: string): TextRun[] => {
       if (!text) return [new TextRun({ text: "" })];
       const parts = text.split(/(<bold>.*?<\/bold>|<ai>.*?<\/ai>|\*\*.*?\*\*)/g);
       return parts.filter(p => p).map(part => {
@@ -503,42 +828,211 @@ export default function App() {
       });
     };
 
+    const parseContentAndInsertDocx = (text: string): Paragraph[] => {
+      if (!text) return [new Paragraph({ children: [new TextRun({ text: "" })] })];
+      const lines = text.split('\n');
+      const paragraphs: Paragraph[] = [];
+
+      for (let line of lines) {
+        const trimmed = line.trim();
+        // Check for specific drawing brackets
+        const mapMatch = trimmed.match(/^\[Bản đồ:\s*(.*?)\]/i);
+        const chartMatch = trimmed.match(/^\[Biểu đồ:\s*(.*?)\]/i);
+        const mindmapMatch = trimmed.match(/^\[Sơ đồ:\s*(.*?)\]/i);
+        const schematicMatch = trimmed.match(/^\[Hình vẽ:\s*(.*?)\]/i);
+
+        if (mapMatch) {
+          const title = mapMatch[1];
+          const imgBytes = drawGeographicalMap(title);
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: `📍 BẢN ĐỒ MINH HỌA: ${title}`, bold: true, color: "0369A1" })
+              ],
+              spacing: { before: 100, after: 60 }
+            }),
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: imgBytes as any,
+                  transformation: { width: 500, height: 266 }
+                } as any)
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 150 }
+            })
+          );
+        } else if (chartMatch) {
+          const title = chartMatch[1];
+          const imgBytes = drawChart(title);
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: `📊 BIỂU ĐỒ SỐ LIỆU: ${title}`, bold: true, color: "4F46E5" })
+              ],
+              spacing: { before: 100, after: 60 }
+            }),
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: imgBytes as any,
+                  transformation: { width: 500, height: 266 }
+                } as any)
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 150 }
+            })
+          );
+        } else if (mindmapMatch) {
+          const title = mindmapMatch[1];
+          const imgBytes = drawMindmap(title);
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: `🌿 SƠ ĐỒ TƯ DUY: ${title}`, bold: true, color: "10B981" })
+              ],
+              spacing: { before: 100, after: 60 }
+            }),
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: imgBytes as any,
+                  transformation: { width: 500, height: 266 }
+                } as any)
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 150 }
+            })
+          );
+        } else if (schematicMatch) {
+          const title = schematicMatch[1];
+          const imgBytes = drawSchematic(title);
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: `⚙️ SƠ ĐỒ MÔ HÌNH THỰC NGHIỆM: ${title}`, bold: true, color: "38BDF8" })
+              ],
+              spacing: { before: 100, after: 60 }
+            }),
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: imgBytes as any,
+                  transformation: { width: 500, height: 266 }
+                } as any)
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 150 }
+            })
+          );
+        } else {
+          paragraphs.push(
+            new Paragraph({
+              children: parseMarkdownToTextRunsDocx(line),
+              spacing: { before: 40, after: 40 }
+            })
+          );
+        }
+      }
+      return paragraphs;
+    };
+
     const fileName = `${result.type.toUpperCase()}_${currentSubject}_Lop${lessonPlanInput.grade || eduPlanInput.grade}.docx`;
 
     let doc;
 
     if (result.type === "khbd") {
       const d = result.data;
+
+      // School & Department details (Standard format for VN school documents)
+      const headerTable = new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+          top: { style: BorderStyle.NONE },
+          bottom: { style: BorderStyle.NONE },
+          left: { style: BorderStyle.NONE },
+          right: { style: BorderStyle.NONE },
+          insideHorizontal: { style: BorderStyle.NONE },
+          insideVertical: { style: BorderStyle.NONE }
+        },
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                children: [
+                  new Paragraph({ children: [new TextRun({ text: "SỞ GD&ĐT TỈNH/THÀNH PHỐ: .................", size: 22 })] }),
+                  new Paragraph({ children: [new TextRun({ text: "TRƯỜNG THPT: .............................", bold: true, size: 22 })] }),
+                  new Paragraph({ children: [new TextRun({ text: "Tổ chuyên môn: ...........................", size: 22 })] })
+                ]
+              }),
+              new TableCell({
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                children: [
+                  new Paragraph({ children: [new TextRun({ text: `Môn học: ${currentSubject}`, bold: true, size: 22 })] }),
+                  new Paragraph({ children: [new TextRun({ text: `Khối lớp: ${lessonPlanInput.grade || eduPlanInput.grade}`, size: 22 })] }),
+                  new Paragraph({ children: [new TextRun({ text: "Người thực hiện: .........................", size: 22 })] })
+                ]
+              })
+            ]
+          })
+        ]
+      });
+
       doc = new Document({
+        styles: {
+          default: {
+            document: {
+              run: {
+                font: "Times New Roman",
+                size: 26 // 13pt
+              },
+              paragraph: {
+                spacing: { line: 276 } // 1.15 line spacing
+              }
+            }
+          }
+        },
         sections: [{
-          properties: {},
+          properties: {
+            page: {
+              margin: {
+                top: 1134,   // 2cm
+                bottom: 1134,// 2cm
+                left: 1701,  // 3cm
+                right: 1134  // 2cm
+              }
+            }
+          },
           children: [
+            headerTable,
+            new Paragraph({ children: [new TextRun({ text: "" })], spacing: { before: 200 } }),
             new Paragraph({
               children: [new TextRun({ text: t("KẾ HOẠCH BÀI DẠY (KHBD)"), bold: true, size: 28 })],
               alignment: AlignmentType.CENTER,
-              spacing: { after: 200 },
+              spacing: { after: 100 },
             }),
             new Paragraph({
-              children: [new TextRun({ text: `${t("Tên bài dạy:")} ${d.title}`, bold: true, size: 24 })],
+              children: [new TextRun({ text: `${t("Tên bài học:")} ${d.title}`, bold: true, size: 26 })],
               alignment: AlignmentType.CENTER,
               spacing: { after: 400 },
             }),
 
             new Paragraph({ children: [new TextRun({ text: t("I. MỤC TIÊU"), bold: true, size: 24 })], spacing: { before: 200, after: 100 } }),
             new Paragraph({ children: [new TextRun({ text: t("1. Kiến thức:"), bold: true })] }),
-            ...d.objectives.knowledge.map((c: string) => new Paragraph({ children: [new TextRun({ text: `- ${c}` })], indent: { left: 720 } })),
+            ...d.objectives.knowledge.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
             new Paragraph({ children: [new TextRun({ text: t("2. Năng lực môn học:"), bold: true })], spacing: { before: 100 } }),
-            ...d.objectives.subjectSpecific.map((c: string) => new Paragraph({ children: [new TextRun({ text: `- ${c}` })], indent: { left: 720 } })),
+            ...d.objectives.subjectSpecific.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
             new Paragraph({ children: [new TextRun({ text: t("3. Năng lực AI:"), bold: true, color: "FF0000" })], spacing: { before: 100 } }),
-            ...d.objectives.aiSpecific.map((c: string) => new Paragraph({ children: [new TextRun({ text: `- ${c}`, color: "FF0000" })], indent: { left: 720 } })),
+            ...d.objectives.aiSpecific.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
             new Paragraph({ children: [new TextRun({ text: t("4. Năng lực chung:"), bold: true })], spacing: { before: 100 } }),
-            ...d.objectives.general.map((c: string) => new Paragraph({ children: [new TextRun({ text: `- ${c}` })], indent: { left: 720 } })),
+            ...d.objectives.general.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
             new Paragraph({ children: [new TextRun({ text: t("5. Phẩm chất:"), bold: true })], spacing: { before: 100 } }),
-            ...d.objectives.qualities.map((q: string) => new Paragraph({ children: [new TextRun({ text: `- ${q}` })], indent: { left: 720 } })),
+            ...d.objectives.qualities.flatMap((q: string) => parseContentAndInsertDocx(`- ${q}`)),
 
             new Paragraph({ children: [new TextRun({ text: t("II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU"), bold: true, size: 24 })], spacing: { before: 200, after: 100 } }),
             new Paragraph({ children: [new TextRun({ text: t("1. Thiết bị truyền thống:"), bold: true })] }),
@@ -554,14 +1048,51 @@ export default function App() {
               new Paragraph({ children: [new TextRun({ text: `${t("a) Mục tiêu:")} ${a.objective}` })], indent: { left: 360 } }),
               new Paragraph({ children: [new TextRun({ text: `${t("b) Nội dung:")} ${a.content}` })], indent: { left: 360 } }),
               new Paragraph({ children: [new TextRun({ text: `${t("c) Sản phẩm:")} ${a.product}` })], indent: { left: 360 } }),
-              new Paragraph({ children: [new TextRun({ text: t("d) Tổ chức thực hiện:") })], indent: { left: 360 } }),
-              ...a.procedure.flatMap((p: any) => [
-                new Paragraph({ children: [new TextRun({ text: p.stepName, bold: true })], indent: { left: 720 }, spacing: { before: 100 } }),
-                new Paragraph({ children: [new TextRun({ text: t("Hoạt động của GV và HS:"), bold: true })], indent: { left: 1080 } }),
-                new Paragraph({ children: parseMarkdownToTextRunsDocx(p.teacherStudentActivities), indent: { left: 1080 } }),
-                new Paragraph({ children: [new TextRun({ text: t("Dự kiến sản phẩm:"), bold: true })], indent: { left: 1080 } }),
-                new Paragraph({ children: parseMarkdownToTextRunsDocx(p.expectedProduct), indent: { left: 1080 } })
-              ])
+              new Paragraph({ children: [new TextRun({ text: t("d) Tổ chức thực hiện:") })], indent: { left: 360 }, spacing: { after: 100 } }),
+              ...a.procedure.flatMap((p: any) => {
+                // Return step name as normal bold title, then insert side-by-side Table for standard layout
+                return [
+                  new Paragraph({ children: [new TextRun({ text: p.stepName, bold: true })], indent: { left: 540 }, spacing: { before: 150, after: 100 } }),
+                  new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    rows: [
+                      // Header Row
+                      new TableRow({
+                        children: [
+                          new TableCell({
+                            width: { size: 55, type: WidthType.PERCENTAGE },
+                            children: [new Paragraph({ children: [new TextRun({ text: t("Hoạt động của GV và HS:"), bold: true })], alignment: AlignmentType.CENTER })],
+                            shading: { fill: "F1F5F9" },
+                            verticalAlign: VerticalAlign.CENTER
+                          }),
+                          new TableCell({
+                            width: { size: 45, type: WidthType.PERCENTAGE },
+                            children: [new Paragraph({ children: [new TextRun({ text: t("Dự kiến sản phẩm:"), bold: true })], alignment: AlignmentType.CENTER })],
+                            shading: { fill: "F1F5F9" },
+                            verticalAlign: VerticalAlign.CENTER
+                          })
+                        ]
+                      }),
+                      // Content Row
+                      new TableRow({
+                        children: [
+                          new TableCell({
+                            width: { size: 55, type: WidthType.PERCENTAGE },
+                            children: parseContentAndInsertDocx(p.teacherStudentActivities),
+                            verticalAlign: VerticalAlign.TOP
+                          }),
+                          new TableCell({
+                            width: { size: 45, type: WidthType.PERCENTAGE },
+                            children: parseContentAndInsertDocx(p.expectedProduct),
+                            verticalAlign: VerticalAlign.TOP
+                          })
+                        ]
+                      })
+                    ]
+                  }),
+                  new Paragraph({ children: [new TextRun({ text: "" })], spacing: { before: 100 } })
+                ];
+              })
             ]),
 
             new Paragraph({ children: [new TextRun({ text: t("IV. KẾ HOẠCH ĐÁNH GIÁ"), bold: true, size: 24 })], spacing: { before: 200, after: 100 } }),
@@ -593,6 +1124,7 @@ export default function App() {
             }),
             new Paragraph({ children: [new TextRun({ text: t("Bảng kiểm:"), bold: true })], spacing: { before: 200, after: 60 } }),
             ...d.appendix.checklist.flatMap((c: string) => c.split('\n').filter((l: string) => l.trim()).map((line: string) => new Paragraph({ children: parseMarkdownToTextRunsDocx(`- ${line.trim()}`), indent: { left: 720 } })))
+
           ]
         }]
       });

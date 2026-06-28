@@ -1,8 +1,15 @@
 import React, { useState } from "react";
 // @ts-ignore
 import * as mammoth from "mammoth";
-import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText } from "lucide-react";
+import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users } from "lucide-react";
 import { analyzeExistingPlan } from "../services/geminiService";
+
+interface TextbookImage {
+    mimeType: string;
+    data: string;
+    previewUrl: string;
+    name: string;
+}
 
 export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady: (data: any) => void, apiKey: string }) {
     const [step, setStep] = useState(1);
@@ -13,6 +20,33 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
     const [analysisResult, setAnalysisResult] = useState<any>(null);
     const [selectedIntegrations, setSelectedIntegrations] = useState<any[]>([]);
     const [selectedSocialIntegrations, setSelectedSocialIntegrations] = useState<string[]>([]);
+    const [textbookImages, setTextbookImages] = useState<TextbookImage[]>([]);
+
+    const handleTextbookImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        const newImages: TextbookImage[] = await Promise.all(
+            files.map(f => new Promise<TextbookImage>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const dataUrl = reader.result as string;
+                    const [header, data] = dataUrl.split(",");
+                    const mimeType = header.match(/data:([^;]+)/)?.[1] || f.type;
+                    resolve({ mimeType, data, previewUrl: dataUrl, name: f.name });
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(f);
+            }))
+        );
+
+        setTextbookImages(prev => [...prev, ...newImages].slice(0, 8)); // Max 8 images
+        e.target.value = "";
+    };
+
+    const removeTextbookImage = (idx: number) => {
+        setTextbookImages(prev => prev.filter((_, i) => i !== idx));
+    };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const uploadedFile = e.target.files?.[0];
@@ -36,8 +70,8 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
         setIsAnalyzing(true);
 
         try {
-            const isPdf = uploadedFile.type === "application/pdf" || uploadedFile.name.toLowerCase().endsWith(".pdf");
             let analysis;
+            const imagePayload = textbookImages.length > 0 ? textbookImages.map(img => ({ mimeType: img.mimeType, data: img.data })) : undefined;
 
             if (isPdf) {
                 const base64 = await new Promise<string>((resolve, reject) => {
@@ -52,7 +86,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
 
                 setPdfBase64(base64);
                 setRawText("");
-                analysis = await analyzeExistingPlan("", base64);
+                analysis = await analyzeExistingPlan("", base64, imagePayload);
             } else {
                 const buffer = await uploadedFile.arrayBuffer();
                 const result = await mammoth.extractRawText({ arrayBuffer: buffer });
@@ -63,7 +97,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                 setRawText(text);
                 setPdfBase64("");
 
-                analysis = await analyzeExistingPlan(text);
+                analysis = await analyzeExistingPlan(text, undefined, imagePayload);
             }
 
             setAnalysisResult(analysis);
@@ -108,8 +142,24 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             existingPdfBase64: pdfBase64,
             aiIntegrationOptions: selectedIntegrations,
             socialIntegrations: selectedSocialIntegrations,
+            newContentFromTextbook: analysisResult.newContentFromTextbook || [],
             indicatorCode: analysisResult.grade ? `${analysisResult.grade}.A.A1.1` : undefined
         });
+    };
+
+    const socialThemeColors: Record<string, string> = {
+        "Di sản": "bg-amber-50 border-amber-300 text-amber-800",
+        "Dân số": "bg-cyan-50 border-cyan-300 text-cyan-800",
+        "Ma túy": "bg-red-50 border-red-300 text-red-800",
+        "Thuốc lá": "bg-orange-50 border-orange-300 text-orange-800",
+        "Hòa nhập": "bg-purple-50 border-purple-300 text-purple-800",
+    };
+
+    const getSocialThemeColor = (theme: string) => {
+        for (const key of Object.keys(socialThemeColors)) {
+            if (theme.includes(key)) return socialThemeColors[key];
+        }
+        return "bg-green-50 border-green-300 text-green-800";
     };
 
     return (
@@ -120,36 +170,81 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                         <Zap className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold font-display text-slate-800">Tích hợp AI vào Giáo án có sẵn</h2>
-                        <p className="text-sm text-slate-500">Tải lên Giáo án Word của bạn, AI sẽ rà soát và tự nhúng Năng lực 3439.</p>
+                        <h2 className="text-xl font-bold font-display text-slate-800">Nâng cấp Giáo án cũ theo SGK Mới</h2>
+                        <p className="text-sm text-slate-500">Tải lên Giáo án cũ + ảnh chụp trang SGK mới. AI sẽ phân tích nội dung thiếu & đề xuất tích hợp.</p>
                     </div>
                 </div>
 
                 <div className="p-6">
                     {step === 1 && (
-                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-12 bg-slate-50 relative">
-                            {isAnalyzing ? (
-                                <div className="text-center space-y-4">
-                                    <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
-                                    <h3 className="text-lg font-medium text-slate-700">Đang đọc giáo án & Rà soát bởi Gemini AI...</h3>
-                                    <p className="text-sm text-slate-500">Quá trình này mất khoảng 5-15 giây để tìm điểm chạm phân bổ kiến thức số.</p>
-                                </div>
-                            ) : (
-                                <div className="text-center space-y-4">
-                                    <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-blue-600">
-                                        <UploadCloud className="w-8 h-8" />
+                        <div className="space-y-6">
+                            {/* Textbook Image Upload Zone */}
+                            <div className="rounded-xl border border-dashed border-indigo-300 bg-indigo-50/40 p-5 space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-indigo-100 p-1.5 rounded-lg">
+                                        <BookOpen className="w-5 h-5 text-indigo-600" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-medium text-slate-800">Kéo thả giáo án DOCX hoặc PDF vào đây</h3>
-                                        <p className="text-sm text-slate-500 mt-1">Hệ thống hỗ trợ file Word biên soạn thuần, và cả PDF.</p>
+                                        <p className="font-semibold text-sm text-indigo-800">Ảnh chụp trang Sách giáo khoa mới <span className="font-normal text-indigo-500">(Tùy chọn – tối đa 8 ảnh)</span></p>
+                                        <p className="text-xs text-indigo-500">AI sẽ so sánh SGK mới với giáo án cũ để tìm nội dung còn thiếu.</p>
                                     </div>
-                                    <label className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm cursor-pointer transition-colors font-medium">
-                                        <FileText className="w-4 h-4" />
-                                        <span>Chọn file từ máy tính</span>
-                                        <input type="file" className="hidden" accept=".docx, .pdf" onChange={handleFileUpload} />
-                                    </label>
                                 </div>
-                            )}
+
+                                {textbookImages.length > 0 && (
+                                    <div className="flex flex-wrap gap-3">
+                                        {textbookImages.map((img, idx) => (
+                                            <div key={idx} className="relative group">
+                                                <img src={img.previewUrl} alt={img.name} className="w-20 h-20 object-cover rounded-lg border-2 border-indigo-200 shadow-sm" />
+                                                <button
+                                                    onClick={() => removeTextbookImage(idx)}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                                <p className="text-xs text-center text-indigo-600 mt-1 w-20 truncate">{img.name}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <label className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm cursor-pointer transition-colors text-sm font-medium">
+                                    <ImagePlus className="w-4 h-4" />
+                                    <span>Thêm ảnh SGK mới</span>
+                                    <input type="file" className="hidden" accept="image/png, image/jpeg, image/webp" multiple onChange={handleTextbookImageUpload} />
+                                </label>
+                            </div>
+
+                            {/* Main Lesson Plan File Upload */}
+                            <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-12 bg-slate-50 relative">
+                                {isAnalyzing ? (
+                                    <div className="text-center space-y-4">
+                                        <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
+                                        <h3 className="text-lg font-medium text-slate-700">
+                                            AI đang phân tích giáo án{textbookImages.length > 0 ? ` & ${textbookImages.length} ảnh SGK` : ""}...
+                                        </h3>
+                                        <p className="text-sm text-slate-500">Quá trình này mất khoảng 10-20 giây.</p>
+                                    </div>
+                                ) : (
+                                    <div className="text-center space-y-4">
+                                        <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-blue-600">
+                                            <UploadCloud className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-medium text-slate-800">Tải lên Giáo án gốc (DOCX hoặc PDF)</h3>
+                                            <p className="text-sm text-slate-500 mt-1">
+                                                {textbookImages.length > 0
+                                                    ? `✅ Đã chọn ${textbookImages.length} ảnh SGK. AI sẽ phân tích so sánh.`
+                                                    : "Hoặc tải ảnh SGK mới ở trên để so sánh chi tiết hơn."}
+                                            </p>
+                                        </div>
+                                        <label className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm cursor-pointer transition-colors font-medium">
+                                            <FileText className="w-4 h-4" />
+                                            <span>Chọn Giáo án từ máy tính</span>
+                                            <input type="file" className="hidden" accept=".docx, .pdf" onChange={handleFileUpload} />
+                                        </label>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -166,16 +261,57 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                                 </div>
                                 <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                                     <h3 className="text-sm font-bold text-blue-600 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                        <Bot className="w-4 h-4" /> AI Đề xuất điểm chạm
+                                        <Bot className="w-4 h-4" /> AI Đề xuất điểm chạm QĐ 3439
                                     </h3>
-                                    <p className="text-xs text-slate-600 mb-3">AI đã tìm ra một số hoạt động trong giáo án có thể lồng ghép KNL 3439.</p>
+                                    <p className="text-xs text-slate-600">{analysisResult.aiSuggestions?.length || 0} điểm lồng ghép AI được tìm thấy.</p>
                                 </div>
                             </div>
 
+                            {/* NEW: Content from new textbook */}
+                            {analysisResult.newContentFromTextbook?.length > 0 && (
+                                <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-3">
+                                    <h3 className="text-sm font-bold text-amber-700 flex items-center gap-2">
+                                        <AlertTriangle className="w-4 h-4" />
+                                        Nội dung SGK mới còn thiếu trong Giáo án cũ ({analysisResult.newContentFromTextbook.length} mục)
+                                    </h3>
+                                    <ul className="space-y-1.5">
+                                        {analysisResult.newContentFromTextbook.map((item: string, idx: number) => (
+                                            <li key={idx} className="flex items-start gap-2 text-sm text-amber-900">
+                                                <span className="font-bold mt-0.5 shrink-0">•</span>
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <p className="text-xs text-amber-600">✅ AI sẽ tự động bổ sung các nội dung này khi tạo giáo án nâng cấp.</p>
+                                </div>
+                            )}
+
+                            {/* Social Integration Suggestions from AI */}
+                            {analysisResult.socialSuggestions?.length > 0 && (
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                        <Users className="w-4 h-4 text-green-600" />
+                                        AI đề xuất Tích hợp xã hội (TT 02/2025) phù hợp với SGK mới
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {analysisResult.socialSuggestions.map((sug: any, idx: number) => (
+                                            <div key={idx} className={`rounded-xl border p-3 ${getSocialThemeColor(sug.theme)}`}>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="font-bold text-xs px-2 py-0.5 rounded-full bg-white/70">{sug.theme}</span>
+                                                    <span className="font-semibold text-sm">{sug.activityName}</span>
+                                                </div>
+                                                <p className="text-xs">{sug.content}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Manual Social Integration Selection */}
                             <div className="space-y-4 pt-2">
                                 <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                     <Sparkles className="w-4 h-4 text-blue-600" />
-                                    Tích hợp nội dung xã hội (TT 02/2025)
+                                    Chọn thêm nội dung tích hợp xã hội (TT 02/2025)
                                 </h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {[
@@ -203,6 +339,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                                 </div>
                             </div>
 
+                            {/* AI Activity Suggestions */}
                             <div className="space-y-3">
                                 {analysisResult.aiSuggestions?.map((sug: any, idx: number) => {
                                     const isSelected = selectedIntegrations.includes(sug);
@@ -245,7 +382,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                                     disabled={selectedIntegrations.length === 0}
                                     className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 transition-colors"
                                 >
-                                    <Sparkles className="w-4 h-4" /> Bắt đầu xuất chuẩn
+                                    <Sparkles className="w-4 h-4" /> Tạo Giáo án Nâng cấp
                                 </button>
                             </div>
                         </div>

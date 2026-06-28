@@ -332,74 +332,92 @@ export interface LessonPlanInput {
   indicatorCode?: string;
 }
 
-export const analyzeExistingPlan = async (fileText: string, pdfBase64?: string) => {
+export const analyzeExistingPlan = async (
+  fileText: string,
+  pdfBase64?: string,
+  textbookImages?: { mimeType: string; data: string }[]
+) => {
+  const hasImages = textbookImages && textbookImages.length > 0;
+
+  // Build the textbook image section of the prompt
+  const textbookSection = hasImages
+    ? `\n\n--- TRANG SÁCH GIÁO KHOA MỚI (${textbookImages!.length} ảnh) ---\nBên cạnh giáo án cũ, hãy phân tích các ảnh chụp trang sách giáo khoa mới được đính kèm và:
+A. Xác định các kiến thức/hoạt động/nội dung MỚI xuất hiện trong sách giáo khoa mà GIÁO ÁN CŨ CÒN THIẾU.
+B. Đề xuất thêm những điểm cần bổ sung vào trường "newContentFromTextbook" (mảng chuỗi) trong JSON đầu ra.
+C. Đề xuất các hoạt động tích hợp chủ đề xã hội bắt buộc TT02/2025 (Di sản, Dân số, Phòng chống Ma túy/Thuốc lá) phù hợp với nội dung SGK mới.`
+    : "";
+
+  const jsonFormat = `{
+  "subject": "Tên môn",
+  "grade": "Khối lớp",
+  "topic": "Tên bài",
+  "duration": "Thời lượng",
+  "contextStudents": "Đặc điểm học sinh",
+  "contextSchool": "Điều kiện CSVC",
+  "objectivesKnowledge": "Tóm tắt mục tiêu kiến thức",
+  "objectivesCompetency": "Tóm tắt mục tiêu năng lực",
+  "objectivesQuality": "Tóm tắt phẩm chất",
+  "newContentFromTextbook": ["Nội dung mới từ SGK còn thiếu trong giáo án cũ (nếu có ảnh SGK)"],
+  "socialSuggestions": [
+    {
+      "theme": "Tên chủ đề (Di sản / Dân số / Ma túy & Thuốc lá / Hòa nhập)",
+      "activityName": "Hoạt động đề xuất lồng ghép",
+      "content": "Nội dung cụ thể cần tích hợp vào bài học"
+    }
+  ],
+  "aiSuggestions": [
+    {
+      "activityName": "Tên hoạt động gợi ý",
+      "suggestedAI": "Mã chỉ báo AI chuẩn (vd: 10.A1.a)",
+      "reason": "Lý do phù hợp",
+      "action": "HS sẽ làm gì với AI?"
+    }
+  ]
+}`;
+
   let prompt: any;
   if (pdfBase64) {
-    prompt = [
-      `
-      Đóng vai trò chuyên gia giáo dục phân tích Kế hoạch bài dạy đính kèm dưới dạng PDF.
-      Hãy rà soát và cho tôi biết:
-1. Thông tin chung của bài học(Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện cơ sở vật chất, Các mục tiêu hiện tại).
-      2. Các hoạt động cốt yếu trong giáo án(Thường là Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-      3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa.Chỉ ra 2 vị trí(2 hoạt động) TỐT NHẤT có thể lồng ghép hoạt động giáo dục AI(hướng đến các mã chỉ báo cụ thể).
-      
-      Định dạng đầu ra JSON bắt buộc:
-{
-  "subject": "Tên môn",
-    "grade": "Khối lớp",
-      "topic": "Tên bài",
-        "duration": "Thời lượng",
-          "contextStudents": "Đặc điểm học sinh (từ tóm tắt)",
-            "contextSchool": "Điều kiện CSVC",
-              "objectivesKnowledge": "Tóm tắt mục tiêu kiến thức",
-                "objectivesCompetency": "Tóm tắt mục tiêu năng lực",
-                  "objectivesQuality": "Tóm tắt phẩm chất",
-                    "aiSuggestions": [
-                      {
-                        "activityName": "Tên hoạt động gợi ý (vd: Hoạt động Luyện tập)",
-                        "suggestedAI": "Mã chỉ báo AI chuẩn (BẮT BUỘC có dạng Khối.ChủĐề.ChỉBáo vd: 10.A1.a hoặc 11.A1.a)",
-                        "reason": "Lý do vì sao phù hợp lồng ghép vào đây",
-                        "action": "Nếu lồng ghép thì HS sẽ làm gì với AI ở hoạt động này?"
-                      }
-                    ]
-}
-`,
+    const textParts: any[] = [
+      `Đóng vai trò chuyên gia giáo dục phân tích Kế hoạch bài dạy đính kèm dưới dạng PDF.
+Hãy rà soát và cho tôi biết:
+1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
+2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
+3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí TỐT NHẤT có thể lồng ghép AI.${textbookSection}
+
+Định dạng đầu ra JSON bắt buộc:
+${jsonFormat}`,
       { inlineData: { mimeType: "application/pdf", data: pdfBase64 } }
     ];
+    // Append textbook images if provided
+    if (hasImages) {
+      textbookImages!.forEach(img => {
+        textParts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+      });
+    }
+    prompt = textParts;
   } else {
-    prompt = `
-      Đóng vai trò chuyên gia giáo dục phân tích Kế hoạch bài dạy(Giáo án) của Giáo viên.
-      Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo viên.
-    
-    Hãy rà soát và cho tôi biết:
-1. Thông tin chung của bài học(Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện cơ sở vật chất, Các mục tiêu hiện tại).
-    2. Các hoạt động cốt yếu trong giáo án(Thường là Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-    3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa.Chỉ ra 2 vị trí(2 hoạt động) TỐT NHẤT có thể lồng ghép hoạt động giáo dục AI(hướng đến các mã chỉ báo cụ thể).
-    
-    VĂN BẢN GIÁO ÁN:
-    ${fileText.substring(0, 15000)} // Giới hạn một phần để chống tràn
+    const textParts: any[] = [
+      `Đóng vai trò chuyên gia giáo dục phân tích Kế hoạch bài dạy (Giáo án) của Giáo viên.
+Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo viên.
 
-    Định dạng đầu ra JSON bắt buộc:
-{
-  "subject": "Tên môn",
-    "grade": "Khối lớp",
-      "topic": "Tên bài",
-        "duration": "Thời lượng",
-          "contextStudents": "Đặc điểm học sinh (từ tóm tắt)",
-            "contextSchool": "Điều kiện CSVC",
-              "objectivesKnowledge": "Tóm tắt mục tiêu kiến thức",
-                "objectivesCompetency": "Tóm tắt mục tiêu năng lực",
-                  "objectivesQuality": "Tóm tắt phẩm chất",
-                    "aiSuggestions": [
-                      {
-                        "activityName": "Tên hoạt động gợi ý (vd: Hoạt động Luyện tập)",
-                        "suggestedAI": "Mã chỉ báo AI chuẩn (BẮT BUỘC có dạng Khối.ChủĐề.ChỉBáo vd: 10.A1.a hoặc 11.A1.a)",
-                        "reason": "Lý do vì sao phù hợp lồng ghép vào đây",
-                        "action": "Nếu lồng ghép thì HS sẽ làm gì với AI ở hoạt động này?"
-                      }
-                    ]
-}
-`;
+Hãy rà soát và cho tôi biết:
+1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
+2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
+3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí TỐT NHẤT có thể lồng ghép AI.${textbookSection}
+
+VĂN BẢN GIÁO ÁN:
+${fileText.substring(0, 15000)}
+
+Định dạng đầu ra JSON bắt buộc:
+${jsonFormat}`
+    ];
+    // Append textbook images if provided
+    if (hasImages) {
+      textbookImages!.forEach(img => {
+        textParts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+      });
+    }
+    prompt = textParts.length === 1 ? textParts[0] : textParts;
   }
 
   try {
@@ -415,6 +433,22 @@ export const analyzeExistingPlan = async (fileText: string, pdfBase64?: string) 
         objectivesKnowledge: { type: Type.STRING },
         objectivesCompetency: { type: Type.STRING },
         objectivesQuality: { type: Type.STRING },
+        newContentFromTextbook: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
+        },
+        socialSuggestions: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              theme: { type: Type.STRING },
+              activityName: { type: Type.STRING },
+              content: { type: Type.STRING }
+            },
+            required: ["theme", "activityName", "content"]
+          }
+        },
         aiSuggestions: {
           type: Type.ARRAY,
           items: {

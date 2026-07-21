@@ -7,12 +7,12 @@ export const isValidGoogleAiApiKey = (key: string): boolean =>
   GOOGLE_AI_API_KEY_PATTERN.test(key.trim());
 
 const getFallbackModels = (startModel: string) => {
-  // Fallback order per LỆNH.md: 2.5-flash → 2.5-flash-8b (lite) → 2.0-flash (stable) → 2.5-pro
+  // Fallback order: Gemini 3.5 (GA) → 3 preview → 3.1 lite → 2.5 (legacy Oct 2026)
   const models = [
+    'gemini-3.5-flash',
+    'gemini-3-flash-preview',
+    'gemini-3.1-flash-lite',
     'gemini-2.5-flash',
-    'gemini-2.5-flash-lite-preview-06-17',
-    'gemini-2.5-flash-lite',
-    'gemini-2.5-pro',
   ];
   const deduplicated = [startModel, ...models.filter(m => m !== startModel)];
   return deduplicated;
@@ -23,7 +23,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
   if (!apiKey) {
     throw new Error('API_KEY_REQUIRED');
   }
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
   // Build parts array for the request
@@ -481,7 +481,7 @@ ${jsonFormat}`
 export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: string) => {
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
   const instruction = `Bạn là chuyên gia phân phối chương trình giáo dục.
@@ -949,7 +949,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với dan
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
   const parts = [{ text: prompt }];

@@ -439,7 +439,7 @@ export default function App() {
   const [province, setProvince] = useState("TP. Hồ Chí Minh (Thành phố)");
   const [showSettings, setShowSettings] = useState(() => !localStorage.getItem("GEMINI_API_KEY"));
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
-  const [aiModel, setAiModel] = useState(() => localStorage.getItem("GEMINI_MODEL") || "gemini-2.5-flash");
+  const [aiModel, setAiModel] = useState(() => localStorage.getItem("GEMINI_MODEL") || "gemini-3.5-flash");
   const [apiTestResult, setApiTestResult] = useState<string | null>(null);
   const [apiTesting, setApiTesting] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -2771,10 +2771,10 @@ export default function App() {
                       </label>
                       <div className="grid grid-cols-1 gap-3">
                         {[
-                          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", desc: "Tốc độ cực cao, thông minh (Mặc định - Khuyên dùng)" },
-                          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview", desc: "Thế hệ mới nhất, siêu nhanh và thông minh" },
-                          { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", desc: "Nhẹ, nhanh, tiết kiệm quota nhất" },
-                          { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", desc: "Siêu trí tuệ, lý luận sâu sắc nhất (Trả phí)" }
+                          { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", desc: "⚡ Mới nhất, nhanh nhất (Mặc định - Khuyến dùng)" },
+                          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview", desc: "🛡️ Gemini 3 ổn định, dự phòng tốt" },
+                          { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash Lite", desc: "🔋 Nhẹ nhất, tiết kiệm quota nhất" },
+                          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash (Legacy)", desc: "⚠️ Phát hưu tháng 10/2026 — Dùng tạm" }
                         ].map(model => (
                           <div
                             key={model.id}

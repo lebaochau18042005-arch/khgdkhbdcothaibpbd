@@ -1289,7 +1289,7 @@ export default function App() {
 
     if (result.type === "khbd") {
       const d = result.data;
-      content = `${t("KẾ HOẠCH BÀI DẠY (KHBD)")}\n\n${t("Tên bài dạy:")} ${d.title}\n\n${t("I. MỤC TIÊU")}\n${t("1. Kiến thức:")}\n${d.objectives.knowledge.map((c: string) => `- ${c}`).join("\n")}\n\n${t("2. Năng lực môn học:")}\n${d.objectives.subjectSpecific.map((c: string) => `- ${c}`).join("\n")}\n\n${t("3. Năng lực AI:")}\n${d.objectives.aiSpecific.map((c: string) => `- ${c}`).join("\n")}\n\n${t("4. Năng lực chung:")}\n${d.objectives.general.map((c: string) => `- ${c}`).join("\n")}\n\n${t("5. Phẩm chất:")}\n${d.objectives.qualities.map((q: string) => `- ${q}`).join("\n")}\n\n${t("II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU")}\n${t("1. Thiết bị truyền thống:")} ${d.materials.traditional.join(", ")}\n${t("2. Công cụ số và AI:")}\n- ${t("Phương án triển khai:")} ${d.materials.digitalAndAI.implementationMethod}\n- ${t("Học liệu/công cụ cụ thể:")} ${d.materials.digitalAndAI.specificTools.join(", ")}\n\n${t("III. TIẾN TRÌNH DẠY HỌC")}\n${d.activities.map((a: any) => `${a.name}\n${t("a) Mục tiêu:")} ${a.objective}\n${t("b) Nội dung:")} ${a.content}\n${t("c) Sản phẩm:")} ${a.product}\n${t("d) Tổ chức thực hiện:")}\n${a.procedure.map((p: any) => `${p.stepName}\n  - ${t("Hoạt động của GV và HS:")} ${strip(p.teacherStudentActivities)}\n  - ${t("Dự kiến sản phẩm:")} ${strip(p.expectedProduct)}`).join("\n")}`).join("\n\n")}\n\n${t("IV. KẾ HOẠCH ĐÁNH GIÁ")}\n${d.assessment.map((a: string) => `- ${strip(a)}`).join("\n")}\n\n${t("V. PHỤ LỤC")}\n- ${t("Mẫu Prompt:")} ${d.appendix.prompts.join(", ")}\n- ${t("Bảng kiểm:")}\n${d.appendix.checklist.map((c: string) => `- ${strip(c)}`).join("\n")}`;
+      content = `${t("KẾ HOẠCH BÀI DẠY (KHBD)")}\n\n${t("Tên bài dạy:")} ${d.title}\n\n${t("I. MỤC TIÊU")}\n${t("1. Kiến thức:")}\n${d.objectives.knowledge.map((c: string) => `- ${c}`).join("\n")}\n\n${t("2. Năng lực môn học:")}\n${d.objectives.subjectSpecific.map((c: string) => `- ${c}`).join("\n")}\n\n${t("3. Năng lực số:")}\n${(d.objectives.digitalSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("4. Năng lực AI:")}\n${d.objectives.aiSpecific.map((c: string) => `- ${c}`).join("\n")}\n\n${t("5. Năng lực chung:")}\n${d.objectives.general.map((c: string) => `- ${c}`).join("\n")}\n\n${t("6. Phẩm chất:")}\n${d.objectives.qualities.map((q: string) => `- ${q}`).join("\n")}\n\n${t("II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU")}\n${t("1. Thiết bị truyền thống:")} ${d.materials.traditional.join(", ")}\n${t("2. Công cụ số và AI:")}\n- ${t("Phương án triển khai:")} ${d.materials.digitalAndAI.implementationMethod}\n- ${t("Học liệu/công cụ cụ thể:")} ${d.materials.digitalAndAI.specificTools.join(", ")}\n\n${t("III. TIẾN TRÌNH DẠY HỌC")}\n${d.activities.map((a: any) => `${a.name}\n${t("a) Mục tiêu:")} ${a.objective}\n${t("b) Nội dung:")} ${a.content}\n${t("c) Sản phẩm:")} ${a.product}\n${t("d) Tổ chức thực hiện:")}\n${a.procedure.map((p: any) => `${p.stepName}\n  - ${t("Hoạt động của GV và HS:")} ${strip(p.teacherStudentActivities)}\n  - ${t("Dự kiến sản phẩm:")} ${strip(p.expectedProduct)}`).join("\n")}`).join("\n\n")}\n\n${t("IV. KẾ HOẠCH ĐÁNH GIÁ")}\n${d.assessment.map((a: string) => `- ${strip(a)}`).join("\n")}\n\n${t("V. PHỤ LỤC")}\n- ${t("Mẫu Prompt:")} ${d.appendix.prompts.join(", ")}\n- ${t("Bảng kiểm:")}\n${d.appendix.checklist.map((c: string) => `- ${strip(c)}`).join("\n")}`;
     } else if (result.type === "khgd") {
       content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Định hướng năng lực số")}\n${result.data.map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.digitalCompetency}`).join("\n")}`;
     } else if (result.type === "kh-tcm") {
@@ -1955,7 +1955,15 @@ export default function App() {
                                     </ul>
                                   </div>
                                   <div>
-                                    <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">3. Năng lực AI đặc thù (3439)</span>
+                                    <span className="inline-block px-2 py-1 bg-blue-50 rounded text-[10px] font-bold text-blue-600 uppercase mb-3 border border-blue-100">3. Năng lực số</span>
+                                    <ul className="list-disc list-inside space-y-2 text-blue-600 text-[12px] leading-relaxed font-medium">
+                                      {(result.data.objectives.digitalSpecific || []).map((c: string, i: number) => (
+                                        <li key={i}>{c}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                  <div>
+                                    <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">4. Năng lực AI đặc thù (3439)</span>
                                     <ul className="list-disc list-inside space-y-2 text-red-600 text-[12px] leading-relaxed italic font-medium">
                                       {result.data.objectives.aiSpecific.map((c: string, i: number) => (
                                         <li key={i}>{c}</li>
@@ -1965,7 +1973,7 @@ export default function App() {
                                 </div>
                                 <div className="space-y-4">
                                   <div>
-                                    <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-brand-muted uppercase mb-3">4. Năng lực chung</span>
+                                    <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-brand-muted uppercase mb-3">5. Năng lực chung</span>
                                     <ul className="list-disc list-inside space-y-2 text-brand-dark text-[12px] leading-relaxed">
                                       {result.data.objectives.general.map((c: string, i: number) => (
                                         <li key={i}>{c}</li>
@@ -1973,7 +1981,7 @@ export default function App() {
                                     </ul>
                                   </div>
                                   <div>
-                                    <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-brand-muted uppercase mb-3">5. Phẩm chất</span>
+                                    <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-brand-muted uppercase mb-3">6. Phẩm chất</span>
                                     <ul className="list-disc list-inside space-y-2 text-brand-dark text-[12px] leading-relaxed">
                                       {result.data.objectives.qualities.map((q: string, i: number) => (
                                         <li key={i}>{q}</li>

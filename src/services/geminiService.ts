@@ -596,8 +596,8 @@ NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầ
 ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 
 KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI: 
-1. BẢO TOÀN NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại các hoạt động Mở đầu, Hình thành Kiến thức mới, Luyện tập, Vận dụng mà giáo viên đã cung cấp. Phải giữ nguyên văn dữ liệu cũ (copy-paste lại nội dung cũ).
-2. THÊM NĂNG LỰC & CÔNG CỤ SỐ: Tự động tổng hợp và thêm mục tiêu AI vào mục Năng Lực, thêm công cụ số AI vào mục "CÔNG CỤ SỐ AI".
+1. BẢO TOÀN NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại các hoạt động Mở đầu, Hình thành Kiến thức mới, Luyện tập, Vận dụng mà giáo viên đã cung cấp. Phải giữ nguyên văn dữ liệu cũ (copy-paste lại nội dung cũ). CHỈ BỔ SUNG những nội dung kiến thức còn thiếu so với chương trình/sách giáo khoa mới (nếu có).
+2. THÊM NĂNG LỰC SỐ & NĂNG LỰC AI: Tự động tổng hợp và thêm mục tiêu "Năng lực số" và "Năng lực AI đặc thù" vào phần Năng lực. Thêm công cụ số vào mục "CÔNG CỤ SỐ AI".
 3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
    - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
@@ -628,8 +628,8 @@ ${input.existingRawText.substring(0, 18000)}
 ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 
 KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
-1. BẢO TOÀN NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại các hoạt động Mở đầu, Hình thành Kiến thức mới, Luyện tập, Vận dụng mà giáo viên đã cung cấp. Phải giữ nguyên văn dữ liệu cũ (copy-paste lại nội dung cũ).
-2. THÊM NĂNG LỰC & CÔNG CỤ SỐ: Tự động tổng hợp và thêm mục tiêu AI vào mục Năng Lực, thêm công cụ số AI vào mục "CÔNG CỤ SỐ AI".
+1. BẢO TOÀN NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại các hoạt động Mở đầu, Hình thành Kiến thức mới, Luyện tập, Vận dụng mà giáo viên đã cung cấp. Phải giữ nguyên văn dữ liệu cũ (copy-paste lại nội dung cũ). CHỈ BỔ SUNG những nội dung kiến thức còn thiếu so với chương trình/sách giáo khoa mới (nếu có).
+2. THÊM NĂNG LỰC SỐ & NĂNG LỰC AI: Tự động tổng hợp và thêm mục tiêu "Năng lực số" và "Năng lực AI đặc thù" vào phần Năng lực. Thêm công cụ số vào mục "CÔNG CỤ SỐ AI".
 3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
    - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
@@ -672,6 +672,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
     - Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
     - Năng lực:
     + Đặc thù môn học: Theo chương trình 2018.
+      + Năng lực số: Xác định rõ các năng lực số học sinh đạt được (sử dụng phần mềm, khai thác thông tin, an toàn mạng...).
       + Năng lực AI đặc thù(Chỉ thêm nếu Có tích hợp AI): LỆNH TỐI CẤP: LƯU Ý RẰNG BẠN CHỈ TRẢ VỀ DỮ LIỆU DƯỚI DẠNG MẢNG STRING CHO MỤC NÀY, DO ĐÓ BẠN PHẢI NỐI TRỰC TIẾP MÃ CHỈ BÁO VÀO BÊN TRONG TỪNG CHUỖI ĐẦU RA! GHI RÕ MÃ VÀO CUỐI MỖI KẾT QUẢ. (Ví dụ chuỗi kết quả: "Học sinh suy luận bằng ChatGPT (${input.indicatorCode || input.grade + '.B.B1.2'})").VIỆC BỎ QUÊN MÃ CHỈ BÁO SẼ LÀM HỎNG HỆ THỐNG.
       + Năng lực chung: Tự chủ, tự học; Giao tiếp...
     - Phẩm chất: Theo CV 5512.
@@ -707,11 +708,12 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
           properties: {
             knowledge: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Mục tiêu về kiến thức" },
             subjectSpecific: { type: Type.ARRAY, items: { type: Type.STRING } },
+            digitalSpecific: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Mục tiêu Năng lực số" },
             aiSpecific: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Mục tiêu Năng lực AI đặc thù. BẮT BUỘC QUAN TRỌNG: MỖI CHUỖI ĐẦU RA PHẢI CÓ MÃ CHỈ BÁO NẰM CHUẨN XÁC TRONG NGOẶC ĐƠN Ở ĐUÔI. Vd: 'Sử dụng AI phân tích XYZ (11.B.B1.2)'" },
             general: { type: Type.ARRAY, items: { type: Type.STRING } },
             qualities: { type: Type.ARRAY, items: { type: Type.STRING } },
           },
-          required: ["knowledge", "subjectSpecific", "aiSpecific", "general", "qualities"],
+          required: ["knowledge", "subjectSpecific", "digitalSpecific", "aiSpecific", "general", "qualities"],
         },
         materials: {
           type: Type.OBJECT,

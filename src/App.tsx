@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
+import NlsLookup from "./components/NlsLookup";
 import { SignedIn, SignedOut, SignIn, UserButton } from "@clerk/clerk-react";
 
 // Add competency mapper utility function
@@ -54,7 +55,7 @@ const mapAiCompetencyText = (code: string) => {
   return `${code} - ${groupName}`;
 };
 
-type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "upgrade-plan" | "ai-framework-gen";
+type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "upgrade-plan" | "ai-framework-gen" | "nls-lookup";
 
 
 const SUBJECTS_THPT = [
@@ -1459,6 +1460,24 @@ export default function App() {
                 icon={<BrainCircuit className="w-4 h-4" />}
                 label="5. Khung Năng lực AI"
               />
+              <li className="my-2 border-t border-slate-700/50"></li>
+                <li>
+                  <button
+                    onClick={() => setMode("nls-lookup")}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 ${
+                      mode === "nls-lookup"
+                        ? "bg-brand-accent/20 text-brand-accent shadow-[inset_2px_0_0_0_#14b8a6]"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-1.5 rounded-lg ${mode === "nls-lookup" ? "bg-brand-accent/20" : "bg-transparent"}`}>
+                        <Search className="w-5 h-5" />
+                      </div>
+                      <span className="font-bold text-sm tracking-wide">6. Tra cứu mã Năng lực số</span>
+                    </div>
+                  </button>
+                </li>
               <div className="pt-6 pb-2 px-3">
                 <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Tài khoản</span>
               </div>
@@ -3040,6 +3059,19 @@ export default function App() {
                     )}
                   </motion.div>
                 )}
+                {mode === "nls-lookup" && (
+                  <motion.div
+                    key="nls-lookup"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="h-full"
+                  >
+                    <NlsLookup />
+                  </motion.div>
+                )}
+
               </AnimatePresence>
             </section>
           </main>

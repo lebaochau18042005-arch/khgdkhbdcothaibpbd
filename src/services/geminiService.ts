@@ -1175,3 +1175,125 @@ ${input.requirementsText}
     throw error;
   }
 };
+
+export const analyzeLessonSource = async (fileBase64: string, mimeType: string, options: { apiKey?: string; aiModel?: string }) => {
+  const model = getModel(options.apiKey, options.aiModel);
+  const prompt = `Bạn là một Chuyên gia Giáo dục và Thị giác máy tính (Computer Vision).
+Nhiệm vụ của bạn là đọc và phân tích bức ảnh/tài liệu (trang Sách giáo khoa) được đính kèm, sau đó trích xuất các thông tin cốt lõi để điền vào form tạo Kế hoạch bài dạy.
+
+YÊU CẦU:
+1. Trích xuất Tên bài học (hoặc nội dung trọng tâm).
+2. Trích xuất chính xác các Yêu cầu cần đạt (Mục tiêu kiến thức, năng lực).
+3. Đề xuất nhanh 2-3 phương pháp hoặc kỹ thuật dạy học tích cực phù hợp nhất với bài học này (Ví dụ: Kỹ thuật KWL, Khăn trải bàn, Dạy học dự án...).
+
+Trả về một chuỗi JSON hợp lệ với cấu trúc sau:
+{
+  "topic": "Tên bài học",
+  "objectives": "Yêu cầu cần đạt chi tiết...",
+  "methodologies": "Phương pháp/Kỹ thuật dạy học đề xuất..."
+}
+`;
+
+  try {
+    const result = await model.generateContent({
+      contents: [
+        { 
+          role: "user", 
+          parts: [
+            { inlineData: { data: fileBase64, mimeType } },
+            { text: prompt }
+          ] 
+        }
+      ],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            topic: { type: Type.STRING },
+            objectives: { type: Type.STRING },
+            methodologies: { type: Type.STRING }
+          },
+          required: ["topic", "objectives", "methodologies"]
+        },
+      }
+    });
+
+    const text = result.response.text();
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Error analyzing lesson source:", error);
+    throw error;
+  }
+};
+
+export const evaluateLessonPlan = async (lessonPlanText: string, options: { apiKey?: string; aiModel?: string }) => {
+  const model = getModel(options.apiKey, options.aiModel);
+  const prompt = `Bạn là HỘI ĐỒNG AI PHẢN BIỆN gồm 3 chuyên gia hàng đầu.
+Nhiệm vụ của bạn là đánh giá bản Kế hoạch bài dạy (KHBD) dưới đây.
+
+BA VAI TRÒ CHUYÊN GIA:
+1. Chuyên gia Giáo dục: Đánh giá việc đáp ứng Yêu cầu cần đạt cốt lõi, việc lựa chọn phương pháp/kỹ thuật dạy học tích cực có phù hợp không.
+2. Chuyên gia Công nghệ số: Đánh giá việc lồng ghép Năng lực số (NLS) có tự nhiên và hiệu quả không.
+3. Chuyên gia Phản biện AI: Kiểm định việc áp dụng Khung năng lực AI (QĐ 3439), kiểm tra xem các Prompt/công cụ đề xuất cho học sinh có thực tế không, có nguy cơ "ảo giác" (hallucination) hay lạm dụng AI thay vì tư duy không.
+
+BẢN KHBD CẦN ĐÁNH GIÁ:
+"""
+${lessonPlanText}
+"""
+
+Hãy trả về kết quả đánh giá bằng JSON theo cấu trúc sau:
+{
+  "educationalExpert": {
+    "strengths": "Ưu điểm về sư phạm...",
+    "weaknesses": "Hạn chế...",
+    "suggestions": "Đề xuất cải thiện..."
+  },
+  "digitalExpert": {
+    "strengths": "Ưu điểm về công nghệ số...",
+    "weaknesses": "Hạn chế...",
+    "suggestions": "Đề xuất cải thiện..."
+  },
+  "aiExpert": {
+    "strengths": "Ưu điểm về tích hợp AI 3439...",
+    "weaknesses": "Hạn chế...",
+    "suggestions": "Đề xuất cải thiện..."
+  },
+  "overallScore": 8.5
+}
+`;
+
+  try {
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            educationalExpert: {
+              type: Type.OBJECT,
+              properties: { strengths: { type: Type.STRING }, weaknesses: { type: Type.STRING }, suggestions: { type: Type.STRING } }
+            },
+            digitalExpert: {
+              type: Type.OBJECT,
+              properties: { strengths: { type: Type.STRING }, weaknesses: { type: Type.STRING }, suggestions: { type: Type.STRING } }
+            },
+            aiExpert: {
+              type: Type.OBJECT,
+              properties: { strengths: { type: Type.STRING }, weaknesses: { type: Type.STRING }, suggestions: { type: Type.STRING } }
+            },
+            overallScore: { type: Type.NUMBER, description: "Điểm đánh giá chung trên thang điểm 10" }
+          },
+          required: ["educationalExpert", "digitalExpert", "aiExpert", "overallScore"]
+        },
+      }
+    });
+
+    const text = result.response.text();
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Error evaluating lesson plan:", error);
+    throw error;
+  }
+};

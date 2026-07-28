@@ -36,7 +36,7 @@ import {
   UploadCloud,
   Trash2
 } from "lucide-react";
-import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, LessonPlanInput } from "./services/geminiService";
+import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
 import { SignedIn, SignedOut, SignIn, UserButton } from "@clerk/clerk-react";
 
@@ -437,6 +437,9 @@ export default function App() {
   const [customCurriculumData, setCustomCurriculumData] = useState<any[] | null>(null);
   const [isParsingCurriculum, setIsParsingCurriculum] = useState(false);
   const [province, setProvince] = useState("TP. Hồ Chí Minh (Thành phố)");
+  const [uploadingSource, setUploadingSource] = useState(false);
+  const [evaluatingCouncil, setEvaluatingCouncil] = useState(false);
+  const [councilEvaluation, setCouncilEvaluation] = useState<any>(null);
   const [showSettings, setShowSettings] = useState(() => !localStorage.getItem("GEMINI_API_KEY"));
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
   const [aiModel, setAiModel] = useState(() => localStorage.getItem("GEMINI_MODEL") || "gemini-3.5-flash");
@@ -588,6 +591,59 @@ export default function App() {
       alert(`❌ Lỗi khi tạo Khung năng lực AI: ${err?.message || "Lỗi không xác định."}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!apiKey.trim()) {
+      alert("Vui lòng lấy API key để sử dụng tính năng đọc ảnh/PDF!");
+      setShowSettings(true);
+      return;
+    }
+    
+    setUploadingSource(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = (reader.result as string).split(',')[1];
+        try {
+          const data = await analyzeLessonSource(base64Data, file.type, { apiKey, aiModel });
+          setLessonPlanInput(prev => ({
+            ...prev,
+            topic: data.topic || prev.topic,
+            objectivesKnowledge: data.objectives || prev.objectivesKnowledge,
+            activities: data.methodologies || prev.activities
+          }));
+          alert("✅ Phân tích thành công! Đã tự động điền thông tin vào form.");
+        } catch (err: any) {
+          alert(`❌ Lỗi phân tích ảnh/PDF: ${err?.message}`);
+        } finally {
+          setUploadingSource(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      alert("❌ Lỗi đọc file: " + err?.message);
+      setUploadingSource(false);
+    }
+  };
+
+  const handleEvaluateCouncil = async () => {
+    if (!apiKey.trim()) {
+      setShowSettings(true);
+      return;
+    }
+    if (!result || result.type !== "khbd") return;
+    setEvaluatingCouncil(true);
+    try {
+      const data = await evaluateLessonPlan(JSON.stringify(result.data), { apiKey, aiModel });
+      setCouncilEvaluation(data);
+    } catch (err: any) {
+      alert(`❌ Lỗi khi gọi Hội đồng AI đánh giá: ${err?.message}`);
+    } finally {
+      setEvaluatingCouncil(false);
     }
   };
 
@@ -1753,7 +1809,16 @@ export default function App() {
                             </div>
 
                             <div className="space-y-2">
-                              <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Tên bài học cụ thể</label>
+                              <div className="flex items-center justify-between">
+                                <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Tên bài học cụ thể (hoặc Tải ảnh/PDF SGK)</label>
+                                <div>
+                                  <input type="file" id="upload-source-1" className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
+                                  <label htmlFor="upload-source-1" className="cursor-pointer flex items-center gap-1 text-[10px] font-bold text-brand-accent hover:text-blue-700 bg-brand-accent/10 px-2 py-1 rounded transition-colors uppercase tracking-[0.1em]">
+                                    {uploadingSource ? <Sparkles className="w-3 h-3 animate-spin" /> : <UploadCloud className="w-3 h-3" />}
+                                    {uploadingSource ? "Đang đọc..." : "AI Đọc Ảnh / PDF"}
+                                  </label>
+                                </div>
+                              </div>
                               <textarea
                                 placeholder="Nhập tên bài học hoặc nội dung trọng tâm..."
                                 className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-accent min-h-[60px] transition-all outline-none text-sm"
@@ -1962,8 +2027,46 @@ export default function App() {
                                 {evaluationLoading ? "Đang thiết kế..." : "Thiết kế đánh giá"}
                               </button>
                             )}
+                            <button
+                              onClick={handleEvaluateCouncil}
+                              disabled={evaluatingCouncil}
+                              className="px-4 py-2 bg-brand-accent text-white rounded-lg text-xs font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                            >
+                              {evaluatingCouncil ? <Sparkles className="w-3 h-3 animate-spin" /> : <BrainCircuit className="w-3 h-3" />}
+                              {evaluatingCouncil ? "Đang Phản Biện..." : "Đánh giá Hội đồng AI"}
+                            </button>
                           </div>
                         </div>
+
+                        {councilEvaluation && (
+                          <div className="glass rounded-[24px] p-6 shadow-xl border-l-4 border-l-brand-accent animate-in fade-in slide-in-from-top-4">
+                            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                              <BrainCircuit className="w-6 h-6 text-brand-accent" />
+                              Báo Cáo Đánh Giá Từ Hội Đồng Chuyên Gia AI
+                              <span className="ml-auto text-brand-accent text-2xl font-black">{councilEvaluation.overallScore}/10</span>
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                <h4 className="font-bold text-sm text-brand-sidebar uppercase flex items-center gap-2 border-b border-slate-200 pb-2"><BookOpen className="w-4 h-4 text-emerald-600" /> Chuyên gia Giáo dục</h4>
+                                <div><span className="text-xs font-bold text-emerald-600">Ưu điểm:</span><p className="text-xs text-slate-700 mt-1">{councilEvaluation.educationalExpert.strengths}</p></div>
+                                <div><span className="text-xs font-bold text-amber-600">Hạn chế:</span><p className="text-xs text-slate-700 mt-1">{councilEvaluation.educationalExpert.weaknesses}</p></div>
+                                <div><span className="text-xs font-bold text-brand-accent">Đề xuất:</span><p className="text-xs text-slate-700 mt-1">{councilEvaluation.educationalExpert.suggestions}</p></div>
+                              </div>
+                              <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                <h4 className="font-bold text-sm text-brand-sidebar uppercase flex items-center gap-2 border-b border-slate-200 pb-2"><Laptop className="w-4 h-4 text-blue-600" /> Chuyên gia Công nghệ</h4>
+                                <div><span className="text-xs font-bold text-emerald-600">Ưu điểm:</span><p className="text-xs text-slate-700 mt-1">{councilEvaluation.digitalExpert.strengths}</p></div>
+                                <div><span className="text-xs font-bold text-amber-600">Hạn chế:</span><p className="text-xs text-slate-700 mt-1">{councilEvaluation.digitalExpert.weaknesses}</p></div>
+                                <div><span className="text-xs font-bold text-brand-accent">Đề xuất:</span><p className="text-xs text-slate-700 mt-1">{councilEvaluation.digitalExpert.suggestions}</p></div>
+                              </div>
+                              <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                <h4 className="font-bold text-sm text-brand-sidebar uppercase flex items-center gap-2 border-b border-slate-200 pb-2"><Sparkles className="w-4 h-4 text-brand-accent" /> Chuyên gia Phản biện AI</h4>
+                                <div><span className="text-xs font-bold text-emerald-600">Ưu điểm:</span><p className="text-xs text-slate-700 mt-1">{councilEvaluation.aiExpert.strengths}</p></div>
+                                <div><span className="text-xs font-bold text-amber-600">Hạn chế:</span><p className="text-xs text-slate-700 mt-1">{councilEvaluation.aiExpert.weaknesses}</p></div>
+                                <div><span className="text-xs font-bold text-brand-accent">Đề xuất:</span><p className="text-xs text-slate-700 mt-1">{councilEvaluation.aiExpert.suggestions}</p></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         <div ref={contentRef} className="glass rounded-[24px] p-8 shadow-2xl space-y-10 print:border-0 print:shadow-none print:bg-white paper">
                           {/* Section I */}
@@ -2817,7 +2920,16 @@ export default function App() {
                           </div>
 
                           <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Chủ đề / Bài dạy</label>
+                            <div className="flex items-center justify-between">
+                              <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Chủ đề / Bài dạy (hoặc Tải ảnh/PDF SGK)</label>
+                              <div>
+                                <input type="file" id="upload-source-2" className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
+                                <label htmlFor="upload-source-2" className="cursor-pointer flex items-center gap-1 text-[10px] font-bold text-brand-accent hover:text-blue-700 bg-brand-accent/10 px-2 py-1 rounded transition-colors uppercase tracking-[0.1em]">
+                                  {uploadingSource ? <Sparkles className="w-3 h-3 animate-spin" /> : <UploadCloud className="w-3 h-3" />}
+                                  {uploadingSource ? "Đang đọc..." : "AI Đọc Ảnh / PDF"}
+                                </label>
+                              </div>
+                            </div>
                             <input
                               type="text"
                               className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-accent outline-none text-sm bg-white font-medium"

@@ -143,7 +143,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             aiIntegrationOptions: selectedIntegrations,
             socialIntegrations: selectedSocialIntegrations,
             newContentFromTextbook: analysisResult.newContentFromTextbook || [],
-            indicatorCode: analysisResult.grade ? `${analysisResult.grade}.A.A1.1` : undefined
+            indicatorCode: undefined
         });
     };
 

@@ -36,7 +36,7 @@ import {
   UploadCloud,
   Trash2
 } from "lucide-react";
-import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateCompetencyEvaluation, parseCurriculumAppendix, LessonPlanInput } from "./services/geminiService";
+import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
 import { SignedIn, SignedOut, SignIn, UserButton } from "@clerk/clerk-react";
 
@@ -54,7 +54,7 @@ const mapAiCompetencyText = (code: string) => {
   return `${code} - ${groupName}`;
 };
 
-type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "upgrade-plan";
+type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "upgrade-plan" | "ai-framework-gen";
 
 
 const SUBJECTS_THPT = [
@@ -481,7 +481,7 @@ export default function App() {
       setLessonPlanInput(prev => ({
         ...prev,
         topic: lessonTitle,
-        indicatorCode: prev.grade ? `${prev.grade}.A.A1.1` : undefined
+        indicatorCode: undefined
       }));
     }
   };
@@ -563,6 +563,29 @@ export default function App() {
         alert(`❌ Lỗi khi tạo giáo án: ${msg || "Lỗi không xác định. Vui lòng thử lại."}`);
       }
       console.error("[KHBD Error]", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateAiFramework = async () => {
+    if (!apiKey.trim()) {
+      alert("Vui lòng lấy API key để sử dụng app!");
+      setShowSettings(true);
+      return;
+    }
+    setLoading(true);
+    setResult(null);
+    try {
+      const data = await generateAiCompetencyFramework({
+        subject: lessonPlanInput.subject,
+        grade: lessonPlanInput.grade,
+        topic: lessonPlanInput.topic,
+        requirementsText: lessonPlanInput.objectivesKnowledge + "\n" + lessonPlanInput.objectivesCompetency
+      }, { apiKey, aiModel });
+      setResult({ type: "ai-framework", data });
+    } catch (err: any) {
+      alert(`❌ Lỗi khi tạo Khung năng lực AI: ${err?.message || "Lỗi không xác định."}`);
     } finally {
       setLoading(false);
     }
@@ -769,9 +792,10 @@ export default function App() {
         "I. MỤC TIÊU": "I. OBJECTIVES",
         "1. Kiến thức:": "1. Knowledge:",
         "2. Năng lực môn học:": "2. Subject-Specific Competencies:",
-        "3. Năng lực AI:": "3. AI Competencies:",
-        "4. Năng lực chung:": "4. General Competencies:",
-        "5. Phẩm chất:": "5. Core Qualities:",
+        "3. Năng lực số:": "3. Digital Competencies:",
+        "4. Năng lực AI:": "4. AI Competencies:",
+        "5. Năng lực chung:": "5. General Competencies:",
+        "6. Phẩm chất:": "6. Core Qualities:",
         "II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU": "II. TEACHING AIDS & MATERIALS",
         "1. Thiết bị truyền thống:": "1. Traditional Aids:",
         "2. CÔNG CỤ SỐ AI:": "2. DIGITAL & AI TOOLS:",
@@ -1025,13 +1049,18 @@ export default function App() {
             new Paragraph({ children: [new TextRun({ text: t("2. Năng lực môn học:"), bold: true })], spacing: { before: 100 } }),
             ...d.objectives.subjectSpecific.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
-            new Paragraph({ children: [new TextRun({ text: t("3. Năng lực AI:"), bold: true, color: "FF0000" })], spacing: { before: 100 } }),
+            ...(d.objectives.digitalSpecific && d.objectives.digitalSpecific.length > 0 ? [
+              new Paragraph({ children: [new TextRun({ text: t("3. Năng lực số:"), bold: true, color: "0000FF" })], spacing: { before: 100 } }),
+              ...d.objectives.digitalSpecific.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`))
+            ] : []),
+
+            new Paragraph({ children: [new TextRun({ text: t("4. Năng lực AI:"), bold: true, color: "FF0000" })], spacing: { before: 100 } }),
             ...d.objectives.aiSpecific.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
-            new Paragraph({ children: [new TextRun({ text: t("4. Năng lực chung:"), bold: true })], spacing: { before: 100 } }),
+            new Paragraph({ children: [new TextRun({ text: t("5. Năng lực chung:"), bold: true })], spacing: { before: 100 } }),
             ...d.objectives.general.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
-            new Paragraph({ children: [new TextRun({ text: t("5. Phẩm chất:"), bold: true })], spacing: { before: 100 } }),
+            new Paragraph({ children: [new TextRun({ text: t("6. Phẩm chất:"), bold: true })], spacing: { before: 100 } }),
             ...d.objectives.qualities.flatMap((q: string) => parseContentAndInsertDocx(`- ${q}`)),
 
             new Paragraph({ children: [new TextRun({ text: t("II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU"), bold: true, size: 24 })], spacing: { before: 200, after: 100 } }),
@@ -1243,9 +1272,10 @@ export default function App() {
         "I. MỤC TIÊU": "I. OBJECTIVES",
         "1. Kiến thức:": "1. Knowledge:",
         "2. Năng lực môn học:": "2. Subject-Specific Competencies:",
-        "3. Năng lực AI:": "3. AI Competencies:",
-        "4. Năng lực chung:": "4. General Competencies:",
-        "5. Phẩm chất:": "5. Core Qualities:",
+        "3. Năng lực số:": "3. Digital Competencies:",
+        "4. Năng lực AI:": "4. AI Competencies:",
+        "5. Năng lực chung:": "5. General Competencies:",
+        "6. Phẩm chất:": "6. Core Qualities:",
         "II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU": "II. TEACHING AIDS & MATERIALS",
         "1. Thiết bị truyền thống:": "1. Traditional Aids:",
         "2. Công cụ số và AI:": "2. Digital & AI Tools:",
@@ -1365,6 +1395,13 @@ export default function App() {
                 onClick={() => { setMode("upgrade-plan"); setResult(null); }}
                 icon={<Zap className="w-4 h-4" />}
                 label="4. Nâng cấp Giáo án (AI)"
+              />
+              <NavItem
+                sidebar
+                active={mode === "ai-framework-gen"}
+                onClick={() => { setMode("ai-framework-gen"); setResult(null); }}
+                icon={<BrainCircuit className="w-4 h-4" />}
+                label="5. Khung Năng lực AI"
               />
               <div className="pt-6 pb-2 px-3">
                 <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Tài khoản</span>
@@ -2728,6 +2765,164 @@ export default function App() {
                               })}
                             </tbody>
                           </table>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+                {mode === "ai-framework-gen" && (
+                  <motion.div
+                    key="ai-framework"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-8"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                      <div>
+                        <h2 className="text-3xl font-bold text-slate-900">Tạo Khung Năng lực AI</h2>
+                        <p className="text-slate-500 mt-1">Trích xuất chỉ báo năng lực AI từ YCCĐ theo chuẩn QĐ 3439/QĐ-BGDĐT</p>
+                      </div>
+                      <button
+                        onClick={() => { setMode("dashboard"); setResult(null); }}
+                        className="text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center gap-1"
+                      >
+                        Quay lại tổng quan <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {!result && !loading && (
+                      <div className="glass rounded-[24px] p-8 max-w-2xl mx-auto backdrop-blur-3xl border-indigo-200/30">
+                        <div className="grid grid-cols-1 gap-6">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Môn học</label>
+                            <input
+                              type="text"
+                              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-accent outline-none text-sm bg-white font-medium"
+                              value={lessonPlanInput.subject}
+                              onChange={(e) => setLessonPlanInput({ ...lessonPlanInput, subject: e.target.value })}
+                              placeholder="VD: Vật lý"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Khối lớp (10, 11, 12...)</label>
+                            <input
+                              type="text"
+                              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-accent outline-none text-sm bg-white font-medium"
+                              value={lessonPlanInput.grade}
+                              onChange={(e) => setLessonPlanInput({ ...lessonPlanInput, grade: e.target.value })}
+                              placeholder="VD: 10"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Chủ đề / Bài dạy</label>
+                            <input
+                              type="text"
+                              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-accent outline-none text-sm bg-white font-medium"
+                              value={lessonPlanInput.topic}
+                              onChange={(e) => setLessonPlanInput({ ...lessonPlanInput, topic: e.target.value })}
+                              placeholder="VD: Động học (Chuyển động biến đổi đều)"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Yêu cầu cần đạt</label>
+                            <textarea
+                              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-accent outline-none text-sm min-h-[160px] bg-white leading-relaxed resize-y"
+                              value={lessonPlanInput.objectivesKnowledge}
+                              onChange={(e) => setLessonPlanInput({ ...lessonPlanInput, objectivesKnowledge: e.target.value })}
+                              placeholder="Dán toàn bộ Yêu cầu cần đạt của bài học vào đây để hệ thống bóc tách thành Khung chỉ báo AI..."
+                            />
+                          </div>
+
+                          <button
+                            onClick={handleGenerateAiFramework}
+                            disabled={loading || !lessonPlanInput.subject || !lessonPlanInput.grade || !lessonPlanInput.objectivesKnowledge}
+                            className="w-full relative group overflow-hidden rounded-xl p-[1px] mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <span className="absolute inset-0 bg-gradient-to-r from-brand-accent via-blue-500 to-brand-accent rounded-xl opacity-70 group-hover:opacity-100 blur-sm transition-opacity duration-500"></span>
+                            <span className="absolute inset-0 bg-gradient-to-r from-brand-accent to-blue-600 rounded-xl"></span>
+                            <div className="relative bg-gradient-to-r from-brand-accent to-blue-600 px-6 py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300">
+                              <BrainCircuit className="w-5 h-5 text-white" />
+                              <span className="text-sm font-bold text-white tracking-wide">Tạo Khung Năng lực AI ngay</span>
+                              <ChevronRight className="w-5 h-5 text-white/70 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {loading && (
+                      <div className="flex flex-col items-center justify-center py-20">
+                        <div className="relative">
+                          <div className="w-20 h-20 border-4 border-brand-accent/20 border-t-brand-accent rounded-full animate-spin"></div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Sparkles className="w-6 h-6 text-brand-accent animate-pulse" />
+                          </div>
+                        </div>
+                        <h3 className="mt-6 text-xl font-bold text-slate-800">Đang phân tích YCCĐ và xây dựng Khung...</h3>
+                        <p className="text-slate-500 mt-2 text-sm text-center max-w-md">
+                          Hệ thống đang trích xuất các hành vi và đánh mã chỉ báo tương ứng theo chuẩn 3439/QĐ-BGDĐT. Quá trình này có thể mất 15-30 giây.
+                        </p>
+                      </div>
+                    )}
+
+                    {result && result.type === "ai-framework" && (
+                      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <div className="glass rounded-2xl p-6 border-brand-accent/20 bg-white">
+                          <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                              <BrainCircuit className="w-5 h-5 text-brand-accent" />
+                              Khung Năng lực AI: {lessonPlanInput.topic}
+                            </h3>
+                            <div className="flex gap-2">
+                              <button onClick={() => {
+                                const tableText = (result.data as any[]).map(row => `${row.code}\t${row.content}\t${row.component}\t${row.level}\t${row.evidence}\t${row.activities}\t${row.tools}\t${row.rubric}`).join('\n');
+                                const header = "Mã chỉ báo\tNội dung chỉ báo\tThành phần năng lực\tMức độ nhận thức\tMinh chứng đánh giá\tHoạt động học tập gợi ý\tCông cụ AI phù hợp\tTiêu chí đánh giá (Rubric)\n";
+                                navigator.clipboard.writeText(header + tableText);
+                                alert("Đã sao chép Khung năng lực vào Clipboard. Bạn có thể dán vào Excel/Word.");
+                              }} className="p-2 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors shadow-sm" title="Sao chép (Dán vào Excel/Word)">
+                                <Copy className="w-4 h-4 text-slate-600" />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left border-collapse">
+                              <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                                <tr>
+                                  <th className="px-4 py-3 border border-slate-200 whitespace-nowrap">Mã chỉ báo</th>
+                                  <th className="px-4 py-3 border border-slate-200 min-w-[200px]">Nội dung chỉ báo</th>
+                                  <th className="px-4 py-3 border border-slate-200 whitespace-nowrap">Thành phần</th>
+                                  <th className="px-4 py-3 border border-slate-200 whitespace-nowrap">Mức độ</th>
+                                  <th className="px-4 py-3 border border-slate-200 min-w-[150px]">Minh chứng</th>
+                                  <th className="px-4 py-3 border border-slate-200 min-w-[200px]">Hoạt động học tập</th>
+                                  <th className="px-4 py-3 border border-slate-200 min-w-[120px]">Công cụ AI</th>
+                                  <th className="px-4 py-3 border border-slate-200 min-w-[200px]">Rubric</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {(result.data as any[]).map((row, index) => (
+                                  <tr key={index} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-4 py-3 border border-slate-200 font-semibold text-brand-accent">{row.code}</td>
+                                    <td className="px-4 py-3 border border-slate-200">{row.content}</td>
+                                    <td className="px-4 py-3 border border-slate-200">
+                                      <span className="inline-flex items-center px-2 py-1 rounded text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">{row.component}</span>
+                                    </td>
+                                    <td className="px-4 py-3 border border-slate-200">
+                                      <span className="inline-flex items-center px-2 py-1 rounded text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">{row.level}</span>
+                                    </td>
+                                    <td className="px-4 py-3 border border-slate-200">{row.evidence}</td>
+                                    <td className="px-4 py-3 border border-slate-200">{row.activities}</td>
+                                    <td className="px-4 py-3 border border-slate-200">{row.tools}</td>
+                                    <td className="px-4 py-3 border border-slate-200">{row.rubric}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       </div>
                     )}

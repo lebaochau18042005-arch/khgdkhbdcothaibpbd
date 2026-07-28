@@ -583,7 +583,7 @@ Trả về ĐÚNG định dạng JSON array(không có markdown, không có gi�
 
 export const generateLessonPlan = async (input: LessonPlanInput) => {
   const formattingNeed = input.useLaTeX || input.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(input.subject);
-  const englishConstraint = (input.subject === "Tiếng Anh" || input.subject.toLowerCase().includes("english")) ? "\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung giáo án (kịch bản GV-HS, mục tiêu, nội dung...) PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
+  const englishConstraint = (input.subject === "Tiếng Anh" || input.subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung giáo án (kịch bản GV-HS, mục tiêu, nội dung...) PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
 
   let finalPromptContents: any = "";
   if (input.existingPdfBase64) {
@@ -601,7 +601,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
 3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
    - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
-5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, BẮT BUỘC mỗi dòng mục tiêu AI phải kết thúc bằng mã chỉ báo (Ví dụ: "Sử dụng ChatGPT lập bảng thông tin (${input.indicatorCode || input.grade + '.A.A1.1'})").
+5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, BẮT BUỘC mỗi dòng mục tiêu AI phải kết thúc bằng mã chỉ báo. ${input.indicatorCode ? `BẮT BUỘC SỬ DỤNG CHÍNH XÁC MÃ NÀY: (${input.indicatorCode})` : `BẠN PHẢI TỰ SUY LUẬN MÃ CHỈ BÁO THEO QĐ 3439 (Ví dụ: ${input.grade}.C1.01, ${input.grade}.B2.02...) ĐỂ ĐIỀN VÀO TƯƠNG ỨNG`}.
 `;
     finalPromptContents = [
       p1,
@@ -633,7 +633,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
 3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
    - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
-5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, BẮT BUỘC mỗi dòng mục tiêu AI phải kết thúc bằng mã chỉ báo (Ví dụ: "Sử dụng ChatGPT lập bảng thông tin (${input.indicatorCode || input.grade + '.A.A1.1'})").
+5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, BẮT BUỘC mỗi dòng mục tiêu AI phải kết thúc bằng mã chỉ báo. ${input.indicatorCode ? `BẮT BUỘC SỬ DỤNG CHÍNH XÁC MÃ NÀY: (${input.indicatorCode})` : `BẠN PHẢI TỰ SUY LUẬN MÃ CHỈ BÁO THEO QĐ 3439 (Ví dụ: ${input.grade}.C1.01, ${input.grade}.B2.02...) ĐỂ ĐIỀN VÀO TƯƠNG ỨNG`}.
 ` : "";
   }
 
@@ -653,7 +653,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
     ${AI_SUBJECT_GUIDELINES}
     ${SOCIAL_INTEGRATION_GUIDELINES}
     ${input.socialIntegrations && input.socialIntegrations.length > 0 ? `\nLỆNH BẮT BUỘC TÍCH HỢP NỘI DUNG XÃ HỘI: Bạn PHẢI tích hợp sâu sắc các nội dung sau vào kế hoạch bài dạy: ${input.socialIntegrations.join(", ")}. Hãy thể hiện rõ trong mục tiêu và các hoạt động học tập.` : ""}
-    CHỈ BÁO QĐ 3439 - Định dạng bắt buộc: KHỐI_LỚP_HIỆN_TẠI.MẠCH.CHỦ_ĐỀ.SỐ(vd: ${input.grade}.A.A1.1).Mạch: A = Tư duy con người, B = Đạo đức AI, C = Kỹ thuật, D = Thiết kế hệ thống.Chủ đề: A1 / A2, B1 / B2, C1 / C2, D1 / D2.THCS(6 - 9) ưu tiên A1, B1, C1.
+    CHỈ BÁO QĐ 3439 - Định dạng bắt buộc: KHỐI_LỚP_HIỆN_TẠI.MẠCH_VÀ_CHỦ_ĐỀ.SỐ (vd: ${input.grade}.C1.01, ${input.grade}.B2.02, ${input.grade}.A3.02).
       ${input.indicatorCode ? `\nLỆNH TỐI CẤP LIÊN QUAN TỚI MÃ CHỈ BÁO: BÀI HỌC NÀY ĐÃ ĐƯỢC HỆ THỐNG GIAO NHIỆM VỤ LÀ "BẮT BUỘC TÍCH HỢP AI" VỚI MÃ CHỈ BÁO GỐC: ${input.indicatorCode}. BẠN PHẢI TUYỆT ĐỐI KHAI BÁO MỤC "Năng lực AI đặc thù" VỚI CHỈ BÁO NÀY (CÓ THỂ BỔ SUNG YCCĐ CHO PHÙ HỢP). KHÔNG ĐƯỢC PHÉP TRẢ VỀ "Không tích hợp".` : ""}
     ${CURRICULUM_DATA}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
@@ -672,8 +672,8 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
     - Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
     - Năng lực:
     + Đặc thù môn học: Theo chương trình 2018.
-      + Năng lực số: Xác định rõ các năng lực số học sinh đạt được (sử dụng phần mềm, khai thác thông tin, an toàn mạng...).
-      + Năng lực AI đặc thù(Chỉ thêm nếu Có tích hợp AI): LỆNH TỐI CẤP: LƯU Ý RẰNG BẠN CHỈ TRẢ VỀ DỮ LIỆU DƯỚI DẠNG MẢNG STRING CHO MỤC NÀY, DO ĐÓ BẠN PHẢI NỐI TRỰC TIẾP MÃ CHỈ BÁO VÀO BÊN TRONG TỪNG CHUỖI ĐẦU RA! GHI RÕ MÃ VÀO CUỐI MỖI KẾT QUẢ. (Ví dụ chuỗi kết quả: "Học sinh suy luận bằng ChatGPT (${input.indicatorCode || input.grade + '.B.B1.2'})").VIỆC BỎ QUÊN MÃ CHỈ BÁO SẼ LÀM HỎNG HỆ THỐNG.
+      + Năng lực số: Xác định rõ các năng lực số học sinh đạt được (sử dụng phần mềm, khai thác thông tin, an toàn mạng...). LỆNH TỐI CẤP: BẮT BUỘC gắn mã chỉ báo Năng lực số theo Thông tư 02/2025 vào cuối mỗi chuỗi đầu ra (Ví dụ: '... (1.1.CB2b)', '... (2.4.CB2a)', '... (3.2.CB2a)').
+      + Năng lực AI đặc thù(Chỉ thêm nếu Có tích hợp AI): LỆNH TỐI CẤP: LƯU Ý RẰNG BẠN CHỈ TRẢ VỀ DỮ LIỆU DƯỚI DẠNG MẢNG STRING CHO MỤC NÀY, DO ĐÓ BẠN PHẢI NỐI TRỰC TIẾP MÃ CHỈ BÁO VÀO BÊN TRONG TỪNG CHUỖI ĐẦU RA! GHI RÕ MÃ VÀO CUỐI MỖI KẾT QUẢ. ${input.indicatorCode ? `(BẮT BUỘC DÙNG MÃ: ${input.indicatorCode})` : `(BẠN PHẢI TỰ SUY LUẬN MÃ THEO QĐ 3439 VÀ KHỐI LỚP ${input.grade}, ví dụ: ${input.grade}.C1.01)`}. VIỆC BỎ QUÊN MÃ CHỈ BÁO SẼ LÀM HỎNG HỆ THỐNG.
       + Năng lực chung: Tự chủ, tự học; Giao tiếp...
     - Phẩm chất: Theo CV 5512.
 
@@ -709,7 +709,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
             knowledge: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Mục tiêu về kiến thức" },
             subjectSpecific: { type: Type.ARRAY, items: { type: Type.STRING } },
             digitalSpecific: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Mục tiêu Năng lực số" },
-            aiSpecific: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Mục tiêu Năng lực AI đặc thù. BẮT BUỘC QUAN TRỌNG: MỖI CHUỖI ĐẦU RA PHẢI CÓ MÃ CHỈ BÁO NẰM CHUẨN XÁC TRONG NGOẶC ĐƠN Ở ĐUÔI. Vd: 'Sử dụng AI phân tích XYZ (11.B.B1.2)'" },
+            aiSpecific: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Mục tiêu Năng lực AI đặc thù. BẮT BUỘC QUAN TRỌNG: MỖI CHUỖI ĐẦU RA PHẢI CÓ MÃ CHỈ BÁO NẰM CHUẨN XÁC TRONG NGOẶC ĐƠN Ở ĐUÔI. (Mã chỉ báo do bạn tự suy luận theo QĐ 3439 nếu không được cung cấp trực tiếp)" },
             general: { type: Type.ARRAY, items: { type: Type.STRING } },
             qualities: { type: Type.ARRAY, items: { type: Type.STRING } },
           },
@@ -775,7 +775,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
 
 export const generateEducationalPlan = async (subject: string, grade: string, province?: string, referencePlan?: any[], options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[], curriculumDbData?: any[], socialIntegrations?: string[] }) => {
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
-  const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
+  const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
 
   const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
@@ -890,7 +890,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài 
 
 export const generateDepartmentPlan = async (subject: string, grade: string, province?: string, options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[], curriculumDbData?: any[] }) => {
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
-  const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
+  const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
 
   const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
@@ -1109,6 +1109,69 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
     });
   } catch (error) {
     console.error("Error generating competency evaluation:", error);
+    throw error;
+  }
+};
+
+export const generateAiCompetencyFramework = async (input: {
+  subject: string;
+  grade: string;
+  topic: string;
+  requirementsText: string;
+}, options: { apiKey?: string; aiModel?: string }) => {
+  const model = getModel(options.apiKey, options.aiModel);
+  const prompt = `Bạn là chuyên gia xây dựng Khung năng lực AI theo Quyết định 3439/QĐ-BGDĐT năm 2025.
+Nhiệm vụ:
+1. Đọc toàn bộ Yêu cầu cần đạt của chủ đề được cung cấp.
+2. Tách từng yêu cầu cần đạt thành các chỉ báo năng lực độc lập.
+3. Đánh mã chỉ báo theo quy tắc: [Lớp].[Chủ đề].[Số thứ tự]
+Trong đó:
+- Lớp = ${input.grade}
+- Chủ đề = A1, A2, A3, B1, B2, B3, C1, C2, C3, C4, C5, D1, D2
+- Số thứ tự gồm 2 chữ số (01, 02, 03...)
+Ví dụ: ${input.grade}.C2.01, ${input.grade}.C2.02...
+4. Với mỗi chỉ báo, trình bày chi tiết theo các tiêu chí: Mã chỉ báo, Nội dung, Thành phần năng lực, Mức độ, Minh chứng, Hoạt động học tập, Công cụ AI, Tiêu chí đánh giá.
+5. Bảo đảm không bỏ sót YCCĐ nào, đánh số liên tục trong từng chủ đề.
+
+THÔNG TIN BÀI HỌC:
+Môn học: ${input.subject}
+Khối lớp: ${input.grade}
+Chủ đề/Bài: ${input.topic}
+Yêu cầu cần đạt (Đầu vào):
+"""
+${input.requirementsText}
+"""
+`;
+
+  try {
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              code: { type: Type.STRING, description: "Mã chỉ báo (VD: 10.C2.01)" },
+              content: { type: Type.STRING, description: "Nội dung chỉ báo" },
+              component: { type: Type.STRING, description: "Thành phần năng lực (NLa, NLb, NLc, NLd)" },
+              level: { type: Type.STRING, description: "Mức độ nhận thức (Biết, Hiểu, Vận dụng, Vận dụng cao)" },
+              evidence: { type: Type.STRING, description: "Minh chứng đánh giá" },
+              activities: { type: Type.STRING, description: "Hoạt động học tập gợi ý" },
+              tools: { type: Type.STRING, description: "Công cụ AI phù hợp" },
+              rubric: { type: Type.STRING, description: "Tiêu chí đánh giá (Rubric Đạt/Chưa đạt)" }
+            },
+            required: ["code", "content", "component", "level", "evidence", "activities", "tools", "rubric"]
+          }
+        },
+      }
+    });
+
+    const text = result.response.text();
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Error generating AI Competency Framework:", error);
     throw error;
   }
 };

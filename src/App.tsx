@@ -36,9 +36,9 @@ import {
   UploadCloud,
   Trash2
 } from "lucide-react";
-import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, LessonPlanInput } from "./services/geminiService";
+import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, suggestNlsIndicators, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
-import NlsLookup from "./components/NlsLookup";
+import NlsLookup, { INDICATORS } from "./components/NlsLookup";
 import { SignedIn, SignedOut, SignIn, UserButton } from "@clerk/clerk-react";
 
 // Add competency mapper utility function
@@ -504,8 +504,47 @@ export default function App() {
     additionalNotes: "",
     useLaTeX: false,
     detailDrawings: false,
-    socialIntegrations: []
+    socialIntegrations: [],
+    selectedNlsIndicators: []
   });
+
+  const [suggestedNlsIndicators, setSuggestedNlsIndicators] = useState<{ code: string; rationale: string; name: string }[]>([]);
+  const [isSuggestingNls, setIsSuggestingNls] = useState(false);
+
+  const handleSuggestNls = async () => {
+    if (!lessonPlanInput.topic || !lessonPlanInput.subject) {
+      alert("Vui lòng nhập Tên bài học và Môn học trước khi dùng AI đề xuất!");
+      return;
+    }
+    if (!apiKey) {
+      alert("Vui lòng nhập API Key để sử dụng AI đề xuất!");
+      return;
+    }
+    setIsSuggestingNls(true);
+    try {
+      const suggestions = await suggestNlsIndicators(
+        lessonPlanInput.topic,
+        (lessonPlanInput.objectivesKnowledge || "") + " " + (lessonPlanInput.objectivesCompetency || ""),
+        lessonPlanInput.grade,
+        { apiKey, aiModel: "gemini-2.5-flash" }
+      );
+      
+      const mapped = suggestions.map(s => {
+        const found = INDICATORS.find(i => i.code === s.code);
+        return {
+          code: s.code,
+          rationale: s.rationale,
+          name: found ? found.description : "Chỉ báo Năng lực số / Năng lực AI"
+        };
+      });
+      setSuggestedNlsIndicators(mapped);
+    } catch (e: any) {
+      console.error(e);
+      alert("Có lỗi khi gọi AI đề xuất: " + e.message);
+    } finally {
+      setIsSuggestingNls(false);
+    }
+  };
 
   // Edu Plan Form State
   const [eduPlanInput, setEduPlanInput] = useState({
@@ -1970,6 +2009,84 @@ export default function App() {
                                 </label>
                               ))}
                             </div>
+                          </div>
+
+                          {/* Giao diện Đề xuất Chỉ báo NLS */}
+                          <div className="space-y-3 pt-4 border-t border-slate-100">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[10px] font-bold text-brand-accent uppercase tracking-[0.14em] flex items-center gap-2">
+                                <BrainCircuit className="w-3.5 h-3.5" />
+                                Đề xuất Chỉ báo NLS/AI
+                              </label>
+                              <button
+                                onClick={handleSuggestNls}
+                                disabled={isSuggestingNls}
+                                className="text-xs font-semibold bg-brand-accent/10 hover:bg-brand-accent/20 text-brand-accent px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                              >
+                                {isSuggestingNls ? (
+                                  <>
+                                    <div className="w-3 h-3 border-2 border-brand-accent border-t-transparent rounded-full animate-spin"></div>
+                                    Đang phân tích...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    AI Đề xuất
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            
+                            {suggestedNlsIndicators.length > 0 && (
+                              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                                {suggestedNlsIndicators.map((item, idx) => (
+                                  <label
+                                    key={idx}
+                                    className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                                      lessonPlanInput.selectedNlsIndicators?.find(i => i.code === item.code)
+                                        ? "border-brand-accent bg-brand-accent/5"
+                                        : "border-slate-200 hover:border-slate-300 bg-white"
+                                    }`}
+                                  >
+                                    <div className="pt-0.5">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!lessonPlanInput.selectedNlsIndicators?.find(i => i.code === item.code)}
+                                        onChange={(e) => {
+                                          const current = lessonPlanInput.selectedNlsIndicators || [];
+                                          if (e.target.checked) {
+                                            setLessonPlanInput({
+                                              ...lessonPlanInput,
+                                              selectedNlsIndicators: [...current, { code: item.code, description: item.name }]
+                                            });
+                                          } else {
+                                            setLessonPlanInput({
+                                              ...lessonPlanInput,
+                                              selectedNlsIndicators: current.filter(i => i.code !== item.code)
+                                            });
+                                          }
+                                        }}
+                                        className="w-4 h-4 rounded text-brand-accent focus:ring-brand-accent"
+                                      />
+                                    </div>
+                                    <div className="flex-1 space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
+                                          {item.code}
+                                        </span>
+                                      </div>
+                                      <p className="text-sm font-medium text-slate-700 line-clamp-2" title={item.name}>
+                                        {item.name}
+                                      </p>
+                                      <div className="text-xs text-brand-accent/80 bg-brand-accent/10 px-2 py-1.5 rounded-lg flex items-start gap-1.5">
+                                        <BrainCircuit className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                        <span className="italic leading-snug">{item.rationale}</span>
+                                      </div>
+                                    </div>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <button
                             onClick={handleGenerateKHBD}

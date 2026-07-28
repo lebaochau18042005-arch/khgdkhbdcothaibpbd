@@ -335,9 +335,41 @@ export interface LessonPlanInput {
   existingRawText?: string;
   existingPdfBase64?: string;
   aiIntegrationOptions?: any[];
-  socialIntegrations?: string[]; // New: ["Heritage", "DrugPrevention", "Population", "Inclusive"]
+  socialIntegrations?: string[]; // ["Heritage", "DrugPrevention", "Population", "Inclusive"]
   indicatorCode?: string;
+  selectedNlsIndicators?: { code: string; description: string }[];
 }
+
+export const suggestNlsIndicators = async (
+  topic: string,
+  objectives: string,
+  grade: string,
+  config: { apiKey: string; aiModel: string }
+) => {
+  const genAI = new GoogleGenerativeAI(config.apiKey);
+  const model = genAI.getGenerativeModel({ model: config.aiModel });
+  const prompt = `Bạn là một chuyên gia giáo dục phân tích Kế hoạch bài dạy.
+Nhiệm vụ: Dựa vào Tên bài học, Mục tiêu, và Khối lớp, hãy đề xuất 3 đến 5 chỉ báo Năng lực số (NLS) hoặc Năng lực AI phù hợp nhất để tích hợp vào bài học này.
+- Tên bài học: ${topic}
+- Khối lớp: ${grade}
+- Mục tiêu/Yêu cầu cần đạt: ${objectives}
+
+Hãy phân tích và trả về kết quả định dạng JSON array chuẩn, mỗi object chứa 2 trường:
+- "code": mã chỉ báo (ví dụ "1.1.CB1a", "6.2.CB2b")
+- "rationale": Lý do ngắn gọn tại sao chỉ báo này phù hợp với bài học này (dưới 30 từ).
+
+Đảm bảo chỉ trả về mảng JSON, không có code block markdown hay giải thích thêm.`;
+
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  try {
+    const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    return JSON.parse(jsonStr) as { code: string; rationale: string }[];
+  } catch (err) {
+    console.error("Failed to parse suggested indicators JSON", text);
+    throw new Error("Lỗi khi AI đề xuất chỉ báo.");
+  }
+};
 
 export const analyzeExistingPlan = async (
   fileText: string,
@@ -655,6 +687,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
     ${input.socialIntegrations && input.socialIntegrations.length > 0 ? `\nLỆNH BẮT BUỘC TÍCH HỢP NỘI DUNG XÃ HỘI: Bạn PHẢI tích hợp sâu sắc các nội dung sau vào kế hoạch bài dạy: ${input.socialIntegrations.join(", ")}. Hãy thể hiện rõ trong mục tiêu và các hoạt động học tập.` : ""}
     CHỈ BÁO QĐ 3439 - Định dạng bắt buộc: KHỐI_LỚP_HIỆN_TẠI.MẠCH_VÀ_CHỦ_ĐỀ.SỐ (vd: ${input.grade}.C1.01, ${input.grade}.B2.02, ${input.grade}.A3.02).
       ${input.indicatorCode ? `\nLỆNH TỐI CẤP LIÊN QUAN TỚI MÃ CHỈ BÁO: BÀI HỌC NÀY ĐÃ ĐƯỢC HỆ THỐNG GIAO NHIỆM VỤ LÀ "BẮT BUỘC TÍCH HỢP AI" VỚI MÃ CHỈ BÁO GỐC: ${input.indicatorCode}. BẠN PHẢI TUYỆT ĐỐI KHAI BÁO MỤC "Năng lực AI đặc thù" VỚI CHỈ BÁO NÀY (CÓ THỂ BỔ SUNG YCCĐ CHO PHÙ HỢP). KHÔNG ĐƯỢC PHÉP TRẢ VỀ "Không tích hợp".` : ""}
+      ${input.selectedNlsIndicators && input.selectedNlsIndicators.length > 0 ? `\nLỆNH TỐI CẤP VỀ NĂNG LỰC SỐ/AI: NGƯỜI DÙNG ĐÃ CHỌN CÁC CHỈ BÁO SAU:\n${input.selectedNlsIndicators.map(i => `- Mã ${i.code}: ${i.description}`).join('\n')}\nBẠN PHẢI SỬ DỤNG CHÍNH XÁC CÁC MÃ NÀY VÀ THIẾT KẾ HOẠT ĐỘNG THỂ HIỆN RÕ CHÚNG.` : ""}
     ${CURRICULUM_DATA}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}

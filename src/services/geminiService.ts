@@ -21,6 +21,16 @@ const getModel = (apiKey?: string, modelName?: string) => {
   };
 };
 
+/**
+ * Strips markdown code fences (```json ... ```) that some models
+ * include around their JSON output, then returns the cleaned string.
+ */
+const stripMarkdownJson = (raw: string): string => {
+  if (!raw) return raw;
+  // Remove ```json or ``` prefix and ``` suffix
+  return raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+};
+
 const getFallbackModels = (startModel: string) => {
   // Fallback order: Gemini 3.5 (GA) → 3 preview → 3.1 lite → 2.5 (legacy Oct 2026)
   const models = [
@@ -97,7 +107,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error('AI trả về phản hồi rỗng.');
       try {
-        return JSON.parse(text);
+        return JSON.parse(stripMarkdownJson(text));
       } catch (parseErr) {
         console.error('[JSON Parse Error] Raw text (first 500 chars):', text?.substring(0, 500));
         throw new Error(`Lỗi phân tích JSON từ AI (phản hồi có thể bị cắt ngắn). Vui lòng thử lại.`);
@@ -1224,7 +1234,7 @@ ${input.requirementsText}
     });
 
     const text = result.text;
-    return JSON.parse(text);
+    return JSON.parse(stripMarkdownJson(text));
   } catch (error) {
     console.error("Error generating AI Competency Framework:", error);
     throw error;
@@ -1275,7 +1285,7 @@ Trả về một chuỗi JSON hợp lệ với cấu trúc sau:
     });
 
     const text = result.text;
-    return JSON.parse(text);
+    return JSON.parse(stripMarkdownJson(text));
   } catch (error) {
     console.error("Error analyzing lesson source:", error);
     throw error;
@@ -1346,7 +1356,7 @@ Hãy trả về kết quả đánh giá bằng JSON theo cấu trúc sau:
     });
 
     const text = result.text;
-    return JSON.parse(text);
+    return JSON.parse(stripMarkdownJson(text));
   } catch (error) {
     console.error("Error evaluating lesson plan:", error);
     throw error;

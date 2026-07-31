@@ -371,8 +371,7 @@ export const suggestNlsIndicators = async (
   grade: string,
   config: { apiKey: string; aiModel: string }
 ) => {
-  const genAI = new GoogleGenerativeAI(config.apiKey);
-  const model = genAI.getGenerativeModel({ model: config.aiModel });
+  const ai = new GoogleGenAI({ apiKey: config.apiKey });
   const prompt = `Bạn là một chuyên gia giáo dục phân tích Kế hoạch bài dạy.
 Nhiệm vụ: Dựa vào Tên bài học, Mục tiêu, và Khối lớp, hãy đề xuất 3 đến 5 chỉ báo Năng lực số (NLS) hoặc Năng lực AI phù hợp nhất để tích hợp vào bài học này.
 - Tên bài học: ${topic}
@@ -385,11 +384,10 @@ Hãy phân tích và trả về kết quả định dạng JSON array chuẩn, m
 
 Đảm bảo chỉ trả về mảng JSON, không có code block markdown hay giải thích thêm.`;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const result = await ai.models.generateContent({ model: config.aiModel, contents: prompt });
+  const text = stripMarkdownJson(result.text ?? "");
   try {
-    const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
-    return JSON.parse(jsonStr) as { code: string; rationale: string }[];
+    return JSON.parse(text) as { code: string; rationale: string }[];
   } catch (err) {
     console.error("Failed to parse suggested indicators JSON", text);
     throw new Error("Lỗi khi AI đề xuất chỉ báo.");

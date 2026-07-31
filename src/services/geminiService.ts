@@ -1223,7 +1223,7 @@ ${input.requirementsText}
       }
     });
 
-    const text = result.text();
+    const text = result.text;
     return JSON.parse(text);
   } catch (error) {
     console.error("Error generating AI Competency Framework:", error);
@@ -1274,7 +1274,7 @@ Trả về một chuỗi JSON hợp lệ với cấu trúc sau:
       }
     });
 
-    const text = result.text();
+    const text = result.text;
     return JSON.parse(text);
   } catch (error) {
     console.error("Error analyzing lesson source:", error);
@@ -1345,7 +1345,7 @@ Hãy trả về kết quả đánh giá bằng JSON theo cấu trúc sau:
       }
     });
 
-    const text = result.text();
+    const text = result.text;
     return JSON.parse(text);
   } catch (error) {
     console.error("Error evaluating lesson plan:", error);

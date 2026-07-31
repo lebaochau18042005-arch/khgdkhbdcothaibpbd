@@ -1026,6 +1026,23 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với dan
       responseMimeType: 'application/json',
       maxOutputTokens: 8192,
       temperature: 0,
+      responseSchema: {
+        type: 'ARRAY' as any,
+        items: {
+          type: 'OBJECT' as any,
+          properties: {
+            topic: { type: 'STRING' as any },
+            lessonContent: { type: 'STRING' as any },
+            lessonGoal: { type: 'STRING' as any },
+            periods: { type: 'STRING' as any },
+            digitalCompetencyTT02: { type: 'STRING' as any },
+            integratedObjective: { type: 'STRING' as any },
+            aiCompetency3439: { type: 'STRING' as any },
+            notes: { type: 'STRING' as any },
+          },
+          required: ['topic', 'lessonContent', 'lessonGoal', 'periods', 'digitalCompetencyTT02', 'integratedObjective', 'aiCompetency3439', 'notes'],
+        },
+      },
     },
   };
 
@@ -1052,7 +1069,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với dan
 
       // Try extract array
       let parsed: any = null;
-      try { parsed = JSON.parse(text); } catch { /* ignore */ }
+      try { parsed = JSON.parse(stripMarkdownJson(text)); } catch { /* ignore */ }
       if (parsed && !Array.isArray(parsed) && typeof parsed === 'object') {
         const keys = Object.keys(parsed);
         for (const k of keys) {
@@ -1061,7 +1078,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với dan
       }
       if (!Array.isArray(parsed)) {
         const match = text.match(/\[[\s\S]*\]/);
-        if (match) try { parsed = JSON.parse(match[0]); } catch { /* ignore */ }
+        if (match) try { parsed = JSON.parse(stripMarkdownJson(match[0])); } catch { /* ignore */ }
       }
 
       if (!Array.isArray(parsed) || parsed.length === 0) {

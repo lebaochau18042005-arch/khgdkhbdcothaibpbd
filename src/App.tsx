@@ -636,16 +636,38 @@ export default function App() {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    // Reset input so same file can be re-selected after an error
+    event.target.value = "";
     if (!file) return;
+
     if (!apiKey.trim()) {
       alert("Vui lòng lấy API key để sử dụng tính năng đọc ảnh/PDF!");
       setShowSettings(true);
       return;
     }
-    
+
+    // File type validation: only images and PDF
+    const isImage = file.type.startsWith("image/");
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isImage && !isPdf) {
+      alert("❌ Chỉ hỗ trợ file ảnh (JPG, PNG, WEBP) hoặc PDF. Vui lòng thử lại.");
+      return;
+    }
+
+    // File size limit: 10MB for images, 20MB for PDF
+    const maxSizeMB = isPdf ? 20 : 10;
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      alert(`❌ File quá lớn (tối đa ${maxSizeMB}MB). Vui lòng nén file hoặc dùng file nhỏ hơn.`);
+      return;
+    }
+
     setUploadingSource(true);
     try {
       const reader = new FileReader();
+      reader.onerror = () => {
+        alert("❌ Không đọc được file. Vui lòng thử lại.");
+        setUploadingSource(false);
+      };
       reader.onloadend = async () => {
         const base64Data = (reader.result as string).split(',')[1];
         try {
@@ -654,7 +676,9 @@ export default function App() {
             ...prev,
             topic: data.topic || prev.topic,
             objectivesKnowledge: data.objectives || prev.objectivesKnowledge,
-            activities: data.methodologies || prev.activities
+            objectivesCompetency: data.methodologies
+              ? (prev.objectivesCompetency ? prev.objectivesCompetency + "\n" + data.methodologies : data.methodologies)
+              : prev.objectivesCompetency,
           }));
           alert("✅ Phân tích thành công! Đã tự động điền thông tin vào form.");
         } catch (err: any) {

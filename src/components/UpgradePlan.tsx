@@ -40,7 +40,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             }))
         );
 
-        setTextbookImages(prev => [...prev, ...newImages].slice(0, 8)); // Max 8 images
+        setTextbookImages(prev => [...prev, ...newImages].slice(0, 1)); // Max 1 image
         e.target.value = "";
     };
 
@@ -185,7 +185,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                                         <BookOpen className="w-5 h-5 text-indigo-600" />
                                     </div>
                                     <div>
-                                        <p className="font-semibold text-sm text-indigo-800">Ảnh chụp trang Sách giáo khoa mới <span className="font-normal text-indigo-500">(Tùy chọn – tối đa 8 ảnh)</span></p>
+                                        <p className="font-semibold text-sm text-indigo-800">Ảnh chụp trang Sách giáo khoa mới <span className="font-normal text-indigo-500">(Tùy chọn – tối đa 1 ảnh)</span></p>
                                         <p className="text-xs text-indigo-500">AI sẽ so sánh SGK mới với giáo án cũ để tìm nội dung còn thiếu.</p>
                                     </div>
                                 </div>
@@ -207,11 +207,13 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                                     </div>
                                 )}
 
+                                {textbookImages.length < 1 && (
                                 <label className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm cursor-pointer transition-colors text-sm font-medium">
                                     <ImagePlus className="w-4 h-4" />
-                                    <span>Thêm ảnh SGK mới</span>
-                                    <input type="file" className="hidden" accept="image/png, image/jpeg, image/webp" multiple onChange={handleTextbookImageUpload} />
+                                    <span>Thêm ảnh SGK (1 ảnh)</span>
+                                    <input type="file" className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleTextbookImageUpload} />
                                 </label>
+                                )}
                             </div>
 
                             {/* Main Lesson Plan File Upload */}

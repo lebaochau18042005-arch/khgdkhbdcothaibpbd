@@ -1257,54 +1257,83 @@ ${input.requirementsText}
 };
 
 export const analyzeLessonSource = async (fileBase64: string, mimeType: string, options: { apiKey?: string; aiModel?: string }) => {
-  const model = getModel(options.apiKey, options.aiModel);
-  const prompt = `Bạn là một Chuyên gia Giáo dục và Thị giác máy tính (Computer Vision).
+  const apiKey = options.apiKey || localStorage.getItem('GEMINI_API_KEY') || '';
+  if (!apiKey) throw new Error('API_KEY_REQUIRED');
+  const startModel = options.aiModel || localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
+  const modelsToTry = getFallbackModels(startModel);
+
+  const promptText = `Bạn là một Chuyên gia Giáo dục và Thị giác máy tính (Computer Vision).
 Nhiệm vụ của bạn là đọc và phân tích bức ảnh/tài liệu (trang Sách giáo khoa) được đính kèm, sau đó trích xuất các thông tin cốt lõi để điền vào form tạo Kế hoạch bài dạy.
 
 YÊU CẦU:
 1. Trích xuất Tên bài học (hoặc nội dung trọng tâm).
 2. Trích xuất chính xác các Yêu cầu cần đạt (Mục tiêu kiến thức, năng lực).
-3. Đề xuất nhanh 2-3 phương pháp hoặc kỹ thuật dạy học tích cực phù hợp nhất với bài học này (Ví dụ: Kỹ thuật KWL, Khăn trải bàn, Dạy học dự án...).
+3. Đề xuất nhanh 2-3 phương pháp hoặc kỹ thuật dạy học tích cực phù hợp nhất với bài học này.
 
-Trả về một chuỗi JSON hợp lệ với cấu trúc sau:
-{
-  "topic": "Tên bài học",
-  "objectives": "Yêu cầu cần đạt chi tiết...",
-  "methodologies": "Phương pháp/Kỹ thuật dạy học đề xuất..."
-}
-`;
+Trả về JSON hợp lệ: {"topic": "Tên bài học", "objectives": "Yêu cầu cần đạt...", "methodologies": "Phương pháp..."}`;
 
-  try {
-    const result = await model.generateContent({
-      contents: [
-        { 
-          role: "user", 
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const currentModel = modelsToTry[i];
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const body = {
+        contents: [{
+          role: 'user',
           parts: [
             { inlineData: { data: fileBase64, mimeType } },
-            { text: prompt }
-          ] 
+            { text: promptText }
+          ]
+        }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'OBJECT',
+            properties: {
+              topic: { type: 'STRING' },
+              objectives: { type: 'STRING' },
+              methodologies: { type: 'STRING' }
+            },
+            required: ['topic', 'objectives', 'methodologies']
+          }
         }
-      ],
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            topic: { type: Type.STRING },
-            objectives: { type: Type.STRING },
-            methodologies: { type: Type.STRING }
-          },
-          required: ["topic", "objectives", "methodologies"]
-        },
-      }
-    });
+      };
 
-    const text = result.text;
-    return JSON.parse(stripMarkdownJson(text));
-  } catch (error) {
-    console.error("Error analyzing lesson source:", error);
-    throw error;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        if (res.status === 429 || errText.includes('RESOURCE_EXHAUSTED')) throw new Error('QUOTA_EXHAUSTED');
+        if (res.status === 503 || errText.toLowerCase().includes('overloaded') || errText.toLowerCase().includes('high demand')) throw new Error('MODEL_OVERLOADED');
+        if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
+
+      const json = await res.json();
+      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('AI trả về phản hồi rỗng.');
+      return JSON.parse(stripMarkdownJson(text));
+
+    } catch (err: any) {
+      console.error(`[analyzeLessonSource] Lỗi với model ${currentModel}:`, err);
+      const isApiKeyInvalid = err.message?.includes('API_KEY_INVALID') || err.message?.includes('401');
+      const isOverloaded = err.message?.includes('MODEL_OVERLOADED') || err.message?.includes('503') || err.message?.toLowerCase().includes('high demand');
+      const isQuota = err.message?.includes('QUOTA_EXHAUSTED');
+      const isLast = i === modelsToTry.length - 1;
+
+      if (isApiKeyInvalid) throw new Error('API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.');
+      if (isLast) {
+        if (isQuota) throw new Error('API Key đã hết quota. Vui lòng thử lại vào ngày mai.');
+        if (isOverloaded) throw new Error('Model AI đang quá tải. Vui lòng thử lại sau 30 giây.');
+        throw err;
+      }
+      await new Promise(r => setTimeout(r, isOverloaded ? 500 : 1000));
+    }
   }
+  throw new Error('Tất cả models đều thất bại khi phân tích ảnh/PDF.');
 };
 
 export const evaluateLessonPlan = async (lessonPlanText: string, options: { apiKey?: string; aiModel?: string }) => {

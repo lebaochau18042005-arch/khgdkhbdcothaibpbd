@@ -6,6 +6,21 @@ export const GOOGLE_AI_API_KEY_PATTERN = /^(?:AIzaSy|AQ)\S{8,}$/;
 export const isValidGoogleAiApiKey = (key: string): boolean =>
   GOOGLE_AI_API_KEY_PATTERN.test(key.trim());
 
+/**
+ * Returns a model adapter compatible with the @google/genai v1.x SDK.
+ * Usage: const model = getModel(apiKey, modelName);
+ *        const result = await model.generateContent({ contents, generationConfig });
+ */
+const getModel = (apiKey?: string, modelName?: string) => {
+  const key = apiKey || localStorage.getItem('GEMINI_API_KEY') || '';
+  const model = modelName || localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
+  const ai = new GoogleGenAI({ apiKey: key });
+  return {
+    generateContent: (params: Parameters<typeof ai.models.generateContent>[0]) =>
+      ai.models.generateContent({ ...params, model }),
+  };
+};
+
 const getFallbackModels = (startModel: string) => {
   // Fallback order: Gemini 3.5 (GA) → 3 preview → 3.1 lite → 2.5 (legacy Oct 2026)
   const models = [
@@ -1201,7 +1216,7 @@ ${input.requirementsText}
       }
     });
 
-    const text = result.response.text();
+    const text = result.text();
     return JSON.parse(text);
   } catch (error) {
     console.error("Error generating AI Competency Framework:", error);
@@ -1252,7 +1267,7 @@ Trả về một chuỗi JSON hợp lệ với cấu trúc sau:
       }
     });
 
-    const text = result.response.text();
+    const text = result.text();
     return JSON.parse(text);
   } catch (error) {
     console.error("Error analyzing lesson source:", error);
@@ -1323,7 +1338,7 @@ Hãy trả về kết quả đánh giá bằng JSON theo cấu trúc sau:
       }
     });
 
-    const text = result.response.text();
+    const text = result.text();
     return JSON.parse(text);
   } catch (error) {
     console.error("Error evaluating lesson plan:", error);

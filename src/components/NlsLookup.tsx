@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 
 type Level = "CB1" | "CB2";
 
-type Indicator = {
+export type Indicator = {
   code: string;
   field: string;
   fieldName: string;
@@ -373,7 +373,7 @@ const COMPONENTS: ComponentDefinition[] = [
   },
 ];
 
-const INDICATORS: Indicator[] = COMPONENTS.flatMap((item) =>
+export const INDICATORS: Indicator[] = COMPONENTS.flatMap((item) =>
   (["CB1", "CB2"] as Level[]).flatMap((level) =>
     Object.entries(level === "CB1" ? item.cb1 : item.cb2).map(([letter, description]) => ({
       code: `${item.component}.${level}${letter}`,

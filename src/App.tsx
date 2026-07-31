@@ -1311,7 +1311,7 @@ export default function App() {
       const rows = [
         new TableRow({
           children: [
-            t("STT"), t("Chủ đề"), t("Nội dung"), t("Yêu cầu cần đạt (CT 2018)"), t("Số tiết"), t("Mục tiêu tích hợp"), t("Yêu cầu cần đạt 3439"), t("Ghi chú")
+            t("STT"), t("Chủ đề"), t("Nội dung"), t("Yêu cầu cần đạt (CT 2018)"), t("Số tiết"), t("Năng lực số (TT 02)"), t("Mục tiêu tích hợp"), t("Yêu cầu cần đạt 3439"), t("Ghi chú")
           ].map(h => new TableCell({
             children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })], alignment: AlignmentType.CENTER })],
             verticalAlign: VerticalAlign.CENTER,
@@ -1320,7 +1320,7 @@ export default function App() {
         }),
         ...result.data.map((item: any, i: number) => new TableRow({
           children: [
-            i + 1, item.topic, item.lessonContent, item.lessonGoal, item.periods, item.integratedObjective, item.aiCompetency3439, item.notes || ""
+            i + 1, item.topic, item.lessonContent, item.lessonGoal, item.periods, item.digitalCompetencyTT02 || "Không", item.integratedObjective, item.aiCompetency3439, item.notes || ""
           ].map(v => new TableCell({ children: [new Paragraph({ text: String(v) })] }))
         }))
       ];
@@ -1419,7 +1419,7 @@ export default function App() {
     } else if (result.type === "khgd") {
       content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Định hướng năng lực số")}\n${result.data.map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.digitalCompetency}`).join("\n")}`;
     } else if (result.type === "kh-tcm") {
-      content = `${t("KẾ HOẠCH GIÁO DỤC TỔ CHUYÊN MÔN TÍCH HỢP AI")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n${t("Căn cứ QĐ 3439/QĐ-BGDĐT")}\n\n${t("STT")} | ${t("Chủ đề")} | ${t("Nội dung")} | ${t("Yêu cầu cần đạt (CT 2018)")} | ${t("Số tiết")} | ${t("Mục tiêu tích hợp")} | ${t("Yêu cầu cần đạt 3439")} | ${t("Ghi chú")}\n${result.data.map((item: any, i: number) => `${i + 1} | ${item.topic} | ${item.lessonContent} | ${item.lessonGoal} | ${item.periods} | ${item.integratedObjective} | ${item.aiCompetency3439} | ${item.notes}`).join("\n")}`;
+      content = `${t("KẾ HOẠCH GIÁO DỤC TỔ CHUYÊN MÔN TÍCH HỢP AI")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n${t("Căn cứ QĐ 3439/QĐ-BGDĐT")}\n\n${t("STT")} | ${t("Chủ đề")} | ${t("Nội dung")} | ${t("Yêu cầu cần đạt (CT 2018)")} | ${t("Số tiết")} | ${t("Năng lực số (TT 02)")} | ${t("Mục tiêu tích hợp")} | ${t("Yêu cầu cần đạt 3439")} | ${t("Ghi chú")}\n${result.data.map((item: any, i: number) => `${i + 1} | ${item.topic} | ${item.lessonContent} | ${item.lessonGoal} | ${item.periods} | ${item.digitalCompetencyTT02 || "Không"} | ${item.integratedObjective} | ${item.aiCompetency3439} | ${item.notes}`).join("\n")}`;
     }
 
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
@@ -2954,6 +2954,7 @@ export default function App() {
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-48">Nội dung</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest">Yêu cầu cần đạt (CT 2018)</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 text-center">Số tiết</th>
+                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Năng lực số (TT 02)</th>
                                 <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Mục tiêu tích hợp</th>
                                 <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Yêu cầu cần đạt 3439</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Ghi chú</th>
@@ -2970,6 +2971,7 @@ export default function App() {
                                     <td className="p-4 text-brand-sidebar leading-relaxed whitespace-pre-line text-[11px]">{item.lessonContent || item.lessonName}</td>
                                     <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.lessonGoal}</td>
                                     <td className="p-4 text-center font-bold text-slate-600">{item.periods}</td>
+                                    <td className="p-4 text-brand-sidebar leading-relaxed whitespace-pre-line text-[10px]">{item.digitalCompetencyTT02 || "Không"}</td>
                                     <td className="p-4 text-slate-700 font-medium leading-relaxed whitespace-pre-line text-[10px]">
                                       {isNotIntegrated ? "Không" : (item.integratedObjective || item.aiObjective)}
                                     </td>

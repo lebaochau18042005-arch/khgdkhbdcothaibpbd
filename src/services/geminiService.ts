@@ -836,9 +836,14 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài 
 
   const referencePrompt = referencePlan
     ? `DỰA TRÊN KẾ HOẠCH TỔ CHUYÊN MÔN SAU ĐÂY ĐỂ ĐỒNG NHẤT NỘI DUNG(BẮT BUỘC):
-       ${JSON.stringify(referencePlan.map(i => ({ bài: i.lessonName, mục_tiêu: i.lessonGoal, ai: i.aiCompetency })), null, 2)}
+       ${JSON.stringify(referencePlan.map(i => ({ 
+           bài: i.lessonContent, 
+           mục_tiêu: i.lessonGoal, 
+           ai: i.aiCompetency3439,
+           năng_lực_số_TT02: i.digitalCompetencyTT02 
+       })), null, 2)}
        
-       Yêu cầu: Bạn phải giữ nguyên tên các bài học và mục tiêu AI đã có trong kế hoạch tổ chuyên môn ở trên.`
+       Yêu cầu: Bạn phải giữ nguyên tên các bài học, mục tiêu AI, và đặc biệt là cột Năng lực số (TT 02) đã có trong kế hoạch tổ chuyên môn ở trên.`
     : "";
 
   const prompt = `
@@ -974,6 +979,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với dan
        - Nội dung(lessonContent): Đây là Tên bài học hoặc nội dung chi tiết.Lưu ý phải khớp 100 % với danh sách gốc.
        - Yêu cầu cần đạt CT 2018(lessonGoal): Mô tả tóm tắt Kiến thức, Năng lực hướng tới của bài học đó(không cần quá dài, chỉ là trọng tâm cốt lõi).
        - Số tiết(periods): Số lượng tiết học.
+       - Năng lực số (digitalCompetencyTT02): Mã và Yêu cầu cần đạt Năng lực số theo Thông tư 02 (vd: 1.1NC1a: Xác định được nhu cầu thông tin...). Ghi "Không tích hợp" nếu bài không phù hợp.
        - Mục tiêu tích hợp(integratedObjective): Dựa vào nội dung bài học, mô tả rành mạch các mục tiêu AI(ví dụ: "- Nhận biết được một số cách AI hỗ trợ...", "- Hình thành thái độ...").
        - Yêu cầu cần đạt 3439(aiCompetency3439): Trích dẫn CHÍNH XÁC nội dung YCCĐ từ Phụ lục CV 3439 VÀ BẮT BUỘC KÈM THEO mã chỉ báo ĐẦY ĐỦ ở cuối theo định dạng: (KHỐI.MẠCH.CHỦ_ĐỀ.SỐ). (Ví dụ: "- Giải thích được tại sao... (9.A.A1.1)" hoặc "(10.C.C1.2)").TUYỆT ĐỐI KHÔNG CHỈ GHI "(A1)" HAY "(C1)".Ghi "Không tích hợp" nếu bài không phù hợp.
        - Ghi chú(notes): Lời khuyên hoặc hình thức triển khai tương ứng.
@@ -992,6 +998,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với dan
     - lessonContent: Nội dung bài học(Tên bài học hoặc nội dung trọng tâm).
     - lessonGoal: Yêu cầu cần đạt CT 2018(Trọng tâm cốt lõi: Kiến thức, Năng lực).
     - periods: Số tiết(Ví dụ: "2", "1").
+    - digitalCompetencyTT02: Năng lực số TT 02 (Mã và YCCĐ, ví dụ: "1.1NC1a: Xác định được nhu cầu thông tin..."). Ghi "Không tích hợp" nếu bài không phù hợp.
     - integratedObjective: Mục tiêu tích hợp(Mô tả chi tiết các mục tiêu, hành động khi HS sử dụng AI.Trình bày bằng dấu gạch ngang đầu dòng.Ví dụ: "- Nhận biết được... - Hình thành thái độ...").
     - aiCompetency3439: Yêu cầu cần đạt 3439(Trích dẫn CHÍNH XÁC nội dung YCCĐ từ CV 3439 và thêm mã chỉ báo ĐẦY ĐỦ ở cuối.Ví dụ: "- Giải thích được tại sao... (9.C.C1.1)".KHÔNG CHỈ GHI "(A1)").Ghi "Không tích hợp" nếu bài không phù hợp.
     - notes: Ghi chú(Các chú ý thêm hoặc hình thức triển khai).

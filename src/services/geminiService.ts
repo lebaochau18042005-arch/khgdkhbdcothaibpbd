@@ -977,23 +977,21 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với dan
     ${englishConstraint}
 
     Nhiệm vụ cụ thể:
-    1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề / bài học trong chương trình GDPT 2018 của môn này.KHÔNG ĐƯỢC bỏ sót bài nào.
+    1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề / bài học trong chương trình GDPT 2018 của môn này. LỆNH TỐI CẤP: BẠN KHÔNG ĐƯỢC BỎ SÓT BẤT KỲ BÀI HỌC NÀO, PHẢI LIỆT KÊ ĐỦ 35 TUẦN HỌC / ĐỦ TOÀN BỘ NỘI DUNG SGK. TRẢ VỀ TOÀN BỘ DANH SÁCH BÀI HỌC CỦA CẢ NĂM HỌC.
     2. Đánh giá khả năng tích hợp AI:
     - Với mỗi bài học, xác định xem có khả năng tích hợp AI dựa trên các tiêu chí: có nội dung phân tích xã hội, kinh tế, pháp luật hoặc có yếu tố dữ liệu, phương pháp nghiên cứu.
        - Nếu bài học PHÙ HỢP: Xác định mạch nội dung AI(NLa, NLb, NLc, NLd) và mục tiêu cụ thể.
        - Nếu bài học KHÔNG PHÙ HỢP: Ghi rõ "Không tích hợp" vào các cột liên quan đến AI để tránh việc tích hợp khiên cưỡng.
     3. Ánh xạ Năng lực:
-    - Chủ đề(topic): Tóm tắt tên chủ đề hoặc chương lớn.
-       - Nội dung(lessonContent): Đây là Tên bài học hoặc nội dung chi tiết.Lưu ý phải khớp 100 % với danh sách gốc.
-       - Yêu cầu cần đạt CT 2018(lessonGoal): Mô tả tóm tắt Kiến thức, Năng lực hướng tới của bài học đó(không cần quá dài, chỉ là trọng tâm cốt lõi).
-       - Số tiết(periods): Số lượng tiết học.
+    - Thời gian (time): Ước lượng thời gian thực hiện (Ví dụ: Học kì I, Tháng 9, Tuần 1...).
+       - Nội dung (lessonContent): Tên bài học, chủ đề hoặc nội dung chi tiết. Phải khớp 100% với danh sách gốc SGK.
+       - Số tiết (periods): Số lượng tiết học của bài học.
+       - Yêu cầu cần đạt CT 2018 (lessonGoal): Mô tả tóm tắt Kiến thức, Năng lực hướng tới của bài học đó theo CT 2018.
        - Năng lực số (digitalCompetencyTT02): Mã và Yêu cầu cần đạt Năng lực số theo Thông tư 02 (vd: 1.1NC1a: Xác định được nhu cầu thông tin...). Ghi "Không tích hợp" nếu bài không phù hợp.
-       - Mục tiêu tích hợp(integratedObjective): Dựa vào nội dung bài học, mô tả rành mạch các mục tiêu AI(ví dụ: "- Nhận biết được một số cách AI hỗ trợ...", "- Hình thành thái độ...").
-       - Yêu cầu cần đạt 3439(aiCompetency3439): Trích dẫn CHÍNH XÁC nội dung YCCĐ từ Phụ lục CV 3439 VÀ BẮT BUỘC KÈM THEO mã chỉ báo ĐẦY ĐỦ ở cuối theo định dạng: (KHỐI.MẠCH.CHỦ_ĐỀ.SỐ). (Ví dụ: "- Giải thích được tại sao... (9.A.A1.1)" hoặc "(10.C.C1.2)").TUYỆT ĐỐI KHÔNG CHỈ GHI "(A1)" HAY "(C1)".Ghi "Không tích hợp" nếu bài không phù hợp.
-       - Ghi chú(notes): Lời khuyên hoặc hình thức triển khai tương ứng.
+       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Gộp mục tiêu tích hợp và mã YCCĐ từ CV 3439. Mô tả rành mạch các mục tiêu AI (ví dụ: "- Nhận biết được... - Hình thành thái độ...") VÀ CHÍNH XÁC nội dung YCCĐ từ CV 3439 kèm mã chỉ báo ở cuối (Ví dụ: "(9.A.A1.1)"). TUYỆT ĐỐI KHÔNG CHỈ GHI "(A1)". Ghi "Không tích hợp" nếu bài không phù hợp.
        
        - Mạch nội dung AI:
-    - ĐỊNH DẠNG VĂN BẢN(RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI.Các công thức toán / lý / hóa phải được viết dưới dạng văn bản thường.
+    - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.
            * NLa(A): Tư duy lấy con người làm trung tâm.
            * NLb(B): Đạo đức và trách nhiệm xã hội.
            * NLc(C): Kỹ thuật và ứng dụng.
@@ -1002,14 +1000,12 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với dan
     4. Xây dựng kế hoạch: Đảm bảo nội dung tích hợp không làm thay đổi nội dung cốt lõi của môn học.
 
     Định dạng đầu ra: JSON Array các đối tượng với các trường sau:
-    - topic: Chủ đề(hoặc Chương).Nếu nhiều bài cùng 1 chủ đề, ghi tên chủ đề đó.
-    - lessonContent: Nội dung bài học(Tên bài học hoặc nội dung trọng tâm).
-    - lessonGoal: Yêu cầu cần đạt CT 2018(Trọng tâm cốt lõi: Kiến thức, Năng lực).
-    - periods: Số tiết(Ví dụ: "2", "1").
-    - digitalCompetencyTT02: Năng lực số TT 02 (Mã và YCCĐ, ví dụ: "1.1NC1a: Xác định được nhu cầu thông tin..."). Ghi "Không tích hợp" nếu bài không phù hợp.
-    - integratedObjective: Mục tiêu tích hợp(Mô tả chi tiết các mục tiêu, hành động khi HS sử dụng AI.Trình bày bằng dấu gạch ngang đầu dòng.Ví dụ: "- Nhận biết được... - Hình thành thái độ...").
-    - aiCompetency3439: Yêu cầu cần đạt 3439(Trích dẫn CHÍNH XÁC nội dung YCCĐ từ CV 3439 và thêm mã chỉ báo ĐẦY ĐỦ ở cuối.Ví dụ: "- Giải thích được tại sao... (9.C.C1.1)".KHÔNG CHỈ GHI "(A1)").Ghi "Không tích hợp" nếu bài không phù hợp.
-    - notes: Ghi chú(Các chú ý thêm hoặc hình thức triển khai).
+    - time: Thời gian (Ví dụ: "Học kì I", "Tháng 9").
+    - lessonContent: Nội dung bài học (Tên bài học hoặc nội dung trọng tâm).
+    - periods: Số tiết (Ví dụ: "2", "1").
+    - lessonGoal: Yêu cầu cần đạt CT 2018.
+    - digitalCompetencyTT02: Năng lực số TT 02 (Mã và YCCĐ). Ghi "Không tích hợp" nếu bài không phù hợp.
+    - aiCompetency3439Integrated: Mục tiêu & YCCĐ 3439 Tích hợp GD AI. Kết hợp mục tiêu cụ thể và mã chỉ báo CV 3439. Ghi "Không tích hợp" nếu bài không phù hợp.
   `;
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
@@ -1029,16 +1025,14 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với dan
         items: {
           type: 'OBJECT' as any,
           properties: {
-            topic: { type: 'STRING' as any },
+            time: { type: 'STRING' as any },
             lessonContent: { type: 'STRING' as any },
-            lessonGoal: { type: 'STRING' as any },
             periods: { type: 'STRING' as any },
+            lessonGoal: { type: 'STRING' as any },
             digitalCompetencyTT02: { type: 'STRING' as any },
-            integratedObjective: { type: 'STRING' as any },
-            aiCompetency3439: { type: 'STRING' as any },
-            notes: { type: 'STRING' as any },
+            aiCompetency3439Integrated: { type: 'STRING' as any }
           },
-          required: ['topic', 'lessonContent', 'lessonGoal', 'periods', 'digitalCompetencyTT02', 'integratedObjective', 'aiCompetency3439', 'notes'],
+          required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'digitalCompetencyTT02', 'aiCompetency3439Integrated'],
         },
       },
     },
@@ -1404,5 +1398,91 @@ Hãy trả về kết quả đánh giá bằng JSON theo cấu trúc sau:
   } catch (error) {
     console.error("Error evaluating lesson plan:", error);
     throw error;
+  }
+};
+
+export const generateEducationalActivitiesPlan = async (subject: string, grade: string, options?: { useLaTeX?: boolean }) => {
+  const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
+  const prompt = `
+    Bạn là một Chuyên gia xây dựng chương trình giáo dục. Hãy giúp tôi lập "Kế hoạch tổ chức các hoạt động giáo dục" (Phụ lục 2 - CV 5512) cho môn: ${subject}, lớp: ${grade}.
+
+    YÊU CẦU QUAN TRỌNG:
+    1. Đề xuất từ 3 đến 5 hoạt động giáo dục đặc sắc, mang tính trải nghiệm, câu lạc bộ, tham quan, hoặc dự án liên môn phù hợp với môn học và lứa tuổi.
+    2. Các hoạt động phải ĐA DẠNG: Có thể bao gồm Sinh hoạt dưới cờ, Sinh hoạt lớp, Câu lạc bộ, Hoạt động trải nghiệm ngoài nhà trường, Dự án học tập...
+    3. TÍCH HỢP AI: Đề xuất cách học sinh hoặc giáo viên sử dụng công cụ số/AI trong hoạt động này (VD: dùng AI để lên kịch bản, làm poster, lập trình chatbot đơn giản, v.v.).
+
+    ${englishConstraint}
+
+    Định dạng đầu ra: JSON Array các đối tượng với các trường sau:
+    - theme: Chủ đề/Hoạt động.
+    - requirements: Yêu cầu cần đạt.
+    - periods: Số tiết.
+    - timing: Thời điểm (VD: Tháng 10, Tuần 2...).
+    - location: Địa điểm (VD: Sân trường, Phòng máy tính, Di tích lịch sử...).
+    - host: Người chủ trì (VD: Giáo viên bộ môn, Đoàn TNCS...).
+    - collaborator: Phối hợp (VD: GVCN, Phụ huynh...).
+    - conditions: Điều kiện thực hiện (Cơ sở vật chất, kinh phí...).
+    - aiIntegration: Tích hợp Năng lực số / AI (Cách sử dụng công cụ AI trong hoạt động này).
+  `;
+
+  const apiKey = localStorage.getItem('GEMINI_API_KEY');
+  if (!apiKey) throw new Error('API_KEY_REQUIRED');
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const modelsToTry = getFallbackModels(startModel);
+
+  const parts = [{ text: prompt }];
+  const body = {
+    contents: [{ role: 'user', parts }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      maxOutputTokens: 8192,
+      temperature: 0.7,
+      responseSchema: {
+        type: 'ARRAY' as any,
+        items: {
+          type: 'OBJECT' as any,
+          properties: {
+            theme: { type: 'STRING' as any },
+            requirements: { type: 'STRING' as any },
+            periods: { type: 'STRING' as any },
+            timing: { type: 'STRING' as any },
+            location: { type: 'STRING' as any },
+            host: { type: 'STRING' as any },
+            collaborator: { type: 'STRING' as any },
+            conditions: { type: 'STRING' as any },
+            aiIntegration: { type: 'STRING' as any },
+          },
+          required: ['theme', 'requirements', 'periods', 'timing', 'location', 'host', 'collaborator', 'conditions', 'aiIntegration'],
+        },
+      },
+    },
+  };
+
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const currentModel = modelsToTry[i];
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!res.ok) {
+        if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
+        if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
+        throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+      }
+      const json = await res.json();
+      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('AI trả về rỗng.');
+      
+      let parsed = JSON.parse(stripMarkdownJson(text));
+      if (parsed && !Array.isArray(parsed) && typeof parsed === 'object') {
+        const keys = Object.keys(parsed);
+        for (const k of keys) {
+          if (Array.isArray(parsed[k])) { parsed = parsed[k]; break; }
+        }
+      }
+      if (!Array.isArray(parsed)) throw new Error('Not an array');
+      return parsed;
+    } catch (err: any) {
+      if (i === modelsToTry.length - 1) throw err;
+    }
   }
 };

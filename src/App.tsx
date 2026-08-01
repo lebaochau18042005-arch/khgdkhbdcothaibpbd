@@ -36,7 +36,8 @@ import {
   Trash2,
   Laptop,
   Image as ImageIcon,
-  UserCircle
+  UserCircle,
+  Clock
 } from "lucide-react";
 import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateEducationalActivitiesPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, suggestNlsIndicators, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
@@ -56,7 +57,7 @@ const mapAiCompetencyText = (code: string) => {
   return `${code} - ${groupName}`;
 };
 
-type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "kh-hdgd-gen" | "upgrade-plan" | "ai-framework-gen" | "nls-lookup";
+type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "kh-hdgd-gen" | "upgrade-plan" | "ai-framework-gen" | "nls-lookup" | "history";
 
 
 const SUBJECTS_THPT = [
@@ -469,12 +470,60 @@ const QuestionAttachments = ({ q }: { q: any }) => {
   );
 };
 
+export interface HistoryItem {
+  id: string;
+  timestamp: number;
+  type: string;
+  title: string;
+  data: any;
+  evaluationResult?: any;
+}
+
 export default function App() {
   const [mode, setMode] = useState<AppMode>("dashboard");
   const [loading, setLoading] = useState(false);
   const [evaluationLoading, setEvaluationLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [evaluationResult, setEvaluationResult] = useState<any>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  
+  useEffect(() => {
+    const h = localStorage.getItem('eduplan_history');
+    if (h) {
+      try {
+        setHistory(JSON.parse(h));
+      } catch (e) {}
+    }
+  }, []);
+
+  useEffect(() => {
+    if (result && !result.loadedFromHistory) {
+      setHistory(prev => {
+        const newHistory = [...prev];
+        const existingIdx = newHistory.findIndex(h => h.data === result.data);
+        if (existingIdx >= 0) {
+          newHistory[existingIdx] = {
+            ...newHistory[existingIdx],
+            evaluationResult: evaluationResult
+          };
+        } else {
+          const title = result.data?.title || result.data?.lesson || result.data?.theme || result.type.toUpperCase();
+          newHistory.unshift({
+            id: Date.now().toString(),
+            timestamp: Date.now(),
+            type: result.type,
+            title,
+            data: result.data,
+            evaluationResult
+          });
+        }
+        const trimmed = newHistory.slice(0, 15);
+        localStorage.setItem('eduplan_history', JSON.stringify(trimmed));
+        return trimmed;
+      });
+    }
+  }, [result, evaluationResult]);
+
   const [departmentPlanRef, setDepartmentPlanRef] = useState<any[] | null>(null);
   const [customCurriculumData, setCustomCurriculumData] = useState<any[] | null>(null);
   const [isParsingCurriculum, setIsParsingCurriculum] = useState(false);
@@ -1920,11 +1969,18 @@ export default function App() {
                   </button>
                 </li>
               <div className="pt-6 pb-2 px-3">
-                <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Tài khoản</span>
+                <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Tài khoản & Lịch sử</span>
               </div>
               <div className="flex items-center gap-3 px-4 py-3 text-slate-300">
                 <UserCircle className="w-6 h-6" /> <span className="text-sm font-bold text-white/80">Khách</span>
               </div>
+              <NavItem
+                sidebar
+                active={mode === "history"}
+                onClick={() => setMode("history")}
+                icon={<Clock className="w-4 h-4" />}
+                label="Lịch sử tạo (Đã lưu)"
+              />
               <div className="pt-4 pb-2 px-3">
                 <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Hệ thống</span>
               </div>
@@ -2025,6 +2081,51 @@ export default function App() {
                         setMode("khbd-gen");
                       }}
                     />
+                  </motion.div>
+                )}
+
+                {mode === "history" && (
+                  <motion.div
+                    key="history"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-6"
+                  >
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg shadow-slate-200/50 border border-slate-100">
+                        <Clock className="w-6 h-6 text-brand-accent" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-black text-brand-dark tracking-tight">Lịch sử tạo gần đây</h2>
+                        <p className="text-sm font-medium text-brand-muted">Các kế hoạch đã được lưu lại tự động (15 bản gần nhất)</p>
+                      </div>
+                    </div>
+                    
+                    {history.length === 0 ? (
+                      <div className="text-center p-12 bg-white rounded-[32px] border border-slate-100 shadow-sm">
+                        <Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500 font-medium">Chưa có lịch sử tạo nào.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {history.map((item, idx) => (
+                          <div key={item.id} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group" onClick={() => {
+                            setResult({ type: item.type, data: item.data, loadedFromHistory: true });
+                            if (item.evaluationResult) {
+                              setEvaluationResult(item.evaluationResult);
+                            }
+                            setMode((item.type + "-gen") as AppMode);
+                          }}>
+                            <div className="flex justify-between items-start mb-4">
+                              <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold uppercase tracking-wider">{item.type.toUpperCase()}</span>
+                              <span className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-1 rounded-md">{new Date(item.timestamp).toLocaleString("vi-VN")}</span>
+                            </div>
+                            <h3 className="font-bold text-slate-800 text-lg line-clamp-2 mb-2 group-hover:text-brand-accent transition-colors">{item.title}</h3>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </motion.div>
                 )}
 

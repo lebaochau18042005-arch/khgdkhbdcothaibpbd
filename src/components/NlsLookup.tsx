@@ -445,7 +445,7 @@ function IndicatorCard({
   indicator: Indicator;
   selected: boolean;
   onToggle: () => void;
-  onCopy: () => void;
+  onCopy: () => Promise<void> | void;
 }) {
   const meta = FIELD_META[indicator.field];
 

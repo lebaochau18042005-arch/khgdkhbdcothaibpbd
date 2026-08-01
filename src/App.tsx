@@ -34,7 +34,8 @@ import {
   Settings,
   Zap,
   UploadCloud,
-  Trash2
+  Trash2,
+  Laptop
 } from "lucide-react";
 import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateEducationalActivitiesPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, suggestNlsIndicators, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
@@ -1780,7 +1781,7 @@ export default function App() {
                 <span className="font-black text-xl">EduPlan <span className="text-blue-400">AI</span></span>
               </div>
               <div className="flex items-center gap-4">
-                <UserButton />
+                <UserCircle className="w-6 h-6 text-white/80" />
                 <button
                   onClick={() => setShowSettings(true)}
                   className="p-2 border border-white/20 rounded-lg text-white/60 hover:text-white transition-colors"

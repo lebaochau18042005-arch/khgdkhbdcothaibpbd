@@ -1220,7 +1220,7 @@ ${input.requirementsText}
   try {
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
+      config: {
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -1369,7 +1369,7 @@ Hãy trả về kết quả đánh giá bằng JSON theo cấu trúc sau:
   try {
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
+      config: {
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,

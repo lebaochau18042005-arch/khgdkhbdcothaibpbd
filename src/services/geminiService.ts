@@ -1108,7 +1108,7 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
     2. CÔNG CỤ ĐÁNH GIÁ THƯỜNG XUYÊN: Thiết kế bộ câu hỏi kiểm tra theo ĐÚNG ĐỊNH DẠNG ĐỀ THI TỐT NGHIỆP THPT 2025 gồm 3 phần:
        - Phần I: Trắc nghiệm khách quan nhiều lựa chọn (BẮT BUỘC TẠO ĐÚNG 12 CÂU). Mỗi câu 4 đáp án A,B,C,D, chỉ 1 đáp án đúng.
        - Phần II: Trắc nghiệm đúng/sai. Sinh 2-4 câu. Mỗi câu gồm 1 lời dẫn và 4 ý phát biểu A, B, C, D. Học sinh phải chọn Đúng hoặc Sai cho mỗi ý.
-       - Phần III: Trả lời ngắn / Tính toán. Sinh 2-4 câu. (LƯU Ý: Với các môn Ngữ văn, Lịch sử, Địa lí, GD Kinh tế & Pháp luật, bỏ qua Phần III và tăng số lượng câu Phần II lên 4-6 câu).
+       - Phần III: Trả lời ngắn / Tính toán. Sinh 2-4 câu. (LƯU Ý: Với các môn Ngữ văn, Lịch sử, GD Kinh tế & Pháp luật, bỏ qua Phần III và tăng số lượng câu Phần II lên 4-6 câu).
        - Bảng kiểm (Checklists): Dùng trong quá trình dạy học để đánh giá tiến trình của học sinh.
     3. CÔNG CỤ ĐÁNH GIÁ ĐỊNH KỲ: Thiết kế một bài tập/dự án nhỏ hoặc câu hỏi tổng hợp nhằm đánh giá mức độ đạt được mục tiêu sau khi kết thúc bài học.
     4. HƯỚNG DẪN NHẬN XÉT: Các mẫu nhận xét tự luận phù hợp với từng mức độ năng lực.

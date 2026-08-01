@@ -651,7 +651,7 @@ NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầ
 ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 
 KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI: 
-1. BẢO TOÀN NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại các hoạt động Mở đầu, Hình thành Kiến thức mới, Luyện tập, Vận dụng mà giáo viên đã cung cấp. Phải giữ nguyên văn dữ liệu cũ (copy-paste lại nội dung cũ). CHỈ BỔ SUNG những nội dung kiến thức còn thiếu so với chương trình/sách giáo khoa mới (nếu có).
+1. BẢO TOÀN TUYỆT ĐỐI NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại bất kỳ nội dung nào. Giáo án gốc tải lên dài bao nhiêu trang/chữ thì BẮT BUỘC phải giữ nguyên khối lượng nội dung đó (copy-paste lại 100% dữ liệu cũ từ Mở đầu, Kiến thức mới, Luyện tập đến Vận dụng). BẠN CHỈ ĐƯỢC PHÉP BỔ SUNG thêm nội dung mới (NLS, NL AI, Giáo dục hòa nhập...) chứ tuyệt đối không được phép xóa hay làm ngắn đi nội dung gốc.
 2. THÊM NĂNG LỰC SỐ & NĂNG LỰC AI: Tự động tổng hợp và thêm mục tiêu "Năng lực số" và "Năng lực AI đặc thù" vào phần Năng lực. Thêm công cụ số vào mục "CÔNG CỤ SỐ AI".
 3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
    - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
@@ -683,7 +683,7 @@ ${input.existingRawText.substring(0, 18000)}
 ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 
 KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
-1. BẢO TOÀN NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại các hoạt động Mở đầu, Hình thành Kiến thức mới, Luyện tập, Vận dụng mà giáo viên đã cung cấp. Phải giữ nguyên văn dữ liệu cũ (copy-paste lại nội dung cũ). CHỈ BỔ SUNG những nội dung kiến thức còn thiếu so với chương trình/sách giáo khoa mới (nếu có).
+1. BẢO TOÀN TUYỆT ĐỐI NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại bất kỳ nội dung nào. Giáo án gốc tải lên dài bao nhiêu trang/chữ thì BẮT BUỘC phải giữ nguyên khối lượng nội dung đó (copy-paste lại 100% dữ liệu cũ từ Mở đầu, Kiến thức mới, Luyện tập đến Vận dụng). BẠN CHỈ ĐƯỢC PHÉP BỔ SUNG thêm nội dung mới (NLS, NL AI, Giáo dục hòa nhập...) chứ tuyệt đối không được phép xóa hay làm ngắn đi nội dung gốc.
 2. THÊM NĂNG LỰC SỐ & NĂNG LỰC AI: Tự động tổng hợp và thêm mục tiêu "Năng lực số" và "Năng lực AI đặc thù" vào phần Năng lực. Thêm công cụ số vào mục "CÔNG CỤ SỐ AI".
 3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
    - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.

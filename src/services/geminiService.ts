@@ -1105,7 +1105,11 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
     
     Yêu cầu hệ thống đánh giá bao gồm:
     1. TIÊU CHÍ ĐÁNH GIÁ (Rubrics): Thiết kế bảng Rubric cho ít nhất 3 năng lực cốt lõi được thể hiện trong bài dạy (bao gồm năng lực chung và năng lực đặc thù môn học/năng lực AI). Mỗi năng lực cần có các mức độ đạt được (VD: Mức 1: Chưa đạt; Mức 2: Đạt; Mức 3: Khá; Mức 4: Tốt).
-    2. CÔNG CỤ ĐÁNH GIÁ THƯỜNG XUYÊN: Thiết kế các câu hỏi trắc nghiệm, câu hỏi tự luận ngắn hoặc bảng kiểm (Checklist) dùng trong quá trình dạy học để đánh giá tiến trình của học sinh.
+    2. CÔNG CỤ ĐÁNH GIÁ THƯỜNG XUYÊN: Thiết kế bộ câu hỏi kiểm tra theo ĐÚNG ĐỊNH DẠNG ĐỀ THI TỐT NGHIỆP THPT 2025 gồm 3 phần:
+       - Phần I: Trắc nghiệm khách quan nhiều lựa chọn (BẮT BUỘC TẠO ĐÚNG 12 CÂU). Mỗi câu 4 đáp án A,B,C,D, chỉ 1 đáp án đúng.
+       - Phần II: Trắc nghiệm đúng/sai. Sinh 2-4 câu. Mỗi câu gồm 1 lời dẫn và 4 ý phát biểu A, B, C, D. Học sinh phải chọn Đúng hoặc Sai cho mỗi ý.
+       - Phần III: Trả lời ngắn / Tính toán. Sinh 2-4 câu. (LƯU Ý: Với các môn Ngữ văn, Lịch sử, Địa lí, GD Kinh tế & Pháp luật, bỏ qua Phần III và tăng số lượng câu Phần II lên 4-6 câu).
+       - Bảng kiểm (Checklists): Dùng trong quá trình dạy học để đánh giá tiến trình của học sinh.
     3. CÔNG CỤ ĐÁNH GIÁ ĐỊNH KỲ: Thiết kế một bài tập/dự án nhỏ hoặc câu hỏi tổng hợp nhằm đánh giá mức độ đạt được mục tiêu sau khi kết thúc bài học.
     4. HƯỚNG DẪN NHẬN XÉT: Các mẫu nhận xét tự luận phù hợp với từng mức độ năng lực.
 
@@ -1143,8 +1147,9 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
         formativeAssessment: {
           type: Type.OBJECT,
           properties: {
-            quizzes: {
+            part1_multipleChoice: {
               type: Type.ARRAY,
+              description: "Phần I: Đúng 12 câu trắc nghiệm nhiều lựa chọn",
               items: {
                 type: Type.OBJECT,
                 properties: {
@@ -1153,11 +1158,36 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
                   answer: { type: Type.STRING },
                 },
                 required: ["question", "options", "answer"],
-              },
+              }
+            },
+            part2_trueFalse: {
+              type: Type.ARRAY,
+              description: "Phần II: Câu trắc nghiệm đúng sai (mỗi câu 4 ý A,B,C,D)",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  question: { type: Type.STRING },
+                  statements: { type: Type.ARRAY, items: { type: Type.STRING }, description: "4 ý phát biểu A, B, C, D" },
+                  answers: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Mảng 4 đáp án 'Đúng' hoặc 'Sai' tương ứng" },
+                },
+                required: ["question", "statements", "answers"],
+              }
+            },
+            part3_shortAnswer: {
+              type: Type.ARRAY,
+              description: "Phần III: Câu trắc nghiệm trả lời ngắn (Rỗng nếu môn học không phù hợp)",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  question: { type: Type.STRING },
+                  answer: { type: Type.STRING },
+                },
+                required: ["question", "answer"],
+              }
             },
             checklists: { type: Type.ARRAY, items: { type: Type.STRING } },
           },
-          required: ["quizzes", "checklists"],
+          required: ["part1_multipleChoice", "part2_trueFalse", "part3_shortAnswer", "checklists"],
         },
         summativeAssessment: {
           type: Type.OBJECT,

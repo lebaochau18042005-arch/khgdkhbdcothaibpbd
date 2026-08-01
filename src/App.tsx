@@ -2687,7 +2687,8 @@ export default function App() {
                                     <Search className="w-4 h-4" /> 2. ĐÁNH GIÁ THƯỜNG XUYÊN
                                   </h5>
                                   <div className="space-y-4">
-                                    {evaluationResult.formativeAssessment.quizzes.map((q: any, qi: number) => (
+                                    {/* Fallback for old cached data */}
+                                    {evaluationResult.formativeAssessment.quizzes && evaluationResult.formativeAssessment.quizzes.length > 0 && evaluationResult.formativeAssessment.quizzes.map((q: any, qi: number) => (
                                       <div key={qi} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
                                         <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q.question}</p>
                                         <div className="grid grid-cols-1 gap-2">
@@ -2701,6 +2702,63 @@ export default function App() {
                                         <p className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded inline-block">Đáp án: {q.answer}</p>
                                       </div>
                                     ))}
+
+                                    {/* Part I: Multiple Choice */}
+                                    {evaluationResult.formativeAssessment.part1_multipleChoice && evaluationResult.formativeAssessment.part1_multipleChoice.length > 0 && (
+                                      <div className="space-y-3">
+                                        <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần I: Trắc nghiệm khách quan nhiều lựa chọn</h6>
+                                        {evaluationResult.formativeAssessment.part1_multipleChoice.map((q: any, qi: number) => (
+                                          <div key={qi} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                                            <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q.question}</p>
+                                            <div className="grid grid-cols-1 gap-2">
+                                              {q.options?.map((opt: string, oi: number) => (
+                                                <div key={oi} className="flex items-center gap-2 text-[11px] text-brand-muted bg-white p-2 rounded-lg border border-slate-200">
+                                                  <span className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-full text-[9px] font-bold">{String.fromCharCode(65 + oi)}</span>
+                                                  {opt}
+                                                </div>
+                                              ))}
+                                            </div>
+                                            <p className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded inline-block">Đáp án: {q.answer}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Part II: True/False */}
+                                    {evaluationResult.formativeAssessment.part2_trueFalse && evaluationResult.formativeAssessment.part2_trueFalse.length > 0 && (
+                                      <div className="space-y-3 mt-4">
+                                        <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần II: Trắc nghiệm Đúng/Sai</h6>
+                                        {evaluationResult.formativeAssessment.part2_trueFalse.map((q: any, qi: number) => (
+                                          <div key={qi} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                                            <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q.question}</p>
+                                            <div className="grid grid-cols-1 gap-2">
+                                              {q.statements?.map((stmt: string, oi: number) => (
+                                                <div key={oi} className="flex flex-col gap-1 text-[11px] text-brand-muted bg-white p-2 rounded-lg border border-slate-200">
+                                                  <div className="flex items-start gap-2">
+                                                    <span className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-full text-[9px] font-bold shrink-0">{String.fromCharCode(65 + oi)}</span>
+                                                    <span>{stmt}</span>
+                                                  </div>
+                                                  <p className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded self-start mt-1">Đáp án: {q.answers?.[oi]}</p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Part III: Short Answer */}
+                                    {evaluationResult.formativeAssessment.part3_shortAnswer && evaluationResult.formativeAssessment.part3_shortAnswer.length > 0 && (
+                                      <div className="space-y-3 mt-4">
+                                        <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần III: Trả lời ngắn / Tính toán</h6>
+                                        {evaluationResult.formativeAssessment.part3_shortAnswer.map((q: any, qi: number) => (
+                                          <div key={qi} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                                            <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q.question}</p>
+                                            <p className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-2 rounded-lg border border-emerald-100">Đáp án: {q.answer}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                     <div className="p-4 border-2 border-dashed border-slate-200 rounded-xl">
                                       <p className="text-[10px] font-black text-brand-sidebar uppercase mb-3 opacity-70">Bảng kiểm (Checklist) tiến trình</p>
                                       <ul className="space-y-2">

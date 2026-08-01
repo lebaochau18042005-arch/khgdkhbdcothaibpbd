@@ -134,6 +134,30 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
   }
 };
 
+// ============================================================
+// CONTENT INTEGRITY RULES (Nguyên tắc 3.1 và Mục 7)
+// Chung cho tất cả các prompt sinh nội dung giáo dục
+// ============================================================
+const CONTENT_INTEGRITY_RULES = `
+==== NGUYÊN TẮc NỘI DUNG BẮT BUỘC (KHÔNG ĐƯỢC VI PHẠM) ====
+
+3.1. NGHIÊM CẤM TỰ ĐOÁN NỘI DUNG - BẨT BUỘC TUÂN THỦ:
+- TUYỆT ĐỐI KHÔNG tự bịa đặt hoặc khẳng định bất kỳ thông tin nào nếu chưa có dữ liệu nguồn rõ ràng từ file tải lên hoặc CURRICULUM_DB.
+- Các thông tin NGHIÊM CẤM tự suy đoán bao gồm: Tên bài học, số lượng bài, thứ tự bài, số tiết, nội dung Yêu cầu cần đạt, số liệu địa lí, tên địa danh, nội dung biểu đồ/bản đồ/bảng số liệu, đáp án câu hỏi không có cơ sở, mã năng lực số, mã năng lực AI.
+- Nếu thiếu dữ liệu nguồn cho bất kỳ mục nào, phải ghi rõ: "Chưa đủ nguồn chính thức. Vui lòng cung cấp chương trình môn học, SGK, SGV hoặc bảng yêu cầu cần đạt."
+- KHÔNG dùng kiến thức suy đoán để thay thế nội dung SGK.
+
+3.3. NGHIÊM CẤM SAO CHÉP TOÀN BỘ SGK:
+- Chỉ được tạo bản tóm tắt học tập và trích dẫn ngắn có ghi nguồn.
+- KHÔNG sao chép nguyên văn toàn bộ đoạn văn từ SGK/SGV.
+- Mọi nội dung trích dẫn phải có ghi nguồn.
+
+MỤC 7 - TIÊU CHUẨN SẢN PHẨM Sử DỤNG AI:
+- AI hỗ trợ học sinh tìm kiếm thông tin, so sánh, đặt câu hỏi, kiểm chứng, sửa và hoàn thiện sản phẩm. AI KHÔNG thay thế suy luận của học sinh.
+- Mọi hoạt động có sử dụng AI trong KHBD phải thiết kế để học sinh tạo ra: (1) Câu lệnh Prompt đã sử dụng, (2) Nguồn kiểm chứng, (3) Nhận xét đúng/chưa đủ/cần sửa, (4) Bản chỉnh sửa của học sinh, (5) Nhận xét của giáo viên.
+- NGHIÊM CẤM dùng cụm từ "bản nháp AI" trong sản phẩm học tập.
+`;
+
 const AI_SUBJECT_GUIDELINES = `
 Dưới đây là Khung mạch nội dung tích hợp AI cho từng môn học theo CV 3439:
 - Ngữ văn: Trọng tâm NLa, NLb, NLc. Nội dung: Lên dàn ý, tóm tắt tư liệu, phân tích thi pháp, dịch thuật. Thảo luận: Sáng tác Người vs AI, bản quyền, phong cách cá nhân, tác động đến ngôn ngữ.
@@ -643,6 +667,7 @@ export const generateLessonPlan = async (input: LessonPlanInput) => {
   let finalPromptContents: any = "";
   if (input.existingPdfBase64) {
     const p1 = `
+${CONTENT_INTEGRITY_RULES}
 🚨🚨🚨 CHẾ ĐỘ NÂNG CẤP GIÁO ÁN GỐC TỪ FILE PDF — ƯU TIÊN TỐI CAO 🚨🚨🚨
 
 NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu. Bạn phải NÂNG CẤP giáo án xuất ra từ File PDF ĐÍNH KÈM của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM/CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
@@ -820,6 +845,19 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
           },
           required: ["prompts", "checklist"],
         },
+        aiUsageLog: {
+          type: Type.ARRAY,
+          description: "PHIẾU SỬ DỤNG AI (Mục 7 — dành cho Học sinh). Tạo một phiếu cho MỖI hoạt động có tích hợp AI trong bài. AI CHỈ điền trước ① (câu lệnh Prompt mẫu GV gợi ý) và ② (nguồn kiểm chứng GV cung cấp). Các ô ③④⑤ dành cho học sinh và GV tự điền tay khi in phiếu — KHÔNG điền vào schema.",
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              activityName: { type: Type.STRING, description: "Tên hoạt động trong bài có tích hợp AI" },
+              aiPromptUsed: { type: Type.STRING, description: "① GV gợi ý: Mẫu câu lệnh Prompt cụ thể, chi tiết mà học sinh sẽ nhập vào công cụ AI (ChatGPT, Gemini...) để thực hiện nhiệm vụ học tập. Viết hoàn chỉnh như một câu lệnh thực tế." },
+              verificationSource: { type: Type.STRING, description: "② GV cung cấp: Nguồn tài liệu chính thống học sinh dùng để kiểm chứng kết quả AI (VD: SGK trang..., tài liệu chính phủ, atlas...). Ghi rõ tên tài liệu, trang số." },
+            },
+            required: ["activityName", "aiPromptUsed", "verificationSource"],
+          }
+        },
       },
       required: ["title", "objectives", "materials", "activities", "assessment", "appendix"],
     });
@@ -855,6 +893,8 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài 
     : "";
 
   const prompt = `
+    ${CONTENT_INTEGRITY_RULES}
+
     Hãy đóng vai một chuyên gia giáo dục THPT tại Việt Nam.Xây dựng "Khung kế hoạch giáo dục của giáo viên"(Phân phối chương trình cả năm) cho:
     - Môn: ${subject}
     - Lớp: ${grade}
@@ -963,6 +1003,8 @@ ${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorC
 LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với danh sách bài học trên.Tại cột "Yêu cầu cần đạt 3439"(aiCompetency3439), BẮT BUỘC phải chèn mã chỉ báo(indicatorCode) được cung cấp tương ứng.TUYỆT ĐỐI KHÔNG BỊA MÃ KHÁC HAY GHI LÀ "Không tích hợp" nều bài đó có mã chỉ báo.`
       : CURRICULUM_DATA;
   const prompt = `
+    ${CONTENT_INTEGRITY_RULES}
+
     Bạn là một Chuyên gia xây dựng chương trình giáo dục.Hãy giúp tôi lập Kế hoạch giáo dục tổ chuyên môn tích hợp nội dung giáo dục AI cho môn: ${subject}, lớp: ${grade}${subject === "Giáo dục địa phương" && province ? `, tại địa phương: ${province}` : ""}.
     
     YÊU CẦU QUAN TRỌNG VỀ TÊN BÀI HỌC VÀ CHƯƠNG TRÌNH:
@@ -1116,7 +1158,11 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
 
     LƯU Ý: Phải có các tiêu chí cụ thể đánh giá "Năng lực AI" (NLa - NLd) đã được xác định trong bài dạy.
     LƯU Ý QUAN TRỌNG VỀ NGÔN NGỮ: Bắt buộc kết quả trả về PHẢI ĐỒNG NHẤT 100% với ngôn ngữ của đầu vào. Nếu Tên bài hoặc mục tiêu được viết bằng Tiếng Anh, TOÀN BỘ nội dung Rubric, Câu hỏi, Checklists và Đánh giá phải được viết 100% bằng Tiếng Anh (English).
-    
+    LƯU Ý QUAN TRỌNG VỀ ĐỊNH DẠNG CÂU HỎI CÓ BẢNG / HÌNH ẢNH:
+    - Nếu câu hỏi có chứa **Bảng số liệu**, TUYỆT ĐỐI KHÔNG dùng text hay markdown để mô phỏng bảng bên trong thuộc tính \`question\`. Thay vào đó, hãy bóc tách phần bảng đó và điền vào thuộc tính \`tableData\` (bao gồm \`headers\` và \`rows\`).
+    - Nếu câu hỏi cần chứa **Hình ảnh** (như lược đồ, bản đồ, đồ thị), hãy thêm nội dung mô tả hình ảnh vào thuộc tính \`imagePlaceholder\` (ví dụ: "[Chèn bản đồ Việt Nam tại đây]"). KHÔNG dùng thẻ \`<img>\` hay \`![]()\` trong \`question\`.
+    - Phần \`question\` CHỈ chứa văn bản câu dẫn đơn thuần.
+
     Định dạng đầu ra: JSON.
   `;
 
@@ -1157,6 +1203,18 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
                   question: { type: Type.STRING },
                   options: { type: Type.ARRAY, items: { type: Type.STRING } },
                   answer: { type: Type.STRING },
+                  tableData: {
+                    type: Type.OBJECT,
+                    description: "Bảng số liệu nếu câu hỏi yêu cầu (trống nếu không có)",
+                    properties: {
+                      headers: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Tiêu đề cột" },
+                      rows: { type: Type.ARRAY, items: { type: Type.ARRAY, items: { type: Type.STRING } }, description: "Mảng các hàng (mỗi hàng là mảng các ô dữ liệu)" },
+                      caption: { type: Type.STRING, description: "Tên bảng số liệu (tùy chọn)" },
+                      source: { type: Type.STRING, description: "Nguồn (tùy chọn)" }
+                    },
+                    required: ["headers", "rows"]
+                  },
+                  imagePlaceholder: { type: Type.STRING, description: "Ghi chú để giáo viên chèn ảnh (VD: '[Chèn biểu đồ X]') (trống nếu không có)" }
                 },
                 required: ["question", "options", "answer"],
               }
@@ -1170,6 +1228,18 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
                   question: { type: Type.STRING },
                   statements: { type: Type.ARRAY, items: { type: Type.STRING }, description: "4 ý phát biểu A, B, C, D" },
                   answers: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Mảng 4 đáp án 'Đúng' hoặc 'Sai' tương ứng" },
+                  tableData: {
+                    type: Type.OBJECT,
+                    description: "Bảng số liệu nếu câu hỏi yêu cầu (trống nếu không có)",
+                    properties: {
+                      headers: { type: Type.ARRAY, items: { type: Type.STRING } },
+                      rows: { type: Type.ARRAY, items: { type: Type.ARRAY, items: { type: Type.STRING } } },
+                      caption: { type: Type.STRING },
+                      source: { type: Type.STRING }
+                    },
+                    required: ["headers", "rows"]
+                  },
+                  imagePlaceholder: { type: Type.STRING, description: "Ghi chú để giáo viên chèn ảnh (trống nếu không có)" }
                 },
                 required: ["question", "statements", "answers"],
               }
@@ -1182,13 +1252,25 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
                 properties: {
                   question: { type: Type.STRING },
                   answer: { type: Type.STRING },
+                  tableData: {
+                    type: Type.OBJECT,
+                    description: "Bảng số liệu nếu câu hỏi yêu cầu (trống nếu không có)",
+                    properties: {
+                      headers: { type: Type.ARRAY, items: { type: Type.STRING } },
+                      rows: { type: Type.ARRAY, items: { type: Type.ARRAY, items: { type: Type.STRING } } },
+                      caption: { type: Type.STRING },
+                      source: { type: Type.STRING }
+                    },
+                    required: ["headers", "rows"]
+                  },
+                  imagePlaceholder: { type: Type.STRING, description: "Ghi chú để giáo viên chèn ảnh (trống nếu không có)" }
                 },
                 required: ["question", "answer"],
               }
             },
             checklists: { type: Type.ARRAY, items: { type: Type.STRING } },
           },
-          required: ["part1_multipleChoice", "part2_trueFalse", "part3_shortAnswer", "checklists"],
+          required: ["part1_multipleChoice", "part2_trueFalse", "checklists"],
         },
         summativeAssessment: {
           type: Type.OBJECT,
@@ -1249,32 +1331,23 @@ ${input.requirementsText}
 `;
 
   try {
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              code: { type: Type.STRING, description: "Mã chỉ báo (VD: 10.C2.01)" },
-              content: { type: Type.STRING, description: "Nội dung chỉ báo" },
-              component: { type: Type.STRING, description: "Thành phần năng lực (NLa, NLb, NLc, NLd)" },
-              level: { type: Type.STRING, description: "Mức độ nhận thức (Biết, Hiểu, Vận dụng, Vận dụng cao)" },
-              evidence: { type: Type.STRING, description: "Minh chứng đánh giá" },
-              activities: { type: Type.STRING, description: "Hoạt động học tập gợi ý" },
-              tools: { type: Type.STRING, description: "Công cụ AI phù hợp" },
-              rubric: { type: Type.STRING, description: "Tiêu chí đánh giá (Rubric Đạt/Chưa đạt)" }
-            },
-            required: ["code", "content", "component", "level", "evidence", "activities", "tools", "rubric"]
-          }
+    return await callGeminiWithFallback(prompt, {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          code: { type: Type.STRING, description: "Mã chỉ báo (VD: 10.C2.01)" },
+          content: { type: Type.STRING, description: "Nội dung chỉ báo" },
+          component: { type: Type.STRING, description: "Thành phần năng lực (NLa, NLb, NLc, NLd)" },
+          level: { type: Type.STRING, description: "Mức độ nhận thức (Biết, Hiểu, Vận dụng, Vận dụng cao)" },
+          evidence: { type: Type.STRING, description: "Minh chứng đánh giá" },
+          activities: { type: Type.STRING, description: "Hoạt động học tập gợi ý" },
+          tools: { type: Type.STRING, description: "Công cụ AI phù hợp" },
+          rubric: { type: Type.STRING, description: "Tiêu chí đánh giá (Rubric Đạt/Chưa đạt)" }
         },
+        required: ["code", "content", "component", "level", "evidence", "activities", "tools", "rubric"]
       }
-    });
-
-    const text = result.text;
-    return JSON.parse(stripMarkdownJson(text));
+    }, undefined, { apiKey: options.apiKey, aiModel: options.aiModel });
   } catch (error) {
     console.error("Error generating AI Competency Framework:", error);
     throw error;
@@ -1398,34 +1471,28 @@ Hãy trả về kết quả đánh giá bằng JSON theo cấu trúc sau:
 `;
 
   try {
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
+    return await callGeminiWithFallback(prompt, {
+      type: Type.OBJECT,
+      properties: {
+        educationalExpert: {
           type: Type.OBJECT,
-          properties: {
-            educationalExpert: {
-              type: Type.OBJECT,
-              properties: { strengths: { type: Type.STRING }, weaknesses: { type: Type.STRING }, suggestions: { type: Type.STRING } }
-            },
-            digitalExpert: {
-              type: Type.OBJECT,
-              properties: { strengths: { type: Type.STRING }, weaknesses: { type: Type.STRING }, suggestions: { type: Type.STRING } }
-            },
-            aiExpert: {
-              type: Type.OBJECT,
-              properties: { strengths: { type: Type.STRING }, weaknesses: { type: Type.STRING }, suggestions: { type: Type.STRING } }
-            },
-            overallScore: { type: Type.NUMBER, description: "Điểm đánh giá chung trên thang điểm 10" }
-          },
-          required: ["educationalExpert", "digitalExpert", "aiExpert", "overallScore"]
+          properties: { strengths: { type: Type.STRING }, weaknesses: { type: Type.STRING }, suggestions: { type: Type.STRING } },
+          required: ["strengths", "weaknesses", "suggestions"]
         },
-      }
-    });
-
-    const text = result.text;
-    return JSON.parse(stripMarkdownJson(text));
+        digitalExpert: {
+          type: Type.OBJECT,
+          properties: { strengths: { type: Type.STRING }, weaknesses: { type: Type.STRING }, suggestions: { type: Type.STRING } },
+          required: ["strengths", "weaknesses", "suggestions"]
+        },
+        aiExpert: {
+          type: Type.OBJECT,
+          properties: { strengths: { type: Type.STRING }, weaknesses: { type: Type.STRING }, suggestions: { type: Type.STRING } },
+          required: ["strengths", "weaknesses", "suggestions"]
+        },
+        overallScore: { type: Type.NUMBER, description: "Điểm đánh giá chung trên thang điểm 10" }
+      },
+      required: ["educationalExpert", "digitalExpert", "aiExpert", "overallScore"]
+    }, undefined, { apiKey: options.apiKey, aiModel: options.aiModel });
   } catch (error) {
     console.error("Error evaluating lesson plan:", error);
     throw error;

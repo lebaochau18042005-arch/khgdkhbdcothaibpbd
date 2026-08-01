@@ -436,17 +436,17 @@ function Badge({ children, color = "#0f766e", soft = "#f0fdfa" }: { children: Re
   );
 }
 
-function IndicatorCard({
-  indicator,
-  selected,
-  onToggle,
-  onCopy,
-}: {
+const IndicatorCard: React.FC<{
   indicator: Indicator;
   selected: boolean;
   onToggle: () => void;
   onCopy: () => Promise<void> | void;
-}) {
+}> = ({
+  indicator,
+  selected,
+  onToggle,
+  onCopy,
+}) => {
   const meta = FIELD_META[indicator.field];
 
   return (

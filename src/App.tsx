@@ -9,12 +9,11 @@ import { motion, AnimatePresence } from "motion/react";
 import html2pdf from "html2pdf.js";
 // @ts-ignore
 import * as mammoth from "mammoth";
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle, HeadingLevel, VerticalAlign, ImageRun } from "docx";
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle, VerticalAlign, ImageRun } from "docx";
 import { saveAs } from "file-saver";
 import {
   BookOpen,
   Calendar,
-  Plus,
   FileText,
   Download,
   Copy,
@@ -35,12 +34,13 @@ import {
   Zap,
   UploadCloud,
   Trash2,
-  Laptop
+  Laptop,
+  Image as ImageIcon,
+  UserCircle
 } from "lucide-react";
 import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateEducationalActivitiesPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, suggestNlsIndicators, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
 import NlsLookup, { INDICATORS } from "./components/NlsLookup";
-import { UserCircle } from "lucide-react";
 
 // Add competency mapper utility function
 const mapAiCompetencyText = (code: string) => {
@@ -428,6 +428,46 @@ const drawSchematic = (title: string): Uint8Array => {
   return base64ToUint8Array(base64);
 };
 
+const QuestionAttachments = ({ q }: { q: any }) => {
+  if (!q) return null;
+  return (
+    <>
+      {q.imagePlaceholder && (
+        <div className="w-full p-6 border-2 border-dashed border-indigo-200 rounded-lg flex flex-col items-center justify-center bg-indigo-50/50 my-3">
+          <ImageIcon className="w-8 h-8 text-indigo-300 mb-2" />
+          <p className="text-indigo-600 font-medium text-sm text-center">
+             {q.imagePlaceholder}
+          </p>
+          <p className="text-indigo-400 text-[10px] mt-1">(Giáo viên chèn ảnh vào vị trí này khi xuất file Word)</p>
+        </div>
+      )}
+      {q.tableData && q.tableData.headers && q.tableData.rows && (
+        <div className="w-full overflow-x-auto my-3 border border-slate-200 rounded-lg">
+          <table className="w-full text-sm text-left border-collapse bg-white">
+            {q.tableData.caption && <caption className="p-3 text-slate-700 font-bold bg-slate-50 border-b border-slate-200">{q.tableData.caption}</caption>}
+            <thead className="bg-slate-100 text-slate-700">
+              <tr>
+                {q.tableData.headers.map((h: string, hi: number) => (
+                  <th key={hi} className="border-b border-r last:border-r-0 border-slate-200 px-4 py-3 font-bold whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {q.tableData.rows.map((row: string[], ri: number) => (
+                <tr key={ri} className="hover:bg-slate-50 border-b last:border-b-0 border-slate-100">
+                  {row.map((cell: string, ci: number) => (
+                    <td key={ci} className="border-r last:border-r-0 border-slate-100 px-4 py-2 text-slate-600">{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {q.tableData.source && <p className="text-xs text-slate-500 p-2 bg-slate-50 italic border-t border-slate-200">Nguồn: {q.tableData.source}</p>}
+        </div>
+      )}
+    </>
+  );
+};
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>("dashboard");
@@ -493,7 +533,7 @@ export default function App() {
 
   // Lesson Plan Form State
   const [lessonPlanInput, setLessonPlanInput] = useState<LessonPlanInput>({
-    subject: "",
+    subject: "Toán học",
     grade: "10",
     topic: "",
     duration: "2 tiết",
@@ -549,7 +589,7 @@ export default function App() {
 
   // Edu Plan Form State
   const [eduPlanInput, setEduPlanInput] = useState({
-    subject: "",
+    subject: "Toán học",
     grade: "10",
     useLaTeX: false,
     detailDrawings: false,
@@ -1199,7 +1239,7 @@ export default function App() {
             ...d.objectives.knowledge.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
             new Paragraph({ children: [new TextRun({ text: t("2. Năng lực môn học:"), bold: true })], spacing: { before: 100 } }),
-            ...d.objectives.subjectSpecific.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
+            ...(d.objectives.subjectSpecific || []).flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
             ...(d.objectives.digitalSpecific && d.objectives.digitalSpecific.length > 0 ? [
               new Paragraph({ children: [new TextRun({ text: t("3. Năng lực số:"), bold: true, color: "0000FF" })], spacing: { before: 100 } }),
@@ -1207,13 +1247,13 @@ export default function App() {
             ] : []),
 
             new Paragraph({ children: [new TextRun({ text: t("4. Năng lực AI:"), bold: true, color: "FF0000" })], spacing: { before: 100 } }),
-            ...d.objectives.aiSpecific.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
+            ...(d.objectives.aiSpecific || []).flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
             new Paragraph({ children: [new TextRun({ text: t("5. Năng lực chung:"), bold: true })], spacing: { before: 100 } }),
-            ...d.objectives.general.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
+            ...(d.objectives.general || []).flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
             new Paragraph({ children: [new TextRun({ text: t("6. Phẩm chất:"), bold: true })], spacing: { before: 100 } }),
-            ...d.objectives.qualities.flatMap((q: string) => parseContentAndInsertDocx(`- ${q}`)),
+            ...(d.objectives.qualities || []).flatMap((q: string) => parseContentAndInsertDocx(`- ${q}`)),
 
             new Paragraph({ children: [new TextRun({ text: t("II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU"), bold: true, size: 24 })], spacing: { before: 200, after: 100 } }),
             new Paragraph({ children: [new TextRun({ text: t("1. Thiết bị truyền thống:"), bold: true })] }),
@@ -1224,13 +1264,13 @@ export default function App() {
             new Paragraph({ children: [new TextRun({ text: `${t("Học liệu/công cụ cụ thể:")} ${d.materials.digitalAndAI.specificTools.join(", ")}`, color: "FF0000" })], indent: { left: 720 } }),
 
             new Paragraph({ children: [new TextRun({ text: t("III. TIẾN TRÌNH DẠY HỌC"), bold: true, size: 24 })], spacing: { before: 200, after: 100 } }),
-            ...d.activities.flatMap((a: any) => [
+            ...(d.activities || []).flatMap((a: any) => [
               new Paragraph({ children: [new TextRun({ text: a.name, bold: true })], spacing: { before: 200 } }),
               new Paragraph({ children: [new TextRun({ text: `${t("a) Mục tiêu:")} ${a.objective}` })], indent: { left: 360 } }),
               new Paragraph({ children: [new TextRun({ text: `${t("b) Nội dung:")} ${a.content}` })], indent: { left: 360 } }),
               new Paragraph({ children: [new TextRun({ text: `${t("c) Sản phẩm:")} ${a.product}` })], indent: { left: 360 } }),
               new Paragraph({ children: [new TextRun({ text: t("d) Tổ chức thực hiện:") })], indent: { left: 360 }, spacing: { after: 100 } }),
-              ...a.procedure.flatMap((p: any) => {
+              ...(a.procedure || []).flatMap((p: any) => {
                 // Return step name as normal bold title, then insert side-by-side Table for standard layout
                 return [
                   new Paragraph({ children: [new TextRun({ text: p.stepName, bold: true })], indent: { left: 540 }, spacing: { before: 150, after: 100 } }),
@@ -1277,11 +1317,11 @@ export default function App() {
             ]),
 
             new Paragraph({ children: [new TextRun({ text: t("IV. KẾ HOẠCH ĐÁNH GIÁ"), bold: true, size: 24 })], spacing: { before: 200, after: 100 } }),
-            ...d.assessment.flatMap((a: string) => a.split('\n').filter((l: string) => l.trim()).map((line: string) => new Paragraph({ children: parseMarkdownToTextRunsDocx(`- ${line.trim()}`), indent: { left: 720 } }))),
+            ...(d.assessment || []).flatMap((a: string) => a.split('\n').filter((l: string) => l.trim()).map((line: string) => new Paragraph({ children: parseMarkdownToTextRunsDocx(`- ${line.trim()}`), indent: { left: 720 } }))),
 
             new Paragraph({ children: [new TextRun({ text: t("V. PHỤ LỤC"), bold: true, size: 24 })], spacing: { before: 200, after: 100 } }),
             new Paragraph({ children: [new TextRun({ text: t("Mẫu Prompt:"), bold: true })], spacing: { before: 100, after: 60 } }),
-            ...d.appendix.prompts.flatMap((prompt: string, idx: number) => {
+            ...(d.appendix?.prompts || []).flatMap((prompt: string, idx: number) => {
               // Try to split "Prompt X (Tên): Nội dung"
               const match = prompt.match(/^(Prompt\s*\d+[^:]*:?)\s*(.*)$/is);
               if (match) {
@@ -1304,26 +1344,163 @@ export default function App() {
               return [new Paragraph({ children: parseMarkdownToTextRunsDocx(`${idx + 1}. ${prompt}`), indent: { left: 360 }, spacing: { before: 80 } })];
             }),
             new Paragraph({ children: [new TextRun({ text: t("Bảng kiểm:"), bold: true })], spacing: { before: 200, after: 60 } }),
-            ...d.appendix.checklist.flatMap((c: string) => c.split('\n').filter((l: string) => l.trim()).map((line: string) => new Paragraph({ children: parseMarkdownToTextRunsDocx(`- ${line.trim()}`), indent: { left: 720 } }))),
+            ...(d.appendix?.checklist || []).flatMap((c: string) => c.split('\n').filter((l: string) => l.trim()).map((line: string) => new Paragraph({ children: parseMarkdownToTextRunsDocx(`- ${line.trim()}`), indent: { left: 720 } }))),
+
+            // VI. PHIẾU SỬ DỤNG AI (Mục 7 — dành cho Học sinh)
+            ...(d.aiUsageLog && d.aiUsageLog.length > 0 ? [
+              new Paragraph({ children: [new TextRun({ text: "VI. PHIẾU SỬ DỤNG AI", bold: true, size: 26, color: "5B21B6" })], spacing: { before: 400, after: 60 } }),
+              new Paragraph({ children: [new TextRun({ text: "(Dành cho Học sinh — Chuẩn Mục 7/CV 3439/QĐ-BGDĐT)", italics: true, color: "5B21B6" })], spacing: { after: 80 } }),
+              new Paragraph({ children: [new TextRun({ text: "Hướng dẫn: ① ② do Giáo viên cung cấp sẵn. Học sinh tự hoàn thiện ③ ④ sau khi sử dụng AI. Giáo viên điền ⑤ và lưu làm minh chứng năng lực số. KHÔNG dùng cụm từ \"bản nháp AI\" trong sản phẩm học tập.", italics: true, size: 18, color: "6B7280" })], spacing: { after: 200 } }),
+              ...(d.aiUsageLog || []).flatMap((log: any) => [
+                new Paragraph({ children: [new TextRun({ text: `Họ và tên học sinh: ____________________________________________    Lớp: _______`, italics: true })], spacing: { before: 200, after: 60 } }),
+                new Paragraph({ children: [new TextRun({ text: `Hoạt động: ${log.activityName}`, bold: true, color: "5B21B6", size: 22 })], spacing: { before: 60, after: 100 } }),
+                new Table({
+                  width: { size: 100, type: WidthType.PERCENTAGE },
+                  rows: [
+                    // Header row
+                    new TableRow({
+                      children: [
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Nội dung", bold: true })], alignment: AlignmentType.CENTER })], shading: { fill: "5B21B6" }, width: { size: 30, type: WidthType.PERCENTAGE }, margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Chi tiết", bold: true })], alignment: AlignmentType.CENTER })], shading: { fill: "5B21B6" }, margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                      ]
+                    }),
+                    // ① Prompt — pre-filled by AI/teacher
+                    new TableRow({
+                      children: [
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "① Câu lệnh Prompt\n(GV cung cấp)", bold: true, color: "5B21B6" })] })], shading: { fill: "EDE9FE" }, margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: log.aiPromptUsed || "", italics: true })], spacing: { before: 60, after: 60 } })], margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                      ]
+                    }),
+                    // ② Verification source — pre-filled by AI/teacher
+                    new TableRow({
+                      children: [
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "② Nguồn kiểm chứng\n(GV cung cấp)", bold: true, color: "5B21B6" })] })], shading: { fill: "EDE9FE" }, margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: log.verificationSource || "" })], spacing: { before: 60, after: 60 } })], margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                      ]
+                    }),
+                    // ③ Student fills — BLANK
+                    new TableRow({
+                      children: [
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "③ Kết quả AI:\nĐúng / Chưa đủ / Cần sửa\n(Học sinh tự điền)", bold: true, color: "92400E" })] })], shading: { fill: "FEF3C7" }, margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                        new TableCell({ children: [new Paragraph({ text: "", spacing: { before: 1200, after: 1200 } })], margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                      ]
+                    }),
+                    // ④ Student fills — BLANK
+                    new TableRow({
+                      children: [
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "④ Bản chỉnh sửa /\nSản phẩm hoàn thiện\n(Học sinh tự điền)", bold: true, color: "065F46" })] })], shading: { fill: "D1FAE5" }, margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                        new TableCell({ children: [new Paragraph({ text: "", spacing: { before: 1800, after: 1800 } })], margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                      ]
+                    }),
+                    // ⑤ Teacher fills — BLANK
+                    new TableRow({
+                      children: [
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "⑤ Nhận xét của\nGiáo viên\n(GV điền)", bold: true, color: "1E3A8A" })] })], shading: { fill: "DBEAFE" }, margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                        new TableCell({ children: [new Paragraph({ text: "", spacing: { before: 1200, after: 1200 } })], margins: { top: 100, bottom: 100, left: 120, right: 120 } }),
+                      ]
+                    }),
+                  ]
+                })
+              ])
+            ] : []),
+
 
             ...(evaluationResult ? [
-              new Paragraph({ children: [new TextRun({ text: "VI. HỆ THỐNG ĐÁNH GIÁ NĂNG LỤC (CHUẨN CV 3439/BGDĐT & CT GDPT 2018)", bold: true, size: 24 })], spacing: { before: 400, after: 100 } }),
+              new Paragraph({ children: [new TextRun({ text: "VII. HỆ THỐNG ĐÁNH GIÁ NĂNG LỰC (CHUẨN CV 3439/BGDĐT & CT GDPT 2018)", bold: true, size: 24 })], spacing: { before: 400, after: 100 } }),
+
               
               new Paragraph({ children: [new TextRun({ text: "1. TIÊU CHÍ ĐÁNH GIÁ (RUBRICS)", bold: true })], spacing: { before: 100, after: 60 } }),
               ...(evaluationResult.rubrics || []).flatMap((rubric: any) => [
-                new Paragraph({ children: [new TextRun({ text: `Năng lực: ${rubric.competencyName}`, bold: true, italics: true })], spacing: { before: 100 } }),
-                new Paragraph({ children: [new TextRun({ text: "Tiêu chí:" })], indent: { left: 360 } }),
-                ...(rubric.criteria || []).map((c: string) => new Paragraph({ children: parseMarkdownToTextRunsDocx(`- ${c}`), indent: { left: 720 } })),
-                new Paragraph({ children: [new TextRun({ text: `Mức 1 (Chưa đạt): ${rubric.levels?.level1 || ''}` })], indent: { left: 360 } }),
-                new Paragraph({ children: [new TextRun({ text: `Mức 2 (Đạt): ${rubric.levels?.level2 || ''}` })], indent: { left: 360 } }),
-                new Paragraph({ children: [new TextRun({ text: `Mức 3 (Khá): ${rubric.levels?.level3 || ''}` })], indent: { left: 360 } }),
-                new Paragraph({ children: [new TextRun({ text: `Mức 4 (Tốt): ${rubric.levels?.level4 || ''}` })], indent: { left: 360 } })
+                new Paragraph({ children: [new TextRun({ text: `Năng lực: ${rubric.competencyName}`, bold: true, italics: true, color: "1E3A8A" })], spacing: { before: 200, after: 100 } }),
+                new Table({
+                  width: { size: 100, type: WidthType.PERCENTAGE },
+                  rows: [
+                    new TableRow({
+                      children: [
+                        "Tiêu chí", "Mức 1: Chưa đạt", "Mức 2: Đạt", "Mức 3: Khá", "Mức 4: Tốt"
+                      ].map(h => new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })], alignment: AlignmentType.CENTER })],
+                        shading: { fill: "F1F5F9" },
+                        verticalAlign: VerticalAlign.CENTER,
+                        margins: { top: 100, bottom: 100, left: 100, right: 100 }
+                      }))
+                    }),
+                    new TableRow({
+                      children: [
+                        new TableCell({ children: (rubric.criteria || []).map((c: string) => new Paragraph({ children: parseMarkdownToTextRunsDocx(`- ${c}`) })), margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                        new TableCell({ children: [new Paragraph({ children: parseMarkdownToTextRunsDocx(rubric.levels?.level1 || '') })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                        new TableCell({ children: [new Paragraph({ children: parseMarkdownToTextRunsDocx(rubric.levels?.level2 || '') })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                        new TableCell({ children: [new Paragraph({ children: parseMarkdownToTextRunsDocx(rubric.levels?.level3 || '') })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                        new TableCell({ children: [new Paragraph({ children: parseMarkdownToTextRunsDocx(rubric.levels?.level4 || '') })], margins: { top: 100, bottom: 100, left: 100, right: 100 } })
+                      ]
+                    })
+                  ]
+                })
               ]),
 
               new Paragraph({ children: [new TextRun({ text: "2. ĐÁNH GIÁ THƯỜNG XUYÊN", bold: true })], spacing: { before: 200, after: 60 } }),
               ...(evaluationResult.formativeAssessment?.quizzes || []).flatMap((q: any, qi: number) => [
                 new Paragraph({ children: [new TextRun({ text: `Câu ${qi + 1}: ${q.question}`, bold: true })], spacing: { before: 100 } }),
                 ...(q.options || []).map((opt: string, oi: number) => new Paragraph({ children: [new TextRun({ text: `${String.fromCharCode(65 + oi)}. ${opt}` })], indent: { left: 360 } })),
+                new Paragraph({ children: [new TextRun({ text: `Đáp án: ${q.answer}`, bold: true, color: "008000" })], indent: { left: 360 }, spacing: { after: 60 } })
+              ]),
+              ...(evaluationResult.formativeAssessment?.part1_multipleChoice || []).flatMap((q: any, qi: number) => [
+                new Paragraph({ children: [new TextRun({ text: `Phần I. Câu ${qi + 1}: ${q.question}`, bold: true })], spacing: { before: 100 } }),
+                ...(q.imagePlaceholder ? [new Paragraph({ children: [new TextRun({ text: `[Khung chèn ảnh: ${q.imagePlaceholder}]`, color: "8B5CF6", italics: true })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
+                ...(q.tableData?.headers ? [
+                  new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    rows: [
+                      new TableRow({
+                        children: q.tableData.headers.map((h: string) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })], alignment: AlignmentType.CENTER })], shading: { fill: "F1F5F9" }, margins: { top: 100, bottom: 100, left: 100, right: 100 } }))
+                      }),
+                      ...(q.tableData.rows || []).map((row: string[]) => new TableRow({
+                        children: row.map((cell: string) => new TableCell({ children: [new Paragraph({ children: parseMarkdownToTextRunsDocx(cell) })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }))
+                      }))
+                    ]
+                  })
+                ] : []),
+                ...(q.tableData?.source ? [new Paragraph({ children: [new TextRun({ text: `Nguồn: ${q.tableData.source}`, italics: true, size: 18 })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
+                ...(q.options || []).map((opt: string, oi: number) => new Paragraph({ children: [new TextRun({ text: `${String.fromCharCode(65 + oi)}. ${opt}` })], indent: { left: 360 } })),
+                new Paragraph({ children: [new TextRun({ text: `Đáp án: ${q.answer}`, bold: true, color: "008000" })], indent: { left: 360 }, spacing: { after: 60 } })
+              ]),
+              ...(evaluationResult.formativeAssessment?.part2_trueFalse || []).flatMap((q: any, qi: number) => [
+                new Paragraph({ children: [new TextRun({ text: `Phần II. Câu ${qi + 1}: ${q.question}`, bold: true })], spacing: { before: 100 } }),
+                ...(q.imagePlaceholder ? [new Paragraph({ children: [new TextRun({ text: `[Khung chèn ảnh: ${q.imagePlaceholder}]`, color: "8B5CF6", italics: true })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
+                ...(q.tableData?.headers ? [
+                  new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    rows: [
+                      new TableRow({
+                        children: q.tableData.headers.map((h: string) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })], alignment: AlignmentType.CENTER })], shading: { fill: "F1F5F9" }, margins: { top: 100, bottom: 100, left: 100, right: 100 } }))
+                      }),
+                      ...(q.tableData.rows || []).map((row: string[]) => new TableRow({
+                        children: row.map((cell: string) => new TableCell({ children: [new Paragraph({ children: parseMarkdownToTextRunsDocx(cell) })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }))
+                      }))
+                    ]
+                  })
+                ] : []),
+                ...(q.tableData?.source ? [new Paragraph({ children: [new TextRun({ text: `Nguồn: ${q.tableData.source}`, italics: true, size: 18 })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
+                ...(q.statements || []).map((stmt: string, oi: number) => new Paragraph({ children: [new TextRun({ text: `${String.fromCharCode(65 + oi)}. ${stmt} - [${q.answers?.[oi]}]` })], indent: { left: 360 } })),
+                new Paragraph({ children: [], spacing: { after: 60 } })
+              ]),
+              ...(evaluationResult.formativeAssessment?.part3_shortAnswer || []).flatMap((q: any, qi: number) => [
+                new Paragraph({ children: [new TextRun({ text: `Phần III. Câu ${qi + 1}: ${q.question}`, bold: true })], spacing: { before: 100 } }),
+                ...(q.imagePlaceholder ? [new Paragraph({ children: [new TextRun({ text: `[Khung chèn ảnh: ${q.imagePlaceholder}]`, color: "8B5CF6", italics: true })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
+                ...(q.tableData?.headers ? [
+                  new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    rows: [
+                      new TableRow({
+                        children: q.tableData.headers.map((h: string) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })], alignment: AlignmentType.CENTER })], shading: { fill: "F1F5F9" }, margins: { top: 100, bottom: 100, left: 100, right: 100 } }))
+                      }),
+                      ...(q.tableData.rows || []).map((row: string[]) => new TableRow({
+                        children: row.map((cell: string) => new TableCell({ children: [new Paragraph({ children: parseMarkdownToTextRunsDocx(cell) })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }))
+                      }))
+                    ]
+                  })
+                ] : []),
+                ...(q.tableData?.source ? [new Paragraph({ children: [new TextRun({ text: `Nguồn: ${q.tableData.source}`, italics: true, size: 18 })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
                 new Paragraph({ children: [new TextRun({ text: `Đáp án: ${q.answer}`, bold: true, color: "008000" })], indent: { left: 360 }, spacing: { after: 60 } })
               ]),
               new Paragraph({ children: [new TextRun({ text: "Bảng kiểm (Checklist) tiến trình:", bold: true })], spacing: { before: 100 } }),
@@ -1355,7 +1532,7 @@ export default function App() {
             shading: { fill: "F1F5F9" }
           }))
         }),
-        ...result.data.map((item: any) => new TableRow({
+        ...(Array.isArray(result.data) ? result.data : []).map((item: any) => new TableRow({
           children: [
             new TableCell({ children: [new Paragraph({ text: String(item.order), alignment: AlignmentType.CENTER })] }),
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: item.lesson, bold: true })] })] }),
@@ -1364,11 +1541,11 @@ export default function App() {
             new TableCell({
               children: [
                 new Paragraph({ children: [new TextRun({ text: t("TRUYỀN THỐNG:"), bold: true, size: 16 })] }),
-                new Paragraph({ children: [new TextRun({ text: item.equipment, italics: true, size: 16 })] }),
+                new Paragraph({ children: [new TextRun({ text: item.equipment || "", italics: true, size: 16 })] }),
                 new Paragraph({ children: [new TextRun({ text: "" })], spacing: { before: 100 } }),
                 new Paragraph({ children: [new TextRun({ text: t("CÔNG CỤ SỐ AI:"), bold: true, color: "FF0000", size: 16 })] }),
-                new Paragraph({ children: [new TextRun({ text: `- Phương án: ${item.digitalToolsAndAI?.method}`, color: "FF0000", italics: true, size: 16 })] }),
-                new Paragraph({ children: [new TextRun({ text: `- Công cụ: ${item.digitalToolsAndAI?.tools}`, color: "FF0000", size: 16 })] }),
+                new Paragraph({ children: [new TextRun({ text: `- Phương án: ${item.digitalToolsAndAI?.method || ""}`, color: "FF0000", italics: true, size: 16 })] }),
+                new Paragraph({ children: [new TextRun({ text: `- Công cụ: ${item.digitalToolsAndAI?.tools || ""}`, color: "FF0000", size: 16 })] }),
               ]
             }),
             new TableCell({ children: [new Paragraph({ text: String(item.location) })] }),
@@ -1409,7 +1586,7 @@ export default function App() {
             shading: { fill: "F1F5F9" }
           }))
         }),
-        ...result.data.map((item: any, i: number) => {
+        ...(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => {
           const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
           return new TableRow({
             children: [
@@ -1479,7 +1656,7 @@ export default function App() {
             shading: { fill: "F1F5F9" }
           }))
         }),
-        ...result.data.map((item: any, i: number) => {
+        ...(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => {
           return new TableRow({
             children: [
               i + 1, item.theme, item.requirements, item.periods, item.timing, item.location, item.host, item.collaborator, item.conditions, item.aiIntegration
@@ -1593,7 +1770,7 @@ export default function App() {
 
     if (result.type === "khbd") {
       const d = result.data;
-      content = `${t("KẾ HOẠCH BÀI DẠY (KHBD)")}\n\n${t("Tên bài dạy:")} ${d.title}\n\n${t("I. MỤC TIÊU")}\n${t("1. Kiến thức:")}\n${d.objectives.knowledge.map((c: string) => `- ${c}`).join("\n")}\n\n${t("2. Năng lực môn học:")}\n${d.objectives.subjectSpecific.map((c: string) => `- ${c}`).join("\n")}\n\n${t("3. Năng lực số:")}\n${(d.objectives.digitalSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("4. Năng lực AI:")}\n${d.objectives.aiSpecific.map((c: string) => `- ${c}`).join("\n")}\n\n${t("5. Năng lực chung:")}\n${d.objectives.general.map((c: string) => `- ${c}`).join("\n")}\n\n${t("6. Phẩm chất:")}\n${d.objectives.qualities.map((q: string) => `- ${q}`).join("\n")}\n\n${t("II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU")}\n${t("1. Thiết bị truyền thống:")} ${d.materials.traditional.join(", ")}\n${t("2. Công cụ số và AI:")}\n- ${t("Phương án triển khai:")} ${d.materials.digitalAndAI.implementationMethod}\n- ${t("Học liệu/công cụ cụ thể:")} ${d.materials.digitalAndAI.specificTools.join(", ")}\n\n${t("III. TIẾN TRÌNH DẠY HỌC")}\n${d.activities.map((a: any) => `${a.name}\n${t("a) Mục tiêu:")} ${a.objective}\n${t("b) Nội dung:")} ${a.content}\n${t("c) Sản phẩm:")} ${a.product}\n${t("d) Tổ chức thực hiện:")}\n${a.procedure.map((p: any) => `${p.stepName}\n  - ${t("Hoạt động của GV và HS:")} ${strip(p.teacherStudentActivities)}\n  - ${t("Dự kiến sản phẩm:")} ${strip(p.expectedProduct)}`).join("\n")}`).join("\n\n")}\n\n${t("IV. KẾ HOẠCH ĐÁNH GIÁ")}\n${d.assessment.map((a: string) => `- ${strip(a)}`).join("\n")}\n\n${t("V. PHỤ LỤC")}\n- ${t("Mẫu Prompt:")} ${d.appendix.prompts.join(", ")}\n- ${t("Bảng kiểm:")}\n${d.appendix.checklist.map((c: string) => `- ${strip(c)}`).join("\n")}`;
+      content = `${t("KẾ HOẠCH BÀI DẠY (KHBD)")}\n\n${t("Tên bài dạy:")} ${d.title}\n\n${t("I. MỤC TIÊU")}\n${t("1. Kiến thức:")}\n${(d.objectives.knowledge || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("2. Năng lực môn học:")}\n${(d.objectives.subjectSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("3. Năng lực số:")}\n${(d.objectives.digitalSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("4. Năng lực AI:")}\n${(d.objectives.aiSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("5. Năng lực chung:")}\n${(d.objectives.general || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("6. Phẩm chất:")}\n${(d.objectives.qualities || []).map((q: string) => `- ${q}`).join("\n")}\n\n${t("II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU")}\n${t("1. Thiết bị truyền thống:")} ${(d.materials?.traditional || []).join(", ")}\n${t("2. Công cụ số và AI:")}\n- ${t("Phương án triển khai:")} ${d.materials?.digitalAndAI?.implementationMethod || ""}\n- ${t("Học liệu/công cụ cụ thể:")} ${(d.materials?.digitalAndAI?.specificTools || []).join(", ")}\n\n${t("III. TIẾN TRÌNH DẠY HỌC")}\n${(d.activities || []).map((a: any) => `${a.name}\n${t("a) Mục tiêu:")} ${a.objective}\n${t("b) Nội dung:")} ${a.content}\n${t("c) Sản phẩm:")} ${a.product}\n${t("d) Tổ chức thực hiện:")}\n${(a.procedure || []).map((p: any) => `${p.stepName}\n  - ${t("Hoạt động của GV và HS:")} ${strip(p.teacherStudentActivities)}\n  - ${t("Dự kiến sản phẩm:")} ${strip(p.expectedProduct)}`).join("\n")}`).join("\n\n")}\n\n${t("IV. KẾ HOẠCH ĐÁNH GIÁ")}\n${(d.assessment || []).map((a: string) => `- ${strip(a)}`).join("\n")}\n\n${t("V. PHỤ LỤC")}\n- ${t("Mẫu Prompt:")} ${(d.appendix?.prompts || []).join(", ")}\n- ${t("Bảng kiểm:")}\n${(d.appendix?.checklist || []).map((c: string) => `- ${strip(c)}`).join("\n")}`;
 
       if (evaluationResult) {
         content += `\n\nVI. HỆ THỐNG ĐÁNH GIÁ NĂNG LỤC (CHUẨN CV 3439/BGDĐT & CT GDPT 2018)\n\n`;
@@ -1631,14 +1808,14 @@ export default function App() {
         });
       }
     } else if (result.type === "khgd") {
-      content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Định hướng năng lực số")}\n${result.data.map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.digitalCompetency}`).join("\n")}`;
+      content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Định hướng năng lực số")}\n${(Array.isArray(result.data) ? result.data : []).map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.digitalCompetency}`).join("\n")}`;
     } else if (result.type === "kh-tcm") {
-      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n1. Số lớp: .............; Số học sinh: .............; Số học sinh học chuyên đề lựa chọn (nếu có): .............\n2. Tình hình đội ngũ: Số giáo viên: .............; Trình độ đào tạo: .............\n3. Thiết bị dạy học:\n........................................................................\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Năng lực số | Mục tiêu & YCCĐ 3439 Tích hợp GD AI\n${result.data.map((item: any, i: number) => {
+      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n1. Số lớp: .............; Số học sinh: .............; Số học sinh học chuyên đề lựa chọn (nếu có): .............\n2. Tình hình đội ngũ: Số giáo viên: .............; Trình độ đào tạo: .............\n3. Thiết bị dạy học:\n........................................................................\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Năng lực số | Mục tiêu & YCCĐ 3439 Tích hợp GD AI\n${(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => {
         const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
         return `${i + 1} | ${item.time || item.topic || item.lessonName} | ${item.lessonContent || item.lessonName} | ${item.periods} | ${item.lessonGoal} | ${item.digitalCompetencyTT02 || "Không"} | ${isNotIntegrated ? "Không" : item.aiCompetency3439Integrated}`;
       }).join("\n")}\n\n2. Chuyên đề lựa chọn (đối với cấp trung học phổ thông)\n........................................................................\n\nIII. Kiểm tra, đánh giá định kỳ\n........................................................................\n\nIV. Các nội dung khác (nếu có)\n........................................................................`;
     } else if (result.type === "kh-hdgd") {
-      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH TỔ CHỨC CÁC HOẠT ĐỘNG GIÁO DỤC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nSTT | Chủ đề/Hoạt động | Yêu cầu cần đạt | Số tiết | Thời điểm | Địa điểm | Người chủ trì | Phối hợp | Điều kiện thực hiện | Tích hợp NLS/AI\n${result.data.map((item: any, i: number) => `${i + 1} | ${item.theme} | ${item.requirements} | ${item.periods} | ${item.timing} | ${item.location} | ${item.host} | ${item.collaborator} | ${item.conditions} | ${item.aiIntegration}`).join("\n")}`;
+      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH TỔ CHỨC CÁC HOẠT ĐỘNG GIÁO DỤC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nSTT | Chủ đề/Hoạt động | Yêu cầu cần đạt | Số tiết | Thời điểm | Địa điểm | Người chủ trì | Phối hợp | Điều kiện thực hiện | Tích hợp NLS/AI\n${(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => `${i + 1} | ${item.theme} | ${item.requirements} | ${item.periods} | ${item.timing} | ${item.location} | ${item.host} | ${item.collaborator} | ${item.conditions} | ${item.aiIntegration}`).join("\n")}`;
     }
 
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
@@ -2313,6 +2490,18 @@ export default function App() {
                               </div>
                             )}
                           </div>
+                          {/* CONTENT INTEGRITY WARNING - Nguyên tắc 3.1 */}
+                          {!lessonPlanInput.existingRawText && !lessonPlanInput.existingPdfBase64 && (
+                            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                              <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-sm font-bold text-amber-800">Lưu ý về nguồn nội dung (Nguyên tắc 3.1)</p>
+                                <p className="text-xs text-amber-700 mt-1">
+                                  Bạn chưa tải lên file giáo án/chương trình môn học. AI sẽ sử dụng dữ liệu chương trình chuẩn từ hệ thống. Để đảm bảo chính xác tuyệt đối về tên bài, số tiết và YCCĐ, vui lòng tải lên file chương trình hoặc giáo án gốc của bạn.
+                                </p>
+                              </div>
+                            </div>
+                          )}
                           <button
                             onClick={handleGenerateKHBD}
                             disabled={!lessonPlanInput.subject || !lessonPlanInput.topic}
@@ -2440,7 +2629,7 @@ export default function App() {
                               <div className="mb-6">
                                 <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-brand-muted uppercase mb-3 border border-slate-200">1. Kiến thức</span>
                                 <ul className="list-disc list-inside space-y-2 text-brand-dark text-[12px] leading-relaxed">
-                                  {result.data.objectives.knowledge.map((c: string, i: number) => (
+                                  {(result.data.objectives.knowledge || []).map((c: string, i: number) => (
                                     <li key={i}>{c}</li>
                                   ))}
                                 </ul>
@@ -2450,7 +2639,7 @@ export default function App() {
                                   <div>
                                     <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-brand-muted uppercase mb-3 text-emerald-700">2. Năng lực đặc thù môn học</span>
                                     <ul className="list-disc list-inside space-y-2 text-brand-dark text-[12px] leading-relaxed">
-                                      {result.data.objectives.subjectSpecific.map((c: string, i: number) => (
+                                      {(result.data.objectives.subjectSpecific || []).map((c: string, i: number) => (
                                         <li key={i}>{c}</li>
                                       ))}
                                     </ul>
@@ -2466,7 +2655,7 @@ export default function App() {
                                   <div>
                                     <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">4. Năng lực AI đặc thù (3439)</span>
                                     <ul className="list-disc list-inside space-y-2 text-red-600 text-[12px] leading-relaxed italic font-medium">
-                                      {result.data.objectives.aiSpecific.map((c: string, i: number) => (
+                                      {(result.data.objectives.aiSpecific || []).map((c: string, i: number) => (
                                         <li key={i}>{c}</li>
                                       ))}
                                     </ul>
@@ -2476,7 +2665,7 @@ export default function App() {
                                   <div>
                                     <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-brand-muted uppercase mb-3">5. Năng lực chung</span>
                                     <ul className="list-disc list-inside space-y-2 text-brand-dark text-[12px] leading-relaxed">
-                                      {result.data.objectives.general.map((c: string, i: number) => (
+                                      {(result.data.objectives.general || []).map((c: string, i: number) => (
                                         <li key={i}>{c}</li>
                                       ))}
                                     </ul>
@@ -2484,7 +2673,7 @@ export default function App() {
                                   <div>
                                     <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-brand-muted uppercase mb-3">6. Phẩm chất</span>
                                     <ul className="list-disc list-inside space-y-2 text-brand-dark text-[12px] leading-relaxed">
-                                      {result.data.objectives.qualities.map((q: string, i: number) => (
+                                      {(result.data.objectives.qualities || []).map((q: string, i: number) => (
                                         <li key={i}>{q}</li>
                                       ))}
                                     </ul>
@@ -2504,7 +2693,7 @@ export default function App() {
                               <div className="space-y-2">
                                 <p className="text-[10px] font-extrabold text-brand-muted uppercase tracking-wider">1. Thiết bị truyền thống</p>
                                 <ul className="list-disc list-inside space-y-1 text-brand-dark text-[12px]">
-                                  {result.data.materials.traditional.map((m: string, i: number) => <li key={i}>{m}</li>)}
+                                  {(result.data.materials?.traditional || []).map((m: string, i: number) => <li key={i}>{m}</li>)}
                                 </ul>
                               </div>
                               <div className="space-y-4">
@@ -2513,13 +2702,13 @@ export default function App() {
                                   <div>
                                     <p className="text-[9px] font-bold text-red-600 uppercase mb-1">Phương án triển khai</p>
                                     <p className="text-[11px] text-red-600 leading-relaxed font-semibold italic">
-                                      {result.data.materials.digitalAndAI.implementationMethod}
+                                      {result.data.materials?.digitalAndAI?.implementationMethod}
                                     </p>
                                   </div>
                                   <div>
                                     <p className="text-[9px] font-bold text-red-600 uppercase mb-1">Học liệu / Công cụ cụ thể</p>
                                     <ul className="list-disc list-inside text-[11px] text-red-600 space-y-1 font-medium">
-                                      {result.data.materials.digitalAndAI.specificTools.map((m: string, i: number) => <li key={i}>{m}</li>)}
+                                      {(result.data.materials?.digitalAndAI?.specificTools || []).map((m: string, i: number) => <li key={i}>{m}</li>)}
                                     </ul>
                                   </div>
                                 </div>
@@ -2534,7 +2723,7 @@ export default function App() {
                               III. TIẾN TRÌNH DẠY HỌC
                             </h4>
                             <div className="space-y-8 pl-4">
-                              {result.data.activities.map((act: any, i: number) => (
+                              {(result.data.activities || []).map((act: any, i: number) => (
                                 <div key={i} className="space-y-4 border-l-2 border-slate-100 pl-6 relative">
                                   <div className="absolute -left-[9px] top-1 w-4 h-4 bg-white border-2 border-brand-accent rounded-full"></div>
                                   <h5 className="font-extrabold text-brand-accent text-sm uppercase">{highlightAI(act.name)}</h5>
@@ -2556,7 +2745,7 @@ export default function App() {
                                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                                       <p className="font-bold text-brand-sidebar mb-3 uppercase text-[10px] tracking-wider text-opacity-70">d) Tổ chức thực hiện</p>
                                       <div className="space-y-6">
-                                        {act.procedure.map((step: any, idx: number) => (
+                                        {(act.procedure || []).map((step: any, idx: number) => (
                                           <div key={idx} className="space-y-3">
                                             <p className="font-bold text-brand-sidebar text-[11px] bg-slate-200/50 px-2 py-1 rounded inline-block">{highlightAI(step.stepName)}</p>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2">
@@ -2586,7 +2775,7 @@ export default function App() {
                               IV. KẾ HOẠCH ĐÁNH GIÁ
                             </h4>
                             <ul className="list-disc list-inside space-y-2 text-brand-dark text-[13px] pl-4 leading-relaxed">
-                              {result.data.assessment.map((a: string, i: number) => (
+                              {(result.data.assessment || []).map((a: string, i: number) => (
                                 <li key={i}>{highlightAI(a)}</li>
                               ))}
                             </ul>
@@ -2602,7 +2791,7 @@ export default function App() {
                               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                                 <p className="text-[10px] font-extrabold text-brand-sidebar uppercase mb-2 tracking-wider">Gợi ý mẫu Prompt cho HS</p>
                                 <div className="space-y-2">
-                                  {result.data.appendix.prompts.map((p: string, i: number) => (
+                                  {(result.data.appendix?.prompts || []).map((p: string, i: number) => (
                                     <div key={i} className="p-3 bg-white border border-slate-200 rounded-lg text-[12px] font-mono text-brand-accent shadow-sm italic">
                                       "{p}"
                                     </div>
@@ -2612,7 +2801,7 @@ export default function App() {
                               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                                 <p className="text-[10px] font-extrabold text-brand-sidebar uppercase mb-2 tracking-wider">Bảng kiểm đánh giá thái độ sử dụng AI</p>
                                 <ul className="list-disc list-inside space-y-1 text-brand-dark text-[12px]">
-                                  {result.data.appendix.checklist.map((c: string, i: number) => <li key={i}>{c}</li>)}
+                                  {(result.data.appendix?.checklist || []).map((c: string, i: number) => <li key={i}>{c}</li>)}
                                 </ul>
                               </div>
                             </div>
@@ -2630,6 +2819,86 @@ export default function App() {
                               </p>
                             </div>
                           </div>
+
+                          {/* Section VI: Phiếu Sử dụng AI - Mục 7 (Phiếu dành cho Học sinh) */}
+                          {result.data.aiUsageLog && result.data.aiUsageLog.length > 0 && (
+                            <section className="space-y-4 mt-6 pt-6 border-t border-slate-100">
+                              <h4 className="text-base font-extrabold text-brand-sidebar uppercase tracking-tight flex items-center gap-3">
+                                <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
+                                VI. PHIẾU SỬ DỤNG AI (Dành cho Học sinh — Chuẩn Mục 7/CV 3439)
+                              </h4>
+                              <div className="pl-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
+                                <p className="text-xs font-bold text-purple-700 mb-1">📋 Hướng dẫn sử dụng phiếu:</p>
+                                <ul className="text-[11px] text-purple-600 space-y-0.5 list-disc list-inside">
+                                  <li>Giáo viên in phiếu và phát cho học sinh trước hoạt động.</li>
+                                  <li><b>① ②</b> Giáo viên đã gợi ý sẵn. Học sinh đọc và thực hiện theo.</li>
+                                  <li><b>③ ④</b> Học sinh tự điền sau khi sử dụng AI.</li>
+                                  <li><b>⑤</b> Giáo viên điền nhận xét và lưu làm minh chứng năng lực số.</li>
+                                  <li><b>Lưu ý:</b> Không dùng cụm từ "bản nháp AI" trong sản phẩm học tập.</li>
+                                </ul>
+                              </div>
+                              <div className="space-y-6 pl-4">
+                                {result.data.aiUsageLog.map((log: any, li: number) => (
+                                  <div key={li} className="border-2 border-purple-200 rounded-xl overflow-hidden">
+                                    {/* Header */}
+                                    <div className="bg-purple-600 px-4 py-2 flex items-center justify-between">
+                                      <p className="text-[11px] font-black text-white uppercase tracking-wider">Phiếu sử dụng AI — {log.activityName}</p>
+                                      <p className="text-[10px] text-purple-200">Họ tên HS: ______________________</p>
+                                    </div>
+                                    {/* Pre-filled by teacher */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-purple-100">
+                                      <div className="p-4 bg-purple-50">
+                                        <p className="text-[9px] font-black text-purple-600 uppercase mb-2 flex items-center gap-1">
+                                          <span className="bg-purple-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px]">①</span>
+                                          Câu lệnh Prompt gợi ý <span className="text-purple-400 font-normal">(GV cung cấp)</span>
+                                        </p>
+                                        <p className="text-[12px] text-slate-700 font-mono bg-white p-2 rounded-lg border border-purple-100 italic leading-relaxed">"{log.aiPromptUsed}"</p>
+                                      </div>
+                                      <div className="p-4 bg-purple-50">
+                                        <p className="text-[9px] font-black text-purple-600 uppercase mb-2 flex items-center gap-1">
+                                          <span className="bg-purple-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px]">②</span>
+                                          Nguồn kiểm chứng <span className="text-purple-400 font-normal">(GV cung cấp)</span>
+                                        </p>
+                                        <p className="text-[12px] text-slate-700 bg-white p-2 rounded-lg border border-purple-100 leading-relaxed">{log.verificationSource}</p>
+                                      </div>
+                                    </div>
+                                    {/* Student fills these */}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-amber-100 border-t-2 border-amber-200">
+                                      <div className="p-4 bg-amber-50">
+                                        <p className="text-[9px] font-black text-amber-700 uppercase mb-2 flex items-center gap-1">
+                                          <span className="bg-amber-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px]">③</span>
+                                          Kết quả AI: Đúng / Chưa đủ / Cần sửa <span className="text-amber-500 font-normal">(HS tự điền)</span>
+                                        </p>
+                                        <div className="min-h-[60px] bg-white rounded-lg border-2 border-dashed border-amber-200 p-2">
+                                          <p className="text-[10px] text-amber-300 italic">Học sinh ghi nhận xét về độ chính xác của kết quả AI so với nguồn kiểm chứng...</p>
+                                        </div>
+                                      </div>
+                                      <div className="p-4 bg-emerald-50">
+                                        <p className="text-[9px] font-black text-emerald-700 uppercase mb-2 flex items-center gap-1">
+                                          <span className="bg-emerald-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px]">④</span>
+                                          Bản chỉnh sửa / Sản phẩm hoàn thiện của HS <span className="text-emerald-500 font-normal">(HS tự điền)</span>
+                                        </p>
+                                        <div className="min-h-[60px] bg-white rounded-lg border-2 border-dashed border-emerald-200 p-2">
+                                          <p className="text-[10px] text-emerald-300 italic">Học sinh ghi / dán sản phẩm đã chỉnh sửa sau khi kiểm chứng...</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {/* Teacher fills */}
+                                    <div className="p-4 bg-blue-50 border-t-2 border-blue-200">
+                                      <p className="text-[9px] font-black text-blue-700 uppercase mb-2 flex items-center gap-1">
+                                        <span className="bg-blue-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px]">⑤</span>
+                                        Nhận xét của Giáo viên <span className="text-blue-400 font-normal">(GV điền)</span>
+                                      </p>
+                                      <div className="min-h-[50px] bg-white rounded-lg border-2 border-dashed border-blue-200 p-2">
+                                        <p className="text-[10px] text-blue-300 italic">Giáo viên ghi nhận xét về quá trình và sản phẩm sử dụng AI của học sinh...</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </section>
+                          )}
 
                           {evaluationResult && (
                             <div className="mt-12 space-y-8 pt-8 border-t-4 border-emerald-100">
@@ -2649,7 +2918,7 @@ export default function App() {
                                   <CheckCircle2 className="w-4 h-4" /> 1. TIÊU CHÍ ĐÁNH GIÁ (RUBRICS)
                                 </h5>
                                 <div className="grid grid-cols-1 gap-6">
-                                  {evaluationResult.rubrics.map((rubric: any, idx: number) => (
+                                  {(evaluationResult.rubrics || []).map((rubric: any, idx: number) => (
                                     <div key={idx} className="overflow-x-auto rounded-xl border border-slate-200">
                                       <table className="w-full text-left border-collapse min-w-[600px]">
                                         <thead>
@@ -2688,7 +2957,7 @@ export default function App() {
                                   </h5>
                                   <div className="space-y-4">
                                     {/* Fallback for old cached data */}
-                                    {evaluationResult.formativeAssessment.quizzes && evaluationResult.formativeAssessment.quizzes.length > 0 && evaluationResult.formativeAssessment.quizzes.map((q: any, qi: number) => (
+                                    {evaluationResult.formativeAssessment?.quizzes && evaluationResult.formativeAssessment.quizzes.length > 0 && evaluationResult.formativeAssessment.quizzes.map((q: any, qi: number) => (
                                       <div key={qi} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
                                         <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q.question}</p>
                                         <div className="grid grid-cols-1 gap-2">
@@ -2704,7 +2973,7 @@ export default function App() {
                                     ))}
 
                                     {/* Part I: Multiple Choice */}
-                                    {evaluationResult.formativeAssessment.part1_multipleChoice && evaluationResult.formativeAssessment.part1_multipleChoice.length > 0 && (
+                                    {evaluationResult.formativeAssessment?.part1_multipleChoice && evaluationResult.formativeAssessment.part1_multipleChoice.length > 0 && (
                                       <div className="space-y-3">
                                         <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần I: Trắc nghiệm khách quan nhiều lựa chọn</h6>
                                         {evaluationResult.formativeAssessment.part1_multipleChoice.map((q: any, qi: number) => (

@@ -549,8 +549,8 @@ QUY TẮC BẮT BUỘC(THỰC THI NGHIÊM NGẶT):
 5. Bỏ qua thông tin tiêu đề trang, quốc hiệu, chữ ký cán bộ.
 6. Chỉ gộp nếu một tiết kiểm tra xuất hiện nhiều lần liên tiếp với tên GIỐNG HỆT nhau.
 
-Trả về ĐÚNG định dạng JSON array(không có markdown, không có giải thích):
-[{ "lessonName": "Tên bài", "periods": 2, "timing": "Tuần 1" }, ...]`;
+Trạng thái: Trả về ĐÚNG định dạng JSON array (không có markdown, không có giải thích). Nếu bảng gốc có cột "Yêu cầu cần đạt" hoặc tương tự, hãy đưa nội dung đó vào thuộc tính "yccd".
+[{ "lessonName": "Tên bài", "periods": 2, "timing": "Tuần 1", "yccd": "Nội dung Yêu cầu cần đạt nếu có" }, ...]`;
 
   let parts: any[];
   if (pdfBase64) {
@@ -953,10 +953,11 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
 
-  const curriculumConstraint = options?.customCurriculumData
+    const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
 ${JSON.stringify(options.customCurriculumData, null, 2)}
-LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên.Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này.KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.`
+LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này. KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.
+LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có chứa thuộc tính "yccd" (Yêu cầu cần đạt), bạn BẮT BUỘC phải sao chép Y NGUYÊN nội dung "yccd" đó vào cột Yêu cầu cần đạt CT 2018 (lessonGoal), TUYỆT ĐỐI KHÔNG ĐƯỢC TỰ Ý RÚT GỌN HAY CẮT XÉN.`
     : options?.curriculumDbData ? `DỮ LIỆU BÀI HỌC VÀ MÃ CHỈ BÁO AI BẮT BUỘC TỪ HỆ THỐNG:
 ${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode })), null, 2)}
 LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với danh sách bài học trên.Tại cột "Yêu cầu cần đạt 3439"(aiCompetency3439), BẮT BUỘC phải chèn mã chỉ báo(indicatorCode) được cung cấp tương ứng.TUYỆT ĐỐI KHÔNG BỊA MÃ KHÁC HAY GHI LÀ "Không tích hợp" nều bài đó có mã chỉ báo.`
@@ -986,9 +987,9 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với dan
     - Thời gian (time): Ước lượng thời gian thực hiện (Ví dụ: Học kì I, Tháng 9, Tuần 1...).
        - Nội dung (lessonContent): Tên bài học, chủ đề hoặc nội dung chi tiết. Phải khớp 100% với danh sách gốc SGK.
        - Số tiết (periods): Số lượng tiết học của bài học.
-       - Yêu cầu cần đạt CT 2018 (lessonGoal): Mô tả tóm tắt Kiến thức, Năng lực hướng tới của bài học đó theo CT 2018.
+       - Yêu cầu cần đạt CT 2018 (lessonGoal): BẮT BUỘC dùng nội dung "yccd" nếu có từ dữ liệu cung cấp (sao chép y nguyên). Nếu không có, mô tả Kiến thức, Năng lực hướng tới của bài học đó theo CT 2018.
        - Năng lực số (digitalCompetencyTT02): Mã và Yêu cầu cần đạt Năng lực số theo Thông tư 02 (vd: 1.1NC1a: Xác định được nhu cầu thông tin...). Ghi "Không tích hợp" nếu bài không phù hợp.
-       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Gộp mục tiêu tích hợp và mã YCCĐ từ CV 3439. Mô tả rành mạch các mục tiêu AI (ví dụ: "- Nhận biết được... - Hình thành thái độ...") VÀ CHÍNH XÁC nội dung YCCĐ từ CV 3439 kèm mã chỉ báo ở cuối (Ví dụ: "(9.A.A1.1)"). TUYỆT ĐỐI KHÔNG CHỈ GHI "(A1)". Ghi "Không tích hợp" nếu bài không phù hợp.
+       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Gộp mục tiêu tích hợp và mã YCCĐ từ CV 3439. Mô tả rành mạch các mục tiêu AI (ví dụ: "- Nhận biết được... - Hình thành thái độ...") VÀ CHÍNH XÁC mã chỉ báo AI ở cuối, CHỈ SỬ DỤNG CÁC MÃ: (NLa), (NLb), (NLc), (NLd). TUYỆT ĐỐI KHÔNG BỊA RA CÁC MÃ SỐ NHƯ (9.A.A1.1). Ghi "Không tích hợp" nếu bài không phù hợp.
        
        - Mạch nội dung AI:
     - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.

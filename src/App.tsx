@@ -535,7 +535,7 @@ export default function App() {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
   const [aiModel, setAiModel] = useState(() => {
     const saved = localStorage.getItem("GEMINI_MODEL");
-    if (saved === "gemini-2.5-flash") {
+    if (saved === "gemini-2.5-flash" || saved === "gemini-3.1-flash-lite") {
       localStorage.setItem("GEMINI_MODEL", "gemini-3.5-flash");
       return "gemini-3.5-flash";
     }
@@ -4029,8 +4029,7 @@ export default function App() {
                       <div className="grid grid-cols-1 gap-3">
                         {[
                           { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", desc: "⚡ Mới nhất, nhanh nhất (Mặc định - Khuyến dùng)" },
-                          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview", desc: "🛡️ Gemini 3 ổn định, dự phòng tốt" },
-                          { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash Lite", desc: "🔋 Nhẹ nhất, tiết kiệm quota nhất" }
+                          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview", desc: "🛡️ Gemini 3 ổn định, dự phòng tốt" }
                         ].map(model => (
                           <div
                             key={model.id}

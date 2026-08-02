@@ -996,7 +996,9 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
     const systemCurriculum = options?.curriculumDbData ? `DỮ LIỆU BÀI HỌC VÀ MÃ CHỈ BÁO AI TỪ HỆ THỐNG:
 ${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode, yccd: [l.objectivesKnowledge, l.objectivesCompetency, l.objectivesQuality].filter(Boolean).join("; ") })), null, 2)}
 LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM chứa toàn bộ danh sách bài học trên. Tại cột "Yêu cầu cần đạt CT 2018" (lessonGoal), BẮT BUỘC lấy nội dung "yccd" tương ứng. Tại cột "Yêu cầu cần đạt 3439" (aiCompetency3439), BẮT BUỘC chèn mã chỉ báo (indicatorCode) được cung cấp.
-LƯU Ý ĐẶC BIỆT VỀ CÁC BÀI HỌC CÒN THIẾU: Danh sách trên có thể chưa đủ 35 tuần học. Bạn BẮT BUỘC phải TỰ BỔ SUNG các bài học SGK còn thiếu cho đủ 35 tuần. Đối với các bài học bạn TỰ BỔ SUNG (không có mã chỉ báo sẵn), bạn PHẢI TỰ ĐÁNH GIÁ: Nếu bài học có liên quan đến biểu đồ, bản đồ, số liệu kinh tế, xã hội, kỹ thuật... HÃY TÍCH CỰC TỰ ĐỀ XUẤT TÍCH HỢP NLS và NL AI (sử dụng các mã NLa, NLb, NLc, NLd) thay vì bỏ qua.` : "";
+LƯU Ý ĐẶC BIỆT VỀ CÁC BÀI HỌC CÒN THIẾU: Danh sách trên có thể chưa đủ 35 tuần học. Bạn BẮT BUỘC phải TỰ BỔ SUNG các bài học SGK còn thiếu cho đủ 35 tuần. 
+Đối với các bài học bạn TỰ BỔ SUNG (không có mã chỉ báo sẵn từ hệ thống): Nếu bài học có liên quan đến biểu đồ, bản đồ, số liệu kinh tế, xã hội, kỹ thuật... HÃY TÍCH CỰC TÍCH HỢP NLS và NL AI. 
+QUY TẮC CHẾ TÀI ĐỐI VỚI MÃ CHỈ BÁO AI KHI TỰ ĐỀ XUẤT: BẠN CHỈ ĐƯỢC PHÉP CHÈN CÁC KÝ HIỆU CHUNG NHƯ (NLa), (NLb), (NLc), (NLd). NGHIÊM CẤM BẠN TỰ SÁNG TÁC HOẶC BỊA RA CÁC MÃ DẠNG SỐ (VÍ DỤ: 12.A.A1.13, 10.A2.b). HÀNH VI TỰ BỊA MÃ SỐ SẼ LÀM HỎNG HỆ THỐNG CỦA CHÚNG TÔI.` : "";
 
     const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
@@ -1023,17 +1025,18 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 
     Nhiệm vụ cụ thể:
     1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề / bài học trong chương trình GDPT 2018 của môn này. LỆNH TỐI CẤP: BẠN KHÔNG ĐƯỢC BỎ SÓT BẤT KỲ BÀI HỌC NÀO, PHẢI LIỆT KÊ ĐỦ 35 TUẦN HỌC / ĐỦ TOÀN BỘ NỘI DUNG SGK. TRẢ VỀ TOÀN BỘ DANH SÁCH BÀI HỌC CỦA CẢ NĂM HỌC.
-    2. Đánh giá khả năng tích hợp AI:
-    - Với mỗi bài học, xác định xem có khả năng tích hợp AI dựa trên các tiêu chí: có nội dung phân tích xã hội, kinh tế, pháp luật hoặc có yếu tố dữ liệu, phương pháp nghiên cứu.
+    2. Đánh giá khả năng tích hợp AI và NLS:
+    - Hãy cố gắng đề xuất tích hợp Năng lực số (NLS) cho tối đa số lượng bài học có thể (tìm kiếm thông tin, sử dụng phần mềm, vẽ bản đồ số, tạo nội dung số...).
+    - Với mỗi bài học, xác định xem có khả năng tích hợp Năng lực AI dựa trên các tiêu chí: có nội dung phân tích xã hội, kinh tế, pháp luật hoặc có yếu tố dữ liệu.
        - Nếu bài học PHÙ HỢP: Xác định mạch nội dung AI(NLa, NLb, NLc, NLd) và mục tiêu cụ thể.
-       - Nếu bài học KHÔNG PHÙ HỢP: Ghi rõ "Không tích hợp" vào các cột liên quan đến AI để tránh việc tích hợp khiên cưỡng.
+       - Nếu bài học KHÔNG PHÙ HỢP: Ghi rõ "Không tích hợp" vào các cột liên quan đến AI.
     3. Ánh xạ Năng lực:
     - Thời gian (time): Ước lượng thời gian thực hiện (Ví dụ: Học kì I, Tháng 9, Tuần 1...).
        - Nội dung (lessonContent): Tên bài học, chủ đề hoặc nội dung chi tiết. Phải khớp 100% với danh sách gốc SGK.
        - Số tiết (periods): Số lượng tiết học của bài học.
        - Yêu cầu cần đạt CT 2018 (lessonGoal): BẮT BUỘC dùng nội dung "yccd" nếu có từ dữ liệu cung cấp (sao chép y nguyên). Nếu không có, mô tả Kiến thức, Năng lực hướng tới của bài học đó theo CT 2018.
-       - Năng lực số (digitalCompetencyTT02): Mã và Yêu cầu cần đạt Năng lực số theo Thông tư 02 (vd: 1.1NC1a: Xác định được nhu cầu thông tin...). Ghi "Không tích hợp" nếu bài không phù hợp.
-       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Gộp mục tiêu tích hợp và mã YCCĐ từ CV 3439. Mô tả rành mạch các mục tiêu AI (ví dụ: "- Nhận biết được... - Hình thành thái độ...") VÀ CHÍNH XÁC mã chỉ báo AI ở cuối, CHỈ SỬ DỤNG CÁC MÃ: (NLa), (NLb), (NLc), (NLd). TUYỆT ĐỐI KHÔNG BỊA RA CÁC MÃ SỐ NHƯ (9.A.A1.1). Ghi "Không tích hợp" nếu bài không phù hợp.
+       - Năng lực số (digitalCompetencyTT02): Mã và Yêu cầu cần đạt Năng lực số theo Thông tư 02 (vd: 1.1NC1a: Xác định được nhu cầu thông tin...). HÃY CỐ GẮNG TÍCH HỢP NLS CHO ÍT NHẤT 80% SỐ BÀI HỌC.
+       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Gộp mục tiêu tích hợp và mã YCCĐ. VỚI NHỮNG BÀI ĐÃ CÓ MÃ HỆ THỐNG TRUYỀN VÀO (ví dụ 10.A1.a), DÙNG ĐÚNG MÃ ĐÓ. VỚI NHỮNG BÀI BẠN TỰ ĐỀ XUẤT THÊM, CHỈ ĐƯỢC VIẾT KÝ HIỆU (NLa), (NLb), (NLc), (NLd) VÀ TUYỆT ĐỐI KHÔNG BỊA RA MÃ SỐ NHƯ (12.A.A1.13).
        
        - Mạch nội dung AI:
     - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.

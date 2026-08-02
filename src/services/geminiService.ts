@@ -999,8 +999,8 @@ ${JSON.stringify(options.customCurriculumData, null, 2)}
 LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này. KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.
 LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có chứa thuộc tính "yccd" (Yêu cầu cần đạt), bạn BẮT BUỘC phải sao chép Y NGUYÊN nội dung "yccd" đó vào cột Yêu cầu cần đạt CT 2018 (lessonGoal), TUYỆT ĐỐI KHÔNG ĐƯỢC TỰ Ý RÚT GỌN HAY CẮT XÉN.`
     : options?.curriculumDbData ? `DỮ LIỆU BÀI HỌC VÀ MÃ CHỈ BÁO AI BẮT BUỘC TỪ HỆ THỐNG:
-${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode })), null, 2)}
-LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100 % với danh sách bài học trên.Tại cột "Yêu cầu cần đạt 3439"(aiCompetency3439), BẮT BUỘC phải chèn mã chỉ báo(indicatorCode) được cung cấp tương ứng.TUYỆT ĐỐI KHÔNG BỊA MÃ KHÁC HAY GHI LÀ "Không tích hợp" nều bài đó có mã chỉ báo.`
+${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode, yccd: [l.objectivesKnowledge, l.objectivesCompetency, l.objectivesQuality].filter(Boolean).join("; ") })), null, 2)}
+LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM KHỚP 100% với danh sách bài học trên. Tại cột "Yêu cầu cần đạt CT 2018" (lessonGoal), BẮT BUỘC lấy nội dung "yccd" tương ứng. Tại cột "Yêu cầu cần đạt 3439" (aiCompetency3439), BẮT BUỘC chèn mã chỉ báo (indicatorCode) được cung cấp tương ứng. TUYỆT ĐỐI KHÔNG BỊA MÃ KHÁC HAY GHI LÀ "Không tích hợp" nều bài đó có mã chỉ báo.`
       : CURRICULUM_DATA;
   const prompt = `
     ${CONTENT_INTEGRITY_RULES}

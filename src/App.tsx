@@ -877,7 +877,7 @@ export default function App() {
         useLaTeX: eduPlanInput.useLaTeX,
         detailDrawings: eduPlanInput.detailDrawings,
         customCurriculumData: customCurriculumData || undefined,
-        curriculumDbData: (!customCurriculumData && province === "TP. Hồ Chí Minh (Thành phố)") ? CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade] : undefined
+        curriculumDbData: customCurriculumData ? undefined : (eduPlanInput.subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" ? undefined : CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade])
       });
       setResult({ type: "kh-tcm", data });
       setDepartmentPlanRef(data);

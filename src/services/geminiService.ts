@@ -32,12 +32,11 @@ const stripMarkdownJson = (raw: string): string => {
 };
 
 const getFallbackModels = (startModel: string) => {
-  // Fallback order: Gemini 3.5 (GA) → 3 preview → 3.1 lite → 2.5 (legacy Oct 2026)
+  // Fallback order: Gemini 3.5 (GA) → 3 preview → 3.1 lite
   const models = [
     'gemini-3.5-flash',
     'gemini-3-flash-preview',
-    'gemini-3.1-flash-lite',
-    'gemini-2.5-flash',
+    'gemini-3.1-flash-lite'
   ];
   const deduplicated = [startModel, ...models.filter(m => m !== startModel)];
   return deduplicated;

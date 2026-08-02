@@ -1352,7 +1352,7 @@ ${input.requirementsText}
         },
         required: ["code", "content", "component", "level", "evidence", "activities", "tools", "rubric"]
       }
-    }, undefined, { apiKey: options.apiKey, aiModel: options.aiModel });
+    });
   } catch (error) {
     console.error("Error generating AI Competency Framework:", error);
     throw error;
@@ -1497,7 +1497,7 @@ Hãy trả về kết quả đánh giá bằng JSON theo cấu trúc sau:
         overallScore: { type: Type.NUMBER, description: "Điểm đánh giá chung trên thang điểm 10" }
       },
       required: ["educationalExpert", "digitalExpert", "aiExpert", "overallScore"]
-    }, undefined, { apiKey: options.apiKey, aiModel: options.aiModel });
+    });
   } catch (error) {
     console.error("Error evaluating lesson plan:", error);
     throw error;

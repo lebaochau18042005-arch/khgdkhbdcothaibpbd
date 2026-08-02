@@ -616,7 +616,7 @@ export default function App() {
         lessonPlanInput.topic,
         (lessonPlanInput.objectivesKnowledge || "") + " " + (lessonPlanInput.objectivesCompetency || ""),
         lessonPlanInput.grade,
-        { apiKey, aiModel: "gemini-2.5-flash" }
+        { apiKey, aiModel }
       );
       
       const mapped = suggestions.map(s => {

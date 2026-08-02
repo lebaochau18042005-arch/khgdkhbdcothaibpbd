@@ -13,7 +13,7 @@ export const isValidGoogleAiApiKey = (key: string): boolean =>
  */
 const getModel = (apiKey?: string, modelName?: string) => {
   const key = apiKey || localStorage.getItem('GEMINI_API_KEY') || '';
-  const model = modelName || localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
+  const model = modelName || localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const ai = new GoogleGenAI({ apiKey: key });
   return {
     generateContent: (params: Parameters<typeof ai.models.generateContent>[0]) =>
@@ -1362,7 +1362,7 @@ ${input.requirementsText}
 export const analyzeLessonSource = async (fileBase64: string, mimeType: string, options: { apiKey?: string; aiModel?: string }) => {
   const apiKey = options.apiKey || localStorage.getItem('GEMINI_API_KEY') || '';
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = options.aiModel || localStorage.getItem('GEMINI_MODEL') || 'gemini-2.5-flash';
+  const startModel = options.aiModel || localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
   const promptText = `Bạn là một Chuyên gia Giáo dục và Thị giác máy tính (Computer Vision).

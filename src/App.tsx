@@ -104,6 +104,7 @@ const PROVINCES = [
 ];
 
 import { CURRICULUM_DB } from "./data/curriculumDb";
+import { saveHistoryToDB, loadHistoryFromDB } from "./utils/idb";
 
 // --- Canvas Graphics Drawers for DOCX Export (VN Standard) ---
 const base64ToUint8Array = (base64: string): Uint8Array => {
@@ -488,12 +489,11 @@ export default function App() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   
   useEffect(() => {
-    const h = localStorage.getItem('eduplan_history');
-    if (h) {
-      try {
-        setHistory(JSON.parse(h));
-      } catch (e) {}
-    }
+    loadHistoryFromDB().then(h => {
+      if (h) {
+        setHistory(h);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -518,7 +518,7 @@ export default function App() {
           });
         }
         const trimmed = newHistory.slice(0, 15);
-        localStorage.setItem('eduplan_history', JSON.stringify(trimmed));
+        saveHistoryToDB(trimmed);
         return trimmed;
       });
     }

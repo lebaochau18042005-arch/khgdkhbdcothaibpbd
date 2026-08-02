@@ -414,8 +414,12 @@ function normalize(text: string) {
 
 async function copyText(value: string) {
   if (typeof navigator !== "undefined" && navigator.clipboard) {
-    await navigator.clipboard.writeText(value);
-    return;
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch (e) {
+      console.warn("Clipboard API failed, falling back to execCommand", e);
+    }
   }
 
   const textarea = document.createElement("textarea");

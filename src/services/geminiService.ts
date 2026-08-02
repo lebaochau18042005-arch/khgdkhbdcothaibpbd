@@ -997,7 +997,7 @@ ${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorC
 LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM chứa toàn bộ danh sách bài học trên. Tại cột "Yêu cầu cần đạt CT 2018" (lessonGoal), BẮT BUỘC lấy nội dung "yccd" tương ứng. Tại cột "Yêu cầu cần đạt 3439" (aiCompetency3439), BẮT BUỘC chèn mã chỉ báo (indicatorCode) được cung cấp.
 LƯU Ý ĐẶC BIỆT VỀ CÁC BÀI HỌC CÒN THIẾU: Danh sách trên có thể chưa đủ 35 tuần học. Bạn BẮT BUỘC phải TỰ BỔ SUNG các bài học SGK còn thiếu cho đủ 35 tuần. 
 Đối với các bài học bạn TỰ BỔ SUNG (không có mã chỉ báo sẵn từ hệ thống): HÃY TÍCH CỰC ĐÁNH GIÁ VÀ TÍCH HỢP NLS, NL AI CHO TẤT CẢ CÁC MÔN HỌC (Toán, Văn, Anh, Lý, Hóa, Sinh, Sử, Địa, Công nghệ...). Bất cứ bài nào có thể khai thác dữ liệu, tìm kiếm thông tin, phân tích văn bản, đồ thị, hay sử dụng công cụ số đều PHẢI tích hợp thay vì bỏ qua.
-QUY TẮC CHẾ TÀI ĐỐI VỚI MÃ CHỈ BÁO AI KHI TỰ ĐỀ XUẤT: BẠN CHỈ ĐƯỢC PHÉP CHÈN CÁC KÝ HIỆU CHUNG NHƯ (NLa), (NLb), (NLc), (NLd). NGHIÊM CẤM BẠN TỰ SÁNG TÁC HOẶC BỊA RA CÁC MÃ DẠNG SỐ (VÍ DỤ: 12.A.A1.13, 10.A2.b). HÀNH VI TỰ BỊA MÃ SỐ SẼ LÀM HỎNG HỆ THỐNG CỦA CHÚNG TÔI.` : "";
+QUY TẮC ĐÁNH MÃ CHỈ BÁO AI KHI TỰ ĐỀ XUẤT: Bạn PHẢI TỰ ĐỀ XUẤT MÃ SỐ theo đúng quy ước định dạng: [Khối lớp].[Ký hiệu Mạch NL].[STT]. Ví dụ: lớp 12, mạch NLa (Tư duy con người), YCCĐ số 1 thì đánh mã 12.A1.1, YCCĐ số 2 đánh mã 12.A1.2. Mạch NLb thì đánh 12.B1.1. Lớp 10 thì đánh 10.C1.1. TUYỆT ĐỐI KHÔNG dùng chung 1 mã (vd 12.A1.1) cho mọi bài học. Mỗi bài học và mỗi YCCĐ phải có STT mã độc lập và tăng dần!` : "";
 
     const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
@@ -1034,7 +1034,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
        - Số tiết (periods): Số lượng tiết học của bài học.
        - Yêu cầu cần đạt CT 2018 (lessonGoal): BẮT BUỘC dùng nội dung "yccd" nếu có từ dữ liệu cung cấp (sao chép y nguyên). Nếu không có, mô tả Kiến thức, Năng lực hướng tới của bài học đó theo CT 2018.
        - Năng lực số (digitalCompetencyTT02): Liệt kê 2-3 mã và Yêu cầu cần đạt Năng lực số theo Thông tư 02 (vd: 1.1NC1a, 2.2NC1b...). BẮT BUỘC TÍCH HỢP CHO ÍT NHẤT 95% SỐ BÀI HỌC.
-       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Liệt kê 2-3 mã và YCCĐ AI. VỚI NHỮNG BÀI ĐÃ CÓ MÃ HỆ THỐNG TRUYỀN VÀO (ví dụ 10.A1.a), DÙNG ĐÚNG MÃ ĐÓ. VỚI NHỮNG BÀI BẠN TỰ ĐỀ XUẤT THÊM, CHỈ ĐƯỢC VIẾT KÝ HIỆU (NLa), (NLb), (NLc), (NLd) VÀ TUYỆT ĐỐI KHÔNG BỊA RA MÃ SỐ NHƯ (12.A.A1.13).
+       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Liệt kê 2-3 mã và YCCĐ AI. VỚI NHỮNG BÀI ĐÃ CÓ MÃ HỆ THỐNG TRUYỀN VÀO (ví dụ 10.A1.a), DÙNG ĐÚNG MÃ ĐÓ. VỚI NHỮNG BÀI BẠN TỰ ĐỀ XUẤT THÊM, BẮT BUỘC PHẢI TỰ ĐÁNH MÃ SỐ THEO ĐÚNG QUY ƯỚC [Khối Lớp].[A1/B1/C1/D1].[STT] (Ví dụ: 12.A1.1, 12.B1.2...). MỖI BÀI HỌC VÀ MỖI MỤC TIÊU PHẢI SỬ DỤNG MÃ SỐ ĐỘC LẬP, KHÔNG ĐƯỢC CHỈ LẶP LẠI 1 MÃ DUY NHẤT CHO TẤT CẢ CÁC BÀI.
        
        - Mạch nội dung AI:
     - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.

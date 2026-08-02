@@ -1065,7 +1065,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
     contents: [{ role: 'user', parts }],
     generationConfig: {
       responseMimeType: 'application/json',
-      maxOutputTokens: 8192,
+      maxOutputTokens: 65536,
       temperature: 0,
       responseSchema: {
         type: 'ARRAY' as any,

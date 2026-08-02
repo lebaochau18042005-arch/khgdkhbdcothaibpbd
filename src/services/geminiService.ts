@@ -1024,18 +1024,17 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 
     Nhiệm vụ cụ thể:
     1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề / bài học trong chương trình GDPT 2018 của môn này. LỆNH TỐI CẤP: BẠN KHÔNG ĐƯỢC BỎ SÓT BẤT KỲ BÀI HỌC NÀO, PHẢI LIỆT KÊ ĐỦ 35 TUẦN HỌC / ĐỦ TOÀN BỘ NỘI DUNG SGK. TRẢ VỀ TOÀN BỘ DANH SÁCH BÀI HỌC CỦA CẢ NĂM HỌC.
-    2. Đánh giá khả năng tích hợp AI và NLS:
-    - Hãy cố gắng đề xuất tích hợp Năng lực số (NLS) cho tối đa số lượng bài học có thể ở TẤT CẢ CÁC MÔN HỌC (tìm kiếm thông tin, sử dụng phần mềm, vẽ bản đồ số, tạo nội dung số, phân tích dữ liệu...).
-    - Với mỗi bài học, xác định xem có khả năng tích hợp Năng lực AI dựa trên các tiêu chí: có nội dung phân tích xã hội, kinh tế, pháp luật hoặc có yếu tố dữ liệu.
-       - Nếu bài học PHÙ HỢP: Xác định mạch nội dung AI(NLa, NLb, NLc, NLd) và mục tiêu cụ thể.
-       - Nếu bài học KHÔNG PHÙ HỢP: Ghi rõ "Không tích hợp" vào các cột liên quan đến AI.
+    2. BẮT BUỘC TÍCH HỢP NLS VÀ NL AI CHO HẦU HẾT CÁC BÀI:
+    - Lệnh tối cấp: Bạn PHẢI tìm cách tích hợp Năng lực số (NLS) và Năng lực AI (NL AI) cho **ÍT NHẤT 95% SỐ BÀI HỌC**. Dù là môn học nào, luôn có cách ứng dụng NLS/AI (VD: dùng AI tìm kiếm tài liệu, tóm tắt, vẽ sơ đồ, phân tích số liệu).
+    - Hạn chế tối đa việc điền "Không tích hợp". Hãy suy nghĩ sáng tạo để lồng ghép các chỉ báo NLS và NL AI (NLa, NLb, NLc, NLd) một cách hợp lý và tự nhiên nhất.
+    - YÊU CẦU ĐA DẠNG MÃ: Mỗi bài học, hãy BẮT BUỘC đề xuất **2 đến 3 mã NLS** và **2 đến 3 mã NL AI** khác nhau để tăng tính phong phú (không được chỉ lặp lại 1 mã).
     3. Ánh xạ Năng lực:
     - Thời gian (time): Ước lượng thời gian thực hiện (Ví dụ: Học kì I, Tháng 9, Tuần 1...).
        - Nội dung (lessonContent): Tên bài học, chủ đề hoặc nội dung chi tiết. Phải khớp 100% với danh sách gốc SGK.
        - Số tiết (periods): Số lượng tiết học của bài học.
        - Yêu cầu cần đạt CT 2018 (lessonGoal): BẮT BUỘC dùng nội dung "yccd" nếu có từ dữ liệu cung cấp (sao chép y nguyên). Nếu không có, mô tả Kiến thức, Năng lực hướng tới của bài học đó theo CT 2018.
-       - Năng lực số (digitalCompetencyTT02): Mã và Yêu cầu cần đạt Năng lực số theo Thông tư 02 (vd: 1.1NC1a: Xác định được nhu cầu thông tin...). HÃY CỐ GẮNG TÍCH HỢP NLS CHO ÍT NHẤT 80% SỐ BÀI HỌC.
-       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Gộp mục tiêu tích hợp và mã YCCĐ. VỚI NHỮNG BÀI ĐÃ CÓ MÃ HỆ THỐNG TRUYỀN VÀO (ví dụ 10.A1.a), DÙNG ĐÚNG MÃ ĐÓ. VỚI NHỮNG BÀI BẠN TỰ ĐỀ XUẤT THÊM, CHỈ ĐƯỢC VIẾT KÝ HIỆU (NLa), (NLb), (NLc), (NLd) VÀ TUYỆT ĐỐI KHÔNG BỊA RA MÃ SỐ NHƯ (12.A.A1.13).
+       - Năng lực số (digitalCompetencyTT02): Liệt kê 2-3 mã và Yêu cầu cần đạt Năng lực số theo Thông tư 02 (vd: 1.1NC1a, 2.2NC1b...). BẮT BUỘC TÍCH HỢP CHO ÍT NHẤT 95% SỐ BÀI HỌC.
+       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Liệt kê 2-3 mã và YCCĐ AI. VỚI NHỮNG BÀI ĐÃ CÓ MÃ HỆ THỐNG TRUYỀN VÀO (ví dụ 10.A1.a), DÙNG ĐÚNG MÃ ĐÓ. VỚI NHỮNG BÀI BẠN TỰ ĐỀ XUẤT THÊM, CHỈ ĐƯỢC VIẾT KÝ HIỆU (NLa), (NLb), (NLc), (NLd) VÀ TUYỆT ĐỐI KHÔNG BỊA RA MÃ SỐ NHƯ (12.A.A1.13).
        
        - Mạch nội dung AI:
     - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.

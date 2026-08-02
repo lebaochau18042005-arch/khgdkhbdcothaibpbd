@@ -169,6 +169,42 @@ Dưới đây là Khung mạch nội dung tích hợp AI cho từng môn học t
 - Giáo dục địa phương: Trọng tâm NLa, NLb, NLc. Nội dung: Phân tích dữ liệu kinh tế - xã hội địa phương, bảo tồn văn hóa qua số hóa kỹ thuật, đề xuất giải pháp phát triển đô thị. Thảo luận: Tác động của AI đến bản sắc văn hóa vùng miền, bảo tồn di sản trong kỷ nguyên số.
 `;
 
+const GEOGRAPHY_AI_RULES = `
+LỆNH ĐẶC BIỆT TỪ CHUYÊN GIA ĐỊA LÍ VÀ AI:
+Nhiệm vụ của bạn là rà soát PPCT và bổ sung nội dung tích hợp NLAI bảo đảm YCCĐ AI phải phục vụ và hỗ trợ trực tiếp YCCĐ môn Địa lí.
+
+I. NGUYÊN TẮC BẮT BUỘC
+1. Giữ nguyên toàn bộ nội dung gốc của PPCT.
+2. Không bổ sung AI theo kiểu hình thức.
+3. Không để AI thay thế hoạt động tư duy Địa lí (đọc bản đồ, phân tích số liệu...).
+4. Trình tự xử lí: YCCĐ Địa lí -> Tách kiến thức/năng lực -> Cơ hội tích hợp AI -> Chọn chủ đề -> Viết YCCĐ AI -> Tạo mã NLAI -> Xác định nhiệm vụ, sản phẩm.
+5. Không sử dụng chatbot làm nguồn dữ liệu gốc (phải dùng SGK, Atlat, cổng thông tin).
+6. Không đưa thông tin cá nhân của học sinh vào AI.
+
+II. CẤU TRÚC MÃ VÀ CHỦ ĐỀ ĐƯỢC PHÉP
+Cấu trúc: [Lớp].[Chủ đề].[Số thứ tự] (Ví dụ: 10.C4.01, 11.C3.02, 12.D2.01).
+- Lớp 10: Chỉ dùng A1, A2, A3; B2, B3; C2, C3, C4; D1, D2.
+- Lớp 11: Chỉ dùng A1, A2, A3; B2, B3; C2, C3, C5; D1, D2.
+- Lớp 12: Chỉ dùng A1, A2, A3; B1, B2, B3; C2, C3, C4; D1, D2.
+TUYỆT ĐỐI không gán mã chủ đề không thuộc lớp tương ứng! Mỗi đơn vị bài học chỉ chọn 1-2 mã NLAI thật sự phù hợp.
+
+III. YÊU CẦU TÁCH YCCĐ AI VÀ ĐẶC THÙ ĐỊA LÍ
+- Công thức: Học sinh + động từ quan sát được + nội dung AI + bối cảnh Địa lí + sản phẩm/minh chứng + tiêu chí đánh giá.
+- Động từ ưu tiên: Xác định, Mô tả, Giải thích, Phân tích, Đối chiếu, Kiểm chứng, Đánh giá, Thiết kế, Thu thập...
+- Gắn với: Đọc Atlat/bản đồ số, Xử lí số liệu, Tìm hiểu thiên tai/BĐKH, Điều tra địa phương...
+- Lớp 10 tập trung nhận diện, mô tả; Lớp 11 tập trung thực hành, phân tích, đánh giá, prompt nâng cao; Lớp 12 tập trung thiết kế, kiểm thử, cải tiến, trách nhiệm.
+
+IV. ĐỊNH DẠNG ĐẦU RA BẮT BUỘC CHO CỘT AI (aiCompetency3439Integrated)
+BẠN BẮT BUỘC PHẢI gộp tất cả các thông tin minh chứng sau vào cột "Mục tiêu & YCCĐ 3439 Tích hợp GD AI" dưới dạng một danh sách văn bản (dùng gạch đầu dòng):
+- Mã NLAI quy ước & Chủ đề.
+- YCCĐ AI tích hợp.
+- Nhiệm vụ học tập có sử dụng AI.
+- Công cụ và dữ liệu sử dụng.
+- Sản phẩm học tập & Tiêu chí đánh giá.
+- Cách kiểm chứng kết quả AI.
+- Quy định bản quyền, dữ liệu & Phương án khi mất Internet.
+`;
+
 const SOCIAL_INTEGRATION_GUIDELINES = `
 Dưới đây là Khung NỘI DUNG LỒNG GHÉP BẮT BUỘC theo quy định của Bộ GD&ĐT (đây là các nội dung lồng ghép RIÊNG BIỆT, KHÔNG phải Thông tư 02/2025 - TT02/2025 là Khung Năng lực số cho người học):
 
@@ -1005,6 +1041,8 @@ ${JSON.stringify(options.customCurriculumData, null, 2)}
 LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này. KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.
 LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có chứa thuộc tính "yccd" (Yêu cầu cần đạt), bạn BẮT BUỘC phải sao chép Y NGUYÊN nội dung "yccd" đó vào cột Yêu cầu cần đạt CT 2018 (lessonGoal), TUYỆT ĐỐI KHÔNG ĐƯỢC TỰ Ý RÚT GỌN HAY CẮT XÉN.`
     : `${systemCurriculum}\n\nDANH SÁCH BÀI HỌC BỔ SUNG TỪ HỆ THỐNG:\n${CURRICULUM_DATA}`;
+    const geographyRules = subject.toLowerCase().includes("địa") ? GEOGRAPHY_AI_RULES : "";
+
   const prompt = `
     ${CONTENT_INTEGRITY_RULES}
 
@@ -1018,6 +1056,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
     ${AI_SUBJECT_GUIDELINES}
     ${SOCIAL_INTEGRATION_GUIDELINES}
     ${curriculumConstraint}
+    ${geographyRules}
     
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}

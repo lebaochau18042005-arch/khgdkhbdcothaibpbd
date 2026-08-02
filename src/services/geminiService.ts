@@ -997,7 +997,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
 ${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode, yccd: [l.objectivesKnowledge, l.objectivesCompetency, l.objectivesQuality].filter(Boolean).join("; ") })), null, 2)}
 LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM chứa toàn bộ danh sách bài học trên. Tại cột "Yêu cầu cần đạt CT 2018" (lessonGoal), BẮT BUỘC lấy nội dung "yccd" tương ứng. Tại cột "Yêu cầu cần đạt 3439" (aiCompetency3439), BẮT BUỘC chèn mã chỉ báo (indicatorCode) được cung cấp.
 LƯU Ý ĐẶC BIỆT VỀ CÁC BÀI HỌC CÒN THIẾU: Danh sách trên có thể chưa đủ 35 tuần học. Bạn BẮT BUỘC phải TỰ BỔ SUNG các bài học SGK còn thiếu cho đủ 35 tuần. 
-Đối với các bài học bạn TỰ BỔ SUNG (không có mã chỉ báo sẵn từ hệ thống): Nếu bài học có liên quan đến biểu đồ, bản đồ, số liệu kinh tế, xã hội, kỹ thuật... HÃY TÍCH CỰC TÍCH HỢP NLS và NL AI. 
+Đối với các bài học bạn TỰ BỔ SUNG (không có mã chỉ báo sẵn từ hệ thống): HÃY TÍCH CỰC ĐÁNH GIÁ VÀ TÍCH HỢP NLS, NL AI CHO TẤT CẢ CÁC MÔN HỌC (Toán, Văn, Anh, Lý, Hóa, Sinh, Sử, Địa, Công nghệ...). Bất cứ bài nào có thể khai thác dữ liệu, tìm kiếm thông tin, phân tích văn bản, đồ thị, hay sử dụng công cụ số đều PHẢI tích hợp thay vì bỏ qua.
 QUY TẮC CHẾ TÀI ĐỐI VỚI MÃ CHỈ BÁO AI KHI TỰ ĐỀ XUẤT: BẠN CHỈ ĐƯỢC PHÉP CHÈN CÁC KÝ HIỆU CHUNG NHƯ (NLa), (NLb), (NLc), (NLd). NGHIÊM CẤM BẠN TỰ SÁNG TÁC HOẶC BỊA RA CÁC MÃ DẠNG SỐ (VÍ DỤ: 12.A.A1.13, 10.A2.b). HÀNH VI TỰ BỊA MÃ SỐ SẼ LÀM HỎNG HỆ THỐNG CỦA CHÚNG TÔI.` : "";
 
     const curriculumConstraint = options?.customCurriculumData
@@ -1026,7 +1026,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
     Nhiệm vụ cụ thể:
     1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề / bài học trong chương trình GDPT 2018 của môn này. LỆNH TỐI CẤP: BẠN KHÔNG ĐƯỢC BỎ SÓT BẤT KỲ BÀI HỌC NÀO, PHẢI LIỆT KÊ ĐỦ 35 TUẦN HỌC / ĐỦ TOÀN BỘ NỘI DUNG SGK. TRẢ VỀ TOÀN BỘ DANH SÁCH BÀI HỌC CỦA CẢ NĂM HỌC.
     2. Đánh giá khả năng tích hợp AI và NLS:
-    - Hãy cố gắng đề xuất tích hợp Năng lực số (NLS) cho tối đa số lượng bài học có thể (tìm kiếm thông tin, sử dụng phần mềm, vẽ bản đồ số, tạo nội dung số...).
+    - Hãy cố gắng đề xuất tích hợp Năng lực số (NLS) cho tối đa số lượng bài học có thể ở TẤT CẢ CÁC MÔN HỌC (tìm kiếm thông tin, sử dụng phần mềm, vẽ bản đồ số, tạo nội dung số, phân tích dữ liệu...).
     - Với mỗi bài học, xác định xem có khả năng tích hợp Năng lực AI dựa trên các tiêu chí: có nội dung phân tích xã hội, kinh tế, pháp luật hoặc có yếu tố dữ liệu.
        - Nếu bài học PHÙ HỢP: Xác định mạch nội dung AI(NLa, NLb, NLc, NLd) và mục tiêu cụ thể.
        - Nếu bài học KHÔNG PHÙ HỢP: Ghi rõ "Không tích hợp" vào các cột liên quan đến AI.

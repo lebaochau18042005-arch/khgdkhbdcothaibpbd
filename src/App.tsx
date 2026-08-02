@@ -626,7 +626,7 @@ export default function App() {
         { apiKey, aiModel }
       );
       
-      const mapped = suggestions.map(s => {
+      const mapped = (Array.isArray(suggestions) ? suggestions : []).map(s => {
         const found = INDICATORS.find(i => i.code === s.code);
         return {
           code: s.code,

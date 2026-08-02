@@ -1106,9 +1106,33 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error('AI trả về phản hồi rỗng khi sinh kế hoạch.');
 
-      // Try extract array
       let parsed: any = null;
-      try { parsed = JSON.parse(stripMarkdownJson(text)); } catch { /* ignore */ }
+      let stripped = stripMarkdownJson(text);
+      try { 
+        parsed = JSON.parse(stripped); 
+      } catch { 
+        // Fallback: try to repair truncated JSON arrays
+        try {
+          // 1. If it ends with an unclosed string, close it
+          if (stripped.lastIndexOf('"') > stripped.lastIndexOf('}') && stripped.lastIndexOf('"') > stripped.lastIndexOf(']')) {
+            // Count quotes to see if it's open
+            const quoteCount = (stripped.match(/"/g) || []).length;
+            if (quoteCount % 2 !== 0) {
+              stripped += '"';
+            }
+          }
+          // 2. Find unclosed objects/arrays
+          const openBraces = (stripped.match(/\{/g) || []).length;
+          const closeBraces = (stripped.match(/\}/g) || []).length;
+          const openBrackets = (stripped.match(/\[/g) || []).length;
+          const closeBrackets = (stripped.match(/\]/g) || []).length;
+          
+          for (let i = 0; i < openBraces - closeBraces; i++) stripped += '}';
+          for (let i = 0; i < openBrackets - closeBrackets; i++) stripped += ']';
+          
+          parsed = JSON.parse(stripped);
+        } catch { /* ignore */ }
+      }
       if (parsed && !Array.isArray(parsed) && typeof parsed === 'object') {
         const keys = Object.keys(parsed);
         for (const k of keys) {
@@ -1129,8 +1153,12 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
       console.error(`[generateDepartmentPlan] Lỗi với model ${currentModel}:`, err);
       const isApiKeyInvalid = err.message?.startsWith('API_KEY_INVALID') || err.message?.includes('401');
       const isQuota = err.message?.includes('QUOTA_EXHAUSTED');
+      const isJsonError = err.message?.includes('Không trích xuất được kế hoạch');
       const isLast = i === modelsToTry.length - 1;
+      
       if (isApiKeyInvalid) throw new Error('API_KEY_INVALID');
+      if (isJsonError) throw err; // Ngừng ngay nếu AI trả về JSON lỗi/cắt cụt, chuyển model yếu hơn không giải quyết được
+      
       if (isLast) {
         if (isQuota) throw new Error('QUOTA_EXHAUSTED');
         throw err;

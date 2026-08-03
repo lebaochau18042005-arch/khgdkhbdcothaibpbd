@@ -21,6 +21,8 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
     const [selectedIntegrations, setSelectedIntegrations] = useState<any[]>([]);
     const [selectedSocialIntegrations, setSelectedSocialIntegrations] = useState<string[]>([]);
     const [textbookImages, setTextbookImages] = useState<TextbookImage[]>([]);
+    const [pl1Text, setPl1Text] = useState("");
+    const [pl1FileName, setPl1FileName] = useState("");
 
     const handleTextbookImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -46,6 +48,34 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
 
     const removeTextbookImage = (idx: number) => {
         setTextbookImages(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const handlePl1Upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const uploadedFile = e.target.files?.[0];
+        if (!uploadedFile) return;
+
+        const isDocx = uploadedFile.name.toLowerCase().endsWith(".docx");
+        if (!isDocx) {
+            alert("❌ Vui lòng tải lên file KHTCM (PL1) định dạng DOCX.");
+            e.target.value = "";
+            return;
+        }
+
+        try {
+            const buffer = await uploadedFile.arrayBuffer();
+            const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+            const text = result.value;
+            if (!text || text.trim().length < 50) {
+                alert("❌ Không bóc tách được nội dung từ file KHTCM này.");
+                return;
+            }
+            setPl1Text(text);
+            setPl1FileName(uploadedFile.name);
+        } catch (err) {
+            console.error("Lỗi đọc file KHTCM", err);
+            alert("❌ Đã có lỗi xảy ra khi đọc file KHTCM.");
+        }
+        e.target.value = "";
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,7 +116,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
 
                 setPdfBase64(base64);
                 setRawText("");
-                analysis = await analyzeExistingPlan("", base64, imagePayload);
+                analysis = await analyzeExistingPlan("", base64, imagePayload, pl1Text || undefined);
             } else {
                 const buffer = await uploadedFile.arrayBuffer();
                 const result = await mammoth.extractRawText({ arrayBuffer: buffer });
@@ -97,7 +127,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                 setRawText(text);
                 setPdfBase64("");
 
-                analysis = await analyzeExistingPlan(text, undefined, imagePayload);
+                analysis = await analyzeExistingPlan(text, undefined, imagePayload, pl1Text || undefined);
             }
 
             setAnalysisResult(analysis);
@@ -213,6 +243,38 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                                     <span>Thêm ảnh SGK (1 ảnh)</span>
                                     <input type="file" className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleTextbookImageUpload} />
                                 </label>
+                                )}
+                            </div>
+
+                            {/* PL1 Upload Zone */}
+                            <div className="rounded-xl border border-dashed border-teal-300 bg-teal-50/40 p-5 space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-teal-100 p-1.5 rounded-lg">
+                                        <FileText className="w-5 h-5 text-teal-600" />
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-sm text-teal-800">Tải lên KHTCM (PL1) <span className="font-normal text-teal-500">(Tùy chọn – Để đồng bộ mã NLS & NL AI)</span></p>
+                                        <p className="text-xs text-teal-500">Hệ thống sẽ giữ nguyên các mã NLS/NL AI đã duyệt từ KHTCM sang giáo án.</p>
+                                    </div>
+                                </div>
+
+                                {pl1FileName ? (
+                                    <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-teal-200 shadow-sm w-fit">
+                                        <FileText className="w-5 h-5 text-teal-500" />
+                                        <span className="text-sm font-medium text-slate-700">{pl1FileName}</span>
+                                        <button
+                                            onClick={() => { setPl1Text(""); setPl1FileName(""); }}
+                                            className="text-slate-400 hover:text-red-500 transition-colors ml-2"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm cursor-pointer transition-colors text-sm font-medium">
+                                        <UploadCloud className="w-4 h-4" />
+                                        <span>Chọn file PL1 (DOCX)</span>
+                                        <input type="file" className="hidden" accept=".docx" onChange={handlePl1Upload} />
+                                    </label>
                                 )}
                             </div>
 

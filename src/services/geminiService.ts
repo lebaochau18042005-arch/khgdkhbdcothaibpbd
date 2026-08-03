@@ -456,7 +456,8 @@ Hãy phân tích và trả về kết quả định dạng JSON array chuẩn, m
 export const analyzeExistingPlan = async (
   fileText: string,
   pdfBase64?: string,
-  textbookImages?: { mimeType: string; data: string }[]
+  textbookImages?: { mimeType: string; data: string }[],
+  pl1Data?: string
 ) => {
   const hasImages = textbookImages && textbookImages.length > 0;
 
@@ -466,6 +467,13 @@ export const analyzeExistingPlan = async (
 A. Xác định các kiến thức/hoạt động/nội dung MỚI xuất hiện trong sách giáo khoa mà GIÁO ÁN CŨ CÒN THIẾU.
 B. Đề xuất thêm những điểm cần bổ sung vào trường "newContentFromTextbook" (mảng chuỗi) trong JSON đầu ra.
 C. Đề xuất các hoạt động tích hợp chủ đề xã hội bắt buộc TT02/2025 (Di sản, Dân số, Phòng chống Ma túy/Thuốc lá) phù hợp với nội dung SGK mới.`
+    : "";
+
+  const pl1Section = pl1Data
+    ? `\n\n--- LỆNH TỐI CẤP ĐỒNG BỘ TỪ KHTCM (PL1) ---\nDưới đây là Kế hoạch Tổ chuyên môn (PL1) được tải lên:
+${pl1Data.substring(0, 5000)}
+
+LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với PL1 ở trên. Tìm ra chính xác dòng chứa bài học này trong PL1, và BẮT BUỘC TRÍCH XUẤT Y NGUYÊN các mã chỉ báo Năng lực số (NLS) và Năng lực AI (NL AI) đã được quy định sẵn trong PL1 để đưa vào mục "aiSuggestions". TUYỆT ĐỐI KHÔNG TỰ CHẾ MÃ MỚI nếu đã tìm thấy mã trong PL1.`
     : "";
 
   const jsonFormat = `{
@@ -503,7 +511,7 @@ C. Đề xuất các hoạt động tích hợp chủ đề xã hội bắt bu�
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí TỐT NHẤT có thể lồng ghép AI.${textbookSection}
+3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí TỐT NHẤT có thể lồng ghép AI.${textbookSection}${pl1Section}
 
 Định dạng đầu ra JSON bắt buộc:
 ${jsonFormat}`,
@@ -524,7 +532,7 @@ Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo vi
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí TỐT NHẤT có thể lồng ghép AI.${textbookSection}
+3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí TỐT NHẤT có thể lồng ghép AI.${textbookSection}${pl1Section}
 
 VĂN BẢN GIÁO ÁN:
 ${fileText.substring(0, 15000)}

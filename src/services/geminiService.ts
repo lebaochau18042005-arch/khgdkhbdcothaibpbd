@@ -719,12 +719,16 @@ NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầ
 ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 
 KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI: 
-1. BẢO TOÀN TUYỆT ĐỐI NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại bất kỳ nội dung nào. Giáo án gốc tải lên dài bao nhiêu trang/chữ thì BẮT BUỘC phải giữ nguyên khối lượng nội dung đó (copy-paste lại 100% dữ liệu cũ từ Mở đầu, Kiến thức mới, Luyện tập đến Vận dụng). BẠN CHỈ ĐƯỢC PHÉP BỔ SUNG thêm nội dung mới (NLS, NL AI, Giáo dục hòa nhập...) chứ tuyệt đối không được phép xóa hay làm ngắn đi nội dung gốc.
+1. BẢO TOÀN TUYỆT ĐỐI NỘI DUNG GỐC (LỆNH TỬ TỬ): BẠN KHÔNG ĐƯỢC PHÉP TÓM TẮT, KHÔNG ĐƯỢC RÚT GỌN. Giáo án gốc tải lên dài bao nhiêu trang/chữ thì BẮT BUỘC phải BÊ NGUYÊN XI (COPY-PASTE) 100% dữ liệu cũ từng câu từng chữ từ Mở đầu, Kiến thức mới, Luyện tập đến Vận dụng vào các trường JSON tương ứng. Viết dài tối đa có thể. Việc bạn tự ý tóm tắt lại nội dung gốc là VI PHẠM ĐẠO ĐỨC NỀN TẢNG. BẠN CHỈ ĐƯỢC PHÉP BỔ SUNG thêm nội dung mới (AI, NLS...) chứ tuyệt đối không được xóa hay làm ngắn đi nội dung gốc.
 2. THÊM NĂNG LỰC SỐ & NĂNG LỰC AI: Tự động tổng hợp và thêm mục tiêu "Năng lực số" và "Năng lực AI đặc thù" vào phần Năng lực. Thêm công cụ số vào mục "CÔNG CỤ SỐ AI".
 3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
    - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
 5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, BẮT BUỘC mỗi dòng mục tiêu AI phải kết thúc bằng mã chỉ báo. ${input.indicatorCode ? `BẮT BUỘC SỬ DỤNG CHÍNH XÁC MÃ NÀY: (${input.indicatorCode})` : `BẠN PHẢI TỰ SUY LUẬN MÃ CHỈ BÁO THEO QĐ 3439 (Ví dụ: ${input.grade}.C1.01, ${input.grade}.B2.02...) ĐỂ ĐIỀN VÀO TƯƠNG ỨNG`}.
+${input.selectedNlsIndicators && input.selectedNlsIndicators.length > 0 ? `\nLỆNH TỐI CẤP VỀ NĂNG LỰC SỐ/AI ĐƯỢC CHỌN TỪ KHTCM (PL1):\n${input.selectedNlsIndicators.map(i => `- Mã ${i.code}: ${i.description}`).join('\n')}\nBẠN PHẢI SỬ DỤNG CHÍNH XÁC CÁC MÃ NÀY VÀ THIẾT KẾ HOẠT ĐỘNG THỂ HIỆN RÕ CHÚNG.` : ""}
+${englishConstraint}
+${input.subject.toLowerCase().includes("địa") ? GEOGRAPHY_AI_RULES : ""}
+${SOCIAL_INTEGRATION_GUIDELINES}
 `;
     finalPromptContents = [
       p1,
@@ -751,12 +755,16 @@ ${input.existingRawText.substring(0, 18000)}
 ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 
 KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
-1. BẢO TOÀN TUYỆT ĐỐI NỘI DUNG GỐC: KHÔNG rút gọn, cắt bớt, tóm tắt lại bất kỳ nội dung nào. Giáo án gốc tải lên dài bao nhiêu trang/chữ thì BẮT BUỘC phải giữ nguyên khối lượng nội dung đó (copy-paste lại 100% dữ liệu cũ từ Mở đầu, Kiến thức mới, Luyện tập đến Vận dụng). BẠN CHỈ ĐƯỢC PHÉP BỔ SUNG thêm nội dung mới (NLS, NL AI, Giáo dục hòa nhập...) chứ tuyệt đối không được phép xóa hay làm ngắn đi nội dung gốc.
+1. BẢO TOÀN TUYỆT ĐỐI NỘI DUNG GỐC (LỆNH TỬ TỬ): BẠN KHÔNG ĐƯỢC PHÉP TÓM TẮT, KHÔNG ĐƯỢC RÚT GỌN. Giáo án gốc tải lên dài bao nhiêu trang/chữ thì BẮT BUỘC phải BÊ NGUYÊN XI (COPY-PASTE) 100% dữ liệu cũ từng câu từng chữ từ Mở đầu, Kiến thức mới, Luyện tập đến Vận dụng vào các trường JSON tương ứng. Viết dài tối đa có thể. Việc bạn tự ý tóm tắt lại nội dung gốc là VI PHẠM ĐẠO ĐỨC NỀN TẢNG. BẠN CHỈ ĐƯỢC PHÉP BỔ SUNG thêm nội dung mới (AI, NLS...) chứ tuyệt đối không được xóa hay làm ngắn đi nội dung gốc.
 2. THÊM NĂNG LỰC SỐ & NĂNG LỰC AI: Tự động tổng hợp và thêm mục tiêu "Năng lực số" và "Năng lực AI đặc thù" vào phần Năng lực. Thêm công cụ số vào mục "CÔNG CỤ SỐ AI".
 3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
    - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
 5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, BẮT BUỘC mỗi dòng mục tiêu AI phải kết thúc bằng mã chỉ báo. ${input.indicatorCode ? `BẮT BUỘC SỬ DỤNG CHÍNH XÁC MÃ NÀY: (${input.indicatorCode})` : `BẠN PHẢI TỰ SUY LUẬN MÃ CHỈ BÁO THEO QĐ 3439 (Ví dụ: ${input.grade}.C1.01, ${input.grade}.B2.02...) ĐỂ ĐIỀN VÀO TƯƠNG ỨNG`}.
+${input.selectedNlsIndicators && input.selectedNlsIndicators.length > 0 ? `\nLỆNH TỐI CẤP VỀ NĂNG LỰC SỐ/AI ĐƯỢC CHỌN TỪ KHTCM (PL1):\n${input.selectedNlsIndicators.map(i => `- Mã ${i.code}: ${i.description}`).join('\n')}\nBẠN PHẢI SỬ DỤNG CHÍNH XÁC CÁC MÃ NÀY VÀ THIẾT KẾ HOẠT ĐỘNG THỂ HIỆN RÕ CHÚNG.` : ""}
+${englishConstraint}
+${input.subject.toLowerCase().includes("địa") ? GEOGRAPHY_AI_RULES : ""}
+${SOCIAL_INTEGRATION_GUIDELINES}
 ` : "";
   }
 
@@ -869,7 +877,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
                   type: Type.OBJECT,
                   properties: {
                     stepName: { type: Type.STRING, description: "Tên bước (Bắt buộc theo thứ tự: Bước 1: Chuyển giao nhiệm vụ; Bước 2: Thực hiện nhiệm vụ; Bước 3: Báo cáo, thảo luận; Bước 4: Kết luận, nhận định)" },
-                    teacherStudentActivities: { type: Type.STRING, description: "Kịch bản GV-HS SIÊU CHI TIẾT (100-250 từ). Lệnh bắt buộc: Phần nội dung chốt kiến thức/kết luận của giáo viên PHẢI được bọc trong thẻ <bold>...</bold> để in đậm. Phần nội dung nào tích hợp AI (ví dụ Prompt, hướng dẫn kỹ năng, chỉ báo 10.A.A1.1...) PHẢI được bọc trong thẻ <ai>...</ai> để bôi đỏ." },
+                    teacherStudentActivities: { type: Type.STRING, description: "Kịch bản GV-HS SIÊU CHI TIẾT. NẾU LÀ NÂNG CẤP GIÁO ÁN, BẮT BUỘC COPY-PASTE 100% TOÀN BỘ NỘI DUNG TỪ BẢN GỐC (dài bao nhiêu chép bấy nhiêu, TUYỆT ĐỐI KHÔNG TÓM TẮT). Phần nội dung chốt kiến thức/kết luận của giáo viên PHẢI được bọc trong thẻ <bold>...</bold> để in đậm. Phần nội dung nào tích hợp AI (ví dụ Prompt, hướng dẫn kỹ năng, chỉ báo 10.A.A1.1...) PHẢI được bọc trong thẻ <ai>...</ai> để bôi đỏ." },
                     expectedProduct: { type: Type.STRING, description: "Dự kiến sản phẩm (Chi tiết kết quả mong đợi)" },
                   },
                   required: ["stepName", "teacherStudentActivities", "expectedProduct"],

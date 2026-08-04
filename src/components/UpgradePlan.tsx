@@ -2,7 +2,9 @@ import React, { useState } from "react";
 // @ts-ignore
 import * as mammoth from "mammoth";
 import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users } from "lucide-react";
-import { analyzeExistingPlan } from "../services/geminiService";
+import { analyzeExistingPlan, generateDirectSnippets } from "../services/geminiService";
+import { injectSnippetsIntoDocx } from "../utils/docxInjector";
+import { saveAs } from "file-saver";
 
 interface TextbookImage {
     mimeType: string;
@@ -23,6 +25,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
     const [textbookImages, setTextbookImages] = useState<TextbookImage[]>([]);
     const [pl1Text, setPl1Text] = useState("");
     const [pl1FileName, setPl1FileName] = useState("");
+    const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
 
     const handleTextbookImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -157,24 +160,52 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
         }
     };
 
-    const handleApply = () => {
-        onUpgradeReady({
-            subject: analysisResult.subject || "Khác",
-            grade: analysisResult.grade || "10",
-            topic: analysisResult.topic || "Bài học nâng cấp",
-            duration: analysisResult.duration || "2 tiết",
-            contextStudents: analysisResult.contextStudents || "",
-            contextSchool: analysisResult.contextSchool || "",
-            objectivesKnowledge: analysisResult.objectivesKnowledge || "",
-            objectivesCompetency: analysisResult.objectivesCompetency || "",
-            objectivesQuality: analysisResult.objectivesQuality || "",
-            existingRawText: rawText,
-            existingPdfBase64: pdfBase64,
-            aiIntegrationOptions: selectedIntegrations,
-            socialIntegrations: selectedSocialIntegrations,
-            newContentFromTextbook: analysisResult.newContentFromTextbook || [],
-            indicatorCode: undefined
-        });
+    const handleApply = async () => {
+        if (!file || !file.name.toLowerCase().endsWith(".docx")) {
+            // Fallback to old AI JSON generation for PDF
+            onUpgradeReady({
+                subject: analysisResult.subject || "Khác",
+                grade: analysisResult.grade || "10",
+                topic: analysisResult.topic || "Bài học nâng cấp",
+                duration: analysisResult.duration || "2 tiết",
+                contextStudents: analysisResult.contextStudents || "",
+                contextSchool: analysisResult.contextSchool || "",
+                objectivesKnowledge: analysisResult.objectivesKnowledge || "",
+                objectivesCompetency: analysisResult.objectivesCompetency || "",
+                objectivesQuality: analysisResult.objectivesQuality || "",
+                existingRawText: rawText,
+                existingPdfBase64: pdfBase64,
+                aiIntegrationOptions: selectedIntegrations,
+                socialIntegrations: selectedSocialIntegrations,
+                newContentFromTextbook: analysisResult.newContentFromTextbook || [],
+                indicatorCode: undefined
+            });
+            return;
+        }
+
+        setIsGeneratingDocx(true);
+        try {
+            // 1. Generate Snippets
+            const snippets = await generateDirectSnippets(
+                analysisResult.subject || "Khác",
+                analysisResult.grade || "10",
+                analysisResult.topic || "Bài học nâng cấp",
+                selectedIntegrations
+            );
+
+            // 2. Inject into DOCX
+            const newDocxBlob = await injectSnippetsIntoDocx(file, snippets);
+
+            // 3. Download
+            saveAs(newDocxBlob, file.name.replace(".docx", "_AI_NangCap.docx"));
+            
+            alert("✅ Đã chèn thành công các hoạt động AI vào file DOCX của bạn!");
+        } catch (err) {
+            console.error(err);
+            alert("❌ Đã có lỗi xảy ra khi chèn vào DOCX: " + (err as Error).message);
+        } finally {
+            setIsGeneratingDocx(false);
+        }
     };
 
     const socialThemeColors: Record<string, string> = {
@@ -443,10 +474,14 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                                 </button>
                                 <button
                                     onClick={handleApply}
-                                    disabled={selectedIntegrations.length === 0}
+                                    disabled={selectedIntegrations.length === 0 || isGeneratingDocx}
                                     className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 transition-colors"
                                 >
-                                    <Sparkles className="w-4 h-4" /> Tạo Giáo án Nâng cấp
+                                    {isGeneratingDocx ? (
+                                        <><Loader2 className="w-4 h-4 animate-spin" /> Đang chèn AI...</>
+                                    ) : (
+                                        <><Sparkles className="w-4 h-4" /> {file?.name.toLowerCase().endsWith(".docx") ? "Chèn AI vào File DOCX" : "Tạo Giáo án Nâng cấp"}</>
+                                    )}
                                 </button>
                             </div>
                         </div>

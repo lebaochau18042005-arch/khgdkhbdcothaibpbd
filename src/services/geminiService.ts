@@ -600,6 +600,54 @@ ${jsonFormat}`
   }
 };
 
+export const generateDirectSnippets = async (
+  subject: string,
+  grade: string,
+  topic: string,
+  aiSuggestions: any[]
+) => {
+  const isEnglish = subject.toLowerCase().includes("tiếng anh") || subject.toLowerCase().includes("english");
+  const englishConstraint = isEnglish ? `LỆNH TỐI CẤP (NGÔN NGỮ): BẮT BUỘC SỬ DỤNG 100% TIẾNG ANH (ENGLISH) CHO TOÀN BỘ NỘI DUNG. KHÔNG ĐƯỢC CHỨA BẤT KỲ TỪ TIẾNG VIỆT NÀO.` : ``;
+
+  const prompt = `Bạn là chuyên gia thiết kế Hoạt động Trí tuệ Nhân tạo (AI) cho học sinh.
+Thông tin bài học: Môn ${subject}, Lớp ${grade}, Bài: ${topic}.
+Dưới đây là các gợi ý tích hợp AI đã được phê duyệt:
+${JSON.stringify(aiSuggestions, null, 2)}
+
+Nhiệm vụ: Viết MỘT ĐOẠN VĂN BẢN CHI TIẾT cho mỗi hoạt động để giáo viên có thể CHÈN TRỰC TIẾP vào giáo án Word của họ. Đoạn văn này phải mô tả rõ:
+1. Nhiệm vụ cụ thể của học sinh với công cụ AI.
+2. Câu lệnh Prompt gợi ý (nếu có).
+3. Yêu cầu sản phẩm.
+4. Có gắn mã chỉ báo AI ở cuối (VD: 10.A1.1).
+
+${englishConstraint}
+
+TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON MẢNG:
+[
+  {
+    "activityName": "Tên hoạt động",
+    "text": "Nội dung đoạn văn chi tiết (Khoảng 3-5 câu, rõ ràng, thực tế, sư phạm)."
+  }
+]`;
+
+  try {
+    return await callGeminiWithFallback(prompt, {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          activityName: { type: Type.STRING },
+          text: { type: Type.STRING }
+        },
+        required: ["activityName", "text"]
+      }
+    });
+  } catch (err) {
+    console.error("Error generating snippets:", err);
+    throw err;
+  }
+};
+
 export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: string) => {
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');

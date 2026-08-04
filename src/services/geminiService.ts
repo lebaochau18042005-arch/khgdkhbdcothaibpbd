@@ -497,7 +497,7 @@ LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với P
   "aiSuggestions": [
     {
       "activityName": "Tên hoạt động gợi ý",
-      "suggestedAI": "Mã chỉ báo AI chuẩn (vd: 10.A1.a)",
+      "suggestedAI": "Mã chỉ báo AI chuẩn (vd: 10.A1.1)",
       "reason": "Lý do phù hợp",
       "action": "HS sẽ làm gì với AI?"
     }
@@ -1089,7 +1089,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
        - Số tiết (periods): Số lượng tiết học của bài học.
        - Yêu cầu cần đạt CT 2018 (lessonGoal): BẮT BUỘC dùng nội dung "yccd" nếu có từ dữ liệu cung cấp (sao chép y nguyên). Nếu không có, mô tả Kiến thức, Năng lực hướng tới của bài học đó theo CT 2018.
        - Năng lực số (digitalCompetencyTT02): Liệt kê 2-3 mã và Yêu cầu cần đạt Năng lực số theo Thông tư 02 (vd: 1.1NC1a, 2.2NC1b...). BẮT BUỘC TÍCH HỢP CHO ÍT NHẤT 95% SỐ BÀI HỌC.
-       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Liệt kê 2-3 mã và YCCĐ AI. VỚI NHỮNG BÀI ĐÃ CÓ MÃ HỆ THỐNG TRUYỀN VÀO (ví dụ 10.A1.a), DÙNG ĐÚNG MÃ ĐÓ. VỚI NHỮNG BÀI BẠN TỰ ĐỀ XUẤT THÊM, BẮT BUỘC PHẢI TỰ ĐÁNH MÃ SỐ THEO ĐÚNG QUY ƯỚC [Khối Lớp].[Ký hiệu Mạch NL + Chủ đề].[STT] (Ví dụ: 12.A1.1, 12.A2.2, 12.B2.1...). MỖI BÀI HỌC VÀ MỖI MỤC TIÊU PHẢI SỬ DỤNG MÃ SỐ ĐỘC LẬP (Đa dạng chủ đề A1, A2, B1, B2...), KHÔNG ĐƯỢC CHỈ LẶP LẠI 1 MÃ DUY NHẤT CHO TẤT CẢ CÁC BÀI.
+       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Liệt kê 2-3 mã và YCCĐ AI. VỚI NHỮNG BÀI ĐÃ CÓ MÃ HỆ THỐNG TRUYỀN VÀO (ví dụ 10.A1.1), DÙNG ĐÚNG MÃ ĐÓ. VỚI NHỮNG BÀI BẠN TỰ ĐỀ XUẤT THÊM, BẮT BUỘC PHẢI TỰ ĐÁNH MÃ SỐ THEO ĐÚNG QUY ƯỚC [Khối Lớp].[Ký hiệu Mạch NL + Chủ đề].[STT] (Ví dụ: 12.A1.1, 12.A2.2, 12.B2.1...). MỖI BÀI HỌC VÀ MỖI MỤC TIÊU PHẢI SỬ DỤNG MÃ SỐ ĐỘC LẬP (Đa dạng chủ đề A1, A2, B1, B2...), KHÔNG ĐƯỢC CHỈ LẶP LẠI 1 MÃ DUY NHẤT CHO TẤT CẢ CÁC BÀI.
        
        - Mạch nội dung AI:
     - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.

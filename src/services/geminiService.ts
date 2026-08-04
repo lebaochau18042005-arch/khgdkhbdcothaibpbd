@@ -231,8 +231,7 @@ LƯU Ý QUAN TRỌNG: Thông tư 02/2025/TT-BGDĐT quy định về Khung Năng 
 const CURRICULUM_DATA = `
 DỮ LIỆU CHUẨN VỀ CHƯƠNG TRÌNH VÀ TÊN BÀI HỌC(THỰC HIỆN NGHIÊM TÚC):
 
-LƯU Ý TỐI QUAN TRỌNG CHUNG MÔN ĐỊA LÍ(TẤT CẢ CÁC KHỐI LỚP): BẮT BUỘC cập nhật tên bài và nội dung chương trình đảm bảo TUYỆT ĐỐI tuân thủ Thông tư 17 / 2025 / TT - BGDĐT của Bộ GD & ĐT.Hãy ưu tiên dữ liệu của TT 17 / 2025 làm chuẩn mực cao nhất để hiệu chỉnh danh sách bài đi kèm.
-
+LƯU Ý TỐI QUAN TRỌNG CHUNG MÔN ĐỊA LÍ (TẤT CẢ CÁC KHỐI LỚP): BẮT BUỘC tuân thủ tuyệt đối cấu trúc chương trình và tên bài học của BỘ SÁCH "KẾT NỐI TRI THỨC VỚI CUỘC SỐNG". TUYỆT ĐỐI KHÔNG DÙNG SÁCH CÁNH DIỀU HAY CHÂN TRỜI SÁNG TẠO.
 1. GIÁO DỤC ĐỊA PHƯƠNG - THÀNH PHỐ HỒ CHÍ MINH:
 - Lớp 10:
      * Chủ đề 1: Biến đổi khí hậu và phòng, chống thiên tai ở Thành phố Hồ Chí Minh(5 tiết)
@@ -1009,11 +1008,9 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài 
     ${englishConstraint}
 
     YÊU CẦU QUAN TRỌNG VỀ ĐỘ CHÍNH XÁC:
-    1. TUÂN THỦ CHƯƠNG TRÌNH GDPT 2018(VÀ TT 17 / 2025 CHO MÔN ĐỊA LÍ):
-    - LƯU Ý MÔN ĐỊA LÍ: TUYỆT ĐỐI tuân thủ danh mục bài học theo Thông tư 17 / 2025 / TT - BGDĐT(điều chỉnh tên bài, thứ tự chương trình của môn Địa Lí theo TT mới nhất).
-       - Đối với các môn còn lại: Sử dụng chính xác tên các bài học theo phân phối chương trình chuẩn.
-       - ĐỐI VỚI TẤT CẢ CÁC MÔN CÒN LẠI: Nội dung, trật tự và tên bài học BẮT BUỘC PHẢI KHỚP TUYỆT ĐỐI VỚI BỘ SÁCH "KẾT NỐI TRI THỨC VỚI CUỘC SỐNG" của NXB Giáo dục Việt Nam.TUYỆT ĐỐI KHÔNG sử dụng yếu tố địa phương(${province}) để thay đổi tên bài học của các môn này.
-       - ĐỐI VỚI MÔN GIÁO DỤC ĐỊA PHƯƠNG: Chỉ trong trường hợp này mới sử dụng nội dung đặc thù của ${province}.
+    1. TUÂN THỦ CHƯƠNG TRÌNH GDPT 2018 VÀ SÁCH KNTT:
+    - LƯU Ý MÔN ĐỊA LÍ VÀ CÁC MÔN CÒN LẠI: Nội dung, trật tự và tên bài học BẮT BUỘC PHẢI KHỚP TUYỆT ĐỐI VỚI BỘ SÁCH "KẾT NỐI TRI THỨC VỚI CUỘC SỐNG" của NXB Giáo dục Việt Nam. Đảm bảo đầy đủ các đơn vị kiến thức, không được thiếu bài. TUYỆT ĐỐI KHÔNG sử dụng cấu trúc của Cánh Diều hay Chân trời sáng tạo.
+    - ĐỐI VỚI MÔN GIÁO DỤC ĐỊA PHƯƠNG: Chỉ trong trường hợp này mới sử dụng nội dung đặc thù của ${province}.
     
     ${curriculumConstraint}
 
@@ -1114,8 +1111,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
     
     YÊU CẦU QUAN TRỌNG VỀ TÊN BÀI HỌC VÀ CHƯƠNG TRÌNH:
     1. Nếu là môn "Giáo dục địa phương": Phải bám sát chương trình của ${province}.
-    2. ĐỐI VỚI MÔN ĐỊA LÍ: TUYỆT ĐỐI BẮT BUỘC tuân thủ danh mục bài học theo Thông tư 17 / 2025 / TT - BGDĐT(ưu tiên TT 17 / 2025 nếu có sai lệch với dữ liệu cũ).
-    3. Nếu là các môn học khác(Toán, Văn...): Phải sử dụng tên bài học TRÙNG KHỚP 100 % với Chương trình GDPT 2018 và SGK hiện hành.
+    2. ĐỐI VỚI MÔN ĐỊA LÍ VÀ CÁC MÔN KHÁC: TUYỆT ĐỐI BẮT BUỘC tuân thủ danh mục bài học và đơn vị kiến thức của BỘ SÁCH "KẾT NỐI TRI THỨC VỚI CUỘC SỐNG". KHÔNG ĐƯỢC TỰ BỊA RA BÀI HỌC HAY SỬ DỤNG BỘ SÁCH KHÁC. ĐẢM BẢO ĐỦ SỐ BÀI TRONG SGK KNTT.
 
     ${AI_SUBJECT_GUIDELINES}
     ${SOCIAL_INTEGRATION_GUIDELINES}

@@ -797,7 +797,7 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
     1. KIỂM TRA ĐIỀU KIỆN TÍCH HỢP:
     - ${input.indicatorCode ? "ĐÃ ĐƯỢC CHỈ ĐỊNH LÀ BẮT BUỘC TÍCH HỢP. Bắt buộc thêm một mục riêng biệt có tên \"HOẠT ĐỘNG GIÁO DỤC AI\" ngay trong phần nội dung tiến trình dạy học ở vị trí có điểm chạm." : "Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không. Nếu không tích hợp thì để trống mục Năng lực AI. Nếu có tích hợp thì chèn HOẠT ĐỘNG GIÁO DỤC AI."}
     2. MÔ TẢ CÔNG CỤ SỐ AI: Trong hoạt động có tích hợp, phải mô tả cụ thể việc sử dụng các công cụ AI(ChatGPT, Canva, chatbot...) để hỗ trợ học sinh đạt được năng lực tương ứng.
-    3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng KHỐI_LỚP.NỘI_DUNG.CHỦ_ĐỀ.SỐ_THỨ_TỰ(Ví dụ: ${input.grade}.A.A1.1).Tuyệt đối khối lớp phải khớp với ${input.grade}.
+    3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng [Khối lớp].[Ký hiệu Mạch NL (A/B/C/D) + Số thứ tự Chủ đề (1,2,3...)].[STT YCCĐ] (Ví dụ: ${input.grade}.A1.1, ${input.grade}.C2.2). Tuyệt đối khối lớp phải khớp với ${input.grade}. MÃ ĐÚNG CHỈ CÓ 2 DẤU CHẤM, KHÔNG ĐƯỢC CHÈN THÊM CHỮ CÁI THỪA (Không được viết 10.A.A1.1 hay 10.C3.A2.1).
     4. PHẢN BIỆN & BÁO ĐỘNG ĐỎ: BẮT BUỘC sử dụng thẻ < ai > [🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI] </ai> để đánh dấu hoạt động trọng tâm có ứng dụng công nghệ AI.
 
     I.MỤC TIÊU:
@@ -877,7 +877,7 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
                   type: Type.OBJECT,
                   properties: {
                     stepName: { type: Type.STRING, description: "Tên bước (Bắt buộc theo thứ tự: Bước 1: Chuyển giao nhiệm vụ; Bước 2: Thực hiện nhiệm vụ; Bước 3: Báo cáo, thảo luận; Bước 4: Kết luận, nhận định)" },
-                    teacherStudentActivities: { type: Type.STRING, description: "Kịch bản GV-HS SIÊU CHI TIẾT. NẾU LÀ NÂNG CẤP GIÁO ÁN, BẮT BUỘC COPY-PASTE 100% TOÀN BỘ NỘI DUNG TỪ BẢN GỐC (dài bao nhiêu chép bấy nhiêu, TUYỆT ĐỐI KHÔNG TÓM TẮT). Phần nội dung chốt kiến thức/kết luận của giáo viên PHẢI được bọc trong thẻ <bold>...</bold> để in đậm. Phần nội dung nào tích hợp AI (ví dụ Prompt, hướng dẫn kỹ năng, chỉ báo 10.A.A1.1...) PHẢI được bọc trong thẻ <ai>...</ai> để bôi đỏ." },
+                    teacherStudentActivities: { type: Type.STRING, description: "Kịch bản GV-HS SIÊU CHI TIẾT. NẾU LÀ NÂNG CẤP GIÁO ÁN, BẮT BUỘC COPY-PASTE 100% TOÀN BỘ NỘI DUNG TỪ BẢN GỐC (dài bao nhiêu chép bấy nhiêu, TUYỆT ĐỐI KHÔNG TÓM TẮT). Phần nội dung chốt kiến thức/kết luận của giáo viên PHẢI được bọc trong thẻ <bold>...</bold> để in đậm. Phần nội dung nào tích hợp AI (ví dụ Prompt, hướng dẫn kỹ năng, chỉ báo 10.A1.1, 10.C2.2...) PHẢI được bọc trong thẻ <ai>...</ai> để bôi đỏ." },
                     expectedProduct: { type: Type.STRING, description: "Dự kiến sản phẩm (Chi tiết kết quả mong đợi)" },
                   },
                   required: ["stepName", "teacherStudentActivities", "expectedProduct"],
@@ -979,7 +979,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài 
     + Phương án triển khai: Sử dụng tình huống giả định, nghiên cứu tình huống(case study) hay có công cụ AI trực tiếp.
          + Học liệu / công cụ cụ thể: Các bài báo, video phân tích, các bộ dữ liệu giả định, hoặc tên phần mềm / nền tảng AI sẽ sử dụng.
        - Địa điểm dạy học: Lớp học, phòng máy tính, thư viện...
-    - Định hướng năng lực số: Cụ thể hóa mã YCCĐ AI(Khung 3439).QUY TẮC MÃ: KHỐI LỚP.NỘI DUNG(A / B / C / D).CHỦ ĐỀ(A1 / B1).YCCĐ_SỐ(1 / 2 / 3)(Ví dụ: 10.A.A1.1, 11.C.C2.3).TUYỆT ĐỐI tuân thủ dấu chấm phân tách và định dạng này.
+    - Định hướng năng lực số: Cụ thể hóa mã YCCĐ AI(Khung 3439). QUY TẮC MÃ: [Khối lớp].[Ký hiệu Mạch NL (A/B/C/D) + Số thứ tự Chủ đề (1,2,3...)].[STT YCCĐ] (Ví dụ: 10.A1.1, 11.C2.3). MÃ ĐÚNG CHỈ CÓ 2 DẤU CHẤM. TUYỆT ĐỐI tuân thủ dấu chấm phân tách và định dạng này, không được chế thêm định dạng (như 10.C2.A1.2 là SAI).
        - ĐỊNH DẠNG VĂN BẢN(RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \sin, \cos) trong bảng này.Các công thức toán / lý / hóa phải chuyển thành text thường dễ đọc nhất(vd: y = sin x).
 
     2. NGUYÊN TẮC TÍCH HỢP(Theo 8334 / BGDĐT - GDPT):

@@ -1095,7 +1095,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
 
   // ===== BATCH PROCESSING FOR DIA LI 10 (prevents output token truncation) =====
-  const isGeo10Batch = subject.toLowerCase().includes("dia") && grade === "10" && !options?.customCurriculumData && Array.isArray(GEO_10_KNTT) && GEO_10_KNTT.length > 0;
+  const isGeo10Batch = (/\u0111\u1ecba/i.test(subject) || subject === "Địa lý" || subject === "Địa lí" || subject === "ĐỊA LÝ" || subject === "ĐỊA LÍ" || subject.includes("\u0111\u1ecba") || subject.includes("\u0110\u1ecaa")) && grade === "10" && !options?.customCurriculumData && Array.isArray(GEO_10_KNTT) && GEO_10_KNTT.length > 0;
   if (isGeo10Batch) {
     const GEO_BATCH_SIZE = 22;
     const allBatchResults: any[] = [];

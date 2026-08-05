@@ -1094,8 +1094,9 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
 
-    const systemCurriculum = options?.curriculumDbData ? `DỮ LIỆU BÀI HỌC VÀ MÃ CHỈ BÁO AI TỪ HỆ THỐNG:
-${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode, yccd: [l.objectivesKnowledge, l.objectivesCompetency, l.objectivesQuality].filter(Boolean).join("; ") })), null, 2)}
+    const overrideCurriculumDbData = (subject.toLowerCase().includes("địa") && grade === "10") ? undefined : options?.curriculumDbData;
+    const systemCurriculum = overrideCurriculumDbData ? `DỮ LIỆU BÀI HỌC VÀ MÃ CHỈ BÁO AI TỪ HỆ THỐNG:
+${JSON.stringify(overrideCurriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode, yccd: [l.objectivesKnowledge, l.objectivesCompetency, l.objectivesQuality].filter(Boolean).join("; ") })), null, 2)}
 LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM chứa toàn bộ danh sách bài học trên. Tại cột "Yêu cầu cần đạt CT 2018" (lessonGoal), BẮT BUỘC lấy nội dung "yccd" tương ứng. Tại cột "Yêu cầu cần đạt 3439" (aiCompetency3439), BẮT BUỘC chèn mã chỉ báo (indicatorCode) được cung cấp.
 LƯU Ý ĐẶC BIỆT VỀ CÁC BÀI HỌC CÒN THIẾU: Danh sách trên có thể chưa đủ 35 tuần học. Bạn BẮT BUỘC phải TỰ BỔ SUNG các bài học SGK còn thiếu cho đủ 35 tuần. 
 Đối với các bài học bạn TỰ BỔ SUNG (không có mã chỉ báo sẵn từ hệ thống): HÃY TÍCH CỰC ĐÁNH GIÁ VÀ TÍCH HỢP NLS, NL AI CHO TẤT CẢ CÁC MÔN HỌC (Toán, Văn, Anh, Lý, Hóa, Sinh, Sử, Địa, Công nghệ...). Bất cứ bài nào có thể khai thác dữ liệu, tìm kiếm thông tin, phân tích văn bản, đồ thị, hay sử dụng công cụ số đều PHẢI tích hợp thay vì bỏ qua.

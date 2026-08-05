@@ -225,7 +225,7 @@ DỮ LIỆU BÀI HỌC GIÁO DỤC ĐỊA PHƯƠNG - THÀNH PHỐ HỒ CHÍ MINH
       * Chủ đề 4: Âm nhạc trong đời sống hiện nay Thành phố Hồ Chí Minh
         * Chủ đề 5: Mĩ thuật bổ sung.Đặc trưng của một số công trình kiến trúc ở Thành phố Hồ Chí Minh
           * Chủ đề 6: Tác động của hoạt động kinh tế đến môi trường tự nhiên ở Thành phố Hồ Chí Minh
-            * Chủ đề 7: Giáo dục STEM và định hướng nghề nghiệp trong kỉ nguyên mới`;� sự phát triển bền vững. Giáo dục SKSS, bình đẳng giới.
+            * Chủ đề 7: Giáo dục STEM và định hướng nghề nghiệp trong kỉ nguyên mới`;� sự phát triển bền vững. Giáo dục SKSS, bình đẳng giới.
    - Nội dung: Phân tích dữ liệu dân cư, tác động của quy mô dân số đến chất lượng cuộc sống và an sinh xã hội.
 4. Giáo dục Hòa nhập (Inclusive Education):
    - Căn cứ: Thông tư 03/2018/TT-BGDĐT về Giáo dục Hòa nhập.
@@ -1105,7 +1105,7 @@ QUY TẮC ĐÁNH MÃ CHỈ BÁO AI KHI TỰ ĐỀ XUẤT: Bạn PHẢI TỰ Đ�
     if (subject === "Giáo dục địa phương") {
         defaultCurriculum = CURRICULUM_DATA_GDDP;
     } else if (subject.toLowerCase().includes("địa") && grade === "10") {
-        defaultCurriculum = `MỤC LỤC CHÍNH XÁC SÁCH GIÁO KHOA ĐỊA LÍ 10 - KẾT NỐI TRI THỨC VỚI CUỘC SỐNG:\n${GEO_10_KNTT}`;
+        defaultCurriculum = `MỤC LỤC VÀ YÊU CẦU CẦN ĐẠT (YCCĐ) CHÍNH XÁC TỪNG BÀI - ĐỊA LÍ 10 KẾT NỐI TRI THỨC VỚI CUỘC SỐNG:\n${JSON.stringify(GEO_10_KNTT, null, 2)}`;
     }
 
     const curriculumConstraint = options?.customCurriculumData
@@ -1134,16 +1134,16 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
     ${englishConstraint}
 
     Nhiệm vụ cụ thể:
-    1. Rà soát & Phân tích toàn diện: Hãy rà soát TOÀN BỘ các chủ đề / bài học trong chương trình GDPT 2018 của môn này. LỆNH TỐI CẤP: BẠN KHÔNG ĐƯỢC BỎ SÓT BẤT KỲ BÀI HỌC NÀO, PHẢI LIỆT KÊ ĐỦ 35 TUẦN HỌC / ĐỦ TOÀN BỘ NỘI DUNG SGK. TRẢ VỀ TOÀN BỘ DANH SÁCH BÀI HỌC CỦA CẢ NĂM HỌC.
+    1. Rà soát & Phân tích toàn diện: LỆNH TỐI CẤP: BẠN KHÔNG ĐƯỢC BỎ SÓT BẤT KỲ BÀI HỌC, CHUYÊN ĐỀ, HAY BÀI KIỂM TRA ĐÁNH GIÁ NÀO CÓ TRONG DANH SÁCH. PHẢI LIỆT KÊ ĐỦ 35 TUẦN HỌC. ĐẶC BIỆT: Phải XEN KẼ các tiết "Ôn tập", "Kiểm tra đánh giá" (Giữa kì, Cuối kì) và Chuyên đề vào các tuần tương ứng để hoàn thiện Kế hoạch Tổ chuyên môn đúng chuẩn thực tế.
     2. BẮT BUỘC TÍCH HỢP NLS VÀ NL AI CHO HẦU HẾT CÁC BÀI:
     - Lệnh tối cấp: Bạn PHẢI tìm cách tích hợp Năng lực số (NLS) và Năng lực AI (NL AI) cho **ÍT NHẤT 95% SỐ BÀI HỌC**. Dù là môn học nào, luôn có cách ứng dụng NLS/AI (VD: dùng AI tìm kiếm tài liệu, tóm tắt, vẽ sơ đồ, phân tích số liệu).
     - Hạn chế tối đa việc điền "Không tích hợp". Hãy suy nghĩ sáng tạo để lồng ghép các chỉ báo NLS và NL AI (NLa, NLb, NLc, NLd) một cách hợp lý và tự nhiên nhất.
     - YÊU CẦU ĐA DẠNG MÃ: Mỗi bài học, hãy BẮT BUỘC đề xuất **2 đến 3 mã NLS** và **2 đến 3 mã NL AI** khác nhau để tăng tính phong phú (không được chỉ lặp lại 1 mã).
     3. Ánh xạ Năng lực:
     - Thời gian (time): Ước lượng thời gian thực hiện (Ví dụ: Học kì I, Tháng 9, Tuần 1...).
-       - Nội dung (lessonContent): Tên bài học, chủ đề hoặc nội dung chi tiết. Phải khớp 100% với danh sách gốc SGK.
+       - Nội dung (lessonContent): Tên bài học, chủ đề, chuyên đề hoặc tên bài kiểm tra. Phải lấy từ danh sách gốc.
        - Số tiết (periods): Số lượng tiết học của bài học.
-       - Yêu cầu cần đạt CT 2018 (lessonGoal): BẮT BUỘC dùng nội dung "yccd" nếu có từ dữ liệu cung cấp (sao chép y nguyên). Nếu không có, mô tả Kiến thức, Năng lực hướng tới của bài học đó theo CT 2018.
+       - Yêu cầu cần đạt CT 2018 (lessonGoal): BẮT BUỘC SAO CHÉP Y NGUYÊN 100% nội dung "yccd" (hoặc "YCCĐ") được cung cấp trong danh sách gốc cho từng bài học/chuyên đề/kiểm tra tương ứng. BẠN KHÔNG ĐƯỢC PHÉP TÓM TẮT HAY CẮT XÉN YCCĐ GỐC!
        - Năng lực số (digitalCompetencyTT02): Liệt kê 2-3 mã và Yêu cầu cần đạt Năng lực số theo Thông tư 02 (vd: 1.1NC1a, 2.2NC1b...). BẮT BUỘC TÍCH HỢP CHO ÍT NHẤT 95% SỐ BÀI HỌC.
        - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Liệt kê 2-3 mã và YCCĐ AI. VỚI NHỮNG BÀI ĐÃ CÓ MÃ HỆ THỐNG TRUYỀN VÀO (ví dụ 10.A1.1), DÙNG ĐÚNG MÃ ĐÓ. VỚI NHỮNG BÀI BẠN TỰ ĐỀ XUẤT THÊM, BẮT BUỘC PHẢI TỰ ĐÁNH MÃ SỐ THEO ĐÚNG QUY ƯỚC [Khối Lớp].[Ký hiệu Mạch NL + Chủ đề].[STT] (Ví dụ: 12.A1.1, 12.A2.2, 12.B2.1...). MỖI BÀI HỌC VÀ MỖI MỤC TIÊU PHẢI SỬ DỤNG MÃ SỐ ĐỘC LẬP (Đa dạng chủ đề A1, A2, B1, B2...), KHÔNG ĐƯỢC CHỈ LẶP LẠI 1 MÃ DUY NHẤT CHO TẤT CẢ CÁC BÀI.
        

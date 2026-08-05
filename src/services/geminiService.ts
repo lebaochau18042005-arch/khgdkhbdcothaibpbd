@@ -1,4 +1,5 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, Type } from "@google/generative-ai";
+import { GEO_10_KNTT } from './curriculumData';
 
 // --- Google AI Key Validation (per google-api skill) ---
 // Accepts both legacy AIzaSy... keys and new AQ... keys from Google AI Studio
@@ -208,19 +209,23 @@ BẠN BẮT BUỘC PHẢI gộp tất cả các thông tin minh chứng sau vào
 const SOCIAL_INTEGRATION_GUIDELINES = `
 Dưới đây là Khung NỘI DUNG LỒNG GHÉP BẮT BUỘC theo quy định của Bộ GD&ĐT (đây là các nội dung lồng ghép RIÊNG BIỆT, KHÔNG phải Thông tư 02/2025 - TT02/2025 là Khung Năng lực số cho người học):
 
-LƯU Ý QUAN TRỌNG: Thông tư 02/2025/TT-BGDĐT quy định về Khung Năng lực số cho người học (kỹ năng sử dụng công nghệ số, AI). Các nội dung Di sản, Ma túy, Dân số dưới đây là NỘI DUNG LỒNG GHÉP theo các chương trình, kế hoạch riêng của Bộ GD&ĐT, KHÔNG thuộc TT02/2025.
-
-1. Giáo dục Di sản (Heritage):
-   - Căn cứ: Công văn 73/HD-BGDĐT về Giáo dục Di sản.
-   - Mục tiêu: Giáo dục niềm tự hào dân tộc, ý thức bảo tồn và phát huy giá trị di sản văn hóa (vật thể và phi vật thể) của địa phương và quốc gia.
-   - Nội dung: Kết nối kiến thức bài học với các di tích lịch sử, danh lam thắng cảnh, lễ hội, làng nghề truyền thống.
-2. Phòng chống Ma túy & Thuốc lá:
-   - Căn cứ: Chương trình Phòng chống Ma túy trong trường học theo Nghị định 116/2021 và Luật PCMT.
-   - Mục tiêu: Trang bị kiến thức về tác hại của ma túy, kỹ năng từ chối, phòng ngừa và trách nhiệm của học sinh.
-   - Nội dung: Lồng ghép tác hại sinh học, tâm lý, pháp luật liên quan đến tệ nạn ma túy và thuốc lá điện tử.
-3. Dân số và Phát triển bền vững:
-   - Căn cứ: Chương trình Giáo dục Dân số - Sức khỏe sinh sản theo Quyết định 2013 của Chính phủ.
-   - Mục tiêu: Hiểu về mối quan hệ giữa dân số, môi trường và sự phát triển bền vững. Giáo dục SKSS, bình đẳng giới.
+LƯU Ý QUAN TRỌNG: Thông tư 02/2025/TT-BGDĐT quy định về Khung Năng lực số cho ngườiconst CURRICULUM_DATA_GDDP = `
+DỮ LIỆU BÀI HỌC GIÁO DỤC ĐỊA PHƯƠNG - THÀNH PHỐ HỒ CHÍ MINH:
+- Lớp 10:
+     * Chủ đề 1: Biến đổi khí hậu và phòng, chống thiên tai ở Thành phố Hồ Chí Minh(5 tiết)
+  * Chủ đề 2: Đạo lí “Uống nước nhớ nguồn” qua các nghi lễ dân gian ở TP.HCM(5 tiết)
+    * Chủ đề 3: Văn học dân gian Thành phố Hồ Chí Minh(6 tiết)
+      * Chủ đề 4: Chân dung nhân vật nghệ thuật ở Thành phố Hồ Chí Minh(4 tiết)
+        * Chủ đề 5: Ô nhiễm môi trường ở Thành phố Hồ Chí Minh(6 tiết)
+          * Chủ đề 6: Định hướng nghề nghiệp(6 tiết)
+            - Lớp 11:
+     * Chủ đề 1: Phát triển du lịch ở Thành phố Hồ Chí Minh
+  * Chủ đề 2: Danh nhân lịch sử của Thành phố Hồ Chí Minh
+    * Chủ đề 3: Văn học ở Thành phố Hồ Chí Minh trước năm 1975
+      * Chủ đề 4: Âm nhạc trong đời sống hiện nay Thành phố Hồ Chí Minh
+        * Chủ đề 5: Mĩ thuật bổ sung.Đặc trưng của một số công trình kiến trúc ở Thành phố Hồ Chí Minh
+          * Chủ đề 6: Tác động của hoạt động kinh tế đến môi trường tự nhiên ở Thành phố Hồ Chí Minh
+            * Chủ đề 7: Giáo dục STEM và định hướng nghề nghiệp trong kỉ nguyên mới`;� sự phát triển bền vững. Giáo dục SKSS, bình đẳng giới.
    - Nội dung: Phân tích dữ liệu dân cư, tác động của quy mô dân số đến chất lượng cuộc sống và an sinh xã hội.
 4. Giáo dục Hòa nhập (Inclusive Education):
    - Căn cứ: Thông tư 03/2018/TT-BGDĐT về Giáo dục Hòa nhập.
@@ -1096,12 +1101,19 @@ LƯU Ý ĐẶC BIỆT VỀ CÁC BÀI HỌC CÒN THIẾU: Danh sách trên có th
 Đối với các bài học bạn TỰ BỔ SUNG (không có mã chỉ báo sẵn từ hệ thống): HÃY TÍCH CỰC ĐÁNH GIÁ VÀ TÍCH HỢP NLS, NL AI CHO TẤT CẢ CÁC MÔN HỌC (Toán, Văn, Anh, Lý, Hóa, Sinh, Sử, Địa, Công nghệ...). Bất cứ bài nào có thể khai thác dữ liệu, tìm kiếm thông tin, phân tích văn bản, đồ thị, hay sử dụng công cụ số đều PHẢI tích hợp thay vì bỏ qua.
 QUY TẮC ĐÁNH MÃ CHỈ BÁO AI KHI TỰ ĐỀ XUẤT: Bạn PHẢI TỰ ĐỀ XUẤT MÃ SỐ theo đúng quy ước định dạng chuẩn QĐ 3439: [Khối lớp].[Ký hiệu Mạch NL (A/B/C/D) + Số thứ tự Chủ đề (1,2,3...)].[STT YCCĐ]. Ví dụ: 12.A1.1, 12.A2.1, 12.B2.1, 10.C3.2. LỆNH TỐI CẤP: BẠN PHẢI LINH HOẠT SỬ DỤNG ĐA DẠNG CÁC CHỦ ĐỀ NHƯ A1, A2, A3, B1, B2, C1, C2, C3... PHÙ HỢP VỚI NỘI DUNG. TUYỆT ĐỐI KHÔNG được chỉ dùng cứng ngắc A1, B1, C1, D1 cho tất cả các bài! TUYỆT ĐỐI KHÔNG dùng chung 1 mã (vd 12.A1.1) cho mọi bài học. Mỗi bài học và mỗi YCCĐ phải có mã độc lập!` : "";
 
+    let defaultCurriculum = "";
+    if (subject === "Giáo dục địa phương") {
+        defaultCurriculum = CURRICULUM_DATA_GDDP;
+    } else if (subject.toLowerCase().includes("địa") && grade === "10") {
+        defaultCurriculum = `MỤC LỤC CHÍNH XÁC SÁCH GIÁO KHOA ĐỊA LÍ 10 - KẾT NỐI TRI THỨC VỚI CUỘC SỐNG:\n${GEO_10_KNTT}`;
+    }
+
     const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
 ${JSON.stringify(options.customCurriculumData, null, 2)}
 LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này. KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.
 LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có chứa thuộc tính "yccd" (Yêu cầu cần đạt), bạn BẮT BUỘC phải sao chép Y NGUYÊN nội dung "yccd" đó vào cột Yêu cầu cần đạt CT 2018 (lessonGoal), TUYỆT ĐỐI KHÔNG ĐƯỢC TỰ Ý RÚT GỌN HAY CẮT XÉN.`
-    : `${systemCurriculum}\n\nDANH SÁCH BÀI HỌC BỔ SUNG TỪ HỆ THỐNG:\n${CURRICULUM_DATA}`;
+    : `${systemCurriculum}\n\nDANH SÁCH BÀI HỌC BỔ SUNG TỪ HỆ THỐNG:\n${defaultCurriculum}`;
     const geographyRules = subject.toLowerCase().includes("địa") ? GEOGRAPHY_AI_RULES : "";
 
   const prompt = `

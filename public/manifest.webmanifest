@@ -1,0 +1,32 @@
+{
+  "name": "EduPlan AI",
+  "short_name": "EduPlan AI",
+  "description": "Tro ly so hoa ke hoach giao duc tich hop AI cho giao vien.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1E293B",
+  "theme_color": "#1E293B",
+  "orientation": "any",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nang cap DOCX",
+      "short_name": "DOCX",
+      "url": "/"
+    },
+    {
+      "name": "Su - Dia Skills",
+      "short_name": "Skills",
+      "url": "/"
+    }
+  ]
+}

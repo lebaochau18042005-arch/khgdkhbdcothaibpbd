@@ -70,15 +70,62 @@
   @media (max-width: 640px) {
     .bento-grid {
       grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .glass {
+      border-radius: 18px;
+    }
+
+    .edu-mobile-nav {
+      scrollbar-width: none;
+    }
+
+    .edu-mobile-nav::-webkit-scrollbar {
+      display: none;
     }
   }
 }
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     @apply min-h-screen bg-indigo-950 text-slate-900 selection:bg-indigo-200 selection:text-indigo-900;
     background-image: radial-gradient(circle at top left, var(--color-indigo-700), transparent),
                       radial-gradient(circle at bottom right, var(--color-indigo-900), transparent);
     background-attachment: fixed;
+  }
+
+  button,
+  [role="button"],
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  @media (max-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+
+    body {
+      background-attachment: scroll;
+    }
   }
 }

@@ -40,7 +40,10 @@ import {
   Clock,
   FileCode,
   Presentation,
-  Map
+  Map,
+  Menu,
+  Wifi,
+  WifiOff
 } from "lucide-react";
 import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateEducationalActivitiesPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, suggestNlsIndicators, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
@@ -547,10 +550,37 @@ export default function App() {
   });
   const [apiTestResult, setApiTestResult] = useState<string | null>(null);
   const [apiTesting, setApiTesting] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
   const contentRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
 
   const [availableLessons, setAvailableLessons] = useState<any[]>([]);
+
+  useEffect(() => {
+    const updateOnlineState = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", updateOnlineState);
+    window.addEventListener("offline", updateOnlineState);
+    updateOnlineState();
+    return () => {
+      window.removeEventListener("online", updateOnlineState);
+      window.removeEventListener("offline", updateOnlineState);
+    };
+  }, []);
+
+  const requireOnlineForAi = (featureName = "tính năng AI") => {
+    if (isOnline) return true;
+    alert(`Bạn đang ngoại tuyến. ${featureName} cần Internet để gọi AI. Bạn vẫn có thể xem lịch sử đã lưu, chỉnh nội dung trên máy và tải các file đã tạo trước đó.`);
+    return false;
+  };
+
+  const mobileNavItems: { mode: AppMode; label: string; icon: React.ReactNode }[] = [
+    { mode: "dashboard", label: "Tổng quan", icon: <BookOpen className="w-4 h-4" /> },
+    { mode: "khbd-gen", label: "KHBD", icon: <FileText className="w-4 h-4" /> },
+    { mode: "upgrade-plan", label: "DOCX", icon: <Zap className="w-4 h-4" /> },
+    { mode: "su-dia-skills", label: "Sử-Địa", icon: <Map className="w-4 h-4" /> },
+    { mode: "nls-lookup", label: "NLS", icon: <Search className="w-4 h-4" /> },
+    { mode: "history", label: "Đã lưu", icon: <Clock className="w-4 h-4" /> },
+  ];
 
   const handleSubjectOrGradeChange = (subject: string, grade: string) => {
     // Chỉ nạp dữ liệu từ DB nếu môn học không phải Giáo dục địa phương 
@@ -613,6 +643,7 @@ export default function App() {
   const [isSuggestingNls, setIsSuggestingNls] = useState(false);
 
   const handleSuggestNls = async () => {
+    if (!requireOnlineForAi("Đề xuất chỉ báo NLS/NL AI")) return;
     if (!lessonPlanInput.topic || !lessonPlanInput.subject) {
       alert("Vui lòng nhập Tên bài học và Môn học trước khi dùng AI đề xuất!");
       return;
@@ -682,6 +713,7 @@ export default function App() {
   };
 
   const handleGenerateKHBD = async () => {
+    if (!requireOnlineForAi("Tạo kế hoạch bài dạy")) return;
     if (!apiKey.trim()) {
       alert("Vui lòng lấy API key để sử dụng app!");
       setShowSettings(true);
@@ -714,6 +746,7 @@ export default function App() {
 
   // Hàm generate giáo án trực tiếp từ input (không phụ thuộc vào lessonPlanInput state)
   const handleGenerateKHBDWithInput = async (input: typeof lessonPlanInput) => {
+    if (!requireOnlineForAi("Tạo kế hoạch bài dạy")) return;
     if (!apiKey.trim()) {
       alert("Vui lòng lấy API key để sử dụng app!");
       setShowSettings(true);
@@ -745,6 +778,7 @@ export default function App() {
   };
 
   const handleGenerateAiFramework = async () => {
+    if (!requireOnlineForAi("Tạo khung năng lực AI")) return;
     if (!apiKey.trim()) {
       alert("Vui lòng lấy API key để sử dụng app!");
       setShowSettings(true);
@@ -772,6 +806,7 @@ export default function App() {
     // Reset input so same file can be re-selected after an error
     event.target.value = "";
     if (!file) return;
+    if (!requireOnlineForAi("Đọc ảnh/PDF bằng AI")) return;
 
     if (!apiKey.trim()) {
       alert("Vui lòng lấy API key để sử dụng tính năng đọc ảnh/PDF!");
@@ -828,6 +863,7 @@ export default function App() {
   };
 
   const handleEvaluateCouncil = async () => {
+    if (!requireOnlineForAi("Hội đồng AI đánh giá giáo án")) return;
     if (!apiKey.trim()) {
       setShowSettings(true);
       return;
@@ -845,6 +881,7 @@ export default function App() {
   };
 
   const handleGenerateEvaluation = async () => {
+    if (!requireOnlineForAi("Tạo đánh giá năng lực")) return;
     if (!apiKey.trim()) {
       setShowSettings(true);
       return;
@@ -874,6 +911,7 @@ export default function App() {
   };
 
   const handleGenerateKHGD = async (customRef?: any[]) => {
+    if (!requireOnlineForAi("Tạo kế hoạch giáo viên")) return;
     if (!apiKey.trim()) {
       setShowSettings(true);
       return;
@@ -909,6 +947,7 @@ export default function App() {
   };
 
   const handleGenerateKHTCM = async () => {
+    if (!requireOnlineForAi("Tạo kế hoạch tổ chuyên môn")) return;
     if (!apiKey.trim()) {
       setShowSettings(true);
       return;
@@ -944,6 +983,7 @@ export default function App() {
   };
 
   const handleGenerateKHHDGD = async () => {
+    if (!requireOnlineForAi("Tạo kế hoạch hoạt động giáo dục")) return;
     if (!apiKey.trim()) {
       setShowSettings(true);
       return;
@@ -977,6 +1017,10 @@ export default function App() {
   const handleCurriculumUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
     if (!uploadedFile) return;
+    if (!requireOnlineForAi("Phân tích phụ lục chương trình")) {
+      e.target.value = "";
+      return;
+    }
 
     if (!apiKey.trim()) {
       alert("Vui lòng nhập API Key ở phần Cài đặt trước khi tải phụ lục.");
@@ -2302,6 +2346,10 @@ export default function App() {
                 <span className="font-black text-xl">EduPlan <span className="text-blue-400">AI</span></span>
               </div>
               <div className="flex items-center gap-4">
+                <div className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase ${isOnline ? "border-emerald-300/40 bg-emerald-400/10 text-emerald-100" : "border-amber-300/40 bg-amber-400/10 text-amber-100"}`}>
+                  {isOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
+                  {isOnline ? "Online" : "Offline"}
+                </div>
                 <UserCircle className="w-6 h-6 text-white/80" />
                 <button
                   onClick={() => setShowSettings(true)}
@@ -2318,19 +2366,51 @@ export default function App() {
               </div>
             </header>
 
-            <section className="flex-1 p-4 md:p-6 lg:p-10 max-w-7xl mx-auto w-full pb-40 lg:pb-40">
-              <div className="mb-6 mx-auto w-full max-w-3xl glass p-4 rounded-xl border border-red-500/20 bg-red-50/10 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-red-500">
-                  <AlertCircle className="w-5 h-5" />
-                  <span className="text-sm font-bold">Lấy API key để sử dụng app</span>
+            <div className="lg:hidden sticky top-[65px] z-30 bg-indigo-950/90 backdrop-blur-xl border-b border-white/10 px-3 py-2">
+              <div className="edu-mobile-nav flex gap-2 overflow-x-auto pb-1">
+                <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-white/10 text-white/70">
+                  <Menu className="w-4 h-4" />
                 </div>
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs font-bold rounded-lg transition-colors border border-red-500/30"
-                >
-                  Cài đặt ngay
-                </button>
+                {mobileNavItems.map(item => (
+                  <button
+                    key={item.mode}
+                    onClick={() => { setMode(item.mode); setResult(null); }}
+                    className={`shrink-0 inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold border transition-colors touch-manipulation ${mode === item.mode ? "bg-white text-indigo-950 border-white shadow-sm" : "bg-white/10 text-white/75 border-white/10 hover:bg-white/15"}`}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </button>
+                ))}
               </div>
+            </div>
+
+            <section className="flex-1 p-4 md:p-6 lg:p-10 max-w-7xl mx-auto w-full pb-40 lg:pb-40">
+              {!isOnline && (
+                <div className="mb-6 mx-auto w-full max-w-4xl glass p-4 rounded-xl border border-amber-300/50 bg-amber-50/90 flex flex-col sm:flex-row sm:items-center gap-3 text-amber-900">
+                  <div className="flex items-center gap-2">
+                    <WifiOff className="w-5 h-5 shrink-0" />
+                    <span className="text-sm font-black">Đang ngoại tuyến</span>
+                  </div>
+                  <p className="text-sm font-medium leading-relaxed">
+                    App vẫn mở được để xem lịch sử, tải lại file đã tạo và chỉnh nội dung trên máy. Các thao tác tạo mới bằng AI cần Internet.
+                  </p>
+                </div>
+              )}
+
+              {!apiKey.trim() && isOnline && (
+                <div className="mb-6 mx-auto w-full max-w-3xl glass p-4 rounded-xl border border-red-500/20 bg-red-50/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-red-500">
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                    <span className="text-sm font-bold">Lấy API key để sử dụng app</span>
+                  </div>
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs font-bold rounded-lg transition-colors border border-red-500/30"
+                  >
+                    Cài đặt ngay
+                  </button>
+                </div>
+              )}
               <AnimatePresence mode="wait">
                 {mode === "upgrade-plan" && (
                   <motion.div
@@ -2349,6 +2429,7 @@ export default function App() {
                     </div>
                     <UpgradePlan
                       apiKey={apiKey}
+                      isOnline={isOnline}
                       onUpgradeReady={(data) => {
                         const newInput = {
                           subject: data.subject,
@@ -2389,6 +2470,7 @@ export default function App() {
                     <SuDiaSkills
                       apiKey={apiKey}
                       aiModel={aiModel}
+                      isOnline={isOnline}
                       onRequestSettings={() => setShowSettings(true)}
                       onOpenUpgradePlan={() => {
                         setResult(null);
@@ -2491,9 +2573,9 @@ export default function App() {
                         </div>
                         <div className="relative z-10 flex items-center gap-4 mt-8 pt-8 border-t border-indigo-100/30">
                           <div className="flex -space-x-3">
-                            {[1, 2, 3, 4, 5].map(i => (
-                              <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center overflow-hidden shadow-md">
-                                <img src={`https://picsum.photos/seed/edu_user_${i}/40/40`} referrerPolicy="no-referrer" alt="User" />
+                            {["GV", "AI", "NLS", "10", "12"].map((label, i) => (
+                              <div key={label} className={`w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden shadow-md text-[10px] font-black text-white ${["bg-blue-600", "bg-indigo-600", "bg-emerald-600", "bg-amber-600", "bg-rose-600"][i]}`}>
+                                {label}
                               </div>
                             ))}
                           </div>
@@ -4398,6 +4480,7 @@ export default function App() {
                       onClick={async () => {
                         const key = apiKey.trim();
                         if (!key) { setApiTestResult('❌ Chưa nhập API key'); return; }
+                        if (!isOnline) { setApiTestResult('⚠️ Đang ngoại tuyến. Vui lòng kết nối Internet để kiểm tra API.'); return; }
                         setApiTesting(true); setApiTestResult(null);
                         try {
                           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}&pageSize=10`);

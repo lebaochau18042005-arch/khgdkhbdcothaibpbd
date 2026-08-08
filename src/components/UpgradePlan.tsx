@@ -13,7 +13,7 @@ interface TextbookImage {
     name: string;
 }
 
-export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady: (data: any) => void, apiKey: string }) {
+export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }: { onUpgradeReady: (data: any) => void, apiKey: string, isOnline?: boolean }) {
     const [step, setStep] = useState(1);
     const [file, setFile] = useState<File | null>(null);
     const [rawText, setRawText] = useState("");
@@ -92,6 +92,11 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             e.target.value = "";
             return;
         }
+        if (!isOnline) {
+            alert("Bạn đang ngoại tuyến. Rà soát giáo án bằng AI cần Internet. Bạn vẫn có thể mở lại các kết quả đã lưu trước đó trong Lịch sử.");
+            e.target.value = "";
+            return;
+        }
 
         const isPdf = uploadedFile.type === "application/pdf" || uploadedFile.name.toLowerCase().endsWith(".pdf");
         const maxSizeMB = isPdf ? 10 : 20;
@@ -163,6 +168,10 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
     };
 
     const handleApply = async () => {
+        if (!isOnline) {
+            alert("Bạn đang ngoại tuyến. Chèn nội dung AI vào DOCX cần Internet để tạo đoạn lồng ghép mới.");
+            return;
+        }
         if (!file || !file.name.toLowerCase().endsWith(".docx")) {
             // Fallback to old AI JSON generation for PDF
             onUpgradeReady({

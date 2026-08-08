@@ -31,6 +31,7 @@ type SkillCard = {
 type Props = {
   apiKey: string;
   aiModel: string;
+  isOnline?: boolean;
   onOpenUpgradePlan: () => void;
   onRequestSettings: () => void;
 };
@@ -136,7 +137,7 @@ const isQuizKind = (kind: SuDiaSkillKind) => kind.endsWith("quiz");
 const isSlidesKind = (kind: SuDiaSkillKind) => kind.endsWith("slides");
 const isExamKind = (kind: SuDiaSkillKind) => kind.endsWith("exam");
 
-export default function SuDiaSkills({ apiKey, aiModel, onOpenUpgradePlan, onRequestSettings }: Props) {
+export default function SuDiaSkills({ apiKey, aiModel, isOnline = true, onOpenUpgradePlan, onRequestSettings }: Props) {
   const [domain, setDomain] = useState<SuDiaSkillDomain>("history");
   const [kind, setKind] = useState<SuDiaSkillKind>("history-quiz");
   const [subject, setSubject] = useState("Lịch sử");
@@ -173,6 +174,10 @@ export default function SuDiaSkills({ apiKey, aiModel, onOpenUpgradePlan, onRequ
     if (!apiKey.trim()) {
       alert("Vui lòng nhập Gemini API key trước khi dùng tính năng này.");
       onRequestSettings();
+      return;
+    }
+    if (!isOnline) {
+      alert("Bạn đang ngoại tuyến. Các skill Sử - Địa cần Internet để gọi AI; bạn vẫn có thể xem hoặc tải lại kết quả đã tạo trước đó trong Lịch sử.");
       return;
     }
     if (!topic.trim()) {

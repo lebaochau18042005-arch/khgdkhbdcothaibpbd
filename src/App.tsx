@@ -37,7 +37,9 @@ import {
   Laptop,
   Image as ImageIcon,
   UserCircle,
-  Clock
+  Clock,
+  FileCode,
+  Presentation
 } from "lucide-react";
 import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateEducationalActivitiesPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, suggestNlsIndicators, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
@@ -995,11 +997,249 @@ export default function App() {
   };
 
   const handleCopy = () => {
+
     navigator.clipboard.writeText(JSON.stringify(result.data, null, 2));
     alert("Đã sao chép vào bộ nhớ tạm!");
   };
 
+  // ===== EXPORT HTML =====
+  const downloadHTML = () => {
+    if (!result || !result.data) return;
+    const currentSubject = lessonPlanInput.subject || eduPlanInput.subject;
+    const element = result.type === "khbd" ? contentRef.current : tableRef.current;
+    if (!element) return;
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduPlan AI - ${currentSubject}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Be Vietnam Pro', Arial, sans-serif; background: #f8fafc; color: #1e293b; padding: 24px; }
+  .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 40px; }
+  h1 { color: #1e40af; font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  h2 { color: #1e40af; font-size: 16px; font-weight: 700; margin: 24px 0 12px; border-left: 4px solid #3b82f6; padding-left: 12px; }
+  h3 { color: #334155; font-size: 14px; font-weight: 700; margin: 16px 0 8px; }
+  p, li { font-size: 13px; line-height: 1.7; color: #475569; }
+  ul { padding-left: 20px; margin: 8px 0; }
+  li { margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12px; }
+  th { background: #1e40af; color: white; padding: 10px 12px; text-align: left; font-weight: 600; }
+  td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .badge { display: inline-block; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; margin: 2px; }
+  .ai-badge { background: #f0fdf4; color: #166534; }
+  .header-bar { background: linear-gradient(135deg, #1e40af, #4f46e5); color: white; padding: 20px 40px; margin: -40px -40px 32px; border-radius: 12px 12px 0 0; }
+  .header-bar h1 { color: white; font-size: 20px; }
+  .header-bar p { color: rgba(255,255,255,0.8); font-size: 13px; margin-top: 4px; }
+  .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 11px; }
+  @media print { body { padding: 0; background: white; } .container { box-shadow: none; padding: 20px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header-bar">
+    <h1>EduPlan AI — Kế hoạch Giáo dục</h1>
+    <p>Môn: ${currentSubject} | Khối: ${lessonPlanInput.grade || eduPlanInput.grade} | Chuẩn CV 5512 + QĐ 3439/BGDĐT</p>
+  </div>
+  ${element.innerHTML}
+  <div class="footer">Tạo bởi EduPlan AI • Hệ thống Kế hoạch Giáo dục Thông minh • ${new Date().toLocaleDateString('vi-VN')}</div>
+</div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${result.type.toUpperCase()}_${currentSubject}.html`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ===== EXPORT PPTX (via JSZip Open XML) =====
+  const downloadPPTX = async () => {
+    if (!result || !result.data) return;
+    const currentSubject = lessonPlanInput.subject || eduPlanInput.subject;
+    const grade = lessonPlanInput.grade || eduPlanInput.grade;
+
+    // Build slide content based on result type
+    const slides: Array<{ title: string; bullets: string[] }> = [];
+
+    if (result.type === "khbd") {
+      const d = result.data;
+      slides.push({ title: d.title || "Kế hoạch Bài dạy", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, "Chuẩn CV 5512/BGDĐT + QĐ 3439"] });
+      slides.push({ title: "I. MỤC TIÊU", bullets: [...(d.objectives?.knowledge || []).slice(0, 5).map((k: string) => `• KT: ${k}`), ...(d.objectives?.aiSpecific || []).slice(0, 3).map((a: string) => `• AI: ${a}`)] });
+      (d.activities || []).forEach((act: any) => {
+        slides.push({ title: act.name || "Hoạt động", bullets: [`Mục tiêu: ${act.objective || ""}`, `Nội dung: ${act.content || ""}`, `Sản phẩm: ${act.product || ""}`] });
+      });
+      slides.push({ title: "IV. KẾ HOẠCH ĐÁNH GIÁ", bullets: (d.assessment || []).slice(0, 6) });
+    } else if (result.type === "kh-tcm") {
+      const data = Array.isArray(result.data) ? result.data : [];
+      slides.push({ title: "KẾ HOẠCH TỔ CHUYÊN MÔN TÍCH HỢP AI", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `Tổng số bài: ${data.length}`] });
+      // Chunk lessons into groups of 8 per slide
+      for (let i = 0; i < data.length; i += 8) {
+        const chunk = data.slice(i, i + 8);
+        slides.push({ title: `Phân phối chương trình (${i + 1}–${Math.min(i + 8, data.length)})`, bullets: chunk.map((item: any) => `${item.time || ""}: ${item.lessonContent || item.lessonName || ""} (${item.periods || ""} tiết)`) });
+      }
+    } else {
+      const data = Array.isArray(result.data) ? result.data : [];
+      slides.push({ title: `KẾ HOẠCH GIÁO DỤC - ${currentSubject}`, bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `Tổng số mục: ${data.length}`] });
+      data.slice(0, 20).forEach((item: any, i: number) => {
+        if (i % 6 === 0) slides.push({ title: `Nội dung (${i + 1}–${Math.min(i + 6, data.length)})`, bullets: data.slice(i, i + 6).map((it: any) => `• ${it.lesson || it.lessonContent || it.theme || ""} - ${it.periods || ""} tiết`) });
+      });
+    }
+
+    // Generate PPTX XML using JSZip
+    const JSZip = (await import("jszip")).default;
+    const zip = new JSZip();
+
+    const slideWidth = 9144000; // EMU for 10 inches
+    const slideHeight = 5143500; // EMU for 7.5 inches
+
+    // [Content_Types].xml
+    zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
+  <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
+  <Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>
+  ${slides.map((_: any, i: number) => `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join("\n  ")}
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+</Types>`);
+
+    // _rels/.rels
+    zip.folder("_rels")!.file(".rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
+</Relationships>`);
+
+    // ppt/presentation.xml
+    const pptFolder = zip.folder("ppt")!;
+    pptFolder.file("presentation.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>
+  <p:sldSz cx="${slideWidth}" cy="${slideHeight}"/>
+  <p:notesSz cx="${slideHeight}" cy="${slideWidth}"/>
+  <p:sldIdLst>
+    ${slides.map((_: any, i: number) => `<p:sldId id="${256 + i}" r:id="rId${i + 2}"/>`).join("\n    ")}
+  </p:sldIdLst>
+</p:presentation>`);
+
+    // ppt/_rels/presentation.xml.rels
+    pptFolder.folder("_rels")!.file("presentation.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>
+  ${slides.map((_: any, i: number) => `<Relationship Id="rId${i + 2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${i + 1}.xml"/>`).join("\n  ")}
+</Relationships>`);
+
+    // Minimal slideMaster
+    const masterFolder = pptFolder.folder("slideMasters")!;
+    masterFolder.file("slideMaster1.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>
+  <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
+  <p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>
+</p:sldMaster>`);
+    masterFolder.folder("_rels")!.file("slideMaster1.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+</Relationships>`);
+
+    // Minimal slideLayout
+    const layoutFolder = pptFolder.folder("slideLayouts")!;
+    layoutFolder.file("slideLayout1.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldLayout xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" type="title" preserve="1">
+  <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>
+</p:sldLayout>`);
+    layoutFolder.folder("_rels")!.file("slideLayout1.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
+</Relationships>`);
+
+    // Helper to escape XML
+    const esc = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+    // Generate each slide
+    const slidesFolder = pptFolder.folder("slides")!;
+    const slideRelsFolder = slidesFolder.folder("_rels")!;
+    const colors = ["1E40AF", "4F46E5", "0F766E", "7C3AED", "BE185D"];
+
+    slides.forEach((slide, idx) => {
+      const bgColor = idx === 0 ? "1E40AF" : colors[idx % colors.length];
+      const isTitle = idx === 0;
+      const bulletItems = (slide.bullets || []).slice(0, 10);
+
+      const bulletXml = bulletItems.map((b: string) => `
+        <a:p>
+          <a:pPr marL="228600" indent="-228600"><a:buNone/></a:pPr>
+          <a:r><a:rPr lang="vi-VN" sz="1600" b="0"><a:solidFill><a:srgbClr val="${isTitle ? "FFFFFF" : "1E293B"}"/></a:solidFill></a:rPr>
+          <a:t>${esc(b)}</a:t></a:r>
+        </a:p>`).join("");
+
+      slidesFolder.file(`slide${idx + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <p:cSld>
+    <p:bg><p:bgPr><a:solidFill><a:srgbClr val="${isTitle ? bgColor : "F8FAFC"}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>
+    <p:spTree>
+      <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${slideWidth}" cy="${slideHeight}"/><a:chOff x="0" y="0"/><a:chExt cx="${slideWidth}" cy="${slideHeight}"/></a:xfrm></p:grpSpPr>
+      
+      <!-- Title bar -->
+      <p:sp><p:nvSpPr><p:cNvPr id="2" name="Title"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="457200" y="274638"/><a:ext cx="8229600" cy="960000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${bgColor}"/></a:solidFill></p:spPr>
+        <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r>
+          <a:rPr lang="vi-VN" sz="2400" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr>
+          <a:t>${esc(slide.title)}</a:t>
+        </a:r></a:p></p:txBody>
+      </p:sp>
+      
+      <!-- Content -->
+      <p:sp><p:nvSpPr><p:cNvPr id="3" name="Content"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph idx="1"/></p:nvPr></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="457200" y="1320000"/><a:ext cx="8229600" cy="3520000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${isTitle ? bgColor : "FFFFFF"}"/></a:solidFill></p:spPr>
+        <p:txBody><a:bodyPr/><a:lstStyle/>${bulletXml}</p:txBody>
+      </p:sp>
+      
+      <!-- Footer -->
+      <p:sp><p:nvSpPr><p:cNvPr id="4" name="Footer"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="457200" y="4800000"/><a:ext cx="8229600" cy="300000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${bgColor}"/></a:solidFill></p:spPr>
+        <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r>
+          <a:rPr lang="vi-VN" sz="1000" b="0"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr>
+          <a:t>EduPlan AI — ${currentSubject} Lớp ${grade} • Slide ${idx + 1}/${slides.length}</a:t>
+        </a:r></a:p></p:txBody>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
+</p:sld>`);
+
+      slideRelsFolder.file(`slide${idx + 1}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+</Relationships>`);
+    });
+
+    // docProps/app.xml
+    zip.folder("docProps")!.file("app.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
+  <Application>EduPlan AI</Application>
+  <Slides>${slides.length}</Slides>
+</Properties>`);
+
+    const blob = await zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${result.type.toUpperCase()}_${currentSubject}.pptx`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const downloadPDF = () => {
+
     const element = result.type === "khbd" ? contentRef.current : tableRef.current;
     if (!element) return;
 
@@ -2646,8 +2886,14 @@ export default function App() {
                             <button onClick={downloadPDF} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống PDF">
                               <FileDown className="w-4 h-4 text-red-500" />
                             </button>
-                            <button onClick={downloadText} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống Text">
+                            <button onClick={downloadText} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống Text (.txt)">
                               <FileText className="w-4 h-4 text-brand-muted" />
+                            </button>
+                            <button onClick={downloadHTML} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống HTML (mở trình duyệt)">
+                              <FileCode className="w-4 h-4 text-orange-500" />
+                            </button>
+                            <button onClick={downloadPPTX} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống PowerPoint (.pptx)">
+                              <Presentation className="w-4 h-4 text-orange-600" />
                             </button>
                             <button onClick={handleCopy} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Sao chép JSON">
                               <FileJson className="w-4 h-4 text-brand-accent" />
@@ -3345,8 +3591,14 @@ export default function App() {
                             <button onClick={downloadPDF} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống PDF">
                               <FileDown className="w-4 h-4 text-red-500" />
                             </button>
-                            <button onClick={downloadText} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống Text">
+                            <button onClick={downloadText} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống Text (.txt)">
                               <FileText className="w-4 h-4 text-brand-muted" />
+                            </button>
+                            <button onClick={downloadHTML} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống HTML">
+                              <FileCode className="w-4 h-4 text-orange-500" />
+                            </button>
+                            <button onClick={downloadPPTX} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống PowerPoint (.pptx)">
+                              <Presentation className="w-4 h-4 text-orange-600" />
                             </button>
                             <button onClick={handleCopy} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Sao chép JSON">
                               <FileJson className="w-4 h-4 text-brand-accent" />
@@ -3584,8 +3836,14 @@ export default function App() {
                             <button onClick={downloadPDF} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống PDF">
                               <FileDown className="w-4 h-4 text-red-500" />
                             </button>
-                            <button onClick={downloadText} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống Text">
+                            <button onClick={downloadText} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống Text (.txt)">
                               <FileText className="w-4 h-4 text-brand-muted" />
+                            </button>
+                            <button onClick={downloadHTML} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống HTML">
+                              <FileCode className="w-4 h-4 text-orange-500" />
+                            </button>
+                            <button onClick={downloadPPTX} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống PowerPoint (.pptx)">
+                              <Presentation className="w-4 h-4 text-orange-600" />
                             </button>
                             <button onClick={handleCopy} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Sao chép JSON">
                               <FileJson className="w-4 h-4 text-brand-accent" />
@@ -3743,8 +4001,14 @@ export default function App() {
                             <button onClick={downloadPDF} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống PDF">
                               <FileDown className="w-4 h-4 text-red-500" />
                             </button>
-                            <button onClick={downloadText} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống Text">
+                            <button onClick={downloadText} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống Text (.txt)">
                               <FileText className="w-4 h-4 text-brand-muted" />
+                            </button>
+                            <button onClick={downloadHTML} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống HTML">
+                              <FileCode className="w-4 h-4 text-orange-500" />
+                            </button>
+                            <button onClick={downloadPPTX} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Tải xuống PowerPoint (.pptx)">
+                              <Presentation className="w-4 h-4 text-orange-600" />
                             </button>
                             <button onClick={handleCopy} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm" title="Sao chép JSON">
                               <FileJson className="w-4 h-4 text-brand-accent" />

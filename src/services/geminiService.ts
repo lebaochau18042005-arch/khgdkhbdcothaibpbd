@@ -219,6 +219,14 @@ const extractGradeNumber = (grade?: string) => {
 
 const isThptGrade = (grade?: string) => ["10", "11", "12"].includes(extractGradeNumber(grade));
 
+const detectThptGradeFromText = (...texts: Array<string | undefined>) => {
+  const combined = texts.filter(Boolean).join("\n").slice(0, 60000);
+  const contextualMatch = combined.match(/(?:lớp|lop|khối|khoi)\s*[:\-]?\s*(10|11|12)\b/i);
+  if (contextualMatch) return contextualMatch[1];
+  const lessonPlanMatch = combined.match(/(?:kế hoạch bài dạy|giao án|giáo án)[\s\S]{0,800}?\b(10|11|12)\b/i);
+  return lessonPlanMatch?.[1];
+};
+
 const isLikelyPlaceholderIndicatorCode = (code?: string) => /^\s*\d{1,2}\.A\d+\.a\s*$/i.test(code || "");
 
 const isValidAiIndicatorCode = (code: string, grade?: string) => {
@@ -235,6 +243,68 @@ const getSafeAiIndicatorCode = (code?: string, grade?: string) => {
   if (!code || isLikelyPlaceholderIndicatorCode(code)) return undefined;
   const trimmed = code.trim();
   return isValidAiIndicatorCode(trimmed, grade) ? trimmed : undefined;
+};
+
+const sanitizeAiCodeForGrade = (code: string | undefined, grade?: string) => {
+  const currentGrade = extractGradeNumber(grade);
+  const rawCode = (code || "").trim();
+  if (!rawCode) {
+    return { code: "Không gán mã", note: "Thiếu mã NL AI." };
+  }
+
+  const match = rawCode.match(/(\d{1,2})\.([ABCD]\d+)\.(\d{1,2})/i);
+  if (!match) {
+    return { code: "Không gán mã", note: `Mã "${rawCode}" không đúng định dạng NL AI.` };
+  }
+
+  const [, codeGrade, rawTheme, rawOrder] = match;
+  const theme = rawTheme.toUpperCase();
+  const allowedThemes = AI_THEMES_BY_THPT_GRADE[currentGrade];
+  if (isThptGrade(currentGrade) && !allowedThemes?.includes(theme)) {
+    return { code: "Không gán mã", note: `Chủ đề ${theme} không thuộc danh sách được phép của lớp ${currentGrade}.` };
+  }
+
+  const normalizedOrder = rawOrder.padStart(2, "0");
+  const correctedCode = isThptGrade(currentGrade)
+    ? `${currentGrade}.${theme}.${normalizedOrder}`
+    : `${codeGrade}.${theme}.${normalizedOrder}`;
+
+  if (isThptGrade(currentGrade) && codeGrade !== currentGrade) {
+    return {
+      code: correctedCode,
+      note: `Đã hiệu chỉnh tiền tố lớp từ ${codeGrade} sang ${currentGrade}; giáo viên cần đối chiếu lại YCCĐ trước khi dùng.`,
+    };
+  }
+
+  return { code: correctedCode };
+};
+
+const appendSanitizerNote = (text: string | undefined, note?: string) => {
+  if (!note) return text || "";
+  const base = (text || "").trim();
+  return base ? `${base} (${note})` : note;
+};
+
+const sanitizeAnalysisResultCompetencies = (analysis: any, forcedGrade?: string) => {
+  const grade = forcedGrade || extractGradeNumber(analysis?.grade);
+  if (!isThptGrade(grade)) return analysis;
+
+  const sanitizedSuggestions = Array.isArray(analysis?.aiSuggestions)
+    ? analysis.aiSuggestions.map((suggestion: any) => {
+        const sanitized = sanitizeAiCodeForGrade(suggestion?.suggestedAI, grade);
+        return {
+          ...suggestion,
+          suggestedAI: sanitized.code,
+          reason: appendSanitizerNote(suggestion?.reason, sanitized.note),
+        };
+      })
+    : [];
+
+  return {
+    ...analysis,
+    grade,
+    aiSuggestions: sanitizedSuggestions,
+  };
 };
 
 const normalizeCurriculumCompetencyData = (items: any[] = [], grade?: string) =>
@@ -582,7 +652,11 @@ export const analyzeExistingPlan = async (
   pl1Data?: string
 ) => {
   const hasImages = textbookImages && textbookImages.length > 0;
-  const genericThptGuardrails = getThptCompetencyGuardrails("môn học trong giáo án");
+  const detectedGrade = detectThptGradeFromText(fileText, pl1Data);
+  const genericThptGuardrails = getThptCompetencyGuardrails("môn học trong giáo án", detectedGrade);
+  const detectedGradeInstruction = detectedGrade
+    ? `\nLỚP ĐÃ PHÁT HIỆN TỪ GIÁO ÁN GỐC: ${detectedGrade}. Mọi mã NL AI trong aiSuggestions BẮT BUỘC bắt đầu bằng "${detectedGrade}."; tuyệt đối không dùng mã lớp khác.`
+    : `\nTrước khi đề xuất aiSuggestions, phải trích xuất chính xác lớp từ giáo án. Mã NL AI bắt buộc bắt đầu bằng đúng lớp vừa trích xuất; ví dụ nếu lớp là 12 thì dùng 12.A1.01, không dùng 10.* hoặc 11.*.`;
 
   // Build the textbook image section of the prompt
   const textbookSection = hasImages
@@ -596,7 +670,7 @@ C. Đề xuất các hoạt động tích hợp chủ đề xã hội bắt bu�
     ? `\n\n--- LỆNH TỐI CẤP ĐỒNG BỘ TỪ KHTCM (PL1) ---\nDưới đây là Kế hoạch Tổ chuyên môn (PL1) được tải lên:
 ${pl1Data.substring(0, 5000)}
 
-LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với PL1 ở trên. Tìm ra chính xác dòng chứa bài học này trong PL1, và BẮT BUỘC TRÍCH XUẤT Y NGUYÊN các mã chỉ báo Năng lực số (NLS) và Năng lực AI (NL AI) đã được quy định sẵn trong PL1 để đưa vào mục "aiSuggestions". TUYỆT ĐỐI KHÔNG TỰ CHẾ MÃ MỚI nếu đã tìm thấy mã trong PL1.`
+LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với PL1 ở trên. Tìm ra chính xác dòng chứa bài học này trong PL1. Chỉ trích xuất mã NLS/NL AI từ PL1 nếu mã đó khớp đúng lớp của giáo án và có căn cứ YCCĐ. Nếu PL1 chứa mã sai lớp hoặc mã tạm, phải ghi "Không gán mã" và nêu lý do, không được bê nguyên mã sai.`
     : "";
 
   const jsonFormat = `{
@@ -620,7 +694,7 @@ LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với P
   "aiSuggestions": [
     {
       "activityName": "Tên hoạt động gợi ý",
-      "suggestedAI": "Mã chỉ báo AI chuẩn (vd: 10.A1.1)",
+      "suggestedAI": "Mã chỉ báo AI chuẩn đúng lớp (vd: nếu grade là 12 thì 12.A1.01; không dùng 10.*)",
       "reason": "Lý do phù hợp",
       "action": "HS sẽ làm gì với AI?"
     }
@@ -634,7 +708,7 @@ LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với P
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, mã NLS phải dùng mức NC1 (ví dụ '1.1.NC1a') và mã NL AI phải đúng lớp (ví dụ '10.A1.01', '10.C2.02').${textbookSection}${pl1Section}
+3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, mã NLS phải dùng mức NC1 (ví dụ '1.1.NC1a') và mã NL AI phải bắt đầu đúng lớp của giáo án.${detectedGradeInstruction}${textbookSection}${pl1Section}
 
 ${genericThptGuardrails}
 
@@ -657,12 +731,12 @@ Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo vi
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, mã NLS phải dùng mức NC1 (ví dụ '1.1.NC1a') và mã NL AI phải đúng lớp (ví dụ '10.A1.01', '10.C2.02').${textbookSection}${pl1Section}
+3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, mã NLS phải dùng mức NC1 (ví dụ '1.1.NC1a') và mã NL AI phải bắt đầu đúng lớp của giáo án.${detectedGradeInstruction}${textbookSection}${pl1Section}
 
 ${genericThptGuardrails}
 
 VĂN BẢN GIÁO ÁN:
-${fileText.substring(0, 15000)}
+${fileText.substring(0, 60000)}
 
 Định dạng đầu ra JSON bắt buộc:
 ${jsonFormat}`
@@ -677,7 +751,7 @@ ${jsonFormat}`
   }
 
   try {
-    return await callGeminiWithFallback(prompt, {
+    const analysis = await callGeminiWithFallback(prompt, {
       type: Type.OBJECT,
       properties: {
         subject: { type: Type.STRING },
@@ -721,6 +795,7 @@ ${jsonFormat}`
       },
       required: ["subject", "grade", "topic", "duration", "aiSuggestions"]
     });
+    return sanitizeAnalysisResultCompetencies(analysis, detectedGrade);
   } catch (err) {
     console.error("Error analyzing plan:", err);
     throw err;
@@ -735,17 +810,28 @@ export const generateDirectSnippets = async (
 ) => {
   const isEnglish = subject.toLowerCase().includes("tiếng anh") || subject.toLowerCase().includes("english");
   const englishConstraint = isEnglish ? `LỆNH TỐI CẤP (NGÔN NGỮ): BẮT BUỘC SỬ DỤNG 100% TIẾNG ANH (ENGLISH) CHO TOÀN BỘ NỘI DUNG. KHÔNG ĐƯỢC CHỨA BẤT KỲ TỪ TIẾNG VIỆT NÀO.` : ``;
+  const competencyGuardrails = getThptCompetencyGuardrails(subject, grade);
+  const sanitizedSuggestions = (aiSuggestions || []).map((suggestion) => {
+    const sanitized = sanitizeAiCodeForGrade(suggestion?.suggestedAI, grade);
+    return {
+      ...suggestion,
+      suggestedAI: sanitized.code,
+      reason: appendSanitizerNote(suggestion?.reason, sanitized.note),
+    };
+  });
 
   const prompt = `Bạn là chuyên gia thiết kế Hoạt động Trí tuệ Nhân tạo (AI) cho học sinh.
 Thông tin bài học: Môn ${subject}, Lớp ${grade}, Bài: ${topic}.
 Dưới đây là các gợi ý tích hợp AI đã được phê duyệt:
-${JSON.stringify(aiSuggestions, null, 2)}
+${JSON.stringify(sanitizedSuggestions, null, 2)}
+
+${competencyGuardrails}
 
 Nhiệm vụ: Viết MỘT ĐOẠN VĂN BẢN CHI TIẾT cho mỗi hoạt động để giáo viên có thể CHÈN TRỰC TIẾP vào giáo án Word của họ. Đoạn văn này phải mô tả rõ:
 1. Nhiệm vụ cụ thể của học sinh với công cụ AI.
 2. Câu lệnh Prompt gợi ý (nếu có).
 3. Yêu cầu sản phẩm.
-4. Có gắn mã chỉ báo AI ở cuối (VD: 10.A1.1).
+4. Có gắn mã chỉ báo AI đúng lớp ở cuối. Nếu lớp ${grade} thì mã phải bắt đầu bằng ${extractGradeNumber(grade)}.; nếu gợi ý đang là "Không gán mã" thì không tự tạo mã mới.
 
 ${englishConstraint}
 
@@ -930,7 +1016,7 @@ NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầ
 
 VĂN BẢN GIÁO ÁN GỐC CỦA GIÁO VIÊN(BẮT BUỘC BẢO TOÀN):
 """
-${input.existingRawText.substring(0, 18000)}
+${input.existingRawText.substring(0, 60000)}
 """
 
 ĐIỂM CHẠM AI CẦN TÍCH HỢP(chỉ chỉnh sửa những hoạt động này):

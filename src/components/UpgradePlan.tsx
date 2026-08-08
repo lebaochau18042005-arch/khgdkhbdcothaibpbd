@@ -136,7 +136,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             }
 
             setAnalysisResult(analysis);
-            setSelectedIntegrations(analysis.aiSuggestions || []);
+            setSelectedIntegrations((analysis.aiSuggestions || []).filter((sug: any) => /^\d{1,2}\.[ABCD]\d+\.\d{1,2}$/i.test(sug?.suggestedAI || "")));
             setStep(2);
         } catch (err: any) {
             console.error("[UpgradePlan Error]", err);
@@ -203,26 +203,8 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             setReadyBlob(result.blob);
             setStep(3);
 
-            // 4. QUAN TRỌNG: Đồng thời gọi onUpgradeReady để App.tsx tạo và hiển thị
-            // toàn bộ giáo án đầy đủ (với NLS/NLAI hoàn chỉnh) lên màn hình — tính năng CŨ
-            onUpgradeReady({
-                subject: analysisResult.subject || "Khác",
-                grade: analysisResult.grade || "10",
-                topic: analysisResult.topic || "Bài học nâng cấp",
-                duration: analysisResult.duration || "2 tiết",
-                contextStudents: analysisResult.contextStudents || "",
-                contextSchool: analysisResult.contextSchool || "",
-                objectivesKnowledge: analysisResult.objectivesKnowledge || "",
-                objectivesCompetency: analysisResult.objectivesCompetency || "",
-                objectivesQuality: analysisResult.objectivesQuality || "",
-                existingRawText: rawText,
-                existingPdfBase64: "",
-                aiIntegrationOptions: selectedIntegrations,
-                socialIntegrations: selectedSocialIntegrations,
-                newContentFromTextbook: analysisResult.newContentFromTextbook || [],
-                indicatorCode: selectedIntegrations?.[0]?.suggestedAI || undefined,
-                selectedNlsIndicators: []
-            });
+            // DOCX là nguồn đầy đủ nhất: giữ nguyên giáo án gốc và chỉ chèn phần AI vào file.
+            // Không tự tạo lại giáo án ở màn KHBD vì mô hình có thể rút gọn nội dung gốc.
         } catch (err) {
             console.error(err);
             alert("❌ Đã có lỗi xảy ra khi chèn vào DOCX: " + (err as Error).message);
@@ -251,6 +233,8 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
         }
         return "bg-green-50 border-green-300 text-green-800";
     };
+
+    const hasValidAiCode = (code?: string) => /^\d{1,2}\.[ABCD]\d+\.\d{1,2}$/i.test(code || "");
 
     return (
         <div className="w-full max-w-5xl mx-auto p-4 space-y-6">
@@ -466,15 +450,20 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                             {/* AI Activity Suggestions */}
                             <div className="space-y-3">
                                 {analysisResult.aiSuggestions?.map((sug: any, idx: number) => {
-                                    const isSelected = selectedIntegrations.includes(sug);
-                                    const isSelClass = isSelected ? "border-blue-600 bg-blue-50 shadow-sm" : "border-slate-200 hover:border-slate-300";
+                                    const validCode = hasValidAiCode(sug.suggestedAI);
+                                    const isSelected = validCode && selectedIntegrations.includes(sug);
+                                    const isSelClass = isSelected
+                                        ? "border-blue-600 bg-blue-50 shadow-sm"
+                                        : validCode
+                                            ? "border-slate-200 hover:border-slate-300"
+                                            : "border-amber-300 bg-amber-50 cursor-not-allowed";
                                     const circleClass = isSelected ? "bg-blue-600" : "bg-slate-200";
 
                                     return (
                                         <div
                                             key={idx}
-                                            onClick={() => toggleIntegration(sug)}
-                                            className={"cursor-pointer border-2 transition-all rounded-xl p-4 flex gap-4 " + isSelClass}
+                                            onClick={() => validCode && toggleIntegration(sug)}
+                                            className={(validCode ? "cursor-pointer " : "") + "border-2 transition-all rounded-xl p-4 flex gap-4 " + isSelClass}
                                         >
                                             <div className="pt-1">
                                                 <div className={"w-6 h-6 rounded-full flex items-center justify-center " + circleClass}>
@@ -484,7 +473,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-start mb-1">
                                                     <h4 className="font-bold text-slate-800">{sug.activityName}</h4>
-                                                    <span className="px-2 py-1 bg-indigo-100 text-indigo-700 font-bold text-xs rounded-md">{sug.suggestedAI}</span>
+                                                    <span className={`px-2 py-1 font-bold text-xs rounded-md ${validCode ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-800"}`}>{sug.suggestedAI}</span>
                                                 </div>
                                                 <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Lý do:</span> {sug.reason}</p>
                                                 <p className="text-sm text-slate-600"><span className="font-semibold text-slate-700">Hành động của HS:</span> {sug.action}</p>

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, Type } from "@google/generative-ai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { GEO_10_KNTT } from './curriculumData';
 
 // --- Google AI Key Validation (per google-api skill) ---
@@ -206,31 +206,146 @@ BẠN BẮT BUỘC PHẢI gộp tất cả các thông tin minh chứng sau vào
 - Quy định bản quyền, dữ liệu & Phương án khi mất Internet.
 `;
 
+const AI_THEMES_BY_THPT_GRADE: Record<string, string[]> = {
+  "10": ["A1", "A2", "A3", "B2", "B3", "C2", "C3", "C4", "D1", "D2"],
+  "11": ["A1", "A2", "A3", "B2", "B3", "C2", "C3", "C5", "D1", "D2"],
+  "12": ["A1", "A2", "A3", "B1", "B2", "B3", "C2", "C3", "C4", "D1", "D2"],
+};
+
+const extractGradeNumber = (grade?: string) => {
+  const match = (grade || "").match(/\b(10|11|12|[1-9])\b/);
+  return match?.[1] || (grade || "").trim();
+};
+
+const isThptGrade = (grade?: string) => ["10", "11", "12"].includes(extractGradeNumber(grade));
+
+const isLikelyPlaceholderIndicatorCode = (code?: string) => /^\s*\d{1,2}\.A\d+\.a\s*$/i.test(code || "");
+
+const isValidAiIndicatorCode = (code: string, grade?: string) => {
+  const normalizedCode = code.trim();
+  const currentGrade = extractGradeNumber(grade);
+  const match = normalizedCode.match(/^(\d{1,2})\.([ABCD]\d+)\.\d{1,2}$/i);
+  if (!match) return false;
+  if (isThptGrade(grade) && match[1] !== currentGrade) return false;
+  const allowedThemes = AI_THEMES_BY_THPT_GRADE[currentGrade];
+  return !allowedThemes || allowedThemes.includes(match[2].toUpperCase());
+};
+
+const getSafeAiIndicatorCode = (code?: string, grade?: string) => {
+  if (!code || isLikelyPlaceholderIndicatorCode(code)) return undefined;
+  const trimmed = code.trim();
+  return isValidAiIndicatorCode(trimmed, grade) ? trimmed : undefined;
+};
+
+const normalizeCurriculumCompetencyData = (items: any[] = [], grade?: string) =>
+  items.map((item) => {
+    const safeCode = getSafeAiIndicatorCode(item.indicatorCode, grade);
+    return {
+      ...item,
+      indicatorCode: safeCode,
+      indicatorNote: safeCode
+        ? "Mã NL AI hợp lệ theo lớp và chủ đề."
+        : item.indicatorCode
+          ? `Bỏ qua mã tạm/không hợp lệ "${item.indicatorCode}". Chỉ gán lại khi YCCĐ có điểm chạm rõ.`
+          : undefined,
+    };
+  });
+
+const formatSelectedIndicatorsForPrompt = (
+  indicators: { code: string; description: string }[] | undefined,
+  grade?: string,
+) => {
+  if (!indicators?.length) return "";
+  const currentGrade = extractGradeNumber(grade);
+  const thptNote = isThptGrade(grade)
+    ? `\n- Vì đây là cấp THPT lớp ${currentGrade}, mã NLS phải ở mức NC1 theo Công văn 3456. Không dùng nguyên mã CB1/CB2 cho THPT nếu không có phụ lục chính thức chứng minh.`
+    : "";
+  return `
+LỆNH RÀ SOÁT MÃ NLS/NL AI ĐÃ CHỌN:
+${indicators.map(i => `- Mã ${i.code}: ${i.description}`).join('\n')}
+- Chỉ sử dụng mã nào có minh chứng trực tiếp từ YCCĐ môn học và hoạt động học sinh.
+- Nếu mã đã chọn không khớp cấp học, không khớp YCCĐ hoặc là mã tạm, phải ghi "Không gán mã" và nêu lý do ngắn gọn.${thptNote}
+`;
+};
+
+const getThptCompetencyGuardrails = (subject: string, grade?: string, yccd?: string) => {
+  const currentGrade = extractGradeNumber(grade);
+  const allowedThemes = AI_THEMES_BY_THPT_GRADE[currentGrade];
+  const gradeRule = isThptGrade(grade)
+    ? `- Cấp THPT lớp ${currentGrade}: mã NLS phải dùng mức Nâng cao 1 (NC1), ví dụ 1.1.NC1a; không dùng CB1/CB2 cho lớp 10-12.\n- Mã NL AI phải bắt đầu bằng "${currentGrade}." và chỉ dùng các chủ đề được phép: ${allowedThemes?.join(", ") || "theo bảng lớp tương ứng trong QĐ 3439"}.`
+    : `- Nếu bài thuộc lớp 10, 11, 12 thì mã NLS phải dùng mức NC1 và mã NL AI phải bắt đầu đúng số lớp.`;
+  const subjectRule = subject.toLowerCase().includes("địa")
+    ? "- Môn Địa lí: chỉ gán mã khi YCCĐ yêu cầu/cho phép thao tác với bản đồ, Atlat, GIS, biểu đồ, bảng số liệu, dữ liệu địa phương hoặc công thức tính toán địa lí."
+    : subject.toLowerCase().includes("sử")
+      ? "- Môn Lịch sử: chỉ gán mã khi YCCĐ yêu cầu/cho phép phân tích tư liệu, kiểm chứng nguồn, lập timeline, so sánh bối cảnh, nguyên nhân - hệ quả hoặc đánh giá quan điểm lịch sử."
+      : "- Với môn học này, chỉ chọn mã dựa trên thao tác học tập thật sự được nêu trong YCCĐ; không gán mã theo tên bài một cách hình thức.";
+  return `
+==== RÀ SOÁT BẮT BUỘC MÃ NLS / NL AI THEO YCCĐ ====
+Căn cứ áp dụng trong app:
+- TT 02/2025/TT-BGDĐT: Khung NLS gồm 6 miền, 24 năng lực thành phần, dùng để xây dựng/đánh giá yêu cầu năng lực số.
+- Công văn 3456/BGDĐT-GDPT: triển khai NLS cho học sinh phổ thông; lớp 10-12 thuộc mức Nâng cao 1 (NC1), nhiệm vụ đa dạng và có thể hướng dẫn người khác.
+- QĐ 3439/QĐ-BGDĐT: năng lực AI có 4 mạch NLa/NLb/NLc/NLd và yêu cầu riêng cho từng lớp THPT.
+Quy tắc không được vi phạm:
+${gradeRule}
+- Không coi các mã tạm kiểu "10.A1.a", "11.A2.a", "12.A3.a" là mã NL AI hợp lệ.
+- Không trộn mã NLS (ví dụ 1.1.NC1a) với mã NL AI (ví dụ 10.C2.01).
+- Không gán mã chỉ để đủ số lượng. Nếu YCCĐ không có điểm chạm rõ, ghi "Không tích hợp" hoặc "Không gán mã".
+- Mỗi mã được chọn phải có chuỗi chứng minh: YCCĐ môn học -> thao tác học sinh -> công cụ/dữ liệu -> sản phẩm/minh chứng -> mã NLS/NL AI.
+${subjectRule}
+${yccd ? `YCCĐ đầu vào cần bám sát:\n${yccd}` : ""}
+`;
+};
+
 const SOCIAL_INTEGRATION_GUIDELINES = `
 Dưới đây là Khung NỘI DUNG LỒNG GHÉP BẮT BUỘC theo quy định của Bộ GD&ĐT (đây là các nội dung lồng ghép RIÊNG BIỆT, KHÔNG phải Thông tư 02/2025 - TT02/2025 là Khung Năng lực số cho người học):
 
-LƯU Ý QUAN TRỌNG: Thông tư 02/2025/TT-BGDĐT quy định về Khung Năng lực số cho ngườiconst CURRICULUM_DATA_GDDP = `
-DỮ LIỆU BÀI HỌC GIÁO DỤC ĐỊA PHƯƠNG - THÀNH PHỐ HỒ CHÍ MINH:
-- Lớp 10:
-     * Chủ đề 1: Biến đổi khí hậu và phòng, chống thiên tai ở Thành phố Hồ Chí Minh(5 tiết)
-  * Chủ đề 2: Đạo lí “Uống nước nhớ nguồn” qua các nghi lễ dân gian ở TP.HCM(5 tiết)
-    * Chủ đề 3: Văn học dân gian Thành phố Hồ Chí Minh(6 tiết)
-      * Chủ đề 4: Chân dung nhân vật nghệ thuật ở Thành phố Hồ Chí Minh(4 tiết)
-        * Chủ đề 5: Ô nhiễm môi trường ở Thành phố Hồ Chí Minh(6 tiết)
-          * Chủ đề 6: Định hướng nghề nghiệp(6 tiết)
-            - Lớp 11:
-     * Chủ đề 1: Phát triển du lịch ở Thành phố Hồ Chí Minh
-  * Chủ đề 2: Danh nhân lịch sử của Thành phố Hồ Chí Minh
-    * Chủ đề 3: Văn học ở Thành phố Hồ Chí Minh trước năm 1975
-      * Chủ đề 4: Âm nhạc trong đời sống hiện nay Thành phố Hồ Chí Minh
-        * Chủ đề 5: Mĩ thuật bổ sung.Đặc trưng của một số công trình kiến trúc ở Thành phố Hồ Chí Minh
-          * Chủ đề 6: Tác động của hoạt động kinh tế đến môi trường tự nhiên ở Thành phố Hồ Chí Minh
-            * Chủ đề 7: Giáo dục STEM và định hướng nghề nghiệp trong kỉ nguyên mới`;� sự phát triển bền vững. Giáo dục SKSS, bình đẳng giới.
+LƯU Ý QUAN TRỌNG: Thông tư 02/2025/TT-BGDĐT quy định về Khung Năng lực số cho người học, còn các nội dung dưới đây là nhóm giáo dục tích hợp xã hội được giáo viên chọn thêm trong kế hoạch bài dạy.
+
+1. Giáo dục Di sản văn hóa:
+   - Mục tiêu: Bảo tồn, phát huy giá trị di sản văn hóa dân tộc và địa phương.
+   - Nội dung: Khai thác tư liệu di sản, địa danh, nhân vật, lễ hội, phong tục, nghệ thuật và bảo tàng/số hóa di sản.
+
+2. Phòng chống Ma túy & Thuốc lá:
+   - Mục tiêu: Nâng cao nhận thức, hình thành kỹ năng phòng tránh hành vi nguy cơ.
+   - Nội dung: Phân tích tác hại, tình huống từ chối, truyền thông học đường và trách nhiệm với sức khỏe cộng đồng.
+
+3. Dân số & Phát triển bền vững:
+   - Mục tiêu: Nhận thức mối quan hệ giữa dân số, chất lượng cuộc sống, bình đẳng giới và phát triển bền vững.
    - Nội dung: Phân tích dữ liệu dân cư, tác động của quy mô dân số đến chất lượng cuộc sống và an sinh xã hội.
+
 4. Giáo dục Hòa nhập (Inclusive Education):
    - Căn cứ: Thông tư 03/2018/TT-BGDĐT về Giáo dục Hòa nhập.
    - Mục tiêu: Đảm bảo quyền được học tập của mọi học sinh, bao gồm học sinh khuyết tật hoặc có hoàn cảnh đặc biệt.
-   - Nội dung: Thiết kế các hoạt động linh hoạt, đa dạng hóa phương thức tiếp cận để mọi học sinh đều có thể tham gia.
+   - Nội dung: Thiết kế hoạt động linh hoạt, đa dạng hóa phương thức tiếp cận để mọi học sinh đều có thể tham gia.
+`;
+
+const CURRICULUM_DATA_GDDP = `
+DỮ LIỆU BÀI HỌC GIÁO DỤC ĐỊA PHƯƠNG - THÀNH PHỐ HỒ CHÍ MINH:
+- Lớp 10:
+  * Chủ đề 1: Biến đổi khí hậu và phòng, chống thiên tai ở Thành phố Hồ Chí Minh (5 tiết)
+  * Chủ đề 2: Đạo lí "Uống nước nhớ nguồn" qua các nghi lễ dân gian ở TP.HCM (5 tiết)
+  * Chủ đề 3: Văn học dân gian Thành phố Hồ Chí Minh (6 tiết)
+  * Chủ đề 4: Chân dung nhân vật nghệ thuật ở Thành phố Hồ Chí Minh (4 tiết)
+  * Chủ đề 5: Ô nhiễm môi trường ở Thành phố Hồ Chí Minh (6 tiết)
+  * Chủ đề 6: Định hướng nghề nghiệp (6 tiết)
+- Lớp 11:
+  * Chủ đề 1: Phát triển du lịch ở Thành phố Hồ Chí Minh
+  * Chủ đề 2: Danh nhân lịch sử của Thành phố Hồ Chí Minh
+  * Chủ đề 3: Văn học ở Thành phố Hồ Chí Minh trước năm 1975
+  * Chủ đề 4: Âm nhạc trong đời sống hiện nay Thành phố Hồ Chí Minh
+  * Chủ đề 5: Mĩ thuật bổ sung. Đặc trưng của một số công trình kiến trúc ở Thành phố Hồ Chí Minh
+  * Chủ đề 6: Tác động của hoạt động kinh tế đến môi trường tự nhiên ở Thành phố Hồ Chí Minh
+  * Chủ đề 7: Giáo dục STEM và định hướng nghề nghiệp trong kỉ nguyên mới
+  * Chủ đề 8: Phong tục, luật tục và giáo dục pháp luật ở TP.HCM
+- Lớp 12:
+  * Chủ đề 1: Lao động, việc làm tại Thành phố Hồ Chí Minh
+  * Chủ đề 2: Phát triển giao thông vận tải ở Thành phố Hồ Chí Minh
+  * Chủ đề 3: Những thành tựu cơ bản và bài học kinh nghiệm trong công cuộc Đổi mới tại Thành phố Hồ Chí Minh (1991 - nay)
+  * Chủ đề 4: Văn học ở Thành phố Hồ Chí Minh từ năm 1975
+  * Chủ đề 5: Một số loại hình nghệ thuật ở Thành phố Hồ Chí Minh (Hát bội, Kịch nói, Đờn ca tài tử, Cải lương)
+  * Chủ đề 6: Mĩ thuật ứng dụng hiện đại ở Thành phố Hồ Chí Minh (Đúc đồng, Điêu khắc đá, Tranh bích họa, Đồ gốm)
+  * Chủ đề 7: Vai trò của lễ hội truyền thống tại Thành phố Hồ Chí Minh trong việc duy trì, phát huy các giá trị văn hóa dân tộc
+  * Chủ đề 8: Ý tưởng khởi nghiệp cho học sinh tại Thành phố Hồ Chí Minh
 `;
 
 const CURRICULUM_DATA = `
@@ -435,14 +550,17 @@ export const suggestNlsIndicators = async (
   config: { apiKey: string; aiModel: string }
 ) => {
   const ai = new GoogleGenAI({ apiKey: config.apiKey });
+  const competencyGuardrails = getThptCompetencyGuardrails("môn học đang xét", grade, objectives);
   const prompt = `Bạn là một chuyên gia giáo dục phân tích Kế hoạch bài dạy.
 Nhiệm vụ: Dựa vào Tên bài học, Mục tiêu, và Khối lớp, hãy đề xuất 3 đến 5 chỉ báo Năng lực số (NLS) hoặc Năng lực AI phù hợp nhất để tích hợp vào bài học này.
 - Tên bài học: ${topic}
 - Khối lớp: ${grade}
 - Mục tiêu/Yêu cầu cần đạt: ${objectives}
 
+${competencyGuardrails}
+
 Hãy phân tích và trả về kết quả định dạng JSON array chuẩn, mỗi object chứa 2 trường:
-- "code": mã chỉ báo (ví dụ "1.1.CB1a", "6.2.CB2b")
+- "code": mã chỉ báo hợp lệ. Với THPT, mã NLS dùng dạng "1.1.NC1a"; mã NL AI dùng dạng "${extractGradeNumber(grade)}.C2.01".
 - "rationale": Lý do ngắn gọn tại sao chỉ báo này phù hợp với bài học này (dưới 30 từ).
 
 Đảm bảo chỉ trả về mảng JSON, không có code block markdown hay giải thích thêm.`;
@@ -464,6 +582,7 @@ export const analyzeExistingPlan = async (
   pl1Data?: string
 ) => {
   const hasImages = textbookImages && textbookImages.length > 0;
+  const genericThptGuardrails = getThptCompetencyGuardrails("môn học trong giáo án");
 
   // Build the textbook image section of the prompt
   const textbookSection = hasImages
@@ -515,7 +634,9 @@ LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với P
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí TỐT NHẤT có thể lồng ghép AI.${textbookSection}${pl1Section}
+3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, mã NLS phải dùng mức NC1 (ví dụ '1.1.NC1a') và mã NL AI phải đúng lớp (ví dụ '10.A1.01', '10.C2.02').${textbookSection}${pl1Section}
+
+${genericThptGuardrails}
 
 Định dạng đầu ra JSON bắt buộc:
 ${jsonFormat}`,
@@ -536,7 +657,9 @@ Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo vi
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 2 vị trí TỐT NHẤT có thể lồng ghép AI.${textbookSection}${pl1Section}
+3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, mã NLS phải dùng mức NC1 (ví dụ '1.1.NC1a') và mã NL AI phải đúng lớp (ví dụ '10.A1.01', '10.C2.02').${textbookSection}${pl1Section}
+
+${genericThptGuardrails}
 
 VĂN BẢN GIÁO ÁN:
 ${fileText.substring(0, 15000)}
@@ -758,11 +881,16 @@ Trạng thái: Trả về ĐÚNG định dạng JSON array (không có markdown,
 export const generateLessonPlan = async (input: LessonPlanInput) => {
   const formattingNeed = input.useLaTeX || input.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(input.subject);
   const englishConstraint = (input.subject === "Tiếng Anh" || input.subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung giáo án (kịch bản GV-HS, mục tiêu, nội dung...) PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
+  const lessonYccd = [input.objectivesKnowledge, input.objectivesCompetency, input.objectivesQuality].filter(Boolean).join("\n");
+  const competencyGuardrails = getThptCompetencyGuardrails(input.subject, input.grade, lessonYccd);
+  const safeIndicatorCode = getSafeAiIndicatorCode(input.indicatorCode, input.grade);
+  const selectedIndicatorPrompt = formatSelectedIndicatorsForPrompt(input.selectedNlsIndicators, input.grade);
 
   let finalPromptContents: any = "";
   if (input.existingPdfBase64) {
     const p1 = `
 ${CONTENT_INTEGRITY_RULES}
+${competencyGuardrails}
 🚨🚨🚨 CHẾ ĐỘ NÂNG CẤP GIÁO ÁN GỐC TỪ FILE PDF — ƯU TIÊN TỐI CAO 🚨🚨🚨
 
 NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu. Bạn phải NÂNG CẤP giáo án xuất ra từ File PDF ĐÍNH KÈM của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM/CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
@@ -776,8 +904,8 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
 3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
    - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
-5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, BẮT BUỘC mỗi dòng mục tiêu AI phải kết thúc bằng mã chỉ báo. ${input.indicatorCode ? `BẮT BUỘC SỬ DỤNG CHÍNH XÁC MÃ NÀY: (${input.indicatorCode})` : `BẠN PHẢI TỰ SUY LUẬN MÃ CHỈ BÁO THEO QĐ 3439 (Ví dụ: ${input.grade}.C1.01, ${input.grade}.B2.02...) ĐỂ ĐIỀN VÀO TƯƠNG ỨNG`}.
-${input.selectedNlsIndicators && input.selectedNlsIndicators.length > 0 ? `\nLỆNH TỐI CẤP VỀ NĂNG LỰC SỐ/AI ĐƯỢC CHỌN TỪ KHTCM (PL1):\n${input.selectedNlsIndicators.map(i => `- Mã ${i.code}: ${i.description}`).join('\n')}\nBẠN PHẢI SỬ DỤNG CHÍNH XÁC CÁC MÃ NÀY VÀ THIẾT KẾ HOẠT ĐỘNG THỂ HIỆN RÕ CHÚNG.` : ""}
+5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, mỗi dòng mục tiêu AI chỉ được kết thúc bằng mã chỉ báo khi mã đó đã khớp YCCĐ. ${safeIndicatorCode ? `Có mã NL AI hợp lệ từ hệ thống: (${safeIndicatorCode}); vẫn phải chứng minh bằng YCCĐ trước khi dùng.` : `Không được tự bịa mã. Nếu có điểm chạm rõ với QĐ 3439 thì chọn mã đúng lớp ${extractGradeNumber(input.grade)} và đúng chủ đề; nếu không đủ căn cứ thì ghi "Không tích hợp".`}.
+${selectedIndicatorPrompt}
 ${englishConstraint}
 ${input.subject.toLowerCase().includes("địa") ? GEOGRAPHY_AI_RULES : ""}
 ${SOCIAL_INTEGRATION_GUIDELINES}
@@ -794,6 +922,8 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
   } else {
     finalPromptContents = input.existingRawText
       ? `
+${CONTENT_INTEGRITY_RULES}
+${competencyGuardrails}
 🚨🚨🚨 CHẾ ĐỘ NÂNG CẤP GIÁO ÁN GỐC — ƯU TIÊN TỐI CAO 🚨🚨🚨
 
 NHIỆM VỤ CỐT LÕI: Bạn KHÔNG được viết giáo án mới từ đầu. Bạn phải NÂNG CẤP giáo án gốc sau đây của giáo viên bằng cách GIỮ NGUYÊN TOÀN BỘ cấu trúc, hoạt động, nội dung khoa học, bài tập và tiến trình đã có — chỉ THÊM / CHỈNH SỬA những điểm chạm AI được chỉ định cụ thể.
@@ -812,8 +942,8 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
 3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
    - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
-5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, BẮT BUỘC mỗi dòng mục tiêu AI phải kết thúc bằng mã chỉ báo. ${input.indicatorCode ? `BẮT BUỘC SỬ DỤNG CHÍNH XÁC MÃ NÀY: (${input.indicatorCode})` : `BẠN PHẢI TỰ SUY LUẬN MÃ CHỈ BÁO THEO QĐ 3439 (Ví dụ: ${input.grade}.C1.01, ${input.grade}.B2.02...) ĐỂ ĐIỀN VÀO TƯƠNG ỨNG`}.
-${input.selectedNlsIndicators && input.selectedNlsIndicators.length > 0 ? `\nLỆNH TỐI CẤP VỀ NĂNG LỰC SỐ/AI ĐƯỢC CHỌN TỪ KHTCM (PL1):\n${input.selectedNlsIndicators.map(i => `- Mã ${i.code}: ${i.description}`).join('\n')}\nBẠN PHẢI SỬ DỤNG CHÍNH XÁC CÁC MÃ NÀY VÀ THIẾT KẾ HOẠT ĐỘNG THỂ HIỆN RÕ CHÚNG.` : ""}
+5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, mỗi dòng mục tiêu AI chỉ được kết thúc bằng mã chỉ báo khi mã đó đã khớp YCCĐ. ${safeIndicatorCode ? `Có mã NL AI hợp lệ từ hệ thống: (${safeIndicatorCode}); vẫn phải chứng minh bằng YCCĐ trước khi dùng.` : `Không được tự bịa mã. Nếu có điểm chạm rõ với QĐ 3439 thì chọn mã đúng lớp ${extractGradeNumber(input.grade)} và đúng chủ đề; nếu không đủ căn cứ thì ghi "Không tích hợp".`}.
+${selectedIndicatorPrompt}
 ${englishConstraint}
 ${input.subject.toLowerCase().includes("địa") ? GEOGRAPHY_AI_RULES : ""}
 ${SOCIAL_INTEGRATION_GUIDELINES}
@@ -835,10 +965,11 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
 
     ${AI_SUBJECT_GUIDELINES}
     ${SOCIAL_INTEGRATION_GUIDELINES}
+    ${competencyGuardrails}
     ${input.socialIntegrations && input.socialIntegrations.length > 0 ? `\nLỆNH BẮT BUỘC TÍCH HỢP NỘI DUNG XÃ HỘI: Bạn PHẢI tích hợp sâu sắc các nội dung sau vào kế hoạch bài dạy: ${input.socialIntegrations.join(", ")}. Hãy thể hiện rõ trong mục tiêu và các hoạt động học tập.` : ""}
     CHỈ BÁO QĐ 3439 - Định dạng bắt buộc: KHỐI_LỚP_HIỆN_TẠI.MẠCH_VÀ_CHỦ_ĐỀ.SỐ (vd: ${input.grade}.C1.01, ${input.grade}.B2.02, ${input.grade}.A3.02).
-      ${input.indicatorCode ? `\nLỆNH TỐI CẤP LIÊN QUAN TỚI MÃ CHỈ BÁO: BÀI HỌC NÀY ĐÃ ĐƯỢC HỆ THỐNG GIAO NHIỆM VỤ LÀ "BẮT BUỘC TÍCH HỢP AI" VỚI MÃ CHỈ BÁO GỐC: ${input.indicatorCode}. BẠN PHẢI TUYỆT ĐỐI KHAI BÁO MỤC "Năng lực AI đặc thù" VỚI CHỈ BÁO NÀY (CÓ THỂ BỔ SUNG YCCĐ CHO PHÙ HỢP). KHÔNG ĐƯỢC PHÉP TRẢ VỀ "Không tích hợp".` : ""}
-      ${input.selectedNlsIndicators && input.selectedNlsIndicators.length > 0 ? `\nLỆNH TỐI CẤP VỀ NĂNG LỰC SỐ/AI: NGƯỜI DÙNG ĐÃ CHỌN CÁC CHỈ BÁO SAU:\n${input.selectedNlsIndicators.map(i => `- Mã ${i.code}: ${i.description}`).join('\n')}\nBẠN PHẢI SỬ DỤNG CHÍNH XÁC CÁC MÃ NÀY VÀ THIẾT KẾ HOẠT ĐỘNG THỂ HIỆN RÕ CHÚNG.` : ""}
+      ${safeIndicatorCode ? `\nMÃ NL AI HỢP LỆ TỪ HỆ THỐNG: ${safeIndicatorCode}. Chỉ khai báo trong mục "Năng lực AI đặc thù" nếu chứng minh được mã này bám sát YCCĐ môn học.` : ""}
+      ${selectedIndicatorPrompt}
     ${CURRICULUM_DATA}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
@@ -847,7 +978,7 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
 
     QUY TẮC THỰC THI NGHIÊM NGẶT(CRITICAL RULES):
     1. KIỂM TRA ĐIỀU KIỆN TÍCH HỢP:
-    - ${input.indicatorCode ? "ĐÃ ĐƯỢC CHỈ ĐỊNH LÀ BẮT BUỘC TÍCH HỢP. Bắt buộc thêm một mục riêng biệt có tên \"HOẠT ĐỘNG GIÁO DỤC AI\" ngay trong phần nội dung tiến trình dạy học ở vị trí có điểm chạm." : "Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không. Nếu không tích hợp thì để trống mục Năng lực AI. Nếu có tích hợp thì chèn HOẠT ĐỘNG GIÁO DỤC AI."}
+    - ${safeIndicatorCode ? "Có mã NL AI hợp lệ từ hệ thống. Phải kiểm tra lại YCCĐ trước khi chèn HOẠT ĐỘNG GIÁO DỤC AI; nếu không có điểm chạm thật sự thì nêu lý do không gán." : "Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không. Nếu không tích hợp thì để trống mục Năng lực AI. Nếu có tích hợp thì chèn HOẠT ĐỘNG GIÁO DỤC AI."}
     2. MÔ TẢ CÔNG CỤ SỐ AI: Trong hoạt động có tích hợp, phải mô tả cụ thể việc sử dụng các công cụ AI(ChatGPT, Canva, chatbot...) để hỗ trợ học sinh đạt được năng lực tương ứng.
     3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng [Khối lớp].[Ký hiệu Mạch NL (A/B/C/D) + Số thứ tự Chủ đề (1,2,3...)].[STT YCCĐ] (Ví dụ: ${input.grade}.A1.1, ${input.grade}.C2.2). Tuyệt đối khối lớp phải khớp với ${input.grade}. MÃ ĐÚNG CHỈ CÓ 2 DẤU CHẤM, KHÔNG ĐƯỢC CHÈN THÊM CHỮ CÁI THỪA (Không được viết 10.A.A1.1 hay 10.C3.A2.1).
     4. PHẢN BIỆN & BÁO ĐỘNG ĐỎ: BẮT BUỘC sử dụng thẻ < ai > [🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI] </ai> để đánh dấu hoạt động trọng tâm có ứng dụng công nghệ AI.
@@ -856,8 +987,8 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
     - Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
     - Năng lực:
     + Đặc thù môn học: Theo chương trình 2018.
-      + Năng lực số: Xác định rõ các năng lực số học sinh đạt được (sử dụng phần mềm, khai thác thông tin, an toàn mạng...). LỆNH TỐI CẤP: BẮT BUỘC gắn mã chỉ báo Năng lực số theo Thông tư 02/2025 vào cuối mỗi chuỗi đầu ra (Ví dụ: '... (1.1.CB2b)', '... (2.4.CB2a)', '... (3.2.CB2a)').
-      + Năng lực AI đặc thù(Chỉ thêm nếu Có tích hợp AI): LỆNH TỐI CẤP: LƯU Ý RẰNG BẠN CHỈ TRẢ VỀ DỮ LIỆU DƯỚI DẠNG MẢNG STRING CHO MỤC NÀY, DO ĐÓ BẠN PHẢI NỐI TRỰC TIẾP MÃ CHỈ BÁO VÀO BÊN TRONG TỪNG CHUỖI ĐẦU RA! GHI RÕ MÃ VÀO CUỐI MỖI KẾT QUẢ. ${input.indicatorCode ? `(BẮT BUỘC DÙNG MÃ: ${input.indicatorCode})` : `(BẠN PHẢI TỰ SUY LUẬN MÃ THEO QĐ 3439 VÀ KHỐI LỚP ${input.grade}, ví dụ: ${input.grade}.C1.01)`}. VIỆC BỎ QUÊN MÃ CHỈ BÁO SẼ LÀM HỎNG HỆ THỐNG.
+      + Năng lực số: Xác định rõ các năng lực số học sinh đạt được (sử dụng phần mềm, khai thác thông tin, an toàn mạng...). Với lớp 10-12, mã phải là NC1 theo Công văn 3456 (Ví dụ: '... (1.1.NC1a)', '... (2.4.NC1b)', '... (3.2.NC1a)'). Chỉ gắn mã khi có minh chứng từ YCCĐ.
+      + Năng lực AI đặc thù(Chỉ thêm nếu Có tích hợp AI): Chỉ trả về mảng string, mỗi chuỗi ghi rõ mã NL AI đúng lớp và đúng chủ đề ở cuối câu nếu có căn cứ YCCĐ. ${safeIndicatorCode ? `(Mã hệ thống hợp lệ cần xem xét: ${safeIndicatorCode})` : `(Không tự bịa mã; nếu thiếu căn cứ thì để trống/ghi "Không tích hợp")`}.
       + Năng lực chung: Tự chủ, tự học; Giao tiếp...
     - Phẩm chất: Theo CV 5512.
 
@@ -973,14 +1104,16 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
 export const generateEducationalPlan = async (subject: string, grade: string, province?: string, referencePlan?: any[], options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[], curriculumDbData?: any[], socialIntegrations?: string[] }) => {
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
+  const competencyGuardrails = getThptCompetencyGuardrails(subject, grade);
+  const normalizedCurriculumDbData = options?.curriculumDbData ? normalizeCurriculumCompetencyData(options.curriculumDbData, grade) : undefined;
 
   const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
 ${JSON.stringify(options.customCurriculumData, null, 2)}
 LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên.KHÔNG SỬ DỤNG DỮ LIỆU MẶC ĐỊNH KHÁC.`
-    : options?.curriculumDbData ? `DỮ LIỆU BÀI HỌC VÀ MÃ CHỈ BÁO AI BẮT BUỘC TỪ HỆ THỐNG:
-${JSON.stringify(options.curriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode })), null, 2)}
-LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài học và ĐẶC BIỆT LÀ MÃ CHỈ BÁO AI(indicatorCode) từ danh sách trên để phân bổ.TUYỆT ĐỐI KHÔNG ĐƯỢC BỊA MÃ KHÁC.`
+    : normalizedCurriculumDbData ? `DỮ LIỆU BÀI HỌC TỪ HỆ THỐNG:
+${JSON.stringify(normalizedCurriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode, indicatorNote: l.indicatorNote })), null, 2)}
+LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. Chỉ dùng indicatorCode nếu trường này còn tồn tại sau khi hệ thống lọc. Nếu indicatorCode bị bỏ trống hoặc có indicatorNote báo mã tạm/không hợp lệ, phải tự đối chiếu YCCĐ theo QĐ 3439; không đủ căn cứ thì ghi "Không tích hợp/Không gán mã".`
       : CURRICULUM_DATA;
 
   const referencePrompt = referencePlan
@@ -1007,6 +1140,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài 
     
     ${AI_SUBJECT_GUIDELINES}
     ${SOCIAL_INTEGRATION_GUIDELINES}
+    ${competencyGuardrails}
     ${options?.socialIntegrations?.length ? `\nYÊU CẦU TÍCH HỢP CÔNG VĂN 02/2025: BẮT BUỘC lồng ghép nội dung về: ${options.socialIntegrations.join(", ")}.` : ""}
     ${curriculumConstraint}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
@@ -1093,6 +1227,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC phải dùng chính xác danh sách bài 
 export const generateDepartmentPlan = async (subject: string, grade: string, province?: string, options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[], curriculumDbData?: any[] }) => {
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
+  const competencyGuardrails = getThptCompetencyGuardrails(subject, grade);
 
   // ===== BATCH PROCESSING FOR DIA LI 10 (prevents output token truncation) =====
   const isGeo10Batch = (/\u0111\u1ecba/i.test(subject) || subject === "Địa lý" || subject === "Địa lí" || subject === "ĐỊA LÝ" || subject === "ĐỊA LÍ" || subject.includes("\u0111\u1ecba") || subject.includes("\u0110\u1ecaa")) && grade === "10" && !options?.customCurriculumData && Array.isArray(GEO_10_KNTT) && GEO_10_KNTT.length > 0;
@@ -1100,7 +1235,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
     const GEO_BATCH_SIZE = 22;
     const allBatchResults: any[] = [];
     let weekCounter = 1;
-    const geoRulesForBatch = GEOGRAPHY_AI_RULES;
+    const geoRulesForBatch = `${GEOGRAPHY_AI_RULES}\n${competencyGuardrails}`;
 
     for (let bIdx = 0; bIdx < (GEO_10_KNTT as any[]).length; bIdx += GEO_BATCH_SIZE) {
       const batch = (GEO_10_KNTT as any[]).slice(bIdx, bIdx + GEO_BATCH_SIZE);
@@ -1123,9 +1258,9 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
         "YEU CAU TUYET DOI BAT BUOC:",
         "1. TAO DUNG DU " + batch.length + " HANG cho " + batch.length + " bai tren. KHONG DUOC BO SOT BAI NAO.",
         "2. lessonGoal: SAO CHEP Y NGUYEN 100% noi dung yccd tu du lieu tren. TUYET DOI KHONG tom tat hay cat xen.",
-        "3. TICH HOP NLS va NL AI cho 100% so bai (ke ca kiem tra, on tap, chuyen de).",
-        "4. digitalCompetencyTT02: 2-3 ma NLS KHAC NHAU kem mo ta (VD: 1.1NC1a: Su dung GPS...; 2.2NC1b: Khai thac ban do so...)",
-        "5. aiCompetency3439Integrated: 2-3 ma NL AI KHAC NHAU theo chuan QD 3439 kem YCCD cu the.",
+        "3. TICH HOP NLS va NL AI chi khi YCCD cua bai co diem cham ro rang. Neu khong du can cu, ghi 'Khong tich hop/Khong gan ma' va neu ly do ngan.",
+        "4. digitalCompetencyTT02: voi THPT dung ma NLS muc NC1 (VD: 1.1.NC1a: Khai thac nguon du lieu...; 2.4.NC1b: Hop tac tren cong cu so...). Moi ma phai bam vao YCCD va san pham hoc tap.",
+        "5. aiCompetency3439Integrated: chi dung ma NL AI hop le theo lop va chu de QD 3439, kem YCCD cu the.",
         "   Quy uoc ma: [10].[Mach(A/B/C/D)+So chu de].[STT] - VD: 10.A1.1, 10.A2.3, 10.B1.2, 10.C2.1, 10.D3.2",
         "   - Mach A: Tu duy lay con nguoi lam trung tam | Mach B: Dao duc & trach nhiem | Mach C: Ky thuat & ung dung | Mach D: Giai quyet van de",
         "   PHAI DA DANG: moi bai dung ma va chu de KHAC NHAU. KHONG lap lai cung ma.",
@@ -1183,7 +1318,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
           try { bparsed = JSON.parse(bstripped); } catch {
             try {
               const ob = (bstripped.match(/{/g)||[]).length, cb = (bstripped.match(/}/g)||[]).length;
-              const oa = (bstripped.match(/[/g)||[]).length, ca = (bstripped.match(/]/g)||[]).length;
+              const oa = (bstripped.match(/\[/g)||[]).length, ca = (bstripped.match(/]/g)||[]).length;
               for (let x=0; x<ob-cb; x++) bstripped+='}';
               for (let x=0; x<oa-ca; x++) bstripped+=']';
               bparsed = JSON.parse(bstripped);
@@ -1207,12 +1342,13 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
   // ===== END BATCH PROCESSING FOR DIA LI 10 =====
 
     const overrideCurriculumDbData = (subject.toLowerCase().includes("địa") && grade === "10") ? undefined : options?.curriculumDbData;
-    const systemCurriculum = overrideCurriculumDbData ? `DỮ LIỆU BÀI HỌC VÀ MÃ CHỈ BÁO AI TỪ HỆ THỐNG:
-${JSON.stringify(overrideCurriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode, yccd: [l.objectivesKnowledge, l.objectivesCompetency, l.objectivesQuality].filter(Boolean).join("; ") })), null, 2)}
-LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM chứa toàn bộ danh sách bài học trên. Tại cột "Yêu cầu cần đạt CT 2018" (lessonGoal), BẮT BUỘC lấy nội dung "yccd" tương ứng. Tại cột "Yêu cầu cần đạt 3439" (aiCompetency3439), BẮT BUỘC chèn mã chỉ báo (indicatorCode) được cung cấp.
+    const normalizedOverrideCurriculumDbData = overrideCurriculumDbData ? normalizeCurriculumCompetencyData(overrideCurriculumDbData, grade) : undefined;
+    const systemCurriculum = normalizedOverrideCurriculumDbData ? `DỮ LIỆU BÀI HỌC TỪ HỆ THỐNG:
+${JSON.stringify(normalizedOverrideCurriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode, indicatorNote: l.indicatorNote, yccd: [l.objectivesKnowledge, l.objectivesCompetency, l.objectivesQuality].filter(Boolean).join("; ") })), null, 2)}
+LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM chứa toàn bộ danh sách bài học trên. Tại cột "Yêu cầu cần đạt CT 2018" (lessonGoal), BẮT BUỘC lấy nội dung "yccd" tương ứng. Tại cột "Yêu cầu cần đạt 3439" (aiCompetency3439), chỉ chèn indicatorCode khi mã còn hợp lệ sau khi hệ thống lọc và có căn cứ YCCĐ. Nếu indicatorCode bị bỏ trống hoặc có indicatorNote báo mã tạm/không hợp lệ, phải tự đối chiếu QĐ 3439; không đủ căn cứ thì ghi "Không tích hợp/Không gán mã".
 LƯU Ý ĐẶC BIỆT VỀ CÁC BÀI HỌC CÒN THIẾU: Danh sách trên có thể chưa đủ 35 tuần học. Bạn BẮT BUỘC phải TỰ BỔ SUNG các bài học SGK còn thiếu cho đủ 35 tuần. 
-Đối với các bài học bạn TỰ BỔ SUNG (không có mã chỉ báo sẵn từ hệ thống): HÃY TÍCH CỰC ĐÁNH GIÁ VÀ TÍCH HỢP NLS, NL AI CHO TẤT CẢ CÁC MÔN HỌC (Toán, Văn, Anh, Lý, Hóa, Sinh, Sử, Địa, Công nghệ...). Bất cứ bài nào có thể khai thác dữ liệu, tìm kiếm thông tin, phân tích văn bản, đồ thị, hay sử dụng công cụ số đều PHẢI tích hợp thay vì bỏ qua.
-QUY TẮC ĐÁNH MÃ CHỈ BÁO AI KHI TỰ ĐỀ XUẤT: Bạn PHẢI TỰ ĐỀ XUẤT MÃ SỐ theo đúng quy ước định dạng chuẩn QĐ 3439: [Khối lớp].[Ký hiệu Mạch NL (A/B/C/D) + Số thứ tự Chủ đề (1,2,3...)].[STT YCCĐ]. Ví dụ: 12.A1.1, 12.A2.1, 12.B2.1, 10.C3.2. LỆNH TỐI CẤP: BẠN PHẢI LINH HOẠT SỬ DỤNG ĐA DẠNG CÁC CHỦ ĐỀ NHƯ A1, A2, A3, B1, B2, C1, C2, C3... PHÙ HỢP VỚI NỘI DUNG. TUYỆT ĐỐI KHÔNG được chỉ dùng cứng ngắc A1, B1, C1, D1 cho tất cả các bài! TUYỆT ĐỐI KHÔNG dùng chung 1 mã (vd 12.A1.1) cho mọi bài học. Mỗi bài học và mỗi YCCĐ phải có mã độc lập!` : "";
+Đối với các bài học bạn TỰ BỔ SUNG (không có mã chỉ báo sẵn từ hệ thống): Hãy đánh giá cơ hội tích hợp NLS/NL AI theo YCCĐ. Không gán mã hình thức chỉ vì bài có thể tìm kiếm thông tin hoặc dùng công cụ số.
+QUY TẮC ĐÁNH MÃ CHỈ BÁO AI KHI TỰ ĐỀ XUẤT: Chỉ đề xuất mã số theo đúng quy ước [Khối lớp].[Ký hiệu Mạch NL + Chủ đề].[STT] khi có YCCĐ tương ứng. Ví dụ hợp lệ: 12.A1.01, 12.B2.01, 10.C3.02. Không dùng chung 1 mã cho mọi bài học; không dùng chủ đề ngoài danh sách được phép của lớp.` : "";
 
     let defaultCurriculum = "";
     if (subject === "Giáo dục địa phương") {
@@ -1231,6 +1367,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 
   const prompt = `
     ${CONTENT_INTEGRITY_RULES}
+    ${competencyGuardrails}
 
     Bạn là một Chuyên gia xây dựng chương trình giáo dục.Hãy giúp tôi lập Kế hoạch giáo dục tổ chuyên môn tích hợp nội dung giáo dục AI cho môn: ${subject}, lớp: ${grade}${subject === "Giáo dục địa phương" && province ? `, tại địa phương: ${province}` : ""}.
     
@@ -1248,17 +1385,17 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 
     Nhiệm vụ cụ thể:
     1. Rà soát & Phân tích toàn diện: LỆNH TỐI CẤP: BẠN KHÔNG ĐƯỢC BỎ SÓT BẤT KỲ BÀI HỌC, CHUYÊN ĐỀ, HAY BÀI KIỂM TRA ĐÁNH GIÁ NÀO CÓ TRONG DANH SÁCH. PHẢI LIỆT KÊ ĐỦ 35 TUẦN HỌC. ĐẶC BIỆT: Phải XEN KẼ các tiết "Ôn tập", "Kiểm tra đánh giá" (Giữa kì, Cuối kì) và Chuyên đề vào các tuần tương ứng để hoàn thiện Kế hoạch Tổ chuyên môn đúng chuẩn thực tế.
-    2. BẮT BUỘC TÍCH HỢP NLS VÀ NL AI CHO HẦU HẾT CÁC BÀI:
-    - Lệnh tối cấp: Bạn PHẢI tìm cách tích hợp Năng lực số (NLS) và Năng lực AI (NL AI) cho **ÍT NHẤT 95% SỐ BÀI HỌC**. Dù là môn học nào, luôn có cách ứng dụng NLS/AI (VD: dùng AI tìm kiếm tài liệu, tóm tắt, vẽ sơ đồ, phân tích số liệu).
-    - Hạn chế tối đa việc điền "Không tích hợp". Hãy suy nghĩ sáng tạo để lồng ghép các chỉ báo NLS và NL AI (NLa, NLb, NLc, NLd) một cách hợp lý và tự nhiên nhất.
-    - YÊU CẦU ĐA DẠNG MÃ: Mỗi bài học, hãy BẮT BUỘC đề xuất **2 đến 3 mã NLS** và **2 đến 3 mã NL AI** khác nhau để tăng tính phong phú (không được chỉ lặp lại 1 mã).
+    2. TÍCH HỢP NLS VÀ NL AI THEO YCCĐ, KHÔNG GƯỢNG ÉP:
+    - Chỉ tích hợp Năng lực số (NLS) và Năng lực AI (NL AI) khi YCCĐ của bài có thao tác phù hợp: khai thác dữ liệu, kiểm chứng nguồn, tạo sản phẩm số, phân tích biểu đồ/bản đồ/bảng số liệu, mô phỏng, thiết kế, đánh giá rủi ro...
+    - Không đặt chỉ tiêu 95%/100% số bài. Nếu bài không có điểm chạm rõ, ghi "Không tích hợp" hoặc "Không gán mã" và nêu lý do ngắn.
+    - Mỗi mã được đề xuất phải có chuỗi chứng minh: YCCĐ -> thao tác học sinh -> công cụ/dữ liệu -> sản phẩm/minh chứng -> mã.
     3. Ánh xạ Năng lực:
     - Thời gian (time): Ước lượng thời gian thực hiện (Ví dụ: Học kì I, Tháng 9, Tuần 1...).
        - Nội dung (lessonContent): Tên bài học, chủ đề, chuyên đề hoặc tên bài kiểm tra. Phải lấy từ danh sách gốc.
        - Số tiết (periods): Số lượng tiết học của bài học.
        - Yêu cầu cần đạt CT 2018 (lessonGoal): BẮT BUỘC SAO CHÉP Y NGUYÊN 100% nội dung "yccd" (hoặc "YCCĐ") được cung cấp trong danh sách gốc cho từng bài học/chuyên đề/kiểm tra tương ứng. BẠN KHÔNG ĐƯỢC PHÉP TÓM TẮT HAY CẮT XÉN YCCĐ GỐC!
-       - Năng lực số (digitalCompetencyTT02): Liệt kê 2-3 mã và Yêu cầu cần đạt Năng lực số theo Thông tư 02 (vd: 1.1NC1a, 2.2NC1b...). BẮT BUỘC TÍCH HỢP CHO ÍT NHẤT 95% SỐ BÀI HỌC.
-       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Liệt kê 2-3 mã và YCCĐ AI. VỚI NHỮNG BÀI ĐÃ CÓ MÃ HỆ THỐNG TRUYỀN VÀO (ví dụ 10.A1.1), DÙNG ĐÚNG MÃ ĐÓ. VỚI NHỮNG BÀI BẠN TỰ ĐỀ XUẤT THÊM, BẮT BUỘC PHẢI TỰ ĐÁNH MÃ SỐ THEO ĐÚNG QUY ƯỚC [Khối Lớp].[Ký hiệu Mạch NL + Chủ đề].[STT] (Ví dụ: 12.A1.1, 12.A2.2, 12.B2.1...). MỖI BÀI HỌC VÀ MỖI MỤC TIÊU PHẢI SỬ DỤNG MÃ SỐ ĐỘC LẬP (Đa dạng chủ đề A1, A2, B1, B2...), KHÔNG ĐƯỢC CHỈ LẶP LẠI 1 MÃ DUY NHẤT CHO TẤT CẢ CÁC BÀI.
+       - Năng lực số (digitalCompetencyTT02): Với lớp 10-12, mã NLS phải dùng mức NC1 theo Công văn 3456 (vd: 1.1.NC1a, 2.2.NC1b...). Chỉ liệt kê mã gắn với YCCĐ và minh chứng học tập; nếu không phù hợp ghi "Không tích hợp".
+       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Chỉ liệt kê mã NL AI đúng lớp, đúng chủ đề QĐ 3439 và bám YCCĐ. Với bài có indicatorCode hợp lệ từ hệ thống, vẫn phải kiểm tra YCCĐ trước khi dùng. Với bài tự đề xuất, không bịa mã; nếu thiếu căn cứ ghi "Không tích hợp/Không gán mã".
        
        - Mạch nội dung AI:
     - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.
@@ -1562,6 +1699,7 @@ export const generateAiCompetencyFramework = async (input: {
   requirementsText: string;
 }, options: { apiKey?: string; aiModel?: string }) => {
   const model = getModel(options.apiKey, options.aiModel);
+  const competencyGuardrails = getThptCompetencyGuardrails(input.subject, input.grade, input.requirementsText);
   const prompt = `Bạn là chuyên gia xây dựng Khung năng lực AI theo Quyết định 3439/QĐ-BGDĐT năm 2025.
 Nhiệm vụ:
 1. Đọc toàn bộ Yêu cầu cần đạt của chủ đề được cung cấp.
@@ -1574,6 +1712,9 @@ Trong đó:
 Ví dụ: ${input.grade}.C2.01, ${input.grade}.C2.02...
 4. Với mỗi chỉ báo, trình bày chi tiết theo các tiêu chí: Mã chỉ báo, Nội dung, Thành phần năng lực, Mức độ, Minh chứng, Hoạt động học tập, Công cụ AI, Tiêu chí đánh giá.
 5. Bảo đảm không bỏ sót YCCĐ nào, đánh số liên tục trong từng chủ đề.
+6. Không mã hóa YCCĐ môn học thành mã NL AI nếu YCCĐ đó không có thao tác liên quan trực tiếp tới AI, dữ liệu, công cụ số, kiểm chứng, đạo đức AI hoặc thiết kế/đánh giá hệ thống.
+
+${competencyGuardrails}
 
 THÔNG TIN BÀI HỌC:
 Môn học: ${input.subject}
@@ -1838,4 +1979,317 @@ export const generateEducationalActivitiesPlan = async (subject: string, grade: 
       if (i === modelsToTry.length - 1) throw err;
     }
   }
+};
+
+export type SuDiaSkillDomain = "history" | "geography";
+export type SuDiaSkillKind =
+  | "history-quiz"
+  | "history-slides"
+  | "history-exam"
+  | "history-timeline"
+  | "geo-map"
+  | "geo-chart"
+  | "geo-table"
+  | "geo-formula"
+  | "geo-slides"
+  | "geo-exam";
+
+export interface SuDiaSkillInput {
+  kind: SuDiaSkillKind;
+  domain: SuDiaSkillDomain;
+  subject: string;
+  grade: string;
+  topic: string;
+  province?: string;
+  lessonGoal?: string;
+  sourceText?: string;
+  questionCount?: number;
+}
+
+export const generateSuDiaSkill = async (input: SuDiaSkillInput) => {
+  const kindLabels: Record<SuDiaSkillKind, string> = {
+    "history-quiz": "Quiz Lịch sử tương tác",
+    "history-slides": "Bộ slide PPTX môn Lịch sử",
+    "history-exam": "Đề kiểm tra môn Lịch sử theo ma trận",
+    "history-timeline": "Dòng thời gian và phân tích tư liệu Lịch sử",
+    "geo-map": "Phân tích bản đồ/GIS môn Địa lí",
+    "geo-chart": "Phân tích và tạo biểu đồ Địa lí",
+    "geo-table": "Xử lí bảng số liệu Địa lí",
+    "geo-formula": "Công thức và bài tập tính toán Địa lí",
+    "geo-slides": "Bộ slide PPTX môn Địa lí",
+    "geo-exam": "Đề kiểm tra môn Địa lí theo ma trận"
+  };
+  const domainLabel = input.domain === "history" ? "Lịch sử" : "Địa lí";
+  const competencyGuardrails = getThptCompetencyGuardrails(domainLabel, input.grade, input.lessonGoal);
+
+  const prompt = `
+Bạn là chuyên gia thiết kế học liệu ${domainLabel} theo CT GDPT 2018, đồng thời am hiểu Khung năng lực số TT02/2025 và năng lực AI theo QĐ 3439.
+
+Nhiệm vụ đang chọn: ${kindLabels[input.kind]}
+Nhánh môn học: ${domainLabel}
+Môn/chủ đề: ${input.subject}
+Lớp: ${input.grade}
+Bài/chuyên đề: ${input.topic}
+Địa phương/khu vực ưu tiên: ${input.province || "Việt Nam"}
+Số câu mong muốn nếu tạo quiz/đề kiểm tra: ${input.questionCount || 8}
+Yêu cầu cần đạt hoặc ghi chú của giáo viên:
+${input.lessonGoal || "Không có"}
+
+Tư liệu/dữ liệu đầu vào nếu có:
+"""
+${(input.sourceText || "").slice(0, 12000)}
+"""
+
+${competencyGuardrails}
+
+YÊU CẦU CHUNG:
+- Nội dung viết bằng tiếng Việt, đúng thuật ngữ Sử - Địa, dùng được ngay cho giáo viên.
+- Tích hợp hợp lý năng lực số và AI: nêu mã, mô tả, cách học sinh dùng công cụ số/AI và cách kiểm chứng; chỉ gán mã khi mã bám sát YCCĐ môn học.
+- Nếu tạo quiz hoặc đề kiểm tra, câu hỏi phải có đáp án, giải thích ngắn, có đủ nhận biết, thông hiểu, vận dụng.
+- Nếu tạo slide, mỗi slide phải có tiêu đề ngắn, gạch đầu dòng vừa phải, ghi chú thuyết trình và hoạt động trên lớp.
+- Với Lịch sử: ưu tiên mốc thời gian, bối cảnh, nguyên nhân - kết quả, nhân vật/sự kiện, phân tích tư liệu, so sánh quan điểm và kiểm chứng nguồn.
+- Với Địa lí: ngoài bản đồ/GIS, BẮT BUỘC xét thêm biểu đồ, bảng số liệu, công thức tính toán địa lí khi nhiệm vụ phù hợp.
+- Nếu phân tích bản đồ/GIS: nêu lớp dữ liệu, quy trình thao tác, câu hỏi khai thác bản đồ, nguồn dữ liệu gợi ý và cảnh báo sai lệch dữ liệu.
+- Nếu phân tích biểu đồ: nêu loại biểu đồ phù hợp, bảng dữ liệu mẫu, các bước vẽ/đọc biểu đồ, câu hỏi nhận xét và lỗi thường gặp.
+- Nếu xử lí bảng số liệu: nêu bảng mẫu, bước xử lí, phép tính, nhận xét xu hướng, câu hỏi khai thác số liệu.
+- Nếu dùng công thức Địa lí: nêu tên công thức, biểu thức, biến số, khi dùng, ví dụ tính mẫu và bài tập luyện tập.
+- Nếu thiếu dữ liệu thực, hãy tạo bộ mẫu hợp lý và ghi rõ là dữ liệu minh họa để giáo viên thay bằng số liệu chính thức.
+
+Trả về JSON object đúng schema, không markdown, không giải thích ngoài JSON.
+`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      kind: { type: Type.STRING },
+      title: { type: Type.STRING },
+      overview: { type: Type.STRING },
+      tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+      teacherNotes: { type: Type.ARRAY, items: { type: Type.STRING } },
+      nlsAiConnections: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            code: { type: Type.STRING },
+            description: { type: Type.STRING },
+            classroomUse: { type: Type.STRING }
+          },
+          required: ["code", "description", "classroomUse"]
+        }
+      },
+      quiz: {
+        type: Type.OBJECT,
+        properties: {
+          questions: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                level: { type: Type.STRING },
+                question: { type: Type.STRING },
+                options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                answer: { type: Type.STRING },
+                explanation: { type: Type.STRING },
+                sourceHint: { type: Type.STRING }
+              },
+              required: ["level", "question", "options", "answer", "explanation", "sourceHint"]
+            }
+          }
+        },
+        required: ["questions"]
+      },
+      slides: {
+        type: Type.OBJECT,
+        properties: {
+          slides: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                subtitle: { type: Type.STRING },
+                bullets: { type: Type.ARRAY, items: { type: Type.STRING } },
+                speakerNotes: { type: Type.STRING },
+                classroomActivity: { type: Type.STRING }
+              },
+              required: ["title", "subtitle", "bullets", "speakerNotes", "classroomActivity"]
+            }
+          }
+        },
+        required: ["slides"]
+      },
+      gisAnalysis: {
+        type: Type.OBJECT,
+        properties: {
+          mapBrief: { type: Type.STRING },
+          layers: { type: Type.ARRAY, items: { type: Type.STRING } },
+          workflow: { type: Type.ARRAY, items: { type: Type.STRING } },
+          inquiryQuestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+          dataSources: { type: Type.ARRAY, items: { type: Type.STRING } },
+          classroomActivity: { type: Type.ARRAY, items: { type: Type.STRING } },
+          cautions: { type: Type.ARRAY, items: { type: Type.STRING } }
+        },
+        required: ["mapBrief", "layers", "workflow", "inquiryQuestions", "dataSources", "classroomActivity", "cautions"]
+      },
+      historyAnalysis: {
+        type: Type.OBJECT,
+        properties: {
+          timeline: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                time: { type: Type.STRING },
+                event: { type: Type.STRING },
+                significance: { type: Type.STRING }
+              },
+              required: ["time", "event", "significance"]
+            }
+          },
+          sourceAnalysisSteps: { type: Type.ARRAY, items: { type: Type.STRING } },
+          causeEffect: { type: Type.ARRAY, items: { type: Type.STRING } },
+          historicalQuestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+          verificationSources: { type: Type.ARRAY, items: { type: Type.STRING } }
+        },
+        required: ["timeline", "sourceAnalysisSteps", "causeEffect", "historicalQuestions", "verificationSources"]
+      },
+      geographyAnalysis: {
+        type: Type.OBJECT,
+        properties: {
+          chartGuide: {
+            type: Type.OBJECT,
+            properties: {
+              chartType: { type: Type.STRING },
+              dataTable: {
+                type: Type.OBJECT,
+                properties: {
+                  headers: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  rows: { type: Type.ARRAY, items: { type: Type.ARRAY, items: { type: Type.STRING } } },
+                  caption: { type: Type.STRING },
+                  source: { type: Type.STRING }
+                },
+                required: ["headers", "rows", "caption", "source"]
+              },
+              drawingSteps: { type: Type.ARRAY, items: { type: Type.STRING } },
+              interpretationQuestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+              commonMistakes: { type: Type.ARRAY, items: { type: Type.STRING } }
+            },
+            required: ["chartType", "dataTable", "drawingSteps", "interpretationQuestions", "commonMistakes"]
+          },
+          dataTableGuide: {
+            type: Type.OBJECT,
+            properties: {
+              tableTitle: { type: Type.STRING },
+              headers: { type: Type.ARRAY, items: { type: Type.STRING } },
+              rows: { type: Type.ARRAY, items: { type: Type.ARRAY, items: { type: Type.STRING } } },
+              processingSteps: { type: Type.ARRAY, items: { type: Type.STRING } },
+              keyCalculations: { type: Type.ARRAY, items: { type: Type.STRING } },
+              comments: { type: Type.ARRAY, items: { type: Type.STRING } },
+              questions: { type: Type.ARRAY, items: { type: Type.STRING } }
+            },
+            required: ["tableTitle", "headers", "rows", "processingSteps", "keyCalculations", "comments", "questions"]
+          },
+          formulaGuide: {
+            type: Type.OBJECT,
+            properties: {
+              formulas: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING },
+                    expression: { type: Type.STRING },
+                    variables: { type: Type.STRING },
+                    whenToUse: { type: Type.STRING },
+                    example: { type: Type.STRING }
+                  },
+                  required: ["name", "expression", "variables", "whenToUse", "example"]
+                }
+              },
+              practiceTasks: { type: Type.ARRAY, items: { type: Type.STRING } }
+            },
+            required: ["formulas", "practiceTasks"]
+          }
+        },
+        required: ["chartGuide", "dataTableGuide", "formulaGuide"]
+      },
+      exam: {
+        type: Type.OBJECT,
+        properties: {
+          matrix: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                competency: { type: Type.STRING },
+                level: { type: Type.STRING },
+                questionCount: { type: Type.STRING },
+                score: { type: Type.STRING }
+              },
+              required: ["competency", "level", "questionCount", "score"]
+            }
+          },
+          multipleChoice: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                question: { type: Type.STRING },
+                options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                answer: { type: Type.STRING },
+                explanation: { type: Type.STRING }
+              },
+              required: ["question", "options", "answer", "explanation"]
+            }
+          },
+          trueFalse: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                stem: { type: Type.STRING },
+                statements: { type: Type.ARRAY, items: { type: Type.STRING } },
+                answers: { type: Type.ARRAY, items: { type: Type.STRING } }
+              },
+              required: ["stem", "statements", "answers"]
+            }
+          },
+          shortAnswer: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                question: { type: Type.STRING },
+                answer: { type: Type.STRING },
+                rubric: { type: Type.STRING }
+              },
+              required: ["question", "answer", "rubric"]
+            }
+          },
+          essay: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                question: { type: Type.STRING },
+                rubric: { type: Type.ARRAY, items: { type: Type.STRING } }
+              },
+              required: ["question", "rubric"]
+            }
+          },
+          answerKey: { type: Type.ARRAY, items: { type: Type.STRING } }
+        },
+        required: ["matrix", "multipleChoice", "trueFalse", "shortAnswer", "essay", "answerKey"]
+      }
+    },
+    required: ["kind", "title", "overview", "tags", "teacherNotes", "nlsAiConnections", "quiz", "slides", "gisAnalysis", "historyAnalysis", "geographyAnalysis", "exam"]
+  };
+
+  const output = await callGeminiWithFallback(prompt, schema);
+  return {
+    ...output,
+    kind: input.kind,
+    requestedQuestionCount: input.questionCount || 8
+  };
 };

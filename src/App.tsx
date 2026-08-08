@@ -39,11 +39,13 @@ import {
   UserCircle,
   Clock,
   FileCode,
-  Presentation
+  Presentation,
+  Map
 } from "lucide-react";
 import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateEducationalActivitiesPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, suggestNlsIndicators, LessonPlanInput } from "./services/geminiService";
 import UpgradePlan from "./components/UpgradePlan";
 import NlsLookup, { INDICATORS } from "./components/NlsLookup";
+import SuDiaSkills from "./components/SuDiaSkills";
 
 // Add competency mapper utility function
 const mapAiCompetencyText = (code: string) => {
@@ -59,7 +61,7 @@ const mapAiCompetencyText = (code: string) => {
   return `${code} - ${groupName}`;
 };
 
-type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "kh-hdgd-gen" | "upgrade-plan" | "ai-framework-gen" | "nls-lookup" | "history";
+type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "kh-hdgd-gen" | "upgrade-plan" | "ai-framework-gen" | "su-dia-skills" | "nls-lookup" | "history";
 
 
 const SUBJECTS_THPT = [
@@ -705,6 +707,38 @@ export default function App() {
         alert(`❌ Lỗi khi tạo giáo án: ${msg || "Lỗi không xác định. Vui lòng thử lại."}`);
       }
       console.error("[KHBD Error]", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Hàm generate giáo án trực tiếp từ input (không phụ thuộc vào lessonPlanInput state)
+  const handleGenerateKHBDWithInput = async (input: typeof lessonPlanInput) => {
+    if (!apiKey.trim()) {
+      alert("Vui lòng lấy API key để sử dụng app!");
+      setShowSettings(true);
+      return;
+    }
+    setLoading(true);
+    setResult(null);
+    setEvaluationResult(null);
+    try {
+      const data = await generateLessonPlan(input);
+      setResult({ type: "khbd", data });
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("QUOTA_EXHAUSTED")) {
+        alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+        setShowSettings(true);
+      } else if (msg.includes("MODEL_OVERLOADED")) {
+        alert("⚠️ Model Gemini đang quá tải. Vui lòng thử lại sau 30 giây.");
+      } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
+        alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
+        setShowSettings(true);
+      } else {
+        alert(`❌ Lỗi khi tạo giáo án: ${msg || "Lỗi không xác định."}`);
+      }
+      console.error("[KHBD WithInput Error]", err);
     } finally {
       setLoading(false);
     }
@@ -2197,6 +2231,13 @@ export default function App() {
                 icon={<BrainCircuit className="w-4 h-4" />}
                 label="6. Khung Năng lực AI"
               />
+              <NavItem
+                sidebar
+                active={mode === "su-dia-skills"}
+                onClick={() => { setMode("su-dia-skills"); setResult(null); }}
+                icon={<Map className="w-4 h-4" />}
+                label="7. Sử-Địa Skills"
+              />
               <li className="my-2 border-t border-slate-700/50"></li>
                 <li>
                   <button
@@ -2309,7 +2350,7 @@ export default function App() {
                     <UpgradePlan
                       apiKey={apiKey}
                       onUpgradeReady={(data) => {
-                        setLessonPlanInput({
+                        const newInput = {
                           subject: data.subject,
                           grade: data.grade,
                           topic: data.topic,
@@ -2323,9 +2364,35 @@ export default function App() {
                           detailDrawings: false,
                           additionalNotes: "",
                           existingRawText: data.existingRawText,
-                          aiIntegrationOptions: data.aiIntegrationOptions
-                        });
+                          existingPdfBase64: data.existingPdfBase64,
+                          aiIntegrationOptions: data.aiIntegrationOptions,
+                          socialIntegrations: data.socialIntegrations || [],
+                          indicatorCode: data.indicatorCode,
+                          selectedNlsIndicators: data.selectedNlsIndicators || [],
+                        };
+                        setLessonPlanInput(newInput);
                         setMode("khbd-gen");
+                        // Tự động tạo giáo án ngay với input trực tiếp (tránh vấn đề state chưa update kịp)
+                        handleGenerateKHBDWithInput(newInput);
+                      }}
+                    />
+                  </motion.div>
+                )}
+
+                {mode === "su-dia-skills" && (
+                  <motion.div
+                    key="su-dia-skills"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                  >
+                    <SuDiaSkills
+                      apiKey={apiKey}
+                      aiModel={aiModel}
+                      onRequestSettings={() => setShowSettings(true)}
+                      onOpenUpgradePlan={() => {
+                        setResult(null);
+                        setMode("upgrade-plan");
                       }}
                     />
                   </motion.div>
@@ -2456,6 +2523,16 @@ export default function App() {
                           title="Kế hoạch GV (KHGD)"
                           desc="Lập phân phối chương trình và dự kiến kế hoạch dạy học cá nhân chi tiết."
                           onClick={() => setMode("khgd-gen")}
+                        />
+                      </div>
+
+                      <div className="md:col-span-2 lg:col-span-1 h-full">
+                        <FeatureCard
+                          icon={<Map className="w-8 h-8 text-white" />}
+                          iconBg="bg-emerald-600"
+                          title="Sử-Địa Skills"
+                          desc="Tạo quiz, slide PPTX, phân tích bản đồ/GIS và đề kiểm tra cho bài học Sử-Địa."
+                          onClick={() => setMode("su-dia-skills")}
                         />
                       </div>
 

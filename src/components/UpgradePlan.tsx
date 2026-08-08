@@ -202,6 +202,27 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             setInjectionResult(result);
             setReadyBlob(result.blob);
             setStep(3);
+
+            // 4. QUAN TRỌNG: Đồng thời gọi onUpgradeReady để App.tsx tạo và hiển thị
+            // toàn bộ giáo án đầy đủ (với NLS/NLAI hoàn chỉnh) lên màn hình — tính năng CŨ
+            onUpgradeReady({
+                subject: analysisResult.subject || "Khác",
+                grade: analysisResult.grade || "10",
+                topic: analysisResult.topic || "Bài học nâng cấp",
+                duration: analysisResult.duration || "2 tiết",
+                contextStudents: analysisResult.contextStudents || "",
+                contextSchool: analysisResult.contextSchool || "",
+                objectivesKnowledge: analysisResult.objectivesKnowledge || "",
+                objectivesCompetency: analysisResult.objectivesCompetency || "",
+                objectivesQuality: analysisResult.objectivesQuality || "",
+                existingRawText: rawText,
+                existingPdfBase64: "",
+                aiIntegrationOptions: selectedIntegrations,
+                socialIntegrations: selectedSocialIntegrations,
+                newContentFromTextbook: analysisResult.newContentFromTextbook || [],
+                indicatorCode: selectedIntegrations?.[0]?.suggestedAI || undefined,
+                selectedNlsIndicators: []
+            });
         } catch (err) {
             console.error(err);
             alert("❌ Đã có lỗi xảy ra khi chèn vào DOCX: " + (err as Error).message);

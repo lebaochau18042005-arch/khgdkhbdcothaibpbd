@@ -626,15 +626,15 @@ export default function NlsLookup() {
           <div>
             <div className="nls-kicker"><span className="nls-kicker-dot" /> Công cụ chuyên môn giáo viên</div>
             <h1>Tra cứu mã năng lực số</h1>
-            <p>Chọn đúng chỉ báo, đúng bậc năng lực và đưa trực tiếp vào kế hoạch bài dạy, hoạt động học tập hoặc minh chứng đánh giá.</p>
+            <p>Chọn đúng chỉ báo, đúng bậc năng lực và đưa trực tiếp vào kế hoạch bài dạy, hoạt động học tập hoặc minh chứng đánh giá. Với lớp 10-12, mã NLS cần đối chiếu phụ lục NC1 theo Công văn 3456 trước khi dùng.</p>
           </div>
-          <div className="nls-source"><strong>Nguồn dữ liệu</strong>Bảng mã chỉ báo năng lực số theo tài liệu Word đã cung cấp. Các mã bị lỗi gõ được chuẩn hóa để tra cứu thống nhất.</div>
+          <div className="nls-source"><strong>Nguồn dữ liệu</strong>Bảng tra cứu hiện có gồm CB1/CB2. Cấp THPT dùng mức NC1 theo Công văn 3456; không lấy CB1/CB2 thay thế NC1 nếu chưa có phụ lục chính thức.</div>
         </header>
 
         <section className="nls-stat-grid" aria-label="Tổng quan dữ liệu">
           <div className="nls-stat"><span className="nls-stat-icon" style={{ background: "#eff6ff", color: "#2563eb" }}>▦</span><div><span className="nls-stat-value">{INDICATORS.length}</span><span className="nls-stat-label">Chỉ báo đang tra cứu</span></div></div>
           <div className="nls-stat"><span className="nls-stat-icon" style={{ background: "#f0fdfa", color: "#0f766e" }}>◉</span><div><span className="nls-stat-value">6</span><span className="nls-stat-label">Lĩnh vực năng lực</span></div></div>
-          <div className="nls-stat"><span className="nls-stat-icon" style={{ background: "#fff7ed", color: "#ea580c" }}>↕</span><div><span className="nls-stat-value">2</span><span className="nls-stat-label">Bậc mã CB1 / CB2</span></div></div>
+          <div className="nls-stat"><span className="nls-stat-icon" style={{ background: "#fff7ed", color: "#ea580c" }}>↕</span><div><span className="nls-stat-value">2</span><span className="nls-stat-label">Bậc hiện có CB1 / CB2</span></div></div>
           <div className="nls-stat"><span className="nls-stat-icon" style={{ background: "#ecfeff", color: "#0891b2" }}>✓</span><div><span className="nls-stat-value">{selectedCodes.length}</span><span className="nls-stat-label">Mã đã chọn</span></div></div>
         </section>
 
@@ -672,7 +672,7 @@ export default function NlsLookup() {
           <aside className="nls-side">
             <section className="nls-side-card">
               <h2>Bộ mã cho kế hoạch bài dạy</h2>
-              <p>Chỉ chọn những mã có minh chứng rõ qua công cụ, thao tác, sản phẩm và tiêu chí đánh giá.</p>
+              <p>Chỉ chọn những mã có minh chứng rõ qua công cụ, thao tác, sản phẩm và tiêu chí đánh giá. Với THPT, cần mã NC1 từ phụ lục chính thức.</p>
               {selectedIndicators.length ? (
                 <div className="nls-selected-list">
                   {selectedIndicators.map((indicator) => <div className="nls-selected-item" key={indicator.code}><div><code>{indicator.code}</code><small>{indicator.componentName}</small></div><button className="nls-remove" onClick={() => toggleSelected(indicator.code)} aria-label={`Bỏ chọn ${indicator.code}`}>×</button></div>)}

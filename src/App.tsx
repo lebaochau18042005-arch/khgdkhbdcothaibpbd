@@ -49,6 +49,7 @@ import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, ge
 import UpgradePlan from "./components/UpgradePlan";
 import NlsLookup, { INDICATORS } from "./components/NlsLookup";
 import SuDiaSkills from "./components/SuDiaSkills";
+import { GEO_10_KNTT } from "./services/curriculumData";
 
 // Add competency mapper utility function
 const mapAiCompetencyText = (code: string) => {
@@ -65,6 +66,242 @@ const mapAiCompetencyText = (code: string) => {
 };
 
 type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "kh-hdgd-gen" | "upgrade-plan" | "ai-framework-gen" | "su-dia-skills" | "nls-lookup" | "history";
+
+const normalizeKey = (value?: string) =>
+  (value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const readLessonTitle = (item: any) =>
+  String(item?.lesson || item?.topic || item?.lessonContent || item?.lessonName || item?.title || "Nội dung cần bổ sung");
+
+const readLessonGoal = (item: any) =>
+  String(
+    item?.yccd ||
+    item?.lessonGoal ||
+    [item?.objectivesKnowledge, item?.objectivesCompetency, item?.objectivesQuality].filter(Boolean).join("; ") ||
+    "Tổ chuyên môn rà soát và bổ sung yêu cầu cần đạt theo Chương trình GDPT 2018."
+  );
+
+const readPeriods = (item: any) => {
+  const raw = String(item?.periods || item?.duration || item?.timeAmount || "1");
+  const match = raw.match(/\d+/);
+  return match ? match[0] : raw;
+};
+
+const hasMeaningfulText = (value: any) => {
+  const text = String(value || "").trim();
+  return !!text && !["undefined", "null", "...", "........"].includes(text.toLowerCase());
+};
+
+const isGeographySubject = (subject: string) => /địa|dia/i.test(subject.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+
+const getKhtcmExpectedLessons = (subject: string, grade: string, customData?: any[] | null) => {
+  if (Array.isArray(customData) && customData.length > 0) return customData;
+  if (isGeographySubject(subject) && grade === "10") return GEO_10_KNTT;
+  return CURRICULUM_DB[subject]?.[grade] || [];
+};
+
+const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[]) => {
+  const source = Array.isArray(sourceLessons) ? sourceLessons : [];
+  const existing = (Array.isArray(rows) ? rows : []).map((row, index) => ({ ...row, __index: index }));
+  const used = new Set<number>();
+  let runningWeek = 1;
+
+  const completeRow = (row: any, sourceItem: any | null, index: number) => {
+    const periods = hasMeaningfulText(row?.periods) ? String(row.periods) : readPeriods(sourceItem);
+    const lessonContent = hasMeaningfulText(row?.lessonContent || row?.lessonName || row?.topic)
+      ? String(row.lessonContent || row.lessonName || row.topic)
+      : readLessonTitle(sourceItem);
+    const lessonGoal = hasMeaningfulText(row?.lessonGoal) ? String(row.lessonGoal) : readLessonGoal(sourceItem);
+    const time = hasMeaningfulText(row?.time) ? String(row.time) : `Tuần ${Math.max(1, runningWeek)}`;
+    const periodCount = parseInt(String(periods).match(/\d+/)?.[0] || "1", 10);
+    runningWeek += Math.max(1, Math.ceil(periodCount / 2));
+
+    return {
+      time,
+      lessonContent,
+      periods,
+      lessonGoal,
+      digitalCompetencyTT02: hasMeaningfulText(row?.digitalCompetencyTT02)
+        ? String(row.digitalCompetencyTT02)
+        : "Không tích hợp - cần tổ chuyên môn rà soát thêm căn cứ YCCĐ trước khi gán mã NLS.",
+      aiCompetency3439Integrated: hasMeaningfulText(row?.aiCompetency3439Integrated)
+        ? String(row.aiCompetency3439Integrated)
+        : "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.",
+      sourceStatus: row ? "AI tạo, app đã rà soát đủ ô" : "App bổ sung từ danh mục chương trình để tránh thiếu dòng"
+    };
+  };
+
+  if (source.length === 0) {
+    return existing.map((row, index) => completeRow(row, null, index));
+  }
+
+  const completed = source.map((sourceItem, index) => {
+    const sourceKey = normalizeKey(readLessonTitle(sourceItem));
+    let matchIndex = existing.findIndex((row) => {
+      if (used.has(row.__index)) return false;
+      const rowKey = normalizeKey(readLessonTitle(row));
+      return !!sourceKey && !!rowKey && (rowKey.includes(sourceKey) || sourceKey.includes(rowKey));
+    });
+    if (matchIndex < 0 && existing[index] && !used.has(existing[index].__index)) matchIndex = index;
+    const matched = matchIndex >= 0 ? existing[matchIndex] : null;
+    if (matched) used.add(matched.__index);
+    return completeRow(matched, sourceItem, index);
+  });
+
+  existing.forEach((row, index) => {
+    if (!used.has(row.__index)) completed.push(completeRow(row, null, source.length + index));
+  });
+
+  return completed;
+};
+
+const buildKhtcmSupplement = (subject: string, grade: string, rows: any[]) => {
+  const lessonRows = Array.isArray(rows) ? rows : [];
+  const hasThptTopics = ["10", "11", "12"].includes(grade);
+  const assessmentRows = lessonRows
+    .filter((row: any) => /kiểm tra|kiem tra|đánh giá|danh gia|giữa kì|giua ki|cuối kì|cuoi ki/i.test(`${row.lessonContent || ""} ${row.time || ""}`))
+    .map((row: any) => ({
+      time: row.time || "Theo PPCT",
+      content: row.lessonContent || "Kiểm tra, đánh giá định kỳ",
+      form: "Bài kiểm tra viết/thực hành theo ma trận, kết hợp câu hỏi vận dụng và khai thác tư liệu/số liệu phù hợp môn học",
+      duration: row.periods || "1"
+    }));
+
+  return {
+    overview: [
+      `Môn học/Hoạt động giáo dục: ${subject}`,
+      `Khối lớp: ${grade}`,
+      `Số dòng phân phối chương trình: ${lessonRows.length}`,
+      "Kế hoạch đã giữ đủ các ô bắt buộc: thời gian, nội dung, số tiết, YCCĐ CT 2018, NLS theo TT 02/CV 3456 và NL AI theo QĐ 3439."
+    ],
+    situation: [
+      "Số lớp: .............; Số học sinh: .............; Số học sinh học chuyên đề lựa chọn (nếu có): .............",
+      "Tình hình đội ngũ: Số giáo viên: .............; Trình độ đào tạo: .............; Phân công giảng dạy: .............",
+      "Điều kiện thực hiện: bảo đảm thiết bị trình chiếu, học liệu số, tài khoản công cụ AI/GIS/bảng tính khi bài học có yêu cầu tích hợp."
+    ],
+    equipmentRows: [
+      {
+        name: "Máy tính/TV/máy chiếu, loa, bảng phụ",
+        lessons: "Các bài có hoạt động trình bày, thảo luận, báo cáo sản phẩm học tập",
+        note: "Giáo viên kiểm tra thiết bị trước giờ dạy; chuẩn bị phương án thay thế khi mất mạng."
+      },
+      {
+        name: isGeographySubject(subject) ? "Atlat, bản đồ, lược đồ, biểu đồ, bảng số liệu" : "Tư liệu văn bản, hình ảnh, phiếu học tập, timeline/bảng hệ thống",
+        lessons: isGeographySubject(subject) ? "Các bài thực hành bản đồ/GIS, biểu đồ, bảng số liệu và công thức Địa lí" : "Các bài khai thác tư liệu, sự kiện, nhân vật, nguyên nhân - hệ quả",
+        note: "Nguồn học liệu cần được kiểm chứng, ghi rõ xuất xứ và phù hợp YCCĐ."
+      },
+      {
+        name: "Công cụ số/AI có kiểm soát",
+        lessons: "Chỉ dùng ở các dòng có căn cứ YCCĐ và có sản phẩm/minh chứng rõ",
+        note: "Không thay thế tư duy môn học; học sinh phải kiểm chứng, chỉnh sửa và chịu trách nhiệm sản phẩm."
+      }
+    ],
+    rooms: [
+      {
+        room: "Phòng học bộ môn/phòng học có thiết bị trình chiếu",
+        lessons: "Các tiết hình thành kiến thức, luyện tập, báo cáo sản phẩm",
+        note: "Ưu tiên khi bài học cần bản đồ số, biểu đồ, video, học liệu tương tác."
+      },
+      {
+        room: "Phòng máy tính hoặc thiết bị cá nhân có kiểm soát",
+        lessons: "Các tiết thực hành số/AI/GIS/bảng tính",
+        note: "Có phương án ngoại tuyến: phiếu dữ liệu in, ảnh bản đồ, bảng số liệu dự phòng."
+      }
+    ],
+    selectedTopics: hasThptTopics
+      ? [
+          {
+            topic: `Chuyên đề lựa chọn/bổ trợ ${subject} ${grade}`,
+            periods: "Theo PPCT nhà trường",
+            time: "Sắp xếp theo kế hoạch năm học",
+            requirement: "Tổ chuyên môn rà soát chuyên đề đang áp dụng của trường và cập nhật YCCĐ, học liệu, kiểm tra đánh giá tương ứng."
+          }
+        ]
+      : [],
+    assessmentRows: assessmentRows.length > 0 ? assessmentRows : [
+      { time: "Giữa học kì I", content: "Kiểm tra, đánh giá giữa kì I", form: "Theo ma trận/đặc tả của tổ chuyên môn", duration: "1" },
+      { time: "Cuối học kì I", content: "Kiểm tra, đánh giá cuối kì I", form: "Theo ma trận/đặc tả của tổ chuyên môn", duration: "1" },
+      { time: "Giữa học kì II", content: "Kiểm tra, đánh giá giữa kì II", form: "Theo ma trận/đặc tả của tổ chuyên môn", duration: "1" },
+      { time: "Cuối học kì II", content: "Kiểm tra, đánh giá cuối kì II", form: "Theo ma trận/đặc tả của tổ chuyên môn", duration: "1" }
+    ],
+    professionalActivities: [
+      "Rà soát PPCT, thống nhất YCCĐ, chuẩn kiểm tra đánh giá và học liệu dùng chung theo học kì.",
+      "Sinh hoạt chuyên môn theo nghiên cứu bài học; dự giờ, góp ý các bài có tích hợp NLS/NL AI.",
+      "Cập nhật kho học liệu số, ngân hàng câu hỏi, minh chứng sản phẩm học sinh và điều chỉnh kế hoạch sau kiểm tra định kỳ.",
+      "Rà soát an toàn dữ liệu, bản quyền học liệu và quy tắc sử dụng AI có trách nhiệm trong từng chủ đề."
+    ]
+  };
+};
+
+const KhtcmSupplementSections = ({ subject, grade, rows }: { subject: string; grade: string; rows: any[] }) => {
+  const supplement = buildKhtcmSupplement(subject, grade, rows);
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="border-b border-slate-200 pb-4">
+          <h4 className="text-sm font-black text-brand-sidebar uppercase tracking-wider mb-3">Thông tin chung</h4>
+          <ul className="space-y-2 text-sm text-slate-700 font-medium">
+            {supplement.overview.map((item) => <li key={item}>- {item}</li>)}
+          </ul>
+        </div>
+        <div className="border-b border-slate-200 pb-4">
+          <h4 className="text-sm font-black text-brand-sidebar uppercase tracking-wider mb-3">I. Đặc điểm tình hình</h4>
+          <ul className="space-y-2 text-sm text-slate-700 font-medium">
+            {supplement.situation.map((item) => <li key={item}>- {item}</li>)}
+          </ul>
+        </div>
+      </div>
+
+      <div className="border-b border-slate-200 pb-5 overflow-x-auto">
+        <h4 className="text-sm font-black text-brand-sidebar uppercase tracking-wider mb-3">Thiết bị dạy học và phòng học bộ môn</h4>
+        <table className="w-full min-w-[760px] text-left text-[11px] border-collapse">
+          <thead>
+            <tr className="border-b border-slate-200">
+              <th className="p-3 font-black text-slate-700">Thiết bị/Phòng học</th>
+              <th className="p-3 font-black text-slate-700">Bài/Chủ đề áp dụng</th>
+              <th className="p-3 font-black text-slate-700">Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...supplement.equipmentRows, ...supplement.rooms.map(r => ({ name: r.room, lessons: r.lessons, note: r.note }))].map((row) => (
+              <tr key={row.name} className="border-b border-slate-100 align-top">
+                <td className="p-3 font-bold text-brand-sidebar">{row.name}</td>
+                <td className="p-3 text-slate-600">{row.lessons}</td>
+                <td className="p-3 text-slate-600">{row.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="border-b border-slate-200 pb-5">
+        <h4 className="text-sm font-black text-brand-sidebar uppercase tracking-wider mb-3">III. Kiểm tra, đánh giá định kỳ</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {supplement.assessmentRows.map((row) => (
+            <div key={`${row.time}-${row.content}`} className="border-l-4 border-emerald-500 pl-3 py-1">
+              <p className="text-xs font-black text-brand-sidebar">{row.time} - {row.content}</p>
+              <p className="text-[11px] text-slate-600 mt-1">{row.form}</p>
+              <p className="text-[10px] text-slate-500 mt-1">Số tiết: {row.duration}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="pb-2">
+        <h4 className="text-sm font-black text-brand-sidebar uppercase tracking-wider mb-3">IV. Sinh hoạt chuyên môn và nội dung khác</h4>
+        <ul className="space-y-2 text-sm text-slate-700 font-medium">
+          {supplement.professionalActivities.map((item) => <li key={item}>- {item}</li>)}
+        </ul>
+      </div>
+    </div>
+  );
+};
 
 
 const SUBJECTS_THPT = [
@@ -961,8 +1198,10 @@ export default function App() {
         customCurriculumData: customCurriculumData || undefined,
         curriculumDbData: customCurriculumData ? undefined : (eduPlanInput.subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" ? undefined : CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade])
       });
-      setResult({ type: "kh-tcm", data });
-      setDepartmentPlanRef(data);
+      const expectedLessons = getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData);
+      const completedData = completeDepartmentPlanRows(data, expectedLessons);
+      setResult({ type: "kh-tcm", data: completedData });
+      setDepartmentPlanRef(completedData);
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
@@ -1156,8 +1395,15 @@ export default function App() {
       });
       slides.push({ title: "IV. KẾ HOẠCH ĐÁNH GIÁ", bullets: (d.assessment || []).slice(0, 6) });
     } else if (result.type === "kh-tcm") {
-      const data = Array.isArray(result.data) ? result.data : [];
-      slides.push({ title: "KẾ HOẠCH TỔ CHUYÊN MÔN TÍCH HỢP AI", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `Tổng số bài: ${data.length}`] });
+      const data = completeDepartmentPlanRows(
+        Array.isArray(result.data) ? result.data : [],
+        getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData)
+      );
+      const supplement = buildKhtcmSupplement(eduPlanInput.subject, eduPlanInput.grade, data);
+      slides.push({ title: "KẾ HOẠCH TỔ CHUYÊN MÔN TÍCH HỢP AI", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `Tổng số dòng PPCT: ${data.length}`] });
+      slides.push({ title: "I. Đặc điểm tình hình", bullets: supplement.situation.map(item => `• ${item}`) });
+      slides.push({ title: "Thiết bị và phòng học", bullets: [...supplement.equipmentRows, ...supplement.rooms.map(r => ({ name: r.room, note: r.note }))].map((item: any) => `• ${item.name}: ${item.note}`) });
+      slides.push({ title: "III. Kiểm tra, đánh giá định kỳ", bullets: supplement.assessmentRows.slice(0, 6).map(row => `• ${row.time}: ${row.content} (${row.duration} tiết)`) });
       // Chunk lessons into groups of 8 per slide
       for (let i = 0; i < data.length; i += 8) {
         const chunk = data.slice(i, i + 8);
@@ -1950,6 +2196,26 @@ export default function App() {
         }]
       });
     } else if (result.type === "kh-tcm") {
+      const planRows = completeDepartmentPlanRows(
+        Array.isArray(result.data) ? result.data : [],
+        getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData)
+      );
+      const supplement = buildKhtcmSupplement(eduPlanInput.subject, eduPlanInput.grade, planRows);
+      const simpleCell = (value: any, bold = false, fill?: string) => new TableCell({
+        children: [new Paragraph({ children: [new TextRun({ text: String(value || ""), bold })] })],
+        margins: { top: 100, bottom: 100, left: 100, right: 100 },
+        verticalAlign: VerticalAlign.TOP,
+        ...(fill ? { shading: { fill } } : {})
+      });
+      const simpleTable = (headers: string[], bodyRows: any[][]) => new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({
+            children: headers.map(h => simpleCell(h, true, "F1F5F9"))
+          }),
+          ...bodyRows.map(row => new TableRow({ children: row.map(cell => simpleCell(cell)) }))
+        ]
+      });
       const rows = [
         new TableRow({
           children: [
@@ -1960,11 +2226,12 @@ export default function App() {
             shading: { fill: "F1F5F9" }
           }))
         }),
-        ...(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => {
+        ...planRows.map((item: any, i: number) => {
           const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
+          const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
           return new TableRow({
             children: [
-              i + 1, item.time || item.topic || item.lessonName, item.lessonContent || item.lessonName, item.periods, item.lessonGoal, item.digitalCompetencyTT02 || "Không", isNotIntegrated ? "Không" : item.aiCompetency3439Integrated
+              i + 1, item.time || item.topic || item.lessonName, item.lessonContent || item.lessonName, item.periods, item.lessonGoal, item.digitalCompetencyTT02 || "Không", isNotIntegrated ? aiText : item.aiCompetency3439Integrated
             ].map(v => new TableCell({ children: [new Paragraph({ text: String(v) })] }))
           });
         })
@@ -2000,10 +2267,11 @@ export default function App() {
               spacing: { after: 400 },
             }),
             new Paragraph({ children: [new TextRun({ text: "I. Đặc điểm tình hình", bold: true })], spacing: { after: 200 } }),
-            new Paragraph({ children: [new TextRun({ text: "1. Số lớp: .............; Số học sinh: .............; Số học sinh học chuyên đề lựa chọn (nếu có): ............." })], spacing: { after: 100 } }),
-            new Paragraph({ children: [new TextRun({ text: "2. Tình hình đội ngũ: Số giáo viên: .............; Trình độ đào tạo: ............." })], spacing: { after: 100 } }),
-            new Paragraph({ children: [new TextRun({ text: "3. Thiết bị dạy học:" })], spacing: { after: 100 } }),
-            new Paragraph({ children: [new TextRun({ text: "........................................................................" })], spacing: { after: 200 } }),
+            ...supplement.situation.map((line, idx) => new Paragraph({ children: [new TextRun({ text: `${idx + 1}. ${line}` })], spacing: { after: 100 } })),
+            new Paragraph({ children: [new TextRun({ text: "3. Thiết bị dạy học", bold: true })], spacing: { before: 100, after: 100 } }),
+            simpleTable(["Thiết bị dạy học", "Bài/Chủ đề áp dụng", "Ghi chú"], supplement.equipmentRows.map(row => [row.name, row.lessons, row.note])),
+            new Paragraph({ children: [new TextRun({ text: "4. Phòng học bộ môn/phòng chức năng", bold: true })], spacing: { before: 200, after: 100 } }),
+            simpleTable(["Phòng học", "Bài/Chủ đề áp dụng", "Ghi chú"], supplement.rooms.map(row => [row.room, row.lessons, row.note])),
             new Paragraph({ children: [new TextRun({ text: "II. Kế hoạch dạy học", bold: true })], spacing: { after: 200 } }),
             new Paragraph({ children: [new TextRun({ text: "1. Phân phối chương trình", bold: true })], spacing: { after: 200 } }),
             new Table({
@@ -2011,11 +2279,13 @@ export default function App() {
               rows: rows
             }),
             new Paragraph({ children: [new TextRun({ text: "2. Chuyên đề lựa chọn (đối với cấp trung học phổ thông)", bold: true })], spacing: { before: 400, after: 200 } }),
-            new Paragraph({ children: [new TextRun({ text: "........................................................................" })], spacing: { after: 200 } }),
+            ...(supplement.selectedTopics.length > 0
+              ? [simpleTable(["Chuyên đề", "Số tiết", "Thời điểm", "Yêu cầu cần đạt"], supplement.selectedTopics.map(row => [row.topic, row.periods, row.time, row.requirement]))]
+              : [new Paragraph({ children: [new TextRun({ text: "Không áp dụng hoặc tổ chuyên môn bổ sung theo kế hoạch nhà trường." })], spacing: { after: 200 } })]),
             new Paragraph({ children: [new TextRun({ text: "III. Kiểm tra, đánh giá định kỳ", bold: true })], spacing: { after: 200 } }),
-            new Paragraph({ children: [new TextRun({ text: "........................................................................" })], spacing: { after: 200 } }),
+            simpleTable(["Thời gian", "Bài kiểm tra/đánh giá", "Hình thức", "Số tiết"], supplement.assessmentRows.map(row => [row.time, row.content, row.form, row.duration])),
             new Paragraph({ children: [new TextRun({ text: "IV. Các nội dung khác (nếu có)", bold: true })], spacing: { after: 200 } }),
-            new Paragraph({ children: [new TextRun({ text: "........................................................................" })], spacing: { after: 400 } }),
+            ...supplement.professionalActivities.map((line) => new Paragraph({ children: [new TextRun({ text: `- ${line}` })], spacing: { after: 80 } })),
           ]
         }]
       });
@@ -2184,10 +2454,16 @@ export default function App() {
     } else if (result.type === "khgd") {
       content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Định hướng năng lực số")}\n${(Array.isArray(result.data) ? result.data : []).map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.digitalCompetency}`).join("\n")}`;
     } else if (result.type === "kh-tcm") {
-      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n1. Số lớp: .............; Số học sinh: .............; Số học sinh học chuyên đề lựa chọn (nếu có): .............\n2. Tình hình đội ngũ: Số giáo viên: .............; Trình độ đào tạo: .............\n3. Thiết bị dạy học:\n........................................................................\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Năng lực số | Mục tiêu & YCCĐ 3439 Tích hợp GD AI\n${(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => {
+      const planRows = completeDepartmentPlanRows(
+        Array.isArray(result.data) ? result.data : [],
+        getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData)
+      );
+      const supplement = buildKhtcmSupplement(eduPlanInput.subject, eduPlanInput.grade, planRows);
+      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n${supplement.situation.map((line, i) => `${i + 1}. ${line}`).join("\n")}\n\n3. Thiết bị dạy học\nThiết bị | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.equipmentRows.map(row => `${row.name} | ${row.lessons} | ${row.note}`).join("\n")}\n\n4. Phòng học bộ môn/phòng chức năng\nPhòng học | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.rooms.map(row => `${row.room} | ${row.lessons} | ${row.note}`).join("\n")}\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Năng lực số | Mục tiêu & YCCĐ 3439 Tích hợp GD AI\n${planRows.map((item: any, i: number) => {
         const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
-        return `${i + 1} | ${item.time || item.topic || item.lessonName} | ${item.lessonContent || item.lessonName} | ${item.periods} | ${item.lessonGoal} | ${item.digitalCompetencyTT02 || "Không"} | ${isNotIntegrated ? "Không" : item.aiCompetency3439Integrated}`;
-      }).join("\n")}\n\n2. Chuyên đề lựa chọn (đối với cấp trung học phổ thông)\n........................................................................\n\nIII. Kiểm tra, đánh giá định kỳ\n........................................................................\n\nIV. Các nội dung khác (nếu có)\n........................................................................`;
+        const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
+        return `${i + 1} | ${item.time || item.topic || item.lessonName} | ${item.lessonContent || item.lessonName} | ${item.periods} | ${item.lessonGoal} | ${item.digitalCompetencyTT02 || "Không"} | ${isNotIntegrated ? aiText : item.aiCompetency3439Integrated}`;
+      }).join("\n")}\n\n2. Chuyên đề lựa chọn (đối với cấp trung học phổ thông)\n${supplement.selectedTopics.length > 0 ? supplement.selectedTopics.map(row => `${row.topic} | ${row.periods} | ${row.time} | ${row.requirement}`).join("\n") : "Không áp dụng hoặc tổ chuyên môn bổ sung theo kế hoạch nhà trường."}\n\nIII. Kiểm tra, đánh giá định kỳ\nThời gian | Bài kiểm tra/đánh giá | Hình thức | Số tiết\n${supplement.assessmentRows.map(row => `${row.time} | ${row.content} | ${row.form} | ${row.duration}`).join("\n")}\n\nIV. Các nội dung khác (nếu có)\n${supplement.professionalActivities.map(line => `- ${line}`).join("\n")}`;
     } else if (result.type === "kh-hdgd") {
       content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH TỔ CHỨC CÁC HOẠT ĐỘNG GIÁO DỤC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nSTT | Chủ đề/Hoạt động | Yêu cầu cần đạt | Số tiết | Thời điểm | Địa điểm | Người chủ trì | Phối hợp | Điều kiện thực hiện | Tích hợp NLS/AI\n${(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => `${i + 1} | ${item.theme} | ${item.requirements} | ${item.periods} | ${item.timing} | ${item.location} | ${item.host} | ${item.collaborator} | ${item.conditions} | ${item.aiIntegration}`).join("\n")}`;
     }
@@ -4020,8 +4296,12 @@ export default function App() {
                         </div>
 
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
+                          <KhtcmSupplementSections subject={eduPlanInput.subject} grade={eduPlanInput.grade} rows={result.data} />
                           <div className="mb-6">
-                            <h4 className="text-lg font-extrabold text-brand-sidebar">1. Phân phối chương trình</h4>
+                            <h4 className="text-lg font-extrabold text-brand-sidebar mt-8">II. Kế hoạch dạy học - 1. Phân phối chương trình</h4>
+                            <p className="text-xs text-slate-500 font-semibold mt-1">
+                              Đã rà soát {Array.isArray(result.data) ? result.data.length : 0} dòng. Các ô trống được tự động bù từ danh mục chương trình/PL tải lên để tránh thiếu nội dung.
+                            </p>
                           </div>
                           <table className="w-full text-left text-[11px] border-collapse min-w-[1000px]">
                             <thead>
@@ -4039,6 +4319,7 @@ export default function App() {
                             <tbody>
                               {result.data.map((item: any, i: number) => {
                                 const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
+                                const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
                                 return (
                                   <tr key={i} className={`border-b border-slate-50 hover:bg-slate-50 transition-colors align-top ${isNotIntegrated ? "opacity-60" : ""}`}>
                                     <td className="p-4 text-center font-bold text-slate-400">{i + 1}</td>
@@ -4048,7 +4329,7 @@ export default function App() {
                                     <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.lessonGoal}</td>
                                     <td className="p-4 text-brand-sidebar leading-relaxed whitespace-pre-line text-[10px]">{item.digitalCompetencyTT02 || "Không"}</td>
                                     <td className={`p-4 font-bold ${isNotIntegrated ? "text-slate-400" : "text-red-700 bg-red-50/20"} whitespace-pre-line text-[11px]`}>
-                                      {isNotIntegrated ? "Không" : item.aiCompetency3439Integrated}
+                                      {aiText}
                                     </td>
                                     <td className="p-4 print:hidden text-center">
                                       <button

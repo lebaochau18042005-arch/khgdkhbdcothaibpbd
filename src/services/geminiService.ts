@@ -1344,7 +1344,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
         "YEU CAU TUYET DOI BAT BUOC:",
         "1. TAO DUNG DU " + batch.length + " HANG cho " + batch.length + " bai tren. KHONG DUOC BO SOT BAI NAO.",
         "2. lessonGoal: SAO CHEP Y NGUYEN 100% noi dung yccd tu du lieu tren. TUYET DOI KHONG tom tat hay cat xen.",
-        "3. TICH HOP NLS va NL AI chi khi YCCD cua bai co diem cham ro rang. Neu khong du can cu, ghi 'Khong tich hop/Khong gan ma' va neu ly do ngan.",
+        "3. TICH HOP NLS va NL AI chi khi YCCD cua bai co diem cham ro rang. Neu khong du can cu, ghi 'Khong tich hop - ly do: ...' hoac 'Khong gan ma - ly do: ...'. KHONG duoc ghi cut 'Khong'.",
         "4. digitalCompetencyTT02: voi THPT dung ma NLS muc NC1 (VD: 1.1.NC1a: Khai thac nguon du lieu...; 2.4.NC1b: Hop tac tren cong cu so...). Moi ma phai bam vao YCCD va san pham hoc tap.",
         "5. aiCompetency3439Integrated: chi dung ma NL AI hop le theo lop va chu de QD 3439, kem YCCD cu the.",
         "   Quy uoc ma: [10].[Mach(A/B/C/D)+So chu de].[STT] - VD: 10.A1.1, 10.A2.3, 10.B1.2, 10.C2.1, 10.D3.2",
@@ -1352,7 +1352,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
         "   PHAI DA DANG: moi bai dung ma va chu de KHAC NHAU. KHONG lap lai cung ma.",
         "6. Phan bo thoi gian bat dau tu Tuan " + weekCounter + ".",
         "",
-        "Dau ra: JSON Array gom dung " + batch.length + " object voi cac truong: time, lessonContent, periods, lessonGoal, digitalCompetencyTT02, aiCompetency3439Integrated"
+        "Dau ra: JSON Array gom dung " + batch.length + " object voi cac truong: time, lessonContent, periods, lessonGoal, digitalCompetencyTT02, aiCompetency3439Integrated. KHONG duoc de trong bat ky truong nao."
       ];
       const batchPrompt = bLines.join("\n");
 
@@ -1471,17 +1471,18 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 
     Nhiệm vụ cụ thể:
     1. Rà soát & Phân tích toàn diện: LỆNH TỐI CẤP: BẠN KHÔNG ĐƯỢC BỎ SÓT BẤT KỲ BÀI HỌC, CHUYÊN ĐỀ, HAY BÀI KIỂM TRA ĐÁNH GIÁ NÀO CÓ TRONG DANH SÁCH. PHẢI LIỆT KÊ ĐỦ 35 TUẦN HỌC. ĐẶC BIỆT: Phải XEN KẼ các tiết "Ôn tập", "Kiểm tra đánh giá" (Giữa kì, Cuối kì) và Chuyên đề vào các tuần tương ứng để hoàn thiện Kế hoạch Tổ chuyên môn đúng chuẩn thực tế.
+    1b. KHÔNG ĐƯỢC ĐỂ THIẾU Ô: Mỗi dòng bắt buộc phải có đủ 6 trường time, lessonContent, periods, lessonGoal, digitalCompetencyTT02, aiCompetency3439Integrated. Không được trả chuỗi rỗng, "..." hoặc chỉ một chữ "Không". Nếu không tích hợp, phải ghi theo mẫu: "Không tích hợp - lý do: ..." và nêu căn cứ YCCĐ chưa phù hợp.
     2. TÍCH HỢP NLS VÀ NL AI THEO YCCĐ, KHÔNG GƯỢNG ÉP:
     - Chỉ tích hợp Năng lực số (NLS) và Năng lực AI (NL AI) khi YCCĐ của bài có thao tác phù hợp: khai thác dữ liệu, kiểm chứng nguồn, tạo sản phẩm số, phân tích biểu đồ/bản đồ/bảng số liệu, mô phỏng, thiết kế, đánh giá rủi ro...
-    - Không đặt chỉ tiêu 95%/100% số bài. Nếu bài không có điểm chạm rõ, ghi "Không tích hợp" hoặc "Không gán mã" và nêu lý do ngắn.
+    - Không đặt chỉ tiêu 95%/100% số bài. Nếu bài không có điểm chạm rõ, ghi "Không tích hợp - lý do: ..." hoặc "Không gán mã - lý do: ..." và nêu lý do ngắn.
     - Mỗi mã được đề xuất phải có chuỗi chứng minh: YCCĐ -> thao tác học sinh -> công cụ/dữ liệu -> sản phẩm/minh chứng -> mã.
     3. Ánh xạ Năng lực:
     - Thời gian (time): Ước lượng thời gian thực hiện (Ví dụ: Học kì I, Tháng 9, Tuần 1...).
        - Nội dung (lessonContent): Tên bài học, chủ đề, chuyên đề hoặc tên bài kiểm tra. Phải lấy từ danh sách gốc.
        - Số tiết (periods): Số lượng tiết học của bài học.
        - Yêu cầu cần đạt CT 2018 (lessonGoal): BẮT BUỘC SAO CHÉP Y NGUYÊN 100% nội dung "yccd" (hoặc "YCCĐ") được cung cấp trong danh sách gốc cho từng bài học/chuyên đề/kiểm tra tương ứng. BẠN KHÔNG ĐƯỢC PHÉP TÓM TẮT HAY CẮT XÉN YCCĐ GỐC!
-       - Năng lực số (digitalCompetencyTT02): Với lớp 10-12, mã NLS phải dùng mức NC1 theo Công văn 3456 (vd: 1.1.NC1a, 2.2.NC1b...). Chỉ liệt kê mã gắn với YCCĐ và minh chứng học tập; nếu không phù hợp ghi "Không tích hợp".
-       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Chỉ liệt kê mã NL AI đúng lớp, đúng chủ đề QĐ 3439 và bám YCCĐ. Với bài có indicatorCode hợp lệ từ hệ thống, vẫn phải kiểm tra YCCĐ trước khi dùng. Với bài tự đề xuất, không bịa mã; nếu thiếu căn cứ ghi "Không tích hợp/Không gán mã".
+       - Năng lực số (digitalCompetencyTT02): Với lớp 10-12, mã NLS phải dùng mức NC1 theo Công văn 3456 (vd: 1.1.NC1a, 2.2.NC1b...). Chỉ liệt kê mã gắn với YCCĐ và minh chứng học tập; nếu không phù hợp ghi "Không tích hợp - lý do: ..." kèm lý do cụ thể, không ghi cụt "Không".
+       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Chỉ liệt kê mã NL AI đúng lớp, đúng chủ đề QĐ 3439 và bám YCCĐ. Với bài có indicatorCode hợp lệ từ hệ thống, vẫn phải kiểm tra YCCĐ trước khi dùng. Với bài tự đề xuất, không bịa mã; nếu thiếu căn cứ ghi "Không tích hợp/Không gán mã - lý do: ..." kèm lý do cụ thể, không ghi cụt "Không".
        
        - Mạch nội dung AI:
     - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.
@@ -1497,8 +1498,8 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
     - lessonContent: Nội dung bài học (Tên bài học hoặc nội dung trọng tâm).
     - periods: Số tiết (Ví dụ: "2", "1").
     - lessonGoal: Yêu cầu cần đạt CT 2018.
-    - digitalCompetencyTT02: Năng lực số TT 02 (Mã và YCCĐ). Ghi "Không tích hợp" nếu bài không phù hợp.
-    - aiCompetency3439Integrated: Mục tiêu & YCCĐ 3439 Tích hợp GD AI. Kết hợp mục tiêu cụ thể và mã chỉ báo CV 3439. Ghi "Không tích hợp" nếu bài không phù hợp.
+    - digitalCompetencyTT02: Năng lực số TT 02 (Mã và YCCĐ). Ghi "Không tích hợp - lý do: ..." nếu bài không phù hợp.
+    - aiCompetency3439Integrated: Mục tiêu & YCCĐ 3439 Tích hợp GD AI. Kết hợp mục tiêu cụ thể và mã chỉ báo CV 3439. Ghi "Không tích hợp - lý do: ..." nếu bài không phù hợp.
   `;
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');

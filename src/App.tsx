@@ -1092,7 +1092,7 @@ export default function App() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduPlan AI - ${currentSubject}</title>
+<title>khgdkhbdcothaibpbd - ${currentSubject}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1120,11 +1120,11 @@ export default function App() {
 <body>
 <div class="container">
   <div class="header-bar">
-    <h1>EduPlan AI — Kế hoạch Giáo dục</h1>
+    <h1>khgdkhbdcothaibpbd — Kế hoạch Giáo dục</h1>
     <p>Môn: ${currentSubject} | Khối: ${lessonPlanInput.grade || eduPlanInput.grade} | Chuẩn CV 5512 + QĐ 3439/BGDĐT</p>
   </div>
   ${element.innerHTML}
-  <div class="footer">Tạo bởi EduPlan AI • Hệ thống Kế hoạch Giáo dục Thông minh • ${new Date().toLocaleDateString('vi-VN')}</div>
+  <div class="footer">Tạo bởi khgdkhbdcothaibpbd • Hệ thống Kế hoạch Giáo dục Thông minh • ${new Date().toLocaleDateString('vi-VN')}</div>
 </div>
 </body>
 </html>`;
@@ -1287,7 +1287,7 @@ export default function App() {
         <p:spPr><a:xfrm><a:off x="457200" y="4800000"/><a:ext cx="8229600" cy="300000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${bgColor}"/></a:solidFill></p:spPr>
         <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r>
           <a:rPr lang="vi-VN" sz="1000" b="0"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr>
-          <a:t>EduPlan AI — ${currentSubject} Lớp ${grade} • Slide ${idx + 1}/${slides.length}</a:t>
+          <a:t>khgdkhbdcothaibpbd — ${currentSubject} Lớp ${grade} • Slide ${idx + 1}/${slides.length}</a:t>
         </a:r></a:p></p:txBody>
       </p:sp>
     </p:spTree>
@@ -1303,7 +1303,7 @@ export default function App() {
     // docProps/app.xml
     zip.folder("docProps")!.file("app.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
-  <Application>EduPlan AI</Application>
+  <Application>khgdkhbdcothaibpbd</Application>
   <Slides>${slides.length}</Slides>
 </Properties>`);
 
@@ -2211,7 +2211,7 @@ export default function App() {
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                   <BrainCircuit className="w-6 h-6 text-white" />
                 </div>
-                <h1 className="font-black text-2xl tracking-tighter">EduPlan <span className="text-blue-400">AI</span></h1>
+                <h1 className="font-black text-xl tracking-normal break-words leading-tight">khgdkhbdcothaibpbd</h1>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-blue-300/80 font-black uppercase tracking-[0.3em]">Hệ thống thông minh</span>
@@ -2343,7 +2343,7 @@ export default function App() {
             {/* Mobile Header */}
             <header className="lg:hidden flex items-center justify-between p-4 border-b border-white/10 sticky top-0 bg-indigo-900/80 backdrop-blur-md z-40 text-white">
               <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setMode("dashboard"); setResult(null); }}>
-                <span className="font-black text-xl">EduPlan <span className="text-blue-400">AI</span></span>
+                <span className="font-black text-base sm:text-xl tracking-normal truncate max-w-[180px]">khgdkhbdcothaibpbd</span>
               </div>
               <div className="flex items-center gap-4">
                 <div className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase ${isOnline ? "border-emerald-300/40 bg-emerald-400/10 text-emerald-100" : "border-amber-300/40 bg-amber-400/10 text-amber-100"}`}>
@@ -2539,8 +2539,8 @@ export default function App() {
                           <Sparkles className="w-3 h-3 animate-pulse" /> Trợ lý giáo dục 4.0
                         </div>
                         <div>
-                          <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9] mb-4">
-                            EduPlan <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">AI</span>
+                          <h2 className="text-4xl md:text-6xl font-black text-white tracking-normal leading-[1.05] mb-4 break-all">
+                            khgdkhbdcothaibpbd
                           </h2>
                           <p className="text-indigo-100/70 font-medium max-w-xl text-lg">
                             Nền tảng số hóa giáo án chuyên nghiệp, bám sát các tiêu chuẩn giáo dục Việt Nam.
@@ -4423,7 +4423,7 @@ export default function App() {
                       <Settings className="w-6 h-6 text-indigo-500" /> Cài đặt Hệ thống
                     </h3>
                     <p className="text-sm text-slate-500 mt-2">
-                      Cấu hình AI cho EduPlan. Chìa khóa API (API Key) được lưu trữ an toàn trên trình duyệt của bạn.
+                      Cấu hình AI cho khgdkhbdcothaibpbd. Chìa khóa API (API Key) được lưu trữ an toàn trên trình duyệt của bạn.
                     </p>
                   </div>
 

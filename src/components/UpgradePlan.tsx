@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 // @ts-ignore
 import * as mammoth from "mammoth";
-import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users } from "lucide-react";
+import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye } from "lucide-react";
 import { analyzeExistingPlan, generateDirectSnippets } from "../services/geminiService";
-import { injectSnippetsIntoDocx } from "../utils/docxInjector";
+import { injectSnippetsIntoDocx, InjectionResult } from "../utils/docxInjector";
 import { saveAs } from "file-saver";
 
 interface TextbookImage {
@@ -26,6 +26,8 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
     const [pl1Text, setPl1Text] = useState("");
     const [pl1FileName, setPl1FileName] = useState("");
     const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
+    const [injectionResult, setInjectionResult] = useState<InjectionResult | null>(null);
+    const [readyBlob, setReadyBlob] = useState<Blob | null>(null);
 
     const handleTextbookImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -185,7 +187,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
 
         setIsGeneratingDocx(true);
         try {
-            // 1. Generate Snippets
+            // 1. Generate AI Snippets
             const snippets = await generateDirectSnippets(
                 analysisResult.subject || "Khác",
                 analysisResult.grade || "10",
@@ -193,13 +195,13 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                 selectedIntegrations
             );
 
-            // 2. Inject into DOCX
-            const newDocxBlob = await injectSnippetsIntoDocx(file, snippets);
+            // 2. Inject into DOCX and get preview data
+            const result = await injectSnippetsIntoDocx(file, snippets);
 
-            // 3. Download
-            saveAs(newDocxBlob, file.name.replace(".docx", "_AI_NangCap.docx"));
-            
-            alert("✅ Đã chèn thành công các hoạt động AI vào file DOCX của bạn!");
+            // 3. Go to preview step (step 3) instead of downloading directly
+            setInjectionResult(result);
+            setReadyBlob(result.blob);
+            setStep(3);
         } catch (err) {
             console.error(err);
             alert("❌ Đã có lỗi xảy ra khi chèn vào DOCX: " + (err as Error).message);
@@ -207,6 +209,12 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
             setIsGeneratingDocx(false);
         }
     };
+
+    const handleConfirmDownload = () => {
+        if (!readyBlob || !file) return;
+        saveAs(readyBlob, file.name.replace(".docx", "_AI_NangCap.docx"));
+    };
+
 
     const socialThemeColors: Record<string, string> = {
         "Di sản": "bg-amber-50 border-amber-300 text-amber-800",
@@ -486,8 +494,79 @@ export default function UpgradePlan({ onUpgradeReady, apiKey }: { onUpgradeReady
                             </div>
                         </div>
                     )}
+
+                    {/* ===== STEP 3: PREVIEW BEFORE DOWNLOAD ===== */}
+                    {step === 3 && injectionResult && (
+                        <div className="space-y-5">
+                            {/* Header Summary */}
+                            <div className={`rounded-xl p-4 border flex items-start gap-3 ${injectionResult.injectedCount > 0 ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
+                                <div className={`rounded-full p-1.5 mt-0.5 ${injectionResult.injectedCount > 0 ? "bg-green-100" : "bg-amber-100"}`}>
+                                    <CheckCircle2 className={`w-5 h-5 ${injectionResult.injectedCount > 0 ? "text-green-600" : "text-amber-600"}`} />
+                                </div>
+                                <div>
+                                    <p className={`font-bold text-sm ${injectionResult.injectedCount > 0 ? "text-green-800" : "text-amber-800"}`}>
+                                        ✅ Đã chèn thành công {injectionResult.injectedCount}/{injectionResult.previewItems.length} hoạt động AI
+                                    </p>
+                                    <p className="text-xs text-slate-600 mt-1">
+                                        File: <span className="font-semibold">{file?.name.replace(".docx", "_AI_NangCap.docx")}</span> đã sẵn sàng tải xuống.
+                                        {injectionResult.skippedActivities.length > 0 && (
+                                            <span className="text-amber-700"> ({injectionResult.skippedActivities.length} hoạt động không khớp vị trí – đã chèn cuối file.)</span>
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Preview list of injected content */}
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Eye className="w-4 h-4 text-blue-600" />
+                                    <p className="text-sm font-bold text-slate-700">Kiểm tra nội dung AI đã chèn:</p>
+                                </div>
+                                <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                                    {injectionResult.previewItems.map((item, idx) => (
+                                        <div key={idx} className={`rounded-xl border p-4 ${item.found ? "border-green-200 bg-green-50/60" : "border-amber-200 bg-amber-50/60"}`}>
+                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                                <p className="text-sm font-semibold text-slate-800 flex-1">{item.activityName}</p>
+                                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${item.found ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                                                    {item.found ? "✓ Chèn đúng vị trí" : "⚠ Chèn cuối file"}
+                                                </span>
+                                            </div>
+                                            <div className="bg-white rounded-lg border border-red-200 p-3">
+                                                <p className="text-xs font-mono text-red-700 whitespace-pre-wrap leading-relaxed">{item.injectedText}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Action buttons */}
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                                <button
+                                    onClick={() => setStep(2)}
+                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    ← Chỉnh sửa lại
+                                </button>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setStep(1); setFile(null); setAnalysisResult(null); setInjectionResult(null); setReadyBlob(null); }}
+                                        className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition-colors border border-slate-200"
+                                    >
+                                        Tải file khác
+                                    </button>
+                                    <button
+                                        onClick={handleConfirmDownload}
+                                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 transition-colors"
+                                    >
+                                        <Download className="w-4 h-4" /> Tải xuống DOCX đã tích hợp AI
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
     );
 }
+

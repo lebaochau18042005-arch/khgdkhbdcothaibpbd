@@ -10,11 +10,33 @@ export interface InjectionResult {
     injectedCount: number;
     skippedActivities: string[];
     previewItems: Array<{ activityName: string; injectedText: string; found: boolean }>;
+    preservationReport: PreservationReport;
 }
 
 export interface InjectionOptions {
     objectivesText?: string;
     assessmentText?: string;
+}
+
+export interface PreservationReport {
+    status: "passed" | "warning";
+    originalPackageParts: number;
+    outputPackageParts: number;
+    mediaParts: number;
+    chartParts: number;
+    diagramParts: number;
+    embeddedParts: number;
+    tableCount: number;
+    drawingCount: number;
+    mathCount: number;
+    lostPackageParts: string[];
+    warnings: string[];
+}
+
+interface XmlStructureStats {
+    tableCount: number;
+    drawingCount: number;
+    mathCount: number;
 }
 
 // More robust text normalizer for Vietnamese
@@ -44,6 +66,68 @@ function matchScore(paragraphText: string, activityName: string): number {
     
     // Require at least 60% keyword match
     return ratio >= 0.6 ? Math.round(ratio * 80) : 0;
+}
+
+function getPackageParts(zip: JSZip): string[] {
+    return Object.values(zip.files)
+        .filter(part => !part.dir)
+        .map(part => part.name);
+}
+
+function countPackageParts(parts: string[], matchers: RegExp[]): number {
+    return parts.filter(part => matchers.some(pattern => pattern.test(part))).length;
+}
+
+function countXmlStructure(xmlDoc: Document): XmlStructureStats {
+    return {
+        tableCount: xmlDoc.getElementsByTagName("w:tbl").length,
+        drawingCount:
+            xmlDoc.getElementsByTagName("w:drawing").length +
+            xmlDoc.getElementsByTagName("w:pict").length +
+            xmlDoc.getElementsByTagName("v:shape").length,
+        mathCount:
+            xmlDoc.getElementsByTagName("m:oMath").length +
+            xmlDoc.getElementsByTagName("m:oMathPara").length
+    };
+}
+
+function buildPreservationReport(
+    originalParts: string[],
+    outputParts: string[],
+    originalStats: XmlStructureStats,
+    outputStats: XmlStructureStats
+): PreservationReport {
+    const outputPartSet = new Set(outputParts);
+    const lostPackageParts = originalParts.filter(part => !outputPartSet.has(part));
+    const warnings: string[] = [];
+
+    if (lostPackageParts.length > 0) {
+        warnings.push("Có thành phần trong gói DOCX gốc không còn trong file sau khi chèn.");
+    }
+    if (outputStats.tableCount < originalStats.tableCount) {
+        warnings.push("Số bảng trong giáo án bị giảm.");
+    }
+    if (outputStats.drawingCount < originalStats.drawingCount) {
+        warnings.push("Số hình ảnh/hình vẽ trong nội dung chính bị giảm.");
+    }
+    if (outputStats.mathCount < originalStats.mathCount) {
+        warnings.push("Số công thức toán học trong nội dung chính bị giảm.");
+    }
+
+    return {
+        status: warnings.length > 0 ? "warning" : "passed",
+        originalPackageParts: originalParts.length,
+        outputPackageParts: outputParts.length,
+        mediaParts: countPackageParts(outputParts, [/^word\/media\//i]),
+        chartParts: countPackageParts(outputParts, [/^word\/charts\//i]),
+        diagramParts: countPackageParts(outputParts, [/^word\/diagrams\//i, /^word\/drawings\//i]),
+        embeddedParts: countPackageParts(outputParts, [/^word\/embeddings\//i, /^word\/activeX\//i]),
+        tableCount: outputStats.tableCount,
+        drawingCount: outputStats.drawingCount,
+        mathCount: outputStats.mathCount,
+        lostPackageParts,
+        warnings
+    };
 }
 
 function createStyledParagraph(xmlDoc: Document, label: string, text: string, colorValue: string): Element {
@@ -121,6 +205,7 @@ function insertBlockNearHeading(
 
 export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], options: InjectionOptions = {}): Promise<InjectionResult> {
     const zip = await JSZip.loadAsync(file);
+    const originalPackageParts = getPackageParts(zip);
     const xmlContent = await zip.file("word/document.xml")?.async("string");
     
     if (!xmlContent) {
@@ -130,6 +215,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlContent, "application/xml");
     const paragraphs = xmlDoc.getElementsByTagName("w:p");
+    const originalStats = countXmlStructure(xmlDoc);
 
     let injectedCount = 0;
     const skippedActivities: string[] = [];
@@ -283,7 +369,20 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
     const serializer = new XMLSerializer();
     const newXml = serializer.serializeToString(xmlDoc);
     zip.file("word/document.xml", newXml);
+    const outputStats = countXmlStructure(xmlDoc);
+    const outputPackageParts = getPackageParts(zip);
+    const preservationReport = buildPreservationReport(
+        originalPackageParts,
+        outputPackageParts,
+        originalStats,
+        outputStats
+    );
+
+    if (preservationReport.status !== "passed") {
+        const details = preservationReport.warnings.join(" ");
+        throw new Error(`Không xuất file vì kiểm tra bảo toàn giáo án gốc chưa đạt. ${details}`);
+    }
 
     const blob = await zip.generateAsync({ type: "blob" });
-    return { blob, injectedCount, skippedActivities, previewItems };
+    return { blob, injectedCount, skippedActivities, previewItems, preservationReport };
 }

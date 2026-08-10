@@ -29,6 +29,8 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
     const [injectionResult, setInjectionResult] = useState<InjectionResult | null>(null);
     const [readyBlob, setReadyBlob] = useState<Blob | null>(null);
     const [fullPreviewText, setFullPreviewText] = useState("");
+    const [fullPreviewHtml, setFullPreviewHtml] = useState("");
+    const [previewHtmlWarning, setPreviewHtmlWarning] = useState("");
     const [assessmentPreview, setAssessmentPreview] = useState<string[]>([]);
 
     const handleTextbookImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,6 +111,15 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
         }
 
         setFile(uploadedFile);
+        setRawText("");
+        setPdfBase64("");
+        setAnalysisResult(null);
+        setInjectionResult(null);
+        setReadyBlob(null);
+        setFullPreviewText("");
+        setFullPreviewHtml("");
+        setPreviewHtmlWarning("");
+        setAssessmentPreview([]);
         setIsAnalyzing(true);
 
         try {
@@ -175,31 +186,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
             return;
         }
         if (!file || !file.name.toLowerCase().endsWith(".docx")) {
-            // Fallback to old AI JSON generation for PDF
-            const objectiveText = buildObjectiveText();
-            const assessmentText = buildAssessmentText();
-            const selectedNlsIndicators = selectedIntegrations
-                .map((sug: any) => ({ code: sug.suggestedNLS, description: `${sug.activityName}: ${sug.yccdEvidence || sug.reason || sug.action}` }))
-                .filter((item: any) => item.code && !String(item.code).toLowerCase().includes("không"));
-            onUpgradeReady({
-                subject: analysisResult.subject || "Khác",
-                grade: analysisResult.grade || "10",
-                topic: analysisResult.topic || "Bài học nâng cấp",
-                duration: analysisResult.duration || "2 tiết",
-                contextStudents: analysisResult.contextStudents || "",
-                contextSchool: analysisResult.contextSchool || "",
-                objectivesKnowledge: analysisResult.objectivesKnowledge || "",
-                objectivesCompetency: [analysisResult.objectivesCompetency, objectiveText].filter(Boolean).join("\n"),
-                objectivesQuality: analysisResult.objectivesQuality || "",
-                existingRawText: rawText,
-                existingPdfBase64: pdfBase64,
-                aiIntegrationOptions: selectedIntegrations,
-                socialIntegrations: selectedSocialIntegrations,
-                newContentFromTextbook: analysisResult.newContentFromTextbook || [],
-                additionalNotes: `Nội dung tích hợp đã duyệt:\n${objectiveText}\n\nGợi ý đánh giá:\n${assessmentText}`,
-                indicatorCode: selectedIntegrations.find((sug: any) => hasValidAiCode(sug.suggestedAI))?.suggestedAI,
-                selectedNlsIndicators
-            });
+            alert("Để giữ nguyên toàn bộ giáo án gốc, vui lòng tải lên file DOCX. PDF chỉ dùng để AI đọc/rà soát, không thể chèn NLS/NL AI mà vẫn bảo toàn đầy đủ hình ảnh, bảng, biểu đồ, hình vẽ và công thức như file Word gốc.");
             return;
         }
 
@@ -220,12 +207,15 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                 objectivesText: objectiveText,
                 assessmentText: assessmentText
             });
+            const preview = await buildDocxHtmlPreview(result.blob);
 
             // 3. Go to preview step (step 3) instead of downloading directly
             setInjectionResult(result);
             setReadyBlob(result.blob);
             setAssessmentPreview(assessmentText.split("\n").filter(line => line.trim()));
             setFullPreviewText(buildFullPreview(snippets, objectiveText, assessmentText));
+            setFullPreviewHtml(preview.html);
+            setPreviewHtmlWarning(preview.warning);
             setStep(3);
 
             // DOCX là nguồn đầy đủ nhất: giữ nguyên giáo án gốc và chỉ chèn phần AI vào file.
@@ -240,7 +230,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
 
     const handleConfirmDownload = () => {
         if (!readyBlob || !file) return;
-        saveAs(readyBlob, file.name.replace(".docx", "_AI_NangCap.docx"));
+        saveAs(readyBlob, file.name.replace(/\.docx$/i, "_AI_NangCap.docx"));
     };
 
 
@@ -315,6 +305,30 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
         ].join("\n");
     };
 
+    const buildDocxHtmlPreview = async (blob: Blob): Promise<{ html: string; warning: string }> => {
+        try {
+            const arrayBuffer = await blob.arrayBuffer();
+            const result = await mammoth.convertToHtml(
+                { arrayBuffer },
+                {
+                    convertImage: mammoth.images.imgElement(async (image: any) => ({
+                        src: `data:${image.contentType};base64,${await image.read("base64")}`
+                    }))
+                }
+            );
+            const warning = (result.messages || []).length
+                ? "Một số thành phần Word phức tạp có thể không hiển thị hoàn hảo trong bản xem nhanh HTML, nhưng vẫn được giữ trong DOCX tải xuống."
+                : "";
+            return { html: result.value || "", warning };
+        } catch (err) {
+            console.warn("Không tạo được bản xem trước HTML từ DOCX", err);
+            return {
+                html: "",
+                warning: "Không tạo được bản xem trước HTML. File DOCX đã tích hợp vẫn là bản giữ nguyên cấu trúc gốc để tải xuống."
+            };
+        }
+    };
+
     const downloadTextFile = (filename: string, content: string, type = "text/plain;charset=utf-8") => {
         const blob = new Blob([content], { type });
         saveAs(blob, filename);
@@ -331,8 +345,11 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
     };
 
     const handleDownloadPreviewHtml = () => {
-        if (!fullPreviewText) return;
-        const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(analysisResult?.topic || "Giáo án tích hợp AI")}</title><style>body{font-family:Arial,sans-serif;line-height:1.6;margin:32px;color:#0f172a}pre{white-space:pre-wrap;font-family:Arial,sans-serif}.ai{color:#b91c1c;font-weight:700}</style></head><body><pre>${escapeHtml(fullPreviewText)}</pre></body></html>`;
+        if (!fullPreviewText && !fullPreviewHtml) return;
+        const body = fullPreviewHtml
+            ? `<div class="note">Bản HTML chỉ dùng để xem nhanh. Bản DOCX tải xuống mới là bản bảo toàn nghiêm ngặt hình ảnh, bảng, biểu đồ, hình vẽ và công thức.</div><div class="docx">${fullPreviewHtml}</div>`
+            : `<pre>${escapeHtml(fullPreviewText)}</pre>`;
+        const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(analysisResult?.topic || "Giáo án tích hợp AI")}</title><style>body{font-family:Arial,sans-serif;line-height:1.6;margin:32px;color:#0f172a}.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;color:#1e3a8a;font-weight:700}.docx table{border-collapse:collapse;width:100%;margin:12px 0}.docx td,.docx th{border:1px solid #cbd5e1;padding:6px;vertical-align:top}.docx img{max-width:100%;height:auto}pre{white-space:pre-wrap;font-family:Arial,sans-serif}</style></head><body>${body}</body></html>`;
         downloadTextFile(`${analysisResult?.topic || "Giao_an"}_AI_ToanVan.html`, html, "text/html;charset=utf-8");
     };
 
@@ -465,11 +482,11 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                             <UploadCloud className="w-8 h-8" />
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-medium text-slate-800">Tải lên Giáo án gốc (DOCX hoặc PDF)</h3>
+                                            <h3 className="text-lg font-medium text-slate-800">Tải lên Giáo án gốc</h3>
                                             <p className="text-sm text-slate-500 mt-1">
                                                 {textbookImages.length > 0
                                                     ? `✅ Đã chọn ${textbookImages.length} ảnh SGK. AI sẽ phân tích so sánh.`
-                                                    : "Hoặc tải ảnh SGK mới ở trên để so sánh chi tiết hơn."}
+                                                    : "Ưu tiên DOCX để chèn NLS/NL AI và giữ nguyên hình ảnh, bảng, biểu đồ, hình vẽ, công thức. PDF chỉ dùng để AI đọc/rà soát."}
                                             </p>
                                         </div>
                                         <label className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm cursor-pointer transition-colors font-medium">
@@ -501,6 +518,16 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                     <p className="text-xs text-slate-600">{analysisResult.aiSuggestions?.length || 0} điểm lồng ghép AI được tìm thấy.</p>
                                 </div>
                             </div>
+
+                            {file && !file.name.toLowerCase().endsWith(".docx") && (
+                                <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 flex items-start gap-3">
+                                    <AlertTriangle className="w-5 h-5 text-amber-700 mt-0.5 shrink-0" />
+                                    <div>
+                                        <p className="text-sm font-bold text-amber-900">Cần file DOCX để tích hợp mà vẫn giữ nguyên giáo án gốc</p>
+                                        <p className="text-xs text-amber-800 mt-1">PDF có thể giúp AI đọc và gợi ý, nhưng không thể chèn trực tiếp để bảo toàn đầy đủ hình ảnh, bảng, biểu đồ, hình vẽ và công thức như file Word gốc.</p>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* NEW: Content from new textbook */}
                             {analysisResult.newContentFromTextbook?.length > 0 && (
@@ -623,13 +650,13 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                 </button>
                                 <button
                                     onClick={handleApply}
-                                    disabled={selectedIntegrations.length === 0 || isGeneratingDocx}
+                                    disabled={selectedIntegrations.length === 0 || isGeneratingDocx || !file?.name.toLowerCase().endsWith(".docx")}
                                     className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 transition-colors"
                                 >
                                     {isGeneratingDocx ? (
                                         <><Loader2 className="w-4 h-4 animate-spin" /> Đang chèn AI...</>
                                     ) : (
-                                        <><Sparkles className="w-4 h-4" /> {file?.name.toLowerCase().endsWith(".docx") ? "Chèn AI vào File DOCX" : "Tạo Giáo án Nâng cấp"}</>
+                                        <><Sparkles className="w-4 h-4" /> {file?.name.toLowerCase().endsWith(".docx") ? "Chèn AI vào File DOCX" : "Vui lòng tải DOCX để giữ nguyên"}</>
                                     )}
                                 </button>
                             </div>
@@ -657,29 +684,74 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                 </div>
                             </div>
 
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+                                <div className="flex items-start gap-3">
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-700 mt-0.5 shrink-0" />
+                                    <div className="flex-1">
+                                        <p className="text-sm font-bold text-emerald-950">Đã kiểm tra bảo toàn giáo án gốc trong file DOCX</p>
+                                        <p className="text-xs text-emerald-900 mt-1">
+                                            File tải xuống được tạo bằng cách chèn bổ sung vào chính DOCX gốc. App không tái tạo lại giáo án bằng văn bản nên hình ảnh, bảng, biểu đồ, hình vẽ, đối tượng nhúng và công thức trong gói Word được giữ lại.
+                                        </p>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+                                            {[
+                                                ["Thành phần Word", `${injectionResult.preservationReport.outputPackageParts}/${injectionResult.preservationReport.originalPackageParts}`],
+                                                ["Ảnh", injectionResult.preservationReport.mediaParts],
+                                                ["Bảng", injectionResult.preservationReport.tableCount],
+                                                ["Công thức", injectionResult.preservationReport.mathCount],
+                                                ["Biểu đồ", injectionResult.preservationReport.chartParts],
+                                                ["Hình vẽ/diagram", injectionResult.preservationReport.diagramParts],
+                                                ["Đối tượng nhúng", injectionResult.preservationReport.embeddedParts],
+                                                ["Hình trong nội dung", injectionResult.preservationReport.drawingCount]
+                                            ].map(([label, value]) => (
+                                                <div key={String(label)} className="rounded-lg bg-white/80 border border-emerald-100 p-2">
+                                                    <p className="text-[11px] uppercase tracking-wide text-emerald-700 font-bold">{label}</p>
+                                                    <p className="text-sm font-bold text-emerald-950">{value}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Full lesson preview */}
                             {fullPreviewText && (
                                 <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
                                         <div className="flex items-center gap-2">
                                             <Eye className="w-4 h-4 text-blue-700" />
-                                            <p className="text-sm font-bold text-blue-900">Toàn bộ giáo án sau tích hợp trên màn hình</p>
+                                            <div>
+                                                <p className="text-sm font-bold text-blue-900">Xem trước giáo án DOCX sau tích hợp trên màn hình</p>
+                                                <p className="text-xs text-blue-800 mt-0.5">Bản xem trước HTML dùng để kiểm tra nhanh. Bản DOCX tải xuống là bản giữ nguyên định dạng gốc đầy đủ nhất.</p>
+                                            </div>
                                         </div>
                                         <div className="flex flex-wrap gap-2">
                                             <button onClick={handleDownloadPreviewText} className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50">
-                                                Tải TXT
+                                                Tải TXT kiểm tra
                                             </button>
                                             <button onClick={handleDownloadPreviewHtml} className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50">
-                                                Tải HTML
-                                            </button>
-                                            <button onClick={handleOpenFullLessonPlan} className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700">
-                                                Mở KHBD đầy đủ + thiết kế đánh giá
+                                                Tải HTML xem nhanh
                                             </button>
                                         </div>
                                     </div>
                                     <div className="max-h-[520px] overflow-y-auto rounded-lg bg-white border border-blue-100 p-4">
-                                        <pre className="text-xs leading-relaxed text-slate-800 whitespace-pre-wrap font-sans">{fullPreviewText}</pre>
+                                        <style>{`
+                                            .docx-preview-html table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+                                            .docx-preview-html td, .docx-preview-html th { border: 1px solid #cbd5e1; padding: 6px; vertical-align: top; }
+                                            .docx-preview-html img { max-width: 100%; height: auto; }
+                                            .docx-preview-html p { margin: 0 0 8px; }
+                                            .docx-preview-html ul, .docx-preview-html ol { padding-left: 24px; margin: 8px 0; }
+                                        `}</style>
+                                        {fullPreviewHtml ? (
+                                            <div className="docx-preview-html text-xs leading-relaxed text-slate-800" dangerouslySetInnerHTML={{ __html: fullPreviewHtml }} />
+                                        ) : (
+                                            <pre className="text-xs leading-relaxed text-slate-800 whitespace-pre-wrap font-sans">{fullPreviewText}</pre>
+                                        )}
                                     </div>
+                                    {previewHtmlWarning && (
+                                        <p className="text-xs text-amber-700 mt-2">
+                                            Lưu ý xem trước: {previewHtmlWarning}
+                                        </p>
+                                    )}
                                 </div>
                             )}
 
@@ -730,22 +802,16 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                 </button>
                                 <div className="flex flex-wrap gap-3 justify-end">
                                     <button
-                                        onClick={() => { setStep(1); setFile(null); setAnalysisResult(null); setInjectionResult(null); setReadyBlob(null); setFullPreviewText(""); setAssessmentPreview([]); }}
+                                        onClick={() => { setStep(1); setFile(null); setAnalysisResult(null); setInjectionResult(null); setReadyBlob(null); setFullPreviewText(""); setFullPreviewHtml(""); setPreviewHtmlWarning(""); setAssessmentPreview([]); }}
                                         className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition-colors border border-slate-200"
                                     >
                                         Tải file khác
                                     </button>
                                     <button
-                                        onClick={handleOpenFullLessonPlan}
-                                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 transition-colors"
-                                    >
-                                        <Sparkles className="w-4 h-4" /> Hiển thị KHBD đầy đủ
-                                    </button>
-                                    <button
                                         onClick={handleConfirmDownload}
                                         className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 transition-colors"
                                     >
-                                        <Download className="w-4 h-4" /> Tải xuống DOCX đã tích hợp AI
+                                        <Download className="w-4 h-4" /> Tải DOCX giữ nguyên giáo án gốc
                                     </button>
                                 </div>
                             </div>

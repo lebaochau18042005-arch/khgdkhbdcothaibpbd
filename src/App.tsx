@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "motion/react";
 import html2pdf from "html2pdf.js";
 // @ts-ignore
 import * as mammoth from "mammoth";
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle, VerticalAlign, ImageRun } from "docx";
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle, VerticalAlign, ImageRun, Math as DocxMath, MathRun, MathFraction, MathRadical, MathSubScript, MathSuperScript } from "docx";
 import { saveAs } from "file-saver";
 import {
   BookOpen,
@@ -99,6 +99,197 @@ const hasMeaningfulText = (value: any) => {
 };
 
 const isGeographySubject = (subject: string) => /địa|dia/i.test(subject.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+
+const CV5512_ACTIVITY_ORDER = [
+  {
+    prefix: "Hoạt động 1. KHỞI ĐỘNG",
+    keywords: ["khoi dong", "mo dau", "xac dinh van de", "tinh huong xuat phat"]
+  },
+  {
+    prefix: "Hoạt động 2. HÌNH THÀNH KIẾN THỨC MỚI",
+    keywords: ["hinh thanh", "kien thuc moi", "kham pha", "tim hieu"]
+  },
+  {
+    prefix: "Hoạt động 3. LUYỆN TẬP",
+    keywords: ["luyen tap", "thuc hanh", "cung co"]
+  },
+  {
+    prefix: "Hoạt động 4. VẬN DỤNG",
+    keywords: ["van dung", "mo rong", "ung dung"]
+  }
+];
+
+const CV5512_STEP_ORDER = [
+  {
+    name: "Bước 1: Chuyển giao nhiệm vụ",
+    keywords: ["chuyen giao", "giao nhiem vu"]
+  },
+  {
+    name: "Bước 2: Thực hiện nhiệm vụ",
+    keywords: ["thuc hien", "lam viec", "xu li", "xu ly"]
+  },
+  {
+    name: "Bước 3: Báo cáo, thảo luận",
+    keywords: ["bao cao", "thao luan", "trinh bay", "phan bien"]
+  },
+  {
+    name: "Bước 4: Kết luận, nhận định",
+    keywords: ["ket luan", "nhan dinh", "chot", "chuan hoa"]
+  }
+];
+
+const appendText = (base?: string, addition?: string) =>
+  [base, addition].filter(value => String(value || "").trim()).join("\n");
+
+const stripCv5512Prefix = (name?: string) =>
+  String(name || "")
+    .replace(/^hoạt\s*động\s*\d+[\s.:-]*/i, "")
+    .replace(/^(khởi động|mở đầu|xác định vấn đề|hình thành kiến thức mới|luyện tập|vận dụng)[\s:.-]*/i, "")
+    .trim();
+
+const normalizeProcedureToCv5512 = (activity: any) => {
+  const procedures = Array.isArray(activity?.procedure) ? activity.procedure : [];
+  const used = new Set<number>();
+
+  return CV5512_STEP_ORDER.map((requiredStep, index) => {
+    let foundIndex = procedures.findIndex((step: any, stepIndex: number) => {
+      if (used.has(stepIndex)) return false;
+      const stepKey = normalizeKey(step?.stepName);
+      return requiredStep.keywords.some(keyword => stepKey.includes(keyword));
+    });
+    if (foundIndex < 0 && procedures[index] && !used.has(index)) foundIndex = index;
+    const found = foundIndex >= 0 ? procedures[foundIndex] : null;
+    if (foundIndex >= 0) used.add(foundIndex);
+
+    return {
+      stepName: requiredStep.name,
+      teacherStudentActivities:
+        found?.teacherStudentActivities ||
+        found?.content ||
+        (index === 0
+          ? `GV chuyển giao nhiệm vụ gắn với mục tiêu của hoạt động: ${activity?.objective || "cần đạt của bài học"}. HS tiếp nhận yêu cầu và chuẩn bị học liệu.`
+          : index === 1
+            ? `HS thực hiện nhiệm vụ học tập theo nội dung: ${activity?.content || "nội dung bài học"}. GV quan sát, hỗ trợ và đặt câu hỏi gợi mở.`
+            : index === 2
+              ? "HS báo cáo kết quả, trao đổi và phản biện theo tiêu chí đã nêu. GV điều phối thảo luận."
+              : `<bold>GV kết luận, nhận định và chuẩn hóa kiến thức trọng tâm của hoạt động.</bold>`),
+      expectedProduct:
+        found?.expectedProduct ||
+        found?.product ||
+        (index === 3 ? activity?.product : "Minh chứng học tập của học sinh theo yêu cầu hoạt động.")
+    };
+  });
+};
+
+const normalizeKhbdToCv5512 = (data: any) => {
+  if (!data || !Array.isArray(data.activities)) return data;
+
+  const activities = data.activities;
+  const used = new Set<number>();
+  const normalizedActivities = CV5512_ACTIVITY_ORDER.map((requiredActivity, index) => {
+    let foundIndex = activities.findIndex((activity: any, activityIndex: number) => {
+      if (used.has(activityIndex)) return false;
+      const nameKey = normalizeKey(activity?.name);
+      return requiredActivity.keywords.some(keyword => nameKey.includes(keyword));
+    });
+    if (foundIndex < 0 && activities[index] && !used.has(index)) foundIndex = index;
+    const found = foundIndex >= 0 ? activities[foundIndex] : {};
+    if (foundIndex >= 0) used.add(foundIndex);
+
+    const customTitle = stripCv5512Prefix(found?.name);
+    return {
+      ...found,
+      name: customTitle ? `${requiredActivity.prefix}: ${customTitle}` : requiredActivity.prefix,
+      objective: found?.objective || "Xác định mục tiêu học tập của hoạt động theo yêu cầu cần đạt.",
+      content: found?.content || "Tổ chức nhiệm vụ học tập phù hợp với nội dung bài học.",
+      product: found?.product || "Sản phẩm học tập thể hiện mức độ đạt mục tiêu của học sinh.",
+      procedure: normalizeProcedureToCv5512(found)
+    };
+  });
+
+  const unusedActivities = activities.filter((_: any, index: number) => !used.has(index));
+  if (unusedActivities.length > 0) {
+    const merged = unusedActivities.map((activity: any) => {
+      const procedureText = (activity?.procedure || [])
+        .map((step: any) => `${step?.stepName || "Bước bổ sung"}: ${step?.teacherStudentActivities || ""}`)
+        .join("\n");
+      return `${activity?.name || "Hoạt động bổ sung"}\n${activity?.content || ""}\n${procedureText}`;
+    }).join("\n\n");
+    normalizedActivities[1] = {
+      ...normalizedActivities[1],
+      content: appendText(normalizedActivities[1].content, `Nội dung bổ sung từ các hoạt động AI tạo thêm:\n${merged}`),
+      product: appendText(normalizedActivities[1].product, unusedActivities.map((activity: any) => activity?.product).filter(Boolean).join("\n")),
+      procedure: normalizedActivities[1].procedure.map((step: any, index: number) => index === 1
+        ? { ...step, teacherStudentActivities: appendText(step.teacherStudentActivities, merged) }
+        : step
+      )
+    };
+  }
+
+  return { ...data, activities: normalizedActivities };
+};
+
+const extractFormulaText = (text: string) =>
+  text
+    .replace(/^\[Công thức:\s*/i, "")
+    .replace(/\]$/g, "")
+    .replace(/^\$|\$$/g, "")
+    .replace(/^\\\(|\\\)$/g, "")
+    .trim();
+
+const normalizeFormulaText = (formula: string) =>
+  extractFormulaText(formula)
+    .replace(/\\times/g, "×")
+    .replace(/\\cdot/g, "·")
+    .replace(/\\leq/g, "≤")
+    .replace(/\\geq/g, "≥")
+    .replace(/\\neq/g, "≠")
+    .replace(/\\to/g, "→")
+    .replace(/\\pi/g, "π")
+    .replace(/\\Delta/g, "Δ")
+    .replace(/\\sqrt\{([^{}]+)\}/g, "√($1)")
+    .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, "$1 / $2")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const formulaToMathComponents = (formula: string): any[] => {
+  const source = extractFormulaText(formula);
+  const components: any[] = [];
+  const tokenPattern = /(\\frac\{([^{}]+)\}\{([^{}]+)\}|\\sqrt\{([^{}]+)\}|([A-Za-zÀ-ỹ0-9]+)\^\{?([A-Za-zÀ-ỹ0-9+\-]+)\}?|([A-Za-zÀ-ỹ]+)_\{?([A-Za-zÀ-ỹ0-9+\-]+)\}?)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  const pushRun = (value: string) => {
+    const normalized = normalizeFormulaText(value);
+    if (normalized) components.push(new MathRun(normalized));
+  };
+
+  while ((match = tokenPattern.exec(source)) !== null) {
+    pushRun(source.slice(lastIndex, match.index));
+    if (match[2] && match[3]) {
+      components.push(new MathFraction({
+        numerator: [new MathRun(normalizeFormulaText(match[2]))],
+        denominator: [new MathRun(normalizeFormulaText(match[3]))]
+      }));
+    } else if (match[4]) {
+      components.push(new MathRadical({ children: [new MathRun(normalizeFormulaText(match[4]))] }));
+    } else if (match[5] && match[6]) {
+      components.push(new MathSuperScript({
+        children: [new MathRun(normalizeFormulaText(match[5]))],
+        superScript: [new MathRun(normalizeFormulaText(match[6]))]
+      }));
+    } else if (match[7] && match[8]) {
+      components.push(new MathSubScript({
+        children: [new MathRun(normalizeFormulaText(match[7]))],
+        subScript: [new MathRun(normalizeFormulaText(match[8]))]
+      }));
+    }
+    lastIndex = tokenPattern.lastIndex;
+  }
+
+  pushRun(source.slice(lastIndex));
+  return components.length ? components : [new MathRun(normalizeFormulaText(source) || source)];
+};
 
 const getKhtcmExpectedLessons = (subject: string, grade: string, customData?: any[] | null) => {
   if (Array.isArray(customData) && customData.length > 0) return customData;
@@ -926,8 +1117,15 @@ export default function App() {
 
   const highlightAI = (text: string) => {
     if (!text) return text;
-    const parts = text.split(/(<bold>.*?<\/bold>|<ai>.*?<\/ai>|\*\*.*?\*\*|AI|Trí tuệ nhân tạo|Prompt|ChatGPT|Gemini)/gi);
+    const parts = text.split(/(\[Công thức:\s*.*?\]|\\\(.*?\\\)|\$[^$\n]+\$|<bold>.*?<\/bold>|<ai>.*?<\/ai>|\*\*.*?\*\*|AI|Trí tuệ nhân tạo|Prompt|ChatGPT|Gemini)/gi);
     return parts.map((part, i) => {
+      if (/^\[Công thức:\s*.*?\]$/i.test(part) || /^\\\(.*\\\)$/.test(part) || /^\$[^$\n]+\$$/.test(part)) {
+        return (
+          <span key={i} className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-2 py-0.5 mx-0.5 text-sky-900 font-semibold" style={{ fontFamily: "'Cambria Math', 'Times New Roman', serif" }}>
+            {normalizeFormulaText(part)}
+          </span>
+        );
+      }
       if (/^<bold>(.*)<\/bold>$/i.test(part)) return <span key={i} className="font-extrabold">{part.replace(/<bold>|<\/bold>/gi, '')}</span>;
       if (/^<ai>(.*)<\/ai>$/i.test(part)) return <span key={i} className="text-red-600 font-bold">{part.replace(/<ai>|<\/ai>/gi, '')}</span>;
       if (/^\*\*(.*?)\*\*$/i.test(part)) return <span key={i} className="font-bold">{part.replace(/\*\*/g, '')}</span>;
@@ -961,7 +1159,7 @@ export default function App() {
     setEvaluationResult(null);
     try {
       const data = await generateLessonPlan(lessonPlanInput);
-      setResult({ type: "khbd", data });
+      setResult({ type: "khbd", data: normalizeKhbdToCv5512(data) });
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
@@ -994,7 +1192,7 @@ export default function App() {
     setEvaluationResult(null);
     try {
       const data = await generateLessonPlan(input);
-      setResult({ type: "khbd", data });
+      setResult({ type: "khbd", data: normalizeKhbdToCv5512(data) });
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
@@ -1387,7 +1585,7 @@ export default function App() {
     const slides: Array<{ title: string; bullets: string[] }> = [];
 
     if (result.type === "khbd") {
-      const d = result.data;
+      const d = normalizeKhbdToCv5512(result.data);
       slides.push({ title: d.title || "Kế hoạch Bài dạy", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, "Chuẩn CV 5512/BGDĐT + QĐ 3439"] });
       slides.push({ title: "I. MỤC TIÊU", bullets: [...(d.objectives?.knowledge || []).slice(0, 5).map((k: string) => `• KT: ${k}`), ...(d.objectives?.aiSpecific || []).slice(0, 3).map((a: string) => `• AI: ${a}`)] });
       (d.activities || []).forEach((act: any) => {
@@ -1649,11 +1847,13 @@ export default function App() {
       return dict[text] || text;
     };
 
-    const parseMarkdownToTextRunsDocx = (text: string): TextRun[] => {
+    const parseMarkdownToTextRunsDocx = (text: string): any[] => {
       if (!text) return [new TextRun({ text: "" })];
-      const parts = text.split(/(<bold>.*?<\/bold>|<ai>.*?<\/ai>|\*\*.*?\*\*)/g);
+      const parts = text.split(/(\[Công thức:\s*.*?\]|\\\(.*?\\\)|\$[^$\n]+\$|<bold>.*?<\/bold>|<ai>.*?<\/ai>|\*\*.*?\*\*)/g);
       return parts.filter(p => p).map(part => {
-        if (part.startsWith('<bold>') && part.endsWith('</bold>')) {
+        if (/^\[Công thức:\s*.*?\]$/i.test(part) || /^\\\(.*\\\)$/.test(part) || /^\$[^$\n]+\$$/.test(part)) {
+          return new DocxMath({ children: formulaToMathComponents(part) });
+        } else if (part.startsWith('<bold>') && part.endsWith('</bold>')) {
           return new TextRun({ text: part.slice(6, -7), bold: true });
         } else if (part.startsWith('<ai>') && part.endsWith('</ai>')) {
           return new TextRun({ text: part.slice(4, -5), color: "FF0000", bold: true });
@@ -1672,12 +1872,24 @@ export default function App() {
       for (let line of lines) {
         const trimmed = line.trim();
         // Check for specific drawing brackets
+        const formulaMatch = trimmed.match(/^\[Công thức:\s*(.*?)\]$/i);
         const mapMatch = trimmed.match(/^\[Bản đồ:\s*(.*?)\]/i);
         const chartMatch = trimmed.match(/^\[Biểu đồ:\s*(.*?)\]/i);
         const mindmapMatch = trimmed.match(/^\[Sơ đồ:\s*(.*?)\]/i);
         const schematicMatch = trimmed.match(/^\[Hình vẽ:\s*(.*?)\]/i);
 
-        if (mapMatch) {
+        if (formulaMatch) {
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: "Công thức: ", bold: true, color: "0369A1" }),
+                new DocxMath({ children: formulaToMathComponents(formulaMatch[1]) })
+              ],
+              spacing: { before: 80, after: 80 },
+              indent: { left: 360 }
+            })
+          );
+        } else if (mapMatch) {
           const title = mapMatch[1];
           const imgBytes = drawGeographicalMap(title);
           paragraphs.push(
@@ -1778,7 +1990,7 @@ export default function App() {
     let doc;
 
     if (result.type === "khbd") {
-      const d = result.data;
+      const d = normalizeKhbdToCv5512(result.data);
 
       // School & Department details (Standard format for VN school documents)
       const headerTable = new Table({
@@ -1889,7 +2101,7 @@ export default function App() {
               new Paragraph({ children: [new TextRun({ text: `${t("a) Mục tiêu:")} ${a.objective}` })], indent: { left: 360 } }),
               new Paragraph({ children: [new TextRun({ text: `${t("b) Nội dung:")} ${a.content}` })], indent: { left: 360 } }),
               new Paragraph({ children: [new TextRun({ text: `${t("c) Sản phẩm:")} ${a.product}` })], indent: { left: 360 } }),
-              new Paragraph({ children: [new TextRun({ text: t("d) Tổ chức thực hiện:") })], indent: { left: 360 }, spacing: { after: 100 } }),
+              new Paragraph({ children: [new TextRun({ text: `${t("d) Tổ chức thực hiện:")} 4 bước: Chuyển giao - Thực hiện - Báo cáo, thảo luận - Kết luận, nhận định` })], indent: { left: 360 }, spacing: { after: 100 } }),
               ...(a.procedure || []).flatMap((p: any) => {
                 // Return step name as normal bold title, then insert side-by-side Table for standard layout
                 return [
@@ -2413,7 +2625,7 @@ export default function App() {
     const strip = (text: string) => text ? text.replace(/<bold>|<\/bold>|<ai>|<\/ai>|\*\*|#/gi, '') : '';
 
     if (result.type === "khbd") {
-      const d = result.data;
+      const d = normalizeKhbdToCv5512(result.data);
       content = `${t("KẾ HOẠCH BÀI DẠY (KHBD)")}\n\n${t("Tên bài dạy:")} ${d.title}\n\n${t("I. MỤC TIÊU")}\n${t("1. Kiến thức:")}\n${(d.objectives.knowledge || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("2. Năng lực môn học:")}\n${(d.objectives.subjectSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("3. Năng lực số:")}\n${(d.objectives.digitalSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("4. Năng lực AI:")}\n${(d.objectives.aiSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("5. Năng lực chung:")}\n${(d.objectives.general || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("6. Phẩm chất:")}\n${(d.objectives.qualities || []).map((q: string) => `- ${q}`).join("\n")}\n\n${t("II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU")}\n${t("1. Thiết bị truyền thống:")} ${(d.materials?.traditional || []).join(", ")}\n${t("2. Công cụ số và AI:")}\n- ${t("Phương án triển khai:")} ${d.materials?.digitalAndAI?.implementationMethod || ""}\n- ${t("Học liệu/công cụ cụ thể:")} ${(d.materials?.digitalAndAI?.specificTools || []).join(", ")}\n\n${t("III. TIẾN TRÌNH DẠY HỌC")}\n${(d.activities || []).map((a: any) => `${a.name}\n${t("a) Mục tiêu:")} ${a.objective}\n${t("b) Nội dung:")} ${a.content}\n${t("c) Sản phẩm:")} ${a.product}\n${t("d) Tổ chức thực hiện:")}\n${(a.procedure || []).map((p: any) => `${p.stepName}\n  - ${t("Hoạt động của GV và HS:")} ${strip(p.teacherStudentActivities)}\n  - ${t("Dự kiến sản phẩm:")} ${strip(p.expectedProduct)}`).join("\n")}`).join("\n\n")}\n\n${t("IV. KẾ HOẠCH ĐÁNH GIÁ")}\n${(d.assessment || []).map((a: string) => `- ${strip(a)}`).join("\n")}\n\n${t("V. PHỤ LỤC")}\n- ${t("Mẫu Prompt:")} ${(d.appendix?.prompts || []).join(", ")}\n- ${t("Bảng kiểm:")}\n${(d.appendix?.checklist || []).map((c: string) => `- ${strip(c)}`).join("\n")}`;
 
       if (evaluationResult) {
@@ -2783,7 +2995,7 @@ export default function App() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {history.map((item, idx) => (
                           <div key={item.id} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group" onClick={() => {
-                            setResult({ type: item.type, data: item.data, loadedFromHistory: true });
+                            setResult({ type: item.type, data: item.type === "khbd" ? normalizeKhbdToCv5512(item.data) : item.data, loadedFromHistory: true });
                             if (item.evaluationResult) {
                               setEvaluationResult(item.evaluationResult);
                             }
@@ -2906,7 +3118,7 @@ export default function App() {
                             <p className="text-indigo-900/60 font-semibold text-lg">Tạo giáo án chi tiết với kịch bản tương tác AI chuyên sâu.</p>
                           </div>
                           <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-                            {["Chuẩn 5512", "Tích hợp AI 3439", "LaTeX support", "Đa định dạng"].map(tag => (
+                            {["Chuẩn 5512", "Tích hợp AI 3439", "Công thức Word", "Đa định dạng"].map(tag => (
                               <span key={tag} className="px-4 py-1.5 bg-white/50 backdrop-blur-sm text-indigo-700 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-100 shadow-sm">
                                 {tag}
                               </span>
@@ -3142,7 +3354,7 @@ export default function App() {
                                 checked={lessonPlanInput.useLaTeX}
                                 onChange={(e) => setLessonPlanInput({ ...lessonPlanInput, useLaTeX: e.target.checked })}
                               />
-                              <span className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.05em] group-hover:text-brand-accent transition-colors">Ưu tiên LaTeX / MathType</span>
+                              <span className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.05em] group-hover:text-brand-accent transition-colors">Chuẩn công thức Word</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer group">
                               <input
@@ -3532,7 +3744,7 @@ export default function App() {
                                       </div>
                                     </div>
                                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                                      <p className="font-bold text-brand-sidebar mb-3 uppercase text-[10px] tracking-wider text-opacity-70">d) Tổ chức thực hiện</p>
+                                      <p className="font-bold text-brand-sidebar mb-3 uppercase text-[10px] tracking-wider text-opacity-70">d) Tổ chức thực hiện - 4 bước CV 5512</p>
                                       <div className="space-y-6">
                                         {(act.procedure || []).map((step: any, idx: number) => (
                                           <div key={idx} className="space-y-3">
@@ -3947,7 +4159,7 @@ export default function App() {
                                 checked={eduPlanInput.useLaTeX}
                                 onChange={(e) => setEduPlanInput({ ...eduPlanInput, useLaTeX: e.target.checked })}
                               />
-                              <span className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.05em] group-hover:text-indigo-600 transition-colors">Ưu tiên LaTeX / MathType</span>
+                              <span className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.05em] group-hover:text-indigo-600 transition-colors">Chuẩn công thức Word</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer group">
                               <input
@@ -4202,7 +4414,7 @@ export default function App() {
                                 checked={eduPlanInput.useLaTeX}
                                 onChange={(e) => setEduPlanInput({ ...eduPlanInput, useLaTeX: e.target.checked })}
                               />
-                              <span className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.05em] group-hover:text-emerald-600 transition-colors">Ưu tiên LaTeX / MathType</span>
+                              <span className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.05em] group-hover:text-emerald-600 transition-colors">Chuẩn công thức Word</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer group">
                               <input

@@ -559,8 +559,10 @@ LƯU Ý TỐI QUAN TRỌNG CHUNG MÔN ĐỊA LÍ (TẤT CẢ CÁC KHỐI LỚP):
 const FORMATTING_INSTRUCTIONS = `
 YÊU CẦU ĐỊNH DẠNG VÀ TRÌNH BÀY (THỰC THI NGHIÊM NGẶT):
 1. Đối với Công thức (Toán, Vật lí, Hóa học, Sinh học):
-- TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX. Viết công thức theo dạng văn bản thuần túy thân thiện nhất (Ví dụ: sin x, căn bậc hai của a, S = a x b, H2O).
-- Phương trình hóa học: ghi ký hiệu nguyên tố và chỉ số thường (VD: H2O, CO2, CaCO3).
+- Khi có công thức, BẮT BUỘC ghi thành dòng riêng theo mẫu: [Công thức: biểu thức]. Ví dụ: [Công thức: S = a × b], [Công thức: x^2 + y^2 = r^2], [Công thức: d = S / t].
+- Không để công thức trộn lẫn trong câu dài. Mỗi công thức phải có tên/ý nghĩa ngay trước hoặc ngay sau dòng [Công thức: ...].
+- Có thể dùng ký hiệu ^ cho số mũ, _ cho chỉ số, / cho phân số đơn, √(...) cho căn bậc hai. Không dùng cú pháp LaTeX thô như \\frac, \\sqrt, $...$ trong đầu ra cuối cùng.
+- Phương trình hóa học: ghi ký hiệu nguyên tố và chỉ số theo dạng dễ đọc trong [Công thức: ...] (VD: [Công thức: 2H2 + O2 → 2H2O]).
 2. Đối với Hình vẽ, Biểu đồ và Bản đồ (MÔ TẢ CHI TIẾT ĐỂ HỆ THỐNG TỰ ĐỘNG BẢN VẼ):
 - Khi cần vẽ hình vẽ, bản đồ, biểu đồ hay sơ đồ minh họa cho bài học hoặc hoạt động, bạn BẮT BUỘC phải viết kẹp trong các thẻ dưới đây:
   + Bản đồ địa lý: [Bản đồ: Tên tiêu đề nội dung bản đồ cần vẽ]
@@ -576,21 +578,33 @@ const LESSON_PLAN_STRICT_GUIDELINES = `
 # QUY TẮC THỰC THI "KỊCH BẢN CHI TIẾT"(CV 5512 + QĐ 3439)
 
 1. BÁM SÁT HỌC LIỆU: Trích xuất 100 % kiến thức từ tài liệu / đề bài cung cấp.Chỉ bổ sung Năng lực AI và các mô phỏng trực quan.
-2. TIÊU ĐỀ HOẠT ĐỘNG CÁ NHÂN HÓA: Không đặt tên chung chung(như Hoạt động 1, Hoạt động 2).Phải gắn tên hoạt động với nội dung bài học.Đặt tên hay, hấp dẫn.Ví dụ: Thay vì "Hoạt động 1: Khởi động", hãy viết "Hoạt động 1: Giải mã bí ẩn về vị trí địa lí Châu Âu".
+2. PHẦN III. TIẾN TRÌNH DẠY HỌC PHẢI ĐÚNG KHUNG CV 5512:
+- BẮT BUỘC trả về đúng 4 phần tử trong mảng activities, đúng thứ tự và đúng nhóm tên:
+  (1) Hoạt động 1. KHỞI ĐỘNG
+  (2) Hoạt động 2. HÌNH THÀNH KIẾN THỨC MỚI
+  (3) Hoạt động 3. LUYỆN TẬP
+  (4) Hoạt động 4. VẬN DỤNG
+- Có thể thêm tên sáng tạo sau dấu hai chấm, nhưng không được thay mất 4 tên chuẩn trên. Ví dụ: "Hoạt động 1. KHỞI ĐỘNG: Giải mã tình huống mở đầu".
+- MỖI hoạt động BẮT BUỘC có đủ 4 mục: a) Mục tiêu; b) Nội dung; c) Sản phẩm; d) Tổ chức thực hiện.
+- Mục procedure trong MỖI hoạt động BẮT BUỘC có đúng 4 phần tử theo thứ tự:
+  Bước 1: Chuyển giao nhiệm vụ
+  Bước 2: Thực hiện nhiệm vụ
+  Bước 3: Báo cáo, thảo luận
+  Bước 4: Kết luận, nhận định
 
-MỖI HOẠT ĐỘNG TRONG 4 HOẠT ĐỘNG(Xác định vấn đề -> Hình thành kiến thức -> Luyện tập -> Vận dụng) PHẢI ĐẢM BẢO CHI TIẾT TUYỆT ĐỐI NHƯ SAU:
-a.Mục tiêu: Ghi rõ kiến thức / kỹ năng / năng lực AI đạt được.
-  b.Nội dung: Nhiệm vụ cụ thể(đọc mục nào, quan sát hình nào, trả lời câu hỏi gì).
-    c.Sản phẩm: SẢN PHẨM DỰ KIẾN CỤ THỂ, KHÔNG ghi chung chung là "vở ghi".Phải mô tả rõ diện mạo sản phẩm là bảng thông tin, sơ đồ tư duy có mấy nhánh, đoạn văn phản biện, hay bài test trắc nghiệm(Ví dụ: "Bản đồ tư duy gồm 3 nhánh chính về...", "Kết quả trả lời trên Quizizz thiết kế ra sao").
-      d.Tổ chức thực hiện(Mô tả kịch bản siêu chi tiết GV - HS):
-- Bước 1: Chuyển giao nhiệm vụ: GV sử dụng lệnh / câu hỏi cụ thể gì(nằm trong ngoặc kép) ? Cung cấp phiếu học tập / dữ liệu gì(mô tả nội dung phiếu) ? HS tiếp nhận và chuẩn bị như thế nào ?
-  - Bước 2: Thực hiện nhiệm vụ: HS làm việc cá nhân / nhóm chi tiết ra sao ? (Mô tả các bước HS xử lý dữ liệu). GV theo dõi, gợi mở bằng câu hỏi phụ tại các điểm khó như thế nào ?
-    - Bước 3: Báo cáo, thảo luận: Cách thức HS trình bày(trên bảng / Tivi / Padlet) ? Các nhóm khác nhận xét, phản biện dựa trên tiêu chí nào ? Đoạn hội thoại mẫu phản biện.
-   - Bước 4: Kết luận, nhận định: GV chuẩn hóa kiến thức bằng những ý chính nội dung nào(GHI RÕ NỘI DUNG CHỐT KIẾN THỨC) ? Đánh giá thái độ và kết quả làm việc của HS.
+3. YÊU CẦU CHI TIẾT CHO 4 MỤC CỦA MỖI HOẠT ĐỘNG:
+a) Mục tiêu: ghi rõ học sinh cần đạt gì về kiến thức, năng lực, phẩm chất/NLS/NL AI nếu có.
+b) Nội dung: nêu nhiệm vụ cụ thể, học liệu cụ thể, câu hỏi cụ thể, dữ liệu/bảng/hình/công thức cần khai thác.
+c) Sản phẩm: mô tả sản phẩm cụ thể, không ghi chung chung là "vở ghi"; phải nêu dạng sản phẩm, tiêu chí và bằng chứng học tập.
+d) Tổ chức thực hiện: mô tả kịch bản GV-HS chi tiết trong đúng 4 bước:
+  - Bước 1: Chuyển giao nhiệm vụ: GV giao nhiệm vụ/câu hỏi cụ thể, nêu học liệu, phiếu học tập/dữ liệu, cách chia nhóm.
+  - Bước 2: Thực hiện nhiệm vụ: HS làm việc cá nhân/nhóm, xử lí dữ liệu, đọc bản đồ/bảng/công thức/hình; GV quan sát, hỗ trợ bằng câu hỏi gợi mở.
+  - Bước 3: Báo cáo, thảo luận: HS trình bày, nhóm khác nhận xét/phản biện theo tiêu chí; nêu cách GV điều phối.
+  - Bước 4: Kết luận, nhận định: GV chuẩn hóa kiến thức bằng ý chính rõ ràng; phần chốt bắt buộc bọc trong <bold>...</bold>.
 
 🚨 ĐẶC BIỆT: MỤC "HOẠT ĐỘNG GIÁO DỤC AI"
 Nếu hoạt động có tích hợp AI, BẮT BUỘC CHÈN THẺ CẢNH BÁO MÀU ĐỎ: <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI] </ai>.
-Nêu rõ mã chỉ báo năng lực AI từ QĐ 3439 / 8439(vd 11.A1.a).
+Nêu rõ mã chỉ báo năng lực AI từ QĐ 3439 đúng định dạng lớp hiện tại (vd 11.A1.1, 12.C2.1).
 Mô tả chi tiết: GV hướng dẫn HS dùng công cụ AI gì để hỗ trợ giải quyết nội dung bài học đó.HS thực hiện các thao tác kỹ thuật Prompt kỹ sư gì trên công cụ AI.
 `;
 
@@ -1000,6 +1014,8 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
 5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, mỗi dòng mục tiêu AI chỉ được kết thúc bằng mã chỉ báo khi mã đó đã khớp YCCĐ. ${safeIndicatorCode ? `Có mã NL AI hợp lệ từ hệ thống: (${safeIndicatorCode}); vẫn phải chứng minh bằng YCCĐ trước khi dùng.` : `Không được tự bịa mã. Nếu có điểm chạm rõ với QĐ 3439 thì chọn mã đúng lớp ${extractGradeNumber(input.grade)} và đúng chủ đề; nếu không đủ căn cứ thì ghi "Không tích hợp".`}.
 ${selectedIndicatorPrompt}
 ${englishConstraint}
+${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
+${LESSON_PLAN_STRICT_GUIDELINES}
 ${input.subject.toLowerCase().includes("địa") ? GEOGRAPHY_AI_RULES : ""}
 ${SOCIAL_INTEGRATION_GUIDELINES}
 `;
@@ -1038,6 +1054,8 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
 5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, mỗi dòng mục tiêu AI chỉ được kết thúc bằng mã chỉ báo khi mã đó đã khớp YCCĐ. ${safeIndicatorCode ? `Có mã NL AI hợp lệ từ hệ thống: (${safeIndicatorCode}); vẫn phải chứng minh bằng YCCĐ trước khi dùng.` : `Không được tự bịa mã. Nếu có điểm chạm rõ với QĐ 3439 thì chọn mã đúng lớp ${extractGradeNumber(input.grade)} và đúng chủ đề; nếu không đủ căn cứ thì ghi "Không tích hợp".`}.
 ${selectedIndicatorPrompt}
 ${englishConstraint}
+${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
+${LESSON_PLAN_STRICT_GUIDELINES}
 ${input.subject.toLowerCase().includes("địa") ? GEOGRAPHY_AI_RULES : ""}
 ${SOCIAL_INTEGRATION_GUIDELINES}
 ` : "";
@@ -1092,10 +1110,10 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
     ${LESSON_PLAN_STRICT_GUIDELINES}
     
     Phân bổ 4 hoạt động chuẩn 5512:
-    1. Mở đầu(Xác định vấn đề).
-    2. Hình thành kiến thức mới.
-    3. Luyện tập(Các hoạt động không tích hợp soạn chuẩn 5512).
-    4. Vận dụng.
+    1. Hoạt động 1. KHỞI ĐỘNG.
+    2. Hoạt động 2. HÌNH THÀNH KIẾN THỨC MỚI.
+    3. Hoạt động 3. LUYỆN TẬP.
+    4. Hoạt động 4. VẬN DỤNG.
     (LƯU Ý: Với bài học "Có tích hợp AI", phải lồng ghép khéo léo "HOẠT ĐỘNG GIÁO DỤC AI" kèm khai báo mã chỉ báo và thẻ[🚨 BÁO ĐỘNG ĐỎ]vào 1 trong 4 bước trên sao cho phù hợp).
 
       IV.KẾ HOẠCH ĐÁNH GIÁ:
@@ -1144,12 +1162,13 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
           items: {
             type: Type.OBJECT,
             properties: {
-              name: { type: Type.STRING },
-              objective: { type: Type.STRING },
-              content: { type: Type.STRING },
-              product: { type: Type.STRING },
+              name: { type: Type.STRING, description: "Tên hoạt động đúng 4 nhóm chuẩn CV 5512, ví dụ: Hoạt động 1. KHỞI ĐỘNG: tên tình huống cụ thể; Hoạt động 2. HÌNH THÀNH KIẾN THỨC MỚI: tên nhiệm vụ; Hoạt động 3. LUYỆN TẬP; Hoạt động 4. VẬN DỤNG." },
+              objective: { type: Type.STRING, description: "a) Mục tiêu của hoạt động: phải rõ học sinh đạt gì, không viết chung chung." },
+              content: { type: Type.STRING, description: "b) Nội dung hoạt động: nhiệm vụ, học liệu, câu hỏi, bảng/hình/công thức cần khai thác." },
+              product: { type: Type.STRING, description: "c) Sản phẩm: sản phẩm học tập cụ thể, tiêu chí rõ, không ghi chung chung." },
               procedure: {
                 type: Type.ARRAY,
+                description: "d) Tổ chức thực hiện. BẮT BUỘC đúng 4 bước: Chuyển giao nhiệm vụ; Thực hiện nhiệm vụ; Báo cáo, thảo luận; Kết luận, nhận định.",
                 items: {
                   type: Type.OBJECT,
                   properties: {

@@ -28,6 +28,8 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
     const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
     const [injectionResult, setInjectionResult] = useState<InjectionResult | null>(null);
     const [readyBlob, setReadyBlob] = useState<Blob | null>(null);
+    const [fullPreviewText, setFullPreviewText] = useState("");
+    const [assessmentPreview, setAssessmentPreview] = useState<string[]>([]);
 
     const handleTextbookImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -174,6 +176,11 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
         }
         if (!file || !file.name.toLowerCase().endsWith(".docx")) {
             // Fallback to old AI JSON generation for PDF
+            const objectiveText = buildObjectiveText();
+            const assessmentText = buildAssessmentText();
+            const selectedNlsIndicators = selectedIntegrations
+                .map((sug: any) => ({ code: sug.suggestedNLS, description: `${sug.activityName}: ${sug.yccdEvidence || sug.reason || sug.action}` }))
+                .filter((item: any) => item.code && !String(item.code).toLowerCase().includes("không"));
             onUpgradeReady({
                 subject: analysisResult.subject || "Khác",
                 grade: analysisResult.grade || "10",
@@ -182,14 +189,16 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                 contextStudents: analysisResult.contextStudents || "",
                 contextSchool: analysisResult.contextSchool || "",
                 objectivesKnowledge: analysisResult.objectivesKnowledge || "",
-                objectivesCompetency: analysisResult.objectivesCompetency || "",
+                objectivesCompetency: [analysisResult.objectivesCompetency, objectiveText].filter(Boolean).join("\n"),
                 objectivesQuality: analysisResult.objectivesQuality || "",
                 existingRawText: rawText,
                 existingPdfBase64: pdfBase64,
                 aiIntegrationOptions: selectedIntegrations,
                 socialIntegrations: selectedSocialIntegrations,
                 newContentFromTextbook: analysisResult.newContentFromTextbook || [],
-                indicatorCode: undefined
+                additionalNotes: `Nội dung tích hợp đã duyệt:\n${objectiveText}\n\nGợi ý đánh giá:\n${assessmentText}`,
+                indicatorCode: selectedIntegrations.find((sug: any) => hasValidAiCode(sug.suggestedAI))?.suggestedAI,
+                selectedNlsIndicators
             });
             return;
         }
@@ -203,13 +212,20 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                 analysisResult.topic || "Bài học nâng cấp",
                 selectedIntegrations
             );
+            const objectiveText = buildObjectiveText();
+            const assessmentText = buildAssessmentText();
 
             // 2. Inject into DOCX and get preview data
-            const result = await injectSnippetsIntoDocx(file, snippets);
+            const result = await injectSnippetsIntoDocx(file, snippets, {
+                objectivesText: objectiveText,
+                assessmentText: assessmentText
+            });
 
             // 3. Go to preview step (step 3) instead of downloading directly
             setInjectionResult(result);
             setReadyBlob(result.blob);
+            setAssessmentPreview(assessmentText.split("\n").filter(line => line.trim()));
+            setFullPreviewText(buildFullPreview(snippets, objectiveText, assessmentText));
             setStep(3);
 
             // DOCX là nguồn đầy đủ nhất: giữ nguyên giáo án gốc và chỉ chèn phần AI vào file.
@@ -244,6 +260,108 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
     };
 
     const hasValidAiCode = (code?: string) => /^\d{1,2}\.[ABCD]\d+\.\d{1,2}$/i.test(code || "");
+
+    const plain = (value?: string) => (value || "").replace(/<bold>|<\/bold>|<ai>|<\/ai>|\*\*/gi, "").trim();
+
+    const buildObjectiveText = (suggestions = selectedIntegrations) => {
+        const nlsLines = suggestions.map((sug: any, idx: number) => {
+            const code = sug.suggestedNLS || "Không gán mã - cần đối chiếu YCCĐ theo TT 02/CV 3456.";
+            const evidence = sug.yccdEvidence || sug.reason || "Căn cứ từ hoạt động học tập đã chọn.";
+            return `${idx + 1}. Năng lực số: ${code} - Học sinh ${plain(sug.action).replace(/^Học sinh\s*/i, "")}. Căn cứ: ${plain(evidence)}`;
+        });
+        const aiLines = suggestions.map((sug: any, idx: number) => {
+            const code = sug.suggestedAI || "Không gán mã";
+            return `${idx + 1}. Năng lực AI: ${code} - ${plain(sug.reason || sug.action)}`;
+        });
+        return [
+            "Bổ sung vào mục I. MỤC TIÊU:",
+            "a) Năng lực số:",
+            ...(nlsLines.length ? nlsLines : ["- Không có gợi ý NLS được chọn."]),
+            "b) Năng lực AI:",
+            ...(aiLines.length ? aiLines : ["- Không có gợi ý NL AI được chọn."])
+        ].join("\n");
+    };
+
+    const buildAssessmentText = (suggestions = selectedIntegrations) => {
+        if (!suggestions.length) return "Chưa có hoạt động tích hợp được chọn để đề xuất đánh giá.";
+        return suggestions.map((sug: any, idx: number) => {
+            const nls = sug.suggestedNLS || "NLS cần đối chiếu";
+            const ai = sug.suggestedAI || "NL AI cần đối chiếu";
+            return `${idx + 1}. ${sug.activityName}: đánh giá sản phẩm học tập số/AI của học sinh theo 4 tiêu chí: đúng kiến thức môn học; biết kiểm chứng nguồn/đầu ra AI; sản phẩm rõ ràng, có minh chứng; giải thích được cách dùng công cụ. Minh chứng: prompt, bản chỉnh sửa của học sinh, sản phẩm cuối. Mã liên quan: ${nls}; ${ai}.`;
+        }).join("\n");
+    };
+
+    const buildFullPreview = (snippets: { activityName: string; text: string }[], objectiveText: string, assessmentText: string) => {
+        const original = rawText.trim()
+            ? rawText.trim()
+            : "Không có toàn văn bóc tách từ DOCX/PDF để hiển thị. File DOCX đã được chèn trực tiếp và có thể tải xuống.";
+        const inserted = snippets.map((snippet, idx) => `${idx + 1}. ${snippet.activityName}\n${snippet.text}`).join("\n\n");
+        return [
+            `KẾ HOẠCH BÀI DẠY SAU TÍCH HỢP AI`,
+            `Môn: ${analysisResult?.subject || "..."}`,
+            `Lớp: ${analysisResult?.grade || "..."}`,
+            `Bài: ${analysisResult?.topic || "..."}`,
+            "",
+            objectiveText,
+            "",
+            "II. TOÀN VĂN GIÁO ÁN GỐC / NỘI DUNG ĐÃ BÓC TÁCH",
+            original,
+            "",
+            "III. CÁC ĐOẠN TÍCH HỢP AI ĐÃ CHÈN",
+            inserted || "Chưa có đoạn tích hợp.",
+            "",
+            "IV. GỢI Ý NỘI DUNG ĐÁNH GIÁ",
+            assessmentText
+        ].join("\n");
+    };
+
+    const downloadTextFile = (filename: string, content: string, type = "text/plain;charset=utf-8") => {
+        const blob = new Blob([content], { type });
+        saveAs(blob, filename);
+    };
+
+    const escapeHtml = (text: string) => text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    const handleDownloadPreviewText = () => {
+        if (!fullPreviewText) return;
+        downloadTextFile(`${analysisResult?.topic || "Giao_an"}_AI_ToanVan.txt`, fullPreviewText);
+    };
+
+    const handleDownloadPreviewHtml = () => {
+        if (!fullPreviewText) return;
+        const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(analysisResult?.topic || "Giáo án tích hợp AI")}</title><style>body{font-family:Arial,sans-serif;line-height:1.6;margin:32px;color:#0f172a}pre{white-space:pre-wrap;font-family:Arial,sans-serif}.ai{color:#b91c1c;font-weight:700}</style></head><body><pre>${escapeHtml(fullPreviewText)}</pre></body></html>`;
+        downloadTextFile(`${analysisResult?.topic || "Giao_an"}_AI_ToanVan.html`, html, "text/html;charset=utf-8");
+    };
+
+    const handleOpenFullLessonPlan = () => {
+        const objectiveText = buildObjectiveText();
+        const assessmentText = buildAssessmentText();
+        const selectedNlsIndicators = selectedIntegrations
+            .map((sug: any) => ({ code: sug.suggestedNLS, description: `${sug.activityName}: ${sug.yccdEvidence || sug.reason || sug.action}` }))
+            .filter((item: any) => item.code && !String(item.code).toLowerCase().includes("không"));
+        onUpgradeReady({
+            subject: analysisResult.subject || "Khác",
+            grade: analysisResult.grade || "10",
+            topic: analysisResult.topic || "Bài học nâng cấp",
+            duration: analysisResult.duration || "2 tiết",
+            contextStudents: analysisResult.contextStudents || "",
+            contextSchool: analysisResult.contextSchool || "",
+            objectivesKnowledge: analysisResult.objectivesKnowledge || "",
+            objectivesCompetency: [analysisResult.objectivesCompetency, objectiveText].filter(Boolean).join("\n"),
+            objectivesQuality: analysisResult.objectivesQuality || "",
+            existingRawText: rawText,
+            existingPdfBase64: pdfBase64,
+            aiIntegrationOptions: selectedIntegrations,
+            socialIntegrations: selectedSocialIntegrations,
+            newContentFromTextbook: analysisResult.newContentFromTextbook || [],
+            additionalNotes: `Nội dung tích hợp đã duyệt:\n${objectiveText}\n\nGợi ý đánh giá:\n${assessmentText}`,
+            indicatorCode: selectedIntegrations.find((sug: any) => hasValidAiCode(sug.suggestedAI))?.suggestedAI,
+            selectedNlsIndicators
+        });
+    };
 
     return (
         <div className="w-full max-w-5xl mx-auto p-4 space-y-6">
@@ -482,8 +600,12 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-start mb-1">
                                                     <h4 className="font-bold text-slate-800">{sug.activityName}</h4>
-                                                    <span className={`px-2 py-1 font-bold text-xs rounded-md ${validCode ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-800"}`}>{sug.suggestedAI}</span>
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <span className="px-2 py-1 font-bold text-xs rounded-md bg-sky-100 text-sky-700">{sug.suggestedNLS || "NLS cần rà soát"}</span>
+                                                        <span className={`px-2 py-1 font-bold text-xs rounded-md ${validCode ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-800"}`}>{sug.suggestedAI}</span>
+                                                    </div>
                                                 </div>
+                                                {sug.yccdEvidence && <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Căn cứ YCCĐ:</span> {sug.yccdEvidence}</p>}
                                                 <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Lý do:</span> {sug.reason}</p>
                                                 <p className="text-sm text-slate-600"><span className="font-semibold text-slate-700">Hành động của HS:</span> {sug.action}</p>
                                             </div>
@@ -535,6 +657,46 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                 </div>
                             </div>
 
+                            {/* Full lesson preview */}
+                            {fullPreviewText && (
+                                <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <Eye className="w-4 h-4 text-blue-700" />
+                                            <p className="text-sm font-bold text-blue-900">Toàn bộ giáo án sau tích hợp trên màn hình</p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button onClick={handleDownloadPreviewText} className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50">
+                                                Tải TXT
+                                            </button>
+                                            <button onClick={handleDownloadPreviewHtml} className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50">
+                                                Tải HTML
+                                            </button>
+                                            <button onClick={handleOpenFullLessonPlan} className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700">
+                                                Mở KHBD đầy đủ + thiết kế đánh giá
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="max-h-[520px] overflow-y-auto rounded-lg bg-white border border-blue-100 p-4">
+                                        <pre className="text-xs leading-relaxed text-slate-800 whitespace-pre-wrap font-sans">{fullPreviewText}</pre>
+                                    </div>
+                                </div>
+                            )}
+
+                            {assessmentPreview.length > 0 && (
+                                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Bot className="w-4 h-4 text-emerald-700" />
+                                        <p className="text-sm font-bold text-emerald-900">Đề xuất nội dung đánh giá sau tích hợp</p>
+                                    </div>
+                                    <ul className="space-y-2">
+                                        {assessmentPreview.map((line, idx) => (
+                                            <li key={idx} className="text-sm text-emerald-950 leading-relaxed">{line}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
                             {/* Preview list of injected content */}
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
@@ -559,19 +721,25 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                             </div>
 
                             {/* Action buttons */}
-                            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-4 border-t border-slate-100">
                                 <button
                                     onClick={() => setStep(2)}
                                     className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition-colors"
                                 >
                                     ← Chỉnh sửa lại
                                 </button>
-                                <div className="flex gap-3">
+                                <div className="flex flex-wrap gap-3 justify-end">
                                     <button
-                                        onClick={() => { setStep(1); setFile(null); setAnalysisResult(null); setInjectionResult(null); setReadyBlob(null); }}
+                                        onClick={() => { setStep(1); setFile(null); setAnalysisResult(null); setInjectionResult(null); setReadyBlob(null); setFullPreviewText(""); setAssessmentPreview([]); }}
                                         className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition-colors border border-slate-200"
                                     >
                                         Tải file khác
+                                    </button>
+                                    <button
+                                        onClick={handleOpenFullLessonPlan}
+                                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 transition-colors"
+                                    >
+                                        <Sparkles className="w-4 h-4" /> Hiển thị KHBD đầy đủ
                                     </button>
                                     <button
                                         onClick={handleConfirmDownload}

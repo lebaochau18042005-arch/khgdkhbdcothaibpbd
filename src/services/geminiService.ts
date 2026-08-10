@@ -294,6 +294,8 @@ const sanitizeAnalysisResultCompetencies = (analysis: any, forcedGrade?: string)
         const sanitized = sanitizeAiCodeForGrade(suggestion?.suggestedAI, grade);
         return {
           ...suggestion,
+          suggestedNLS: suggestion?.suggestedNLS || "Không gán mã - cần đối chiếu TT 02/CV 3456 theo YCCĐ trước khi sử dụng.",
+          yccdEvidence: suggestion?.yccdEvidence || suggestion?.reason || "Chưa có căn cứ YCCĐ riêng trong phản hồi AI.",
           suggestedAI: sanitized.code,
           reason: appendSanitizerNote(suggestion?.reason, sanitized.note),
         };
@@ -694,7 +696,9 @@ LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với P
   "aiSuggestions": [
     {
       "activityName": "Tên hoạt động gợi ý",
+      "suggestedNLS": "Mã NLS TT 02/CV 3456 đúng cấp/lớp, ví dụ 1.1.NC1a; nếu không đủ căn cứ ghi 'Không gán mã - lý do: ...'",
       "suggestedAI": "Mã chỉ báo AI chuẩn đúng lớp (vd: nếu grade là 12 thì 12.A1.01; không dùng 10.*)",
+      "yccdEvidence": "YCCĐ/hoạt động học tập làm căn cứ để gán mã NLS/NL AI",
       "reason": "Lý do phù hợp",
       "action": "HS sẽ làm gì với AI?"
     }
@@ -708,7 +712,7 @@ LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với P
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, mã NLS phải dùng mức NC1 (ví dụ '1.1.NC1a') và mã NL AI phải bắt đầu đúng lớp của giáo án.${detectedGradeInstruction}${textbookSection}${pl1Section}
+3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, trường suggestedNLS phải dùng mức NC1 theo TT 02/CV 3456 (ví dụ '1.1.NC1a') và trường suggestedAI phải bắt đầu đúng lớp của giáo án. Mỗi gợi ý phải có yccdEvidence để sau đó đưa vào mục I. MỤC TIÊU.${detectedGradeInstruction}${textbookSection}${pl1Section}
 
 ${genericThptGuardrails}
 
@@ -731,7 +735,7 @@ Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo vi
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, mã NLS phải dùng mức NC1 (ví dụ '1.1.NC1a') và mã NL AI phải bắt đầu đúng lớp của giáo án.${detectedGradeInstruction}${textbookSection}${pl1Section}
+3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, trường suggestedNLS phải dùng mức NC1 theo TT 02/CV 3456 (ví dụ '1.1.NC1a') và trường suggestedAI phải bắt đầu đúng lớp của giáo án. Mỗi gợi ý phải có yccdEvidence để sau đó đưa vào mục I. MỤC TIÊU.${detectedGradeInstruction}${textbookSection}${pl1Section}
 
 ${genericThptGuardrails}
 
@@ -785,11 +789,13 @@ ${jsonFormat}`
             type: Type.OBJECT,
             properties: {
               activityName: { type: Type.STRING },
+              suggestedNLS: { type: Type.STRING },
               suggestedAI: { type: Type.STRING },
+              yccdEvidence: { type: Type.STRING },
               reason: { type: Type.STRING },
               action: { type: Type.STRING }
             },
-            required: ["activityName", "suggestedAI", "reason", "action"]
+            required: ["activityName", "suggestedNLS", "suggestedAI", "yccdEvidence", "reason", "action"]
           }
         }
       },
@@ -831,7 +837,8 @@ Nhiệm vụ: Viết MỘT ĐOẠN VĂN BẢN CHI TIẾT cho mỗi hoạt độn
 1. Nhiệm vụ cụ thể của học sinh với công cụ AI.
 2. Câu lệnh Prompt gợi ý (nếu có).
 3. Yêu cầu sản phẩm.
-4. Có gắn mã chỉ báo AI đúng lớp ở cuối. Nếu lớp ${grade} thì mã phải bắt đầu bằng ${extractGradeNumber(grade)}.; nếu gợi ý đang là "Không gán mã" thì không tự tạo mã mới.
+4. Có gắn mã NLS TT 02/CV 3456 và mã chỉ báo AI đúng lớp ở cuối. Nếu lớp ${grade} thì mã NL AI phải bắt đầu bằng ${extractGradeNumber(grade)}.; nếu gợi ý đang là "Không gán mã" thì không tự tạo mã mới.
+5. Phải viết sao cho đoạn này có thể đồng thời đưa vào mục I. MỤC TIÊU, III. TIẾN TRÌNH và IV. ĐÁNH GIÁ.
 
 ${englishConstraint}
 
@@ -1047,6 +1054,7 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
     ${input.objectivesKnowledge ? `Mục tiêu kiến thức yêu cầu: ${input.objectivesKnowledge}` : ""}
     ${input.objectivesCompetency ? `Mục tiêu năng lực yêu cầu: ${input.objectivesCompetency}` : ""}
     ${input.objectivesQuality ? `Mục tiêu phẩm chất yêu cầu: ${input.objectivesQuality}` : ""}
+    ${input.additionalNotes ? `GHI CHÚ TÍCH HỢP BẮT BUỘC TỪ GIÁO VIÊN/APP:\n${input.additionalNotes}\nLỆNH BẮT BUỘC: Toàn bộ nội dung trong ghi chú này phải được thể hiện lại trong giáo án ở ít nhất 3 vị trí: I. MỤC TIÊU, III. TIẾN TRÌNH DẠY HỌC và IV. KẾ HOẠCH ĐÁNH GIÁ. Không được bỏ qua.` : ""}
     Lưu ý riêng về độ tuổi(Nếu là khối 6, 7, 8, 9): Giáo án CẦN TĂNG CƯỜNG thực hành, thao tác trực quan, và trò chơi hóa(gamification).Hạn chế những câu hỏi thảo luận mang tính triết học nặng nề của cấp 3.
 
     ${AI_SUBJECT_GUIDELINES}

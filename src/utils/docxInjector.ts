@@ -12,6 +12,11 @@ export interface InjectionResult {
     previewItems: Array<{ activityName: string; injectedText: string; found: boolean }>;
 }
 
+export interface InjectionOptions {
+    objectivesText?: string;
+    assessmentText?: string;
+}
+
 // More robust text normalizer for Vietnamese
 function normalizeVietnamese(text: string): string {
     return text
@@ -41,7 +46,80 @@ function matchScore(paragraphText: string, activityName: string): number {
     return ratio >= 0.6 ? Math.round(ratio * 80) : 0;
 }
 
-export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[]): Promise<InjectionResult> {
+function createStyledParagraph(xmlDoc: Document, label: string, text: string, colorValue: string): Element {
+    const ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    const paragraph = xmlDoc.createElementNS(ns, "w:p");
+
+    const pPr = xmlDoc.createElementNS(ns, "w:pPr");
+    const ind = xmlDoc.createElementNS(ns, "w:ind");
+    ind.setAttribute("w:left", "360");
+    pPr.appendChild(ind);
+    paragraph.appendChild(pPr);
+
+    const run = xmlDoc.createElementNS(ns, "w:r");
+    const rPr = xmlDoc.createElementNS(ns, "w:rPr");
+    const color = xmlDoc.createElementNS(ns, "w:color");
+    color.setAttribute("w:val", colorValue);
+    rPr.appendChild(color);
+    const bold = xmlDoc.createElementNS(ns, "w:b");
+    rPr.appendChild(bold);
+    const sz = xmlDoc.createElementNS(ns, "w:sz");
+    sz.setAttribute("w:val", "22");
+    rPr.appendChild(sz);
+    run.appendChild(rPr);
+
+    const header = xmlDoc.createElementNS(ns, "w:t");
+    header.textContent = label;
+    header.setAttribute("xml:space", "preserve");
+    run.appendChild(header);
+
+    const lines = text.split("\n").filter(line => line.trim());
+    for (const line of lines) {
+        const br = xmlDoc.createElementNS(ns, "w:br");
+        run.appendChild(br);
+        const wT = xmlDoc.createElementNS(ns, "w:t");
+        wT.textContent = line;
+        wT.setAttribute("xml:space", "preserve");
+        run.appendChild(wT);
+    }
+
+    paragraph.appendChild(run);
+    return paragraph;
+}
+
+function insertBlockNearHeading(
+    xmlDoc: Document,
+    paragraphs: HTMLCollectionOf<Element>,
+    headingKeywords: string[],
+    label: string,
+    text: string,
+    colorValue: string
+): boolean {
+    const body = xmlDoc.getElementsByTagName("w:body")[0];
+    if (!body || !text.trim()) return false;
+
+    const normalizedKeywords = headingKeywords.map(normalizeVietnamese);
+    let target: Element | null = null;
+    for (let i = 0; i < paragraphs.length; i++) {
+        const paragraphText = normalizeVietnamese(paragraphs[i].textContent || "");
+        if (normalizedKeywords.some(keyword => paragraphText.includes(keyword))) {
+            target = paragraphs[i];
+            break;
+        }
+    }
+
+    const paragraph = createStyledParagraph(xmlDoc, label, text, colorValue);
+    if (target?.parentNode) {
+        target.parentNode.insertBefore(paragraph, target.nextSibling);
+        return true;
+    }
+
+    const last = body.lastElementChild;
+    body.insertBefore(paragraph, last);
+    return false;
+}
+
+export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], options: InjectionOptions = {}): Promise<InjectionResult> {
     const zip = await JSZip.loadAsync(file);
     const xmlContent = await zip.file("word/document.xml")?.async("string");
     
@@ -56,6 +134,40 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[]): P
     let injectedCount = 0;
     const skippedActivities: string[] = [];
     const previewItems: InjectionResult["previewItems"] = [];
+
+    if (options.objectivesText?.trim()) {
+        const found = insertBlockNearHeading(
+            xmlDoc,
+            paragraphs,
+            ["mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu"],
+            "🎯 [MỤC TIÊU BỔ SUNG NLS/NL AI] ",
+            options.objectivesText,
+            "C0392B"
+        );
+        previewItems.push({
+            activityName: "I. MỤC TIÊU - bổ sung NLS/NL AI",
+            injectedText: options.objectivesText,
+            found
+        });
+        injectedCount++;
+    }
+
+    if (options.assessmentText?.trim()) {
+        const found = insertBlockNearHeading(
+            xmlDoc,
+            paragraphs,
+            ["đánh giá", "danh gia", "kiểm tra", "kiem tra"],
+            "🧾 [GỢI Ý ĐÁNH GIÁ NLS/NL AI] ",
+            options.assessmentText,
+            "1E40AF"
+        );
+        previewItems.push({
+            activityName: "IV. ĐÁNH GIÁ - bổ sung tiêu chí NLS/NL AI",
+            injectedText: options.assessmentText,
+            found
+        });
+        injectedCount++;
+    }
 
     for (const snippet of snippets) {
         let bestP: Element | null = null;

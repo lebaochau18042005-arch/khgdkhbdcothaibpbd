@@ -2719,7 +2719,7 @@ export default function App() {
                           objectivesQuality: data.objectivesQuality,
                           useLaTeX: false,
                           detailDrawings: false,
-                          additionalNotes: "",
+                          additionalNotes: data.additionalNotes || "",
                           existingRawText: data.existingRawText,
                           existingPdfBase64: data.existingPdfBase64,
                           aiIntegrationOptions: data.aiIntegrationOptions,

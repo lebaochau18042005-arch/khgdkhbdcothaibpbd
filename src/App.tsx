@@ -1134,6 +1134,111 @@ export default function App() {
     });
   };
 
+  const isMarkdownTableLine = (line: string) => /^\s*\|.+\|\s*$/.test(line || "");
+
+  const isMarkdownSeparatorLine = (line: string) => {
+    const cells = splitMarkdownTableRow(line);
+    return cells.length > 1 && cells.every(cell => /^:?-{3,}:?$/.test(cell.replace(/\s/g, "")));
+  };
+
+  const splitMarkdownTableRow = (line: string) =>
+    (line || "")
+      .trim()
+      .replace(/^\|/, "")
+      .replace(/\|$/, "")
+      .split("|")
+      .map(cell => cell.trim());
+
+  const renderChartPreview = (title: string, key: React.Key) => {
+    const bars = [45, 72, 58, 86, 64];
+    return (
+      <div key={key} className="my-3 rounded-xl border border-cyan-200 bg-white/80 p-3 shadow-sm">
+        <p className="text-[11px] font-extrabold uppercase tracking-wide text-cyan-800 mb-3">Biểu đồ số liệu: {title}</p>
+        <div className="h-32 flex items-end gap-3 border-l border-b border-slate-300 pl-3 pb-2">
+          {bars.map((height, idx) => (
+            <div key={idx} className="flex-1 min-w-[28px] flex flex-col items-center justify-end gap-1">
+              <div className="w-full max-w-10 rounded-t-md bg-gradient-to-t from-cyan-500 to-blue-500" style={{ height: `${height}%` }} />
+              <span className="text-[9px] font-semibold text-slate-500">M{idx + 1}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderRichTextBlock = (text: string) => {
+    if (!text) return null;
+    const lines = String(text).split("\n");
+    const nodes: React.ReactNode[] = [];
+    let buffer: string[] = [];
+
+    const flushBuffer = () => {
+      const value = buffer.join("\n").trim();
+      if (value) {
+        nodes.push(
+          <div key={`p-${nodes.length}`} className="whitespace-pre-line">
+            {highlightAI(value)}
+          </div>
+        );
+      }
+      buffer = [];
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+      const chartMatch = trimmed.match(/^\[Biểu đồ:\s*(.*?)\]/i);
+
+      if (chartMatch) {
+        flushBuffer();
+        nodes.push(renderChartPreview(chartMatch[1], `chart-${nodes.length}`));
+        continue;
+      }
+
+      if (isMarkdownTableLine(line)) {
+        const tableLines: string[] = [];
+        while (i < lines.length && isMarkdownTableLine(lines[i])) {
+          tableLines.push(lines[i]);
+          i++;
+        }
+        i--;
+
+        if (tableLines.length >= 2 && isMarkdownSeparatorLine(tableLines[1])) {
+          flushBuffer();
+          const headers = splitMarkdownTableRow(tableLines[0]);
+          const rows = tableLines.slice(2).map(splitMarkdownTableRow);
+          nodes.push(
+            <div key={`table-${nodes.length}`} className="my-3 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+              <table className="w-full min-w-[520px] border-collapse text-[11px]">
+                <thead className="bg-cyan-50 text-cyan-900">
+                  <tr>{headers.map((header, idx) => <th key={idx} className="border border-slate-200 px-3 py-2 text-left font-extrabold">{highlightAI(header)}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, rowIdx) => (
+                    <tr key={rowIdx} className={rowIdx % 2 ? "bg-slate-50/60" : "bg-white"}>
+                      {headers.map((_, cellIdx) => (
+                        <td key={cellIdx} className="border border-slate-200 px-3 py-2 align-top">{highlightAI(row[cellIdx] || "")}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+          continue;
+        }
+
+        buffer.push(...tableLines);
+        continue;
+      }
+
+      buffer.push(line);
+    }
+
+    flushBuffer();
+    return <div className="space-y-2">{nodes}</div>;
+  };
+
   const saveApiKey = () => {
     if (apiKey.trim()) {
       localStorage.setItem("GEMINI_API_KEY", apiKey.trim());
@@ -1864,12 +1969,38 @@ export default function App() {
       });
     };
 
-    const parseContentAndInsertDocx = (text: string): Paragraph[] => {
+    const createMarkdownDocxTable = (tableLines: string[]) => {
+      const headers = splitMarkdownTableRow(tableLines[0]);
+      const rows = tableLines.slice(2).map(splitMarkdownTableRow);
+      return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({
+            children: headers.map((header: string) => new TableCell({
+              children: [new Paragraph({ children: parseMarkdownToTextRunsDocx(header), alignment: AlignmentType.CENTER })],
+              shading: { fill: "ECFEFF" },
+              verticalAlign: VerticalAlign.CENTER,
+              margins: { top: 100, bottom: 100, left: 100, right: 100 }
+            }))
+          }),
+          ...rows.map((row: string[]) => new TableRow({
+            children: headers.map((_: string, idx: number) => new TableCell({
+              children: [new Paragraph({ children: parseMarkdownToTextRunsDocx(row[idx] || "") })],
+              verticalAlign: VerticalAlign.TOP,
+              margins: { top: 100, bottom: 100, left: 100, right: 100 }
+            }))
+          }))
+        ]
+      });
+    };
+
+    const parseContentAndInsertDocx = (text: string): any[] => {
       if (!text) return [new Paragraph({ children: [new TextRun({ text: "" })] })];
       const lines = text.split('\n');
-      const paragraphs: Paragraph[] = [];
+      const paragraphs: any[] = [];
 
-      for (let line of lines) {
+      for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        const line = lines[lineIndex];
         const trimmed = line.trim();
         // Check for specific drawing brackets
         const formulaMatch = trimmed.match(/^\[Công thức:\s*(.*?)\]$/i);
@@ -1878,7 +2009,25 @@ export default function App() {
         const mindmapMatch = trimmed.match(/^\[Sơ đồ:\s*(.*?)\]/i);
         const schematicMatch = trimmed.match(/^\[Hình vẽ:\s*(.*?)\]/i);
 
-        if (formulaMatch) {
+        if (isMarkdownTableLine(line)) {
+          const tableLines: string[] = [];
+          while (lineIndex < lines.length && isMarkdownTableLine(lines[lineIndex])) {
+            tableLines.push(lines[lineIndex]);
+            lineIndex++;
+          }
+          lineIndex--;
+
+          if (tableLines.length >= 2 && isMarkdownSeparatorLine(tableLines[1])) {
+            paragraphs.push(createMarkdownDocxTable(tableLines));
+          } else {
+            tableLines.forEach(tableLine => paragraphs.push(
+              new Paragraph({
+                children: parseMarkdownToTextRunsDocx(tableLine),
+                spacing: { before: 40, after: 40 }
+              })
+            ));
+          }
+        } else if (formulaMatch) {
           paragraphs.push(
             new Paragraph({
               children: [
@@ -3731,16 +3880,16 @@ export default function App() {
                                   <div className="grid grid-cols-1 gap-4 text-[13px] leading-relaxed">
                                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                                       <p className="font-bold text-brand-sidebar mb-1 uppercase text-[10px] tracking-wider text-opacity-70">a) Mục tiêu</p>
-                                      <p className="text-brand-muted">{highlightAI(act.objective)}</p>
+                                      <div className="text-brand-muted">{renderRichTextBlock(act.objective)}</div>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                                         <p className="font-bold text-brand-sidebar mb-1 uppercase text-[10px] tracking-wider text-opacity-70">b) Nội dung</p>
-                                        <div className="text-brand-muted whitespace-pre-line">{highlightAI(act.content)}</div>
+                                        <div className="text-brand-muted">{renderRichTextBlock(act.content)}</div>
                                       </div>
                                       <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                                         <p className="font-bold text-brand-sidebar mb-1 uppercase text-[10px] tracking-wider text-opacity-70">c) Sản phẩm</p>
-                                        <div className="text-brand-muted whitespace-pre-line">{highlightAI(act.product)}</div>
+                                        <div className="text-brand-muted">{renderRichTextBlock(act.product)}</div>
                                       </div>
                                     </div>
                                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
@@ -3752,11 +3901,11 @@ export default function App() {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2">
                                               <div className="space-y-1">
                                                 <p className="text-[9px] font-bold text-brand-muted uppercase">Hoạt động của GV và HS</p>
-                                                <div className="text-brand-dark text-[12px] leading-relaxed pl-3 border-l-2 border-brand-accent/20 whitespace-pre-line">{highlightAI(step.teacherStudentActivities)}</div>
+                                                <div className="text-brand-dark text-[12px] leading-relaxed pl-3 border-l-2 border-brand-accent/20">{renderRichTextBlock(step.teacherStudentActivities)}</div>
                                               </div>
                                               <div className="space-y-1">
                                                 <p className="text-[9px] font-bold text-brand-muted uppercase">Dự kiến sản phẩm</p>
-                                                <div className="text-brand-dark text-[12px] leading-relaxed pl-3 border-l-2 border-emerald-500/20 whitespace-pre-line font-medium italic">{highlightAI(step.expectedProduct)}</div>
+                                                <div className="text-brand-dark text-[12px] leading-relaxed pl-3 border-l-2 border-emerald-500/20 font-medium italic">{renderRichTextBlock(step.expectedProduct)}</div>
                                               </div>
                                             </div>
                                           </div>
@@ -3777,7 +3926,7 @@ export default function App() {
                             </h4>
                             <ul className="list-disc list-inside space-y-2 text-brand-dark text-[13px] pl-4 leading-relaxed">
                               {(result.data.assessment || []).map((a: string, i: number) => (
-                                <li key={i}>{highlightAI(a)}</li>
+                                <li key={i}>{renderRichTextBlock(a)}</li>
                               ))}
                             </ul>
                           </section>

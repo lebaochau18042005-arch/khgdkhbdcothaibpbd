@@ -285,10 +285,58 @@ const appendSanitizerNote = (text: string | undefined, note?: string) => {
   return base ? `${base} (${note})` : note;
 };
 
-const sanitizeAnalysisResultCompetencies = (analysis: any, forcedGrade?: string) => {
-  const grade = forcedGrade || extractGradeNumber(analysis?.grade);
-  if (!isThptGrade(grade)) return analysis;
+const normalizeViText = (value?: string) =>
+  (value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d");
 
+const isGeographyLikeSubject = (subject?: string) => /dia li|giao duc dia phuong|lich su va dia li/.test(normalizeViText(subject));
+
+const needsGeoDataArtifact = (analysis: any, suggestion: any, sourceText?: string) => {
+  if (!isGeographyLikeSubject(analysis?.subject)) return false;
+  const combined = normalizeViText([
+    analysis?.topic,
+    suggestion?.activityName,
+    suggestion?.reason,
+    suggestion?.action,
+    suggestion?.yccdEvidence,
+    sourceText?.slice(0, 10000)
+  ].filter(Boolean).join("\n"));
+  return /(bang so lieu|bieu do|so lieu|du lieu|aqi|o nhiem|tai nguyen|dan so|kinh te|khi hau|nhiet do|luong mua|grdp|co cau|dien tich|san luong|mat do|toc do tang|ti le|ty le|thuc hanh|nhan xet|giai thich|phan tich)/.test(combined);
+};
+
+const buildGeoDataRequirement = (analysis: any, suggestion: any, sourceText?: string) => {
+  if (!needsGeoDataArtifact(analysis, suggestion, sourceText)) return suggestion?.geoDataRequirement;
+  const topic = analysis?.topic || "bài học Địa lí";
+  const activityName = suggestion?.activityName || "hoạt động tích hợp";
+  const combined = normalizeViText(`${topic}\n${activityName}\n${suggestion?.action || ""}\n${suggestion?.reason || ""}`);
+  const isAqi = /aqi|o nhiem|khong khi|pm2/.test(combined);
+  const isForest = /rung|tai nguyen|sinh vat|dat|nuoc/.test(combined);
+  const isEconomy = /grdp|kinh te|co cau|san luong|dien tich gieo trong/.test(combined);
+  const metric = isAqi
+    ? "Chỉ số AQI/PM2.5 theo địa điểm hoặc thời điểm"
+    : isForest
+      ? "Diện tích/tỉ lệ tài nguyên theo năm hoặc theo vùng"
+      : isEconomy
+        ? "GRDP/cơ cấu ngành/sản lượng hoặc diện tích theo vùng"
+        : "Chỉ tiêu địa lí theo năm/vùng";
+  const source = isAqi
+    ? "IQAir/AirVisual, cổng quan trắc môi trường địa phương hoặc bảng số liệu giáo viên cung cấp"
+    : "SGK, Atlat, Niên giám thống kê, Tổng cục Thống kê/cổng thông tin địa phương hoặc bảng số liệu giáo viên cung cấp";
+
+  return {
+    dataTable: `Bắt buộc có bảng số liệu cho ${activityName}: ${metric}. Nếu giáo án/SGK đã có số liệu thì dùng nguyên số liệu đó; nếu chưa có, tạo bảng khung để HS điền từ nguồn chính thống.`,
+    sampleTableMarkdown: `| Đối tượng/Thời điểm | Chỉ tiêu | Giá trị | Nguồn kiểm chứng |\n|---|---|---:|---|\n| Mẫu 1 | ${metric} | ... | ${source} |\n| Mẫu 2 | ${metric} | ... | ${source} |\n| Mẫu 3 | ${metric} | ... | ${source} |`,
+    chart: `[Biểu đồ: ${isAqi ? "Biểu đồ đường/cột so sánh AQI hoặc PM2.5 theo thời điểm" : isEconomy ? "Biểu đồ cột/tròn thể hiện cơ cấu hoặc quy mô kinh tế" : "Biểu đồ cột/đường thể hiện biến động chỉ tiêu địa lí"} trong ${topic}]`,
+    dataSource: source,
+    studentTask: "HS nhập/kiểm chứng số liệu, chọn loại biểu đồ phù hợp, vẽ biểu đồ, nhận xét xu hướng và giải thích bằng kiến thức Địa lí; AI chỉ hỗ trợ gợi ý cách xử lí và phải được đối chiếu nguồn."
+  };
+};
+
+const sanitizeAnalysisResultCompetencies = (analysis: any, forcedGrade?: string, sourceText?: string) => {
+  const grade = forcedGrade || extractGradeNumber(analysis?.grade);
   const sanitizedSuggestions = Array.isArray(analysis?.aiSuggestions)
     ? analysis.aiSuggestions.map((suggestion: any) => {
         const sanitized = sanitizeAiCodeForGrade(suggestion?.suggestedAI, grade);
@@ -296,8 +344,9 @@ const sanitizeAnalysisResultCompetencies = (analysis: any, forcedGrade?: string)
           ...suggestion,
           suggestedNLS: suggestion?.suggestedNLS || "Không gán mã - cần đối chiếu TT 02/CV 3456 theo YCCĐ trước khi sử dụng.",
           yccdEvidence: suggestion?.yccdEvidence || suggestion?.reason || "Chưa có căn cứ YCCĐ riêng trong phản hồi AI.",
-          suggestedAI: sanitized.code,
-          reason: appendSanitizerNote(suggestion?.reason, sanitized.note),
+          suggestedAI: isThptGrade(grade) ? sanitized.code : suggestion?.suggestedAI,
+          reason: appendSanitizerNote(suggestion?.reason, isThptGrade(grade) ? sanitized.note : undefined),
+          geoDataRequirement: buildGeoDataRequirement({ ...analysis, grade }, suggestion, sourceText),
         };
       })
     : [];
@@ -713,6 +762,13 @@ LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với P
       "suggestedNLS": "Mã NLS TT 02/CV 3456 đúng cấp/lớp, ví dụ 1.1.NC1a; nếu không đủ căn cứ ghi 'Không gán mã - lý do: ...'",
       "suggestedAI": "Mã chỉ báo AI chuẩn đúng lớp (vd: nếu grade là 12 thì 12.A1.01; không dùng 10.*)",
       "yccdEvidence": "YCCĐ/hoạt động học tập làm căn cứ để gán mã NLS/NL AI",
+      "geoDataRequirement": {
+        "dataTable": "Riêng môn Địa lí: yêu cầu bảng số liệu cụ thể hoặc bảng khung để HS điền từ nguồn chính thống",
+        "sampleTableMarkdown": "Bảng Markdown có cột Đối tượng/Thời điểm, Chỉ tiêu, Giá trị, Nguồn kiểm chứng",
+        "chart": "Thẻ biểu đồ bắt buộc theo mẫu [Biểu đồ: ...] nếu hoạt động có số liệu",
+        "dataSource": "Nguồn số liệu kiểm chứng",
+        "studentTask": "Nhiệm vụ HS xử lí bảng số liệu và biểu đồ"
+      },
       "reason": "Lý do phù hợp",
       "action": "HS sẽ làm gì với AI?"
     }
@@ -727,6 +783,7 @@ Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
 3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, trường suggestedNLS phải dùng mức NC1 theo TT 02/CV 3456 (ví dụ '1.1.NC1a') và trường suggestedAI phải bắt đầu đúng lớp của giáo án. Mỗi gợi ý phải có yccdEvidence để sau đó đưa vào mục I. MỤC TIÊU.${detectedGradeInstruction}${textbookSection}${pl1Section}
+4. RIÊNG MÔN ĐỊA LÍ: Nếu bài/hoạt động có bảng số liệu, biểu đồ, AQI, tài nguyên, dân số, kinh tế, khí hậu, diện tích, sản lượng, GRDP hoặc yêu cầu nhận xét - giải thích số liệu, trường geoDataRequirement BẮT BUỘC có bảng số liệu và biểu đồ. Không được chỉ ghi chung chung "phân tích dữ liệu"; phải nêu bảng, nguồn kiểm chứng, loại biểu đồ và nhiệm vụ HS.
 
 ${genericThptGuardrails}
 
@@ -750,6 +807,7 @@ Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
 3. Trọng tâm: Phân tích xem giáo án gốc HIỆN CÓ năng lực AI theo QĐ 3439 chưa. Chỉ ra 3-5 vị trí TỐT NHẤT có thể lồng ghép AI, nhưng chỉ gán mã NLS/NL AI khi có căn cứ trực tiếp từ YCCĐ và hoạt động học sinh. Với lớp 10-12, trường suggestedNLS phải dùng mức NC1 theo TT 02/CV 3456 (ví dụ '1.1.NC1a') và trường suggestedAI phải bắt đầu đúng lớp của giáo án. Mỗi gợi ý phải có yccdEvidence để sau đó đưa vào mục I. MỤC TIÊU.${detectedGradeInstruction}${textbookSection}${pl1Section}
+4. RIÊNG MÔN ĐỊA LÍ: Nếu bài/hoạt động có bảng số liệu, biểu đồ, AQI, tài nguyên, dân số, kinh tế, khí hậu, diện tích, sản lượng, GRDP hoặc yêu cầu nhận xét - giải thích số liệu, trường geoDataRequirement BẮT BUỘC có bảng số liệu và biểu đồ. Không được chỉ ghi chung chung "phân tích dữ liệu"; phải nêu bảng, nguồn kiểm chứng, loại biểu đồ và nhiệm vụ HS.
 
 ${genericThptGuardrails}
 
@@ -806,6 +864,16 @@ ${jsonFormat}`
               suggestedNLS: { type: Type.STRING },
               suggestedAI: { type: Type.STRING },
               yccdEvidence: { type: Type.STRING },
+              geoDataRequirement: {
+                type: Type.OBJECT,
+                properties: {
+                  dataTable: { type: Type.STRING },
+                  sampleTableMarkdown: { type: Type.STRING },
+                  chart: { type: Type.STRING },
+                  dataSource: { type: Type.STRING },
+                  studentTask: { type: Type.STRING }
+                }
+              },
               reason: { type: Type.STRING },
               action: { type: Type.STRING }
             },
@@ -815,7 +883,7 @@ ${jsonFormat}`
       },
       required: ["subject", "grade", "topic", "duration", "aiSuggestions"]
     });
-    return sanitizeAnalysisResultCompetencies(analysis, detectedGrade);
+    return sanitizeAnalysisResultCompetencies(analysis, detectedGrade, fileText);
   } catch (err) {
     console.error("Error analyzing plan:", err);
     throw err;
@@ -837,8 +905,10 @@ export const generateDirectSnippets = async (
       ...suggestion,
       suggestedAI: sanitized.code,
       reason: appendSanitizerNote(suggestion?.reason, sanitized.note),
+      geoDataRequirement: suggestion?.geoDataRequirement || buildGeoDataRequirement({ subject, grade, topic }, suggestion),
     };
   });
+  const hasGeoDataRequirement = sanitizedSuggestions.some((suggestion) => suggestion?.geoDataRequirement);
 
   const prompt = `Bạn là chuyên gia thiết kế Hoạt động Trí tuệ Nhân tạo (AI) cho học sinh.
 Thông tin bài học: Môn ${subject}, Lớp ${grade}, Bài: ${topic}.
@@ -853,6 +923,11 @@ Nhiệm vụ: Viết MỘT ĐOẠN VĂN BẢN CHI TIẾT cho mỗi hoạt độn
 3. Yêu cầu sản phẩm.
 4. Có gắn mã NLS TT 02/CV 3456 và mã chỉ báo AI đúng lớp ở cuối. Nếu lớp ${grade} thì mã NL AI phải bắt đầu bằng ${extractGradeNumber(grade)}.; nếu gợi ý đang là "Không gán mã" thì không tự tạo mã mới.
 5. Phải viết sao cho đoạn này có thể đồng thời đưa vào mục I. MỤC TIÊU, III. TIẾN TRÌNH và IV. ĐÁNH GIÁ.
+${hasGeoDataRequirement ? `6. RIÊNG MÔN ĐỊA LÍ: Với mọi gợi ý có geoDataRequirement, đoạn "text" BẮT BUỘC chứa:
+- Một mục "Bảng số liệu bắt buộc:" kèm bảng Markdown từ sampleTableMarkdown.
+- Một dòng thẻ biểu đồ đúng mẫu [Biểu đồ: ...].
+- Nguồn kiểm chứng số liệu và nhiệm vụ HS nhận xét/giải thích biểu đồ.
+Không được chỉ viết chung chung "phân tích dữ liệu" hoặc "vẽ biểu đồ" mà không có bảng số liệu.` : ""}
 
 ${englishConstraint}
 

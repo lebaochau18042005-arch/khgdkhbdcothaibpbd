@@ -193,12 +193,13 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
         setIsGeneratingDocx(true);
         try {
             // 1. Generate AI Snippets
-            const snippets = await generateDirectSnippets(
+            const generatedSnippets = await generateDirectSnippets(
                 analysisResult.subject || "Khác",
                 analysisResult.grade || "10",
                 analysisResult.topic || "Bài học nâng cấp",
                 selectedIntegrations
             );
+            const snippets = ensureGeoDataInSnippets(generatedSnippets);
             const objectiveText = buildObjectiveText();
             const assessmentText = buildAssessmentText();
 
@@ -253,6 +254,39 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
 
     const plain = (value?: string) => (value || "").replace(/<bold>|<\/bold>|<ai>|<\/ai>|\*\*/gi, "").trim();
 
+    const buildGeoDataBlockForSuggestion = (sug: any) => {
+        const geo = sug?.geoDataRequirement;
+        if (!geo) return "";
+        return [
+            "Bảng số liệu và biểu đồ bắt buộc trong hoạt động Địa lí:",
+            geo.dataTable ? `- Bảng số liệu: ${plain(geo.dataTable)}` : "",
+            geo.sampleTableMarkdown ? geo.sampleTableMarkdown : "",
+            geo.chart ? geo.chart : "",
+            geo.dataSource ? `- Nguồn kiểm chứng: ${plain(geo.dataSource)}` : "",
+            geo.studentTask ? `- Nhiệm vụ của HS: ${plain(geo.studentTask)}` : ""
+        ].filter(Boolean).join("\n");
+    };
+
+    const buildGeoDataText = (suggestions = selectedIntegrations) => {
+        const blocks = suggestions
+            .map((sug: any, idx: number) => {
+                const block = buildGeoDataBlockForSuggestion(sug);
+                return block ? `${idx + 1}. ${sug.activityName}\n${block}` : "";
+            })
+            .filter(Boolean);
+        return blocks.length ? `Bổ sung bảng số liệu, biểu đồ/bản đồ Địa lí:\n${blocks.join("\n\n")}` : "";
+    };
+
+    const ensureGeoDataInSnippets = (snippets: { activityName: string; text: string }[]) =>
+        snippets.map((snippet, idx) => {
+            const suggestion = selectedIntegrations.find((sug: any) => sug.activityName === snippet.activityName) || selectedIntegrations[idx];
+            const geoBlock = buildGeoDataBlockForSuggestion(suggestion);
+            if (!geoBlock) return snippet;
+            const normalized = plain(snippet.text).toLowerCase();
+            if (normalized.includes("bảng số liệu") && normalized.includes("biểu đồ")) return snippet;
+            return { ...snippet, text: `${snippet.text}\n\n${geoBlock}` };
+        });
+
     const buildObjectiveText = (suggestions = selectedIntegrations) => {
         const nlsLines = suggestions.map((sug: any, idx: number) => {
             const code = sug.suggestedNLS || "Không gán mã - cần đối chiếu YCCĐ theo TT 02/CV 3456.";
@@ -277,7 +311,8 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
         return suggestions.map((sug: any, idx: number) => {
             const nls = sug.suggestedNLS || "NLS cần đối chiếu";
             const ai = sug.suggestedAI || "NL AI cần đối chiếu";
-            return `${idx + 1}. ${sug.activityName}: đánh giá sản phẩm học tập số/AI của học sinh theo 4 tiêu chí: đúng kiến thức môn học; biết kiểm chứng nguồn/đầu ra AI; sản phẩm rõ ràng, có minh chứng; giải thích được cách dùng công cụ. Minh chứng: prompt, bản chỉnh sửa của học sinh, sản phẩm cuối. Mã liên quan: ${nls}; ${ai}.`;
+            const geoCriteria = sug.geoDataRequirement ? " Riêng nhiệm vụ Địa lí phải có bảng số liệu đúng nguồn, biểu đồ phù hợp, nhận xét xu hướng và giải thích nguyên nhân bằng kiến thức Địa lí." : "";
+            return `${idx + 1}. ${sug.activityName}: đánh giá sản phẩm học tập số/AI của học sinh theo 4 tiêu chí: đúng kiến thức môn học; biết kiểm chứng nguồn/đầu ra AI; sản phẩm rõ ràng, có minh chứng; giải thích được cách dùng công cụ.${geoCriteria} Minh chứng: prompt, bảng số liệu/biểu đồ nếu có, bản chỉnh sửa của học sinh, sản phẩm cuối. Mã liên quan: ${nls}; ${ai}.`;
         }).join("\n");
     };
 
@@ -299,6 +334,8 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
             "",
             "III. CÁC ĐOẠN TÍCH HỢP AI ĐÃ CHÈN",
             inserted || "Chưa có đoạn tích hợp.",
+            "",
+            buildGeoDataText(),
             "",
             "IV. GỢI Ý NỘI DUNG ĐÁNH GIÁ",
             assessmentText
@@ -356,6 +393,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
     const handleOpenFullLessonPlan = () => {
         const objectiveText = buildObjectiveText();
         const assessmentText = buildAssessmentText();
+        const geoDataText = buildGeoDataText();
         const selectedNlsIndicators = selectedIntegrations
             .map((sug: any) => ({ code: sug.suggestedNLS, description: `${sug.activityName}: ${sug.yccdEvidence || sug.reason || sug.action}` }))
             .filter((item: any) => item.code && !String(item.code).toLowerCase().includes("không"));
@@ -374,7 +412,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
             aiIntegrationOptions: selectedIntegrations,
             socialIntegrations: selectedSocialIntegrations,
             newContentFromTextbook: analysisResult.newContentFromTextbook || [],
-            additionalNotes: `Nội dung tích hợp đã duyệt:\n${objectiveText}\n\nGợi ý đánh giá:\n${assessmentText}`,
+            additionalNotes: `Nội dung tích hợp đã duyệt:\n${objectiveText}\n\n${geoDataText ? `${geoDataText}\n\n` : ""}Gợi ý đánh giá:\n${assessmentText}`,
             indicatorCode: selectedIntegrations.find((sug: any) => hasValidAiCode(sug.suggestedAI))?.suggestedAI,
             selectedNlsIndicators
         });
@@ -635,6 +673,14 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                                 {sug.yccdEvidence && <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Căn cứ YCCĐ:</span> {sug.yccdEvidence}</p>}
                                                 <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Lý do:</span> {sug.reason}</p>
                                                 <p className="text-sm text-slate-600"><span className="font-semibold text-slate-700">Hành động của HS:</span> {sug.action}</p>
+                                                {sug.geoDataRequirement && (
+                                                    <div className="mt-3 rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-xs text-cyan-950 space-y-1">
+                                                        <p className="font-bold text-cyan-800">Bảng số liệu / biểu đồ Địa lí bắt buộc</p>
+                                                        <p><span className="font-semibold">Bảng:</span> {sug.geoDataRequirement.dataTable}</p>
+                                                        <p><span className="font-semibold">Biểu đồ:</span> {sug.geoDataRequirement.chart}</p>
+                                                        <p><span className="font-semibold">Nguồn:</span> {sug.geoDataRequirement.dataSource}</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     );

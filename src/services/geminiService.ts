@@ -1013,6 +1013,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
 5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, mỗi dòng mục tiêu AI chỉ được kết thúc bằng mã chỉ báo khi mã đó đã khớp YCCĐ. ${safeIndicatorCode ? `Có mã NL AI hợp lệ từ hệ thống: (${safeIndicatorCode}); vẫn phải chứng minh bằng YCCĐ trước khi dùng.` : `Không được tự bịa mã. Nếu có điểm chạm rõ với QĐ 3439 thì chọn mã đúng lớp ${extractGradeNumber(input.grade)} và đúng chủ đề; nếu không đủ căn cứ thì ghi "Không tích hợp".`}.
 ${selectedIndicatorPrompt}
+${input.additionalNotes ? `\nGHI CHÚ TÍCH HỢP BẮT BUỘC TỪ GIÁO VIÊN/APP:\n${input.additionalNotes}\nLỆNH BẮT BUỘC: Toàn bộ nội dung trong ghi chú này phải được thể hiện lại trong giáo án ở ít nhất 3 vị trí: I. MỤC TIÊU, III. TIẾN TRÌNH DẠY HỌC và IV. KẾ HOẠCH ĐÁNH GIÁ. Không được bỏ qua.` : ""}
 ${englishConstraint}
 ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
 ${LESSON_PLAN_STRICT_GUIDELINES}
@@ -1053,6 +1054,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
 5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, mỗi dòng mục tiêu AI chỉ được kết thúc bằng mã chỉ báo khi mã đó đã khớp YCCĐ. ${safeIndicatorCode ? `Có mã NL AI hợp lệ từ hệ thống: (${safeIndicatorCode}); vẫn phải chứng minh bằng YCCĐ trước khi dùng.` : `Không được tự bịa mã. Nếu có điểm chạm rõ với QĐ 3439 thì chọn mã đúng lớp ${extractGradeNumber(input.grade)} và đúng chủ đề; nếu không đủ căn cứ thì ghi "Không tích hợp".`}.
 ${selectedIndicatorPrompt}
+${input.additionalNotes ? `\nGHI CHÚ TÍCH HỢP BẮT BUỘC TỪ GIÁO VIÊN/APP:\n${input.additionalNotes}\nLỆNH BẮT BUỘC: Toàn bộ nội dung trong ghi chú này phải được thể hiện lại trong giáo án ở ít nhất 3 vị trí: I. MỤC TIÊU, III. TIẾN TRÌNH DẠY HỌC và IV. KẾ HOẠCH ĐÁNH GIÁ. Không được bỏ qua.` : ""}
 ${englishConstraint}
 ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
 ${LESSON_PLAN_STRICT_GUIDELINES}

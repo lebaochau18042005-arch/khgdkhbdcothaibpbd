@@ -130,45 +130,72 @@ function buildPreservationReport(
     };
 }
 
-function createStyledParagraph(xmlDoc: Document, label: string, text: string, colorValue: string): Element {
+function getTopLevelBodyChild(node: Element, body: Element): Element | null {
+    let current: Node | null = node;
+    while (current?.parentNode && current.parentNode !== body) {
+        current = current.parentNode;
+    }
+    return current instanceof Element && current.parentNode === body ? current : null;
+}
+
+function insertBodyElementsAfter(xmlDoc: Document, reference: Element | null, elements: Element[]): boolean {
+    const body = xmlDoc.getElementsByTagName("w:body")[0];
+    if (!body || elements.length === 0) return false;
+
+    const anchor = reference?.parentNode === body ? reference.nextSibling : null;
+    const fallbackAnchor = Array.from(body.children).find(child => child.tagName === "w:sectPr") || null;
+    const beforeNode = anchor || fallbackAnchor;
+
+    for (const element of elements) {
+        body.insertBefore(element, beforeNode);
+    }
+    return !!reference;
+}
+
+function createStyledParagraph(xmlDoc: Document, text: string, colorValue: string, boldText = false, leftIndent = "360"): Element {
     const ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     const paragraph = xmlDoc.createElementNS(ns, "w:p");
 
     const pPr = xmlDoc.createElementNS(ns, "w:pPr");
     const ind = xmlDoc.createElementNS(ns, "w:ind");
-    ind.setAttribute("w:left", "360");
+    ind.setAttribute("w:left", leftIndent);
     pPr.appendChild(ind);
     paragraph.appendChild(pPr);
 
     const run = xmlDoc.createElementNS(ns, "w:r");
     const rPr = xmlDoc.createElementNS(ns, "w:rPr");
+    const fonts = xmlDoc.createElementNS(ns, "w:rFonts");
+    fonts.setAttribute("w:ascii", "Times New Roman");
+    fonts.setAttribute("w:hAnsi", "Times New Roman");
+    fonts.setAttribute("w:cs", "Times New Roman");
+    rPr.appendChild(fonts);
     const color = xmlDoc.createElementNS(ns, "w:color");
     color.setAttribute("w:val", colorValue);
     rPr.appendChild(color);
-    const bold = xmlDoc.createElementNS(ns, "w:b");
-    rPr.appendChild(bold);
+    if (boldText) {
+        const bold = xmlDoc.createElementNS(ns, "w:b");
+        rPr.appendChild(bold);
+    }
     const sz = xmlDoc.createElementNS(ns, "w:sz");
     sz.setAttribute("w:val", "22");
     rPr.appendChild(sz);
     run.appendChild(rPr);
 
-    const header = xmlDoc.createElementNS(ns, "w:t");
-    header.textContent = label;
-    header.setAttribute("xml:space", "preserve");
-    run.appendChild(header);
-
-    const lines = text.split("\n").filter(line => line.trim());
-    for (const line of lines) {
-        const br = xmlDoc.createElementNS(ns, "w:br");
-        run.appendChild(br);
-        const wT = xmlDoc.createElementNS(ns, "w:t");
-        wT.textContent = line;
-        wT.setAttribute("xml:space", "preserve");
-        run.appendChild(wT);
-    }
+    const wT = xmlDoc.createElementNS(ns, "w:t");
+    wT.textContent = text;
+    wT.setAttribute("xml:space", "preserve");
+    run.appendChild(wT);
 
     paragraph.appendChild(run);
     return paragraph;
+}
+
+function createStyledBlock(xmlDoc: Document, label: string, text: string, colorValue: string): Element[] {
+    const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
+    return [
+        createStyledParagraph(xmlDoc, label, colorValue, true, "0"),
+        ...lines.map(line => createStyledParagraph(xmlDoc, line, colorValue, false, "360"))
+    ];
 }
 
 function insertBlockNearHeading(
@@ -192,15 +219,8 @@ function insertBlockNearHeading(
         }
     }
 
-    const paragraph = createStyledParagraph(xmlDoc, label, text, colorValue);
-    if (target?.parentNode) {
-        target.parentNode.insertBefore(paragraph, target.nextSibling);
-        return true;
-    }
-
-    const last = body.lastElementChild;
-    body.insertBefore(paragraph, last);
-    return false;
+    const reference = target ? getTopLevelBodyChild(target, body) : null;
+    return insertBodyElementsAfter(xmlDoc, reference, createStyledBlock(xmlDoc, label, text, colorValue));
 }
 
 export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], options: InjectionOptions = {}): Promise<InjectionResult> {
@@ -226,7 +246,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
             xmlDoc,
             paragraphs,
             ["mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu"],
-            "🎯 [MỤC TIÊU BỔ SUNG NLS/NL AI] ",
+            "[MỤC TIÊU BỔ SUNG NLS/NL AI]",
             options.objectivesText,
             "C0392B"
         );
@@ -243,7 +263,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
             xmlDoc,
             paragraphs,
             ["đánh giá", "danh gia", "kiểm tra", "kiem tra"],
-            "🧾 [GỢI Ý ĐÁNH GIÁ NLS/NL AI] ",
+            "[GỢI Ý ĐÁNH GIÁ NLS/NL AI]",
             options.assessmentText,
             "1E40AF"
         );
@@ -272,58 +292,13 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
         }
 
         if (bestP && bestScore >= 40) {
-            // Create new paragraph with styled AI content
-            const ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
-            
-            const newP = xmlDoc.createElementNS(ns, "w:p");
-            
-            // Paragraph properties - indent slightly
-            const pPr = xmlDoc.createElementNS(ns, "w:pPr");
-            const ind = xmlDoc.createElementNS(ns, "w:ind");
-            ind.setAttribute("w:left", "360");
-            pPr.appendChild(ind);
-            newP.appendChild(pPr);
-
-            const newR = xmlDoc.createElementNS(ns, "w:r");
-            const newRPr = xmlDoc.createElementNS(ns, "w:rPr");
-            
-            // Red color
-            const color = xmlDoc.createElementNS(ns, "w:color");
-            color.setAttribute("w:val", "C0392B");
-            newRPr.appendChild(color);
-            
-            // Bold
-            const bold = xmlDoc.createElementNS(ns, "w:b");
-            newRPr.appendChild(bold);
-            
-            // Font size 22 (11pt)
-            const sz = xmlDoc.createElementNS(ns, "w:sz");
-            sz.setAttribute("w:val", "22");
-            newRPr.appendChild(sz);
-
-            newR.appendChild(newRPr);
-            
-            // Add header label
-            const headerT = xmlDoc.createElementNS(ns, "w:t");
-            headerT.textContent = "🤖 [TÍCH HỢP AI - QĐ 3439] ";
-            headerT.setAttribute("xml:space", "preserve");
-            newR.appendChild(headerT);
-            
-            // Add content lines
-            const lines = snippet.text.split('\n').filter(l => l.trim());
-            for (let i = 0; i < lines.length; i++) {
-                if (i > 0) {
-                    const br = xmlDoc.createElementNS(ns, "w:br");
-                    newR.appendChild(br);
-                }
-                const wT = xmlDoc.createElementNS(ns, "w:t");
-                wT.textContent = lines[i];
-                wT.setAttribute("xml:space", "preserve");
-                newR.appendChild(wT);
-            }
-            
-            newP.appendChild(newR);
-            bestP.parentNode?.insertBefore(newP, bestP.nextSibling);
+            const body = xmlDoc.getElementsByTagName("w:body")[0];
+            const reference = body ? getTopLevelBodyChild(bestP, body) : null;
+            insertBodyElementsAfter(
+                xmlDoc,
+                reference,
+                createStyledBlock(xmlDoc, `[TÍCH HỢP AI - QĐ 3439] ${snippet.activityName}`, snippet.text, "C0392B")
+            );
             
             injectedCount++;
             previewItems.push({
@@ -343,24 +318,11 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
             // Fallback: append at end of body
             const body = xmlDoc.getElementsByTagName("w:body")[0];
             if (body) {
-                const ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
-                const fallbackP = xmlDoc.createElementNS(ns, "w:p");
-                const fallbackR = xmlDoc.createElementNS(ns, "w:r");
-                const fallbackRPr = xmlDoc.createElementNS(ns, "w:rPr");
-                const color = xmlDoc.createElementNS(ns, "w:color");
-                color.setAttribute("w:val", "E74C3C");
-                fallbackRPr.appendChild(color);
-                const bold = xmlDoc.createElementNS(ns, "w:b");
-                fallbackRPr.appendChild(bold);
-                fallbackR.appendChild(fallbackRPr);
-                const wT = xmlDoc.createElementNS(ns, "w:t");
-                wT.textContent = `🤖 [AI - ${snippet.activityName}]: ${snippet.text}`;
-                wT.setAttribute("xml:space", "preserve");
-                fallbackR.appendChild(wT);
-                fallbackP.appendChild(fallbackR);
-                // Insert before last paragraph (sectPr)
-                const lastP = body.lastElementChild;
-                body.insertBefore(fallbackP, lastP);
+                insertBodyElementsAfter(
+                    xmlDoc,
+                    null,
+                    createStyledBlock(xmlDoc, `[TÍCH HỢP AI - ${snippet.activityName}]`, snippet.text, "E74C3C")
+                );
                 injectedCount++;
             }
         }

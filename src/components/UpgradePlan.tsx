@@ -731,7 +731,13 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                             <button onClick={handleDownloadPreviewHtml} className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50">
                                                 Tải HTML xem nhanh
                                             </button>
+                                            <button onClick={handleOpenFullLessonPlan} className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700">
+                                                Mở màn hình KHBD tích hợp
+                                            </button>
                                         </div>
+                                    </div>
+                                    <div className="mb-3 rounded-lg border border-indigo-100 bg-white/80 p-3 text-xs leading-relaxed text-indigo-900">
+                                        Chế độ màn hình giúp thầy/cô xem KHBD đã đưa NLS/NL AI vào mục tiêu, tiến trình và đánh giá trong app. File DOCX tải xuống vẫn là bản giữ nguyên giáo án gốc đầy đủ nhất.
                                     </div>
                                     <div className="max-h-[520px] overflow-y-auto rounded-lg bg-white border border-blue-100 p-4">
                                         <style>{`
@@ -806,6 +812,12 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                         className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition-colors border border-slate-200"
                                     >
                                         Tải file khác
+                                    </button>
+                                    <button
+                                        onClick={handleOpenFullLessonPlan}
+                                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 transition-colors"
+                                    >
+                                        <Sparkles className="w-4 h-4" /> Mở màn hình KHBD tích hợp
                                     </button>
                                     <button
                                         onClick={handleConfirmDownload}

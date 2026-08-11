@@ -635,6 +635,8 @@ const LESSON_PLAN_STRICT_GUIDELINES = `
   (4) Hoạt động 4. VẬN DỤNG
 - Có thể thêm tên sáng tạo sau dấu hai chấm, nhưng không được thay mất 4 tên chuẩn trên. Ví dụ: "Hoạt động 1. KHỞI ĐỘNG: Giải mã tình huống mở đầu".
 - MỖI hoạt động BẮT BUỘC có đủ 4 mục: a) Mục tiêu; b) Nội dung; c) Sản phẩm; d) Tổ chức thực hiện.
+- MỖI hoạt động PHẢI có thêm trường studentNotes: "Nội dung ghi bài của HS". Đây là phần kiến thức cốt lõi HS ghi vào vở sau khi GV chốt, không được bỏ trống hoặc thay bằng nhiệm vụ hoạt động.
+- Nếu bài có nhiều tiết, mỗi hoạt động phải có periodLabel rõ ràng (ví dụ "Tiết 1", "Tiết 2", "Tiết 3-4") và nội dung/procedure phải chia mạch lạc theo tiết.
 - Mục procedure trong MỖI hoạt động BẮT BUỘC có đúng 4 phần tử theo thứ tự:
   Bước 1: Chuyển giao nhiệm vụ
   Bước 2: Thực hiện nhiệm vụ
@@ -644,6 +646,7 @@ const LESSON_PLAN_STRICT_GUIDELINES = `
 3. YÊU CẦU CHI TIẾT CHO 4 MỤC CỦA MỖI HOẠT ĐỘNG:
 a) Mục tiêu: ghi rõ học sinh cần đạt gì về kiến thức, năng lực, phẩm chất/NLS/NL AI nếu có.
 b) Nội dung: nêu nhiệm vụ cụ thể, học liệu cụ thể, câu hỏi cụ thể, dữ liệu/bảng/hình/công thức cần khai thác.
+Nội dung ghi bài của HS (studentNotes): ghi thành các ý kiến thức cốt lõi, ngắn gọn, đúng SGK/tài liệu gốc; đây là phần HS chép vào vở, không phải một nhiệm vụ.
 c) Sản phẩm: mô tả sản phẩm cụ thể, không ghi chung chung là "vở ghi"; phải nêu dạng sản phẩm, tiêu chí và bằng chứng học tập.
 d) Tổ chức thực hiện: mô tả kịch bản GV-HS chi tiết trong đúng 4 bước:
   - Bước 1: Chuyển giao nhiệm vụ: GV giao nhiệm vụ/câu hỏi cụ thể, nêu học liệu, phiếu học tập/dữ liệu, cách chia nhóm.
@@ -651,10 +654,11 @@ d) Tổ chức thực hiện: mô tả kịch bản GV-HS chi tiết trong đún
   - Bước 3: Báo cáo, thảo luận: HS trình bày, nhóm khác nhận xét/phản biện theo tiêu chí; nêu cách GV điều phối.
   - Bước 4: Kết luận, nhận định: GV chuẩn hóa kiến thức bằng ý chính rõ ràng; phần chốt bắt buộc bọc trong <bold>...</bold>.
 
-🚨 ĐẶC BIỆT: MỤC "HOẠT ĐỘNG GIÁO DỤC AI"
-Nếu hoạt động có tích hợp AI, BẮT BUỘC CHÈN THẺ CẢNH BÁO MÀU ĐỎ: <ai>[🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI] </ai>.
-Nêu rõ mã chỉ báo năng lực AI từ QĐ 3439 đúng định dạng lớp hiện tại (vd 11.A1.1, 12.C2.1).
-Mô tả chi tiết: GV hướng dẫn HS dùng công cụ AI gì để hỗ trợ giải quyết nội dung bài học đó.HS thực hiện các thao tác kỹ thuật Prompt kỹ sư gì trên công cụ AI.
+🚨 ĐẶC BIỆT: TÍCH HỢP NLS/NL AI CHỈ ĐÁNH DẤU BẰNG MÀU ĐỎ
+Nếu hoạt động có tích hợp NLS hoặc NL AI, KHÔNG tạo bảng riêng, KHÔNG tạo hoạt động "Giáo dục AI" tách khỏi giáo án gốc. Chỉ bổ sung/hiệu chỉnh đúng vị trí được đề cập trong hoạt động đã có.
+Toàn bộ cụm nội dung tích hợp NLS/NL AI phải bọc trong thẻ <ai>...</ai> để giao diện và DOCX hiển thị màu đỏ; phần không tích hợp giữ màu chữ thường.
+Nêu rõ mã chỉ báo năng lực AI từ QĐ 3439 đúng định dạng lớp hiện tại (vd 11.A1.1, 12.C2.1) chỉ khi có căn cứ YCCĐ.
+Mô tả chi tiết trong chính 4 bước CV 5512: GV hướng dẫn HS dùng công cụ AI gì, prompt nào, kiểm chứng ra sao, sản phẩm phục vụ đúng mục tiêu nào.
 `;
 
 export interface LessonPlanInput {
@@ -1083,9 +1087,9 @@ ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI: 
 1. BẢO TOÀN TUYỆT ĐỐI NỘI DUNG GỐC (LỆNH TỬ TỬ): BẠN KHÔNG ĐƯỢC PHÉP TÓM TẮT, KHÔNG ĐƯỢC RÚT GỌN. Giáo án gốc tải lên dài bao nhiêu trang/chữ thì BẮT BUỘC phải BÊ NGUYÊN XI (COPY-PASTE) 100% dữ liệu cũ từng câu từng chữ từ Mở đầu, Kiến thức mới, Luyện tập đến Vận dụng vào các trường JSON tương ứng. Viết dài tối đa có thể. Việc bạn tự ý tóm tắt lại nội dung gốc là VI PHẠM ĐẠO ĐỨC NỀN TẢNG. BẠN CHỈ ĐƯỢC PHÉP BỔ SUNG thêm nội dung mới (AI, NLS...) chứ tuyệt đối không được xóa hay làm ngắn đi nội dung gốc.
 2. THÊM NĂNG LỰC SỐ & NĂNG LỰC AI: Tự động tổng hợp và thêm mục tiêu "Năng lực số" và "Năng lực AI đặc thù" vào phần Năng lực. Thêm công cụ số vào mục "CÔNG CỤ SỐ AI".
-3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
-   - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
-4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
+3. TÍCH HỢP NLS/NL AI ĐÚNG VỊ TRÍ: Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn CHỈ được bổ sung/hiệu chỉnh phần được đề cập trong hoạt động gốc; KHÔNG tạo phân khúc riêng mang tên "HOẠT ĐỘNG GIÁO DỤC AI", KHÔNG kẻ bảng riêng cho phần tích hợp.
+   - Mô tả KIẾN TRÚC VI MÔ chi tiết ngay trong 4 bước CV 5512: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Kiểm chứng nguồn thế nào? Sản phẩm phục vụ đúng mục tiêu mã 3439 ra sao?
+4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: CHỈ phần nội dung tích hợp NLS/NL AI mới được bọc bởi thẻ <ai>...</ai> để hiện màu đỏ. Không thêm nhãn "[BÁO ĐỘNG ĐỎ]" và không bọc đỏ toàn bộ hoạt động nếu chỉ có một đoạn nhỏ được tích hợp.
 5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, mỗi dòng mục tiêu AI chỉ được kết thúc bằng mã chỉ báo khi mã đó đã khớp YCCĐ. ${safeIndicatorCode ? `Có mã NL AI hợp lệ từ hệ thống: (${safeIndicatorCode}); vẫn phải chứng minh bằng YCCĐ trước khi dùng.` : `Không được tự bịa mã. Nếu có điểm chạm rõ với QĐ 3439 thì chọn mã đúng lớp ${extractGradeNumber(input.grade)} và đúng chủ đề; nếu không đủ căn cứ thì ghi "Không tích hợp".`}.
 ${selectedIndicatorPrompt}
 ${input.additionalNotes ? `\nGHI CHÚ TÍCH HỢP BẮT BUỘC TỪ GIÁO VIÊN/APP:\n${input.additionalNotes}\nLỆNH BẮT BUỘC: Toàn bộ nội dung trong ghi chú này phải được thể hiện lại trong giáo án ở ít nhất 3 vị trí: I. MỤC TIÊU, III. TIẾN TRÌNH DẠY HỌC và IV. KẾ HOẠCH ĐÁNH GIÁ. Không được bỏ qua.` : ""}
@@ -1124,9 +1128,9 @@ ${JSON.stringify(input.aiIntegrationOptions, null, 2)}
 KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP AI:
 1. BẢO TOÀN TUYỆT ĐỐI NỘI DUNG GỐC (LỆNH TỬ TỬ): BẠN KHÔNG ĐƯỢC PHÉP TÓM TẮT, KHÔNG ĐƯỢC RÚT GỌN. Giáo án gốc tải lên dài bao nhiêu trang/chữ thì BẮT BUỘC phải BÊ NGUYÊN XI (COPY-PASTE) 100% dữ liệu cũ từng câu từng chữ từ Mở đầu, Kiến thức mới, Luyện tập đến Vận dụng vào các trường JSON tương ứng. Viết dài tối đa có thể. Việc bạn tự ý tóm tắt lại nội dung gốc là VI PHẠM ĐẠO ĐỨC NỀN TẢNG. BẠN CHỈ ĐƯỢC PHÉP BỔ SUNG thêm nội dung mới (AI, NLS...) chứ tuyệt đối không được xóa hay làm ngắn đi nội dung gốc.
 2. THÊM NĂNG LỰC SỐ & NĂNG LỰC AI: Tự động tổng hợp và thêm mục tiêu "Năng lực số" và "Năng lực AI đặc thù" vào phần Năng lực. Thêm công cụ số vào mục "CÔNG CỤ SỐ AI".
-3. THIẾT KẾ ĐỘC LẬP "HOẠT ĐỘNG GIÁO DỤC AI": Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn BẮT BUỘC phải chèn thêm riêng lẻ một phân khúc mang tên "HOẠT ĐỘNG GIÁO DỤC AI" (không xáo trộn hoạt động có sẵn). 
-   - Mô tả KIẾN TRÚC VI MÔ chi tiết: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Sản phẩm được tạo ra thế nào và CHỨNG MINH sản phẩm đó phục vụ đúng mục tiêu mã 3439.
-4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: TOÀN BỘ nội dung của phần "HOẠT ĐỘNG GIÁO DỤC AI" này (từ mục tiêu, công cụ, cách làm, sản phẩm...) PHẢI ĐƯỢC BỌC KÍN BỞI THẺ <ai>...</ai>. (Ví dụ: <ai>HOẠT ĐỘNG GIÁO DỤC AI: Học sinh sử dụng AI để...</ai>). Hệ thống sẽ tự động in đỏ phần này trên giao diện cho giáo viên phân biệt.
+3. TÍCH HỢP NLS/NL AI ĐÚNG VỊ TRÍ: Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn CHỈ được bổ sung/hiệu chỉnh phần được đề cập trong hoạt động gốc; KHÔNG tạo phân khúc riêng mang tên "HOẠT ĐỘNG GIÁO DỤC AI", KHÔNG kẻ bảng riêng cho phần tích hợp.
+   - Mô tả KIẾN TRÚC VI MÔ chi tiết ngay trong 4 bước CV 5512: Học sinh sử dụng cụ thể công cụ gì? Gõ Prompt lấy dữ liệu ra sao? Kiểm chứng nguồn thế nào? Sản phẩm phục vụ đúng mục tiêu mã 3439 ra sao?
+4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: CHỈ phần nội dung tích hợp NLS/NL AI mới được bọc bởi thẻ <ai>...</ai> để hiện màu đỏ. Không thêm nhãn "[BÁO ĐỘNG ĐỎ]" và không bọc đỏ toàn bộ hoạt động nếu chỉ có một đoạn nhỏ được tích hợp.
 5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, mỗi dòng mục tiêu AI chỉ được kết thúc bằng mã chỉ báo khi mã đó đã khớp YCCĐ. ${safeIndicatorCode ? `Có mã NL AI hợp lệ từ hệ thống: (${safeIndicatorCode}); vẫn phải chứng minh bằng YCCĐ trước khi dùng.` : `Không được tự bịa mã. Nếu có điểm chạm rõ với QĐ 3439 thì chọn mã đúng lớp ${extractGradeNumber(input.grade)} và đúng chủ đề; nếu không đủ căn cứ thì ghi "Không tích hợp".`}.
 ${selectedIndicatorPrompt}
 ${input.additionalNotes ? `\nGHI CHÚ TÍCH HỢP BẮT BUỘC TỪ GIÁO VIÊN/APP:\n${input.additionalNotes}\nLỆNH BẮT BUỘC: Toàn bộ nội dung trong ghi chú này phải được thể hiện lại trong giáo án ở ít nhất 3 vị trí: I. MỤC TIÊU, III. TIẾN TRÌNH DẠY HỌC và IV. KẾ HOẠCH ĐÁNH GIÁ. Không được bỏ qua.` : ""}
@@ -1167,10 +1171,10 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
 
     QUY TẮC THỰC THI NGHIÊM NGẶT(CRITICAL RULES):
     1. KIỂM TRA ĐIỀU KIỆN TÍCH HỢP:
-    - ${safeIndicatorCode ? "Có mã NL AI hợp lệ từ hệ thống. Phải kiểm tra lại YCCĐ trước khi chèn HOẠT ĐỘNG GIÁO DỤC AI; nếu không có điểm chạm thật sự thì nêu lý do không gán." : "Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không. Nếu không tích hợp thì để trống mục Năng lực AI. Nếu có tích hợp thì chèn HOẠT ĐỘNG GIÁO DỤC AI."}
+    - ${safeIndicatorCode ? "Có mã NL AI hợp lệ từ hệ thống. Phải kiểm tra lại YCCĐ trước khi tích hợp vào đúng hoạt động gốc; nếu không có điểm chạm thật sự thì nêu lý do không gán." : "Tự động đánh giá nội dung bài học để xem có khả năng tích hợp AI hay không. Nếu không tích hợp thì để trống mục Năng lực AI. Nếu có tích hợp thì chỉ bổ sung vào đúng hoạt động gốc, không tạo hoạt động AI riêng."}
     2. MÔ TẢ CÔNG CỤ SỐ AI: Trong hoạt động có tích hợp, phải mô tả cụ thể việc sử dụng các công cụ AI(ChatGPT, Canva, chatbot...) để hỗ trợ học sinh đạt được năng lực tương ứng.
     3. GẮN MÃ CHỈ BÁO: Tại hoạt động tích hợp, BẮT BUỘC ghi rõ mã chỉ báo theo định dạng [Khối lớp].[Ký hiệu Mạch NL (A/B/C/D) + Số thứ tự Chủ đề (1,2,3...)].[STT YCCĐ] (Ví dụ: ${input.grade}.A1.1, ${input.grade}.C2.2). Tuyệt đối khối lớp phải khớp với ${input.grade}. MÃ ĐÚNG CHỈ CÓ 2 DẤU CHẤM, KHÔNG ĐƯỢC CHÈN THÊM CHỮ CÁI THỪA (Không được viết 10.A.A1.1 hay 10.C3.A2.1).
-    4. PHẢN BIỆN & BÁO ĐỘNG ĐỎ: BẮT BUỘC sử dụng thẻ < ai > [🚨 BÁO ĐỘNG ĐỎ - TÍCH HỢP AI] </ai> để đánh dấu hoạt động trọng tâm có ứng dụng công nghệ AI.
+    4. ĐÁNH DẤU MÀU ĐỎ: Chỉ sử dụng thẻ <ai>...</ai> cho đúng đoạn nội dung có tích hợp NLS/NL AI để đoạn đó hiện màu đỏ. Không dùng nhãn "[BÁO ĐỘNG ĐỎ]" và không kẻ bảng riêng cho phần tích hợp.
 
     I.MỤC TIÊU:
     - Kiến thức: Nêu rõ kiến thức cốt lõi. (Theo CV 5512).
@@ -1191,7 +1195,7 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
     2. Hoạt động 2. HÌNH THÀNH KIẾN THỨC MỚI.
     3. Hoạt động 3. LUYỆN TẬP.
     4. Hoạt động 4. VẬN DỤNG.
-    (LƯU Ý: Với bài học "Có tích hợp AI", phải lồng ghép khéo léo "HOẠT ĐỘNG GIÁO DỤC AI" kèm khai báo mã chỉ báo và thẻ[🚨 BÁO ĐỘNG ĐỎ]vào 1 trong 4 bước trên sao cho phù hợp).
+    (LƯU Ý: Với bài học có tích hợp AI, phải lồng ghép khéo léo nội dung tích hợp, mã chỉ báo và thẻ <ai>...</ai> vào đúng vị trí trong 1 trong 4 bước trên sao cho phù hợp; không tạo hoạt động AI riêng).
 
       IV.KẾ HOẠCH ĐÁNH GIÁ:
     BẮT BUỘC thiết kế tiêu chí đánh giá kỹ năng tương tác với AI và khả năng phản biện.QUAN TRỌNG: Tại phần Bài kiểm tra ngắn(Quiz), BẮT BUỘC phải viết nội dung cụ thể của 2 - 3 câu hỏi trắc nghiệm(gồm câu hỏi, 4 đáp án A B C D và đáp án đúng) thay vì chỉ ghi chung chung là "có 5 câu hỏi".
@@ -1240,8 +1244,10 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
             type: Type.OBJECT,
             properties: {
               name: { type: Type.STRING, description: "Tên hoạt động đúng 4 nhóm chuẩn CV 5512, ví dụ: Hoạt động 1. KHỞI ĐỘNG: tên tình huống cụ thể; Hoạt động 2. HÌNH THÀNH KIẾN THỨC MỚI: tên nhiệm vụ; Hoạt động 3. LUYỆN TẬP; Hoạt động 4. VẬN DỤNG." },
+              periodLabel: { type: Type.STRING, description: "Nhãn tiết học nếu bài có nhiều tiết, ví dụ: Tiết 1, Tiết 2, Tiết 3-4. Nếu bài 1 tiết có thể ghi Tiết 1." },
               objective: { type: Type.STRING, description: "a) Mục tiêu của hoạt động: phải rõ học sinh đạt gì, không viết chung chung." },
               content: { type: Type.STRING, description: "b) Nội dung hoạt động: nhiệm vụ, học liệu, câu hỏi, bảng/hình/công thức cần khai thác." },
+              studentNotes: { type: Type.STRING, description: "Nội dung ghi bài của HS: các ý kiến thức cốt lõi học sinh ghi vào vở sau khi GV chốt. Không ghi nhiệm vụ, không ghi sản phẩm chung chung; phải bám SGK/tài liệu gốc." },
               product: { type: Type.STRING, description: "c) Sản phẩm: sản phẩm học tập cụ thể, tiêu chí rõ, không ghi chung chung." },
               procedure: {
                 type: Type.ARRAY,
@@ -1257,7 +1263,7 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
                 },
               },
             },
-            required: ["name", "objective", "content", "product", "procedure"],
+            required: ["name", "periodLabel", "objective", "content", "studentNotes", "product", "procedure"],
           },
         },
         assessment: { type: Type.ARRAY, items: { type: Type.STRING } },

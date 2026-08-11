@@ -141,11 +141,52 @@ const CV5512_STEP_ORDER = [
 const appendText = (base?: string, addition?: string) =>
   [base, addition].filter(value => String(value || "").trim()).join("\n");
 
+const extractPeriodCount = (duration?: string) => {
+  const match = String(duration || "").match(/\d+/);
+  const count = match ? Number(match[0]) : 1;
+  return Number.isFinite(count) && count > 0 ? count : 1;
+};
+
+const getActivityPeriodLabel = (activity: any, index: number, total: number, duration?: string) => {
+  const explicit = activity?.periodLabel || activity?.period || activity?.lessonPeriod;
+  if (explicit) return String(explicit);
+  const nameMatch = String(activity?.name || "").match(/tiết\s*\d+(?:\s*[-–]\s*\d+)?/i);
+  if (nameMatch) return nameMatch[0];
+  const periodCount = extractPeriodCount(duration || activity?.duration);
+  if (periodCount <= 1) return "";
+  if (total <= 1) return "Tiết 1";
+  const period = Math.min(periodCount, Math.max(1, Math.round((index / Math.max(total - 1, 1)) * (periodCount - 1)) + 1));
+  return `Tiết ${period}`;
+};
+
 const stripCv5512Prefix = (name?: string) =>
   String(name || "")
     .replace(/^hoạt\s*động\s*\d+[\s.:-]*/i, "")
     .replace(/^(khởi động|mở đầu|xác định vấn đề|hình thành kiến thức mới|luyện tập|vận dụng)[\s:.-]*/i, "")
     .trim();
+
+const extractStudentNotes = (activity: any) => {
+  const explicit =
+    activity?.studentNotes ||
+    activity?.studentNotebookContent ||
+    activity?.notebookContent ||
+    activity?.coreKnowledge ||
+    activity?.lessonCoreContent;
+  if (explicit) return explicit;
+
+  const procedures = Array.isArray(activity?.procedure) ? activity.procedure : [];
+  const conclusion = [...procedures].reverse().find((step: any) => {
+    const key = normalizeKey(step?.stepName);
+    return key.includes("ket luan") || key.includes("nhan dinh") || key.includes("chot");
+  });
+  const conclusionText = String(conclusion?.teacherStudentActivities || "");
+  const boldNotes = Array.from(conclusionText.matchAll(/<bold>(.*?)<\/bold>/gis))
+    .map(match => match[1]?.trim())
+    .filter(Boolean);
+  if (boldNotes.length) return boldNotes.join("\n");
+
+  return activity?.content || "Giáo viên bổ sung nội dung ghi bài cốt lõi cho học sinh theo SGK/tài liệu gốc.";
+};
 
 const normalizeProcedureToCv5512 = (activity: any) => {
   const procedures = Array.isArray(activity?.procedure) ? activity.procedure : [];
@@ -200,8 +241,10 @@ const normalizeKhbdToCv5512 = (data: any) => {
     return {
       ...found,
       name: customTitle ? `${requiredActivity.prefix}: ${customTitle}` : requiredActivity.prefix,
+      periodLabel: found?.periodLabel || found?.period || found?.lessonPeriod || "",
       objective: found?.objective || "Xác định mục tiêu học tập của hoạt động theo yêu cầu cần đạt.",
       content: found?.content || "Tổ chức nhiệm vụ học tập phù hợp với nội dung bài học.",
+      studentNotes: extractStudentNotes(found),
       product: found?.product || "Sản phẩm học tập thể hiện mức độ đạt mục tiêu của học sinh.",
       procedure: normalizeProcedureToCv5512(found)
     };
@@ -2245,57 +2288,29 @@ export default function App() {
             new Paragraph({ children: [new TextRun({ text: `${t("Học liệu/công cụ cụ thể:")} ${d.materials.digitalAndAI.specificTools.join(", ")}`, color: "FF0000" })], indent: { left: 720 } }),
 
             new Paragraph({ children: [new TextRun({ text: t("III. TIẾN TRÌNH DẠY HỌC"), bold: true, size: 24 })], spacing: { before: 200, after: 100 } }),
-            ...(d.activities || []).flatMap((a: any) => [
-              new Paragraph({ children: [new TextRun({ text: a.name, bold: true })], spacing: { before: 200 } }),
-              new Paragraph({ children: [new TextRun({ text: `${t("a) Mục tiêu:")} ${a.objective}` })], indent: { left: 360 } }),
-              new Paragraph({ children: [new TextRun({ text: `${t("b) Nội dung:")} ${a.content}` })], indent: { left: 360 } }),
-              new Paragraph({ children: [new TextRun({ text: `${t("c) Sản phẩm:")} ${a.product}` })], indent: { left: 360 } }),
-              new Paragraph({ children: [new TextRun({ text: `${t("d) Tổ chức thực hiện:")} 4 bước: Chuyển giao - Thực hiện - Báo cáo, thảo luận - Kết luận, nhận định` })], indent: { left: 360 }, spacing: { after: 100 } }),
-              ...(a.procedure || []).flatMap((p: any) => {
-                // Return step name as normal bold title, then insert side-by-side Table for standard layout
-                return [
-                  new Paragraph({ children: [new TextRun({ text: p.stepName, bold: true })], indent: { left: 540 }, spacing: { before: 150, after: 100 } }),
-                  new Table({
-                    width: { size: 100, type: WidthType.PERCENTAGE },
-                    rows: [
-                      // Header Row
-                      new TableRow({
-                        children: [
-                          new TableCell({
-                            width: { size: 55, type: WidthType.PERCENTAGE },
-                            children: [new Paragraph({ children: [new TextRun({ text: t("Hoạt động của GV và HS:"), bold: true })], alignment: AlignmentType.CENTER })],
-                            shading: { fill: "F1F5F9" },
-                            verticalAlign: VerticalAlign.CENTER
-                          }),
-                          new TableCell({
-                            width: { size: 45, type: WidthType.PERCENTAGE },
-                            children: [new Paragraph({ children: [new TextRun({ text: t("Dự kiến sản phẩm:"), bold: true })], alignment: AlignmentType.CENTER })],
-                            shading: { fill: "F1F5F9" },
-                            verticalAlign: VerticalAlign.CENTER
-                          })
-                        ]
-                      }),
-                      // Content Row
-                      new TableRow({
-                        children: [
-                          new TableCell({
-                            width: { size: 55, type: WidthType.PERCENTAGE },
-                            children: parseContentAndInsertDocx(p.teacherStudentActivities),
-                            verticalAlign: VerticalAlign.TOP
-                          }),
-                          new TableCell({
-                            width: { size: 45, type: WidthType.PERCENTAGE },
-                            children: parseContentAndInsertDocx(p.expectedProduct),
-                            verticalAlign: VerticalAlign.TOP
-                          })
-                        ]
-                      })
-                    ]
-                  }),
-                  new Paragraph({ children: [new TextRun({ text: "" })], spacing: { before: 100 } })
-                ];
-              })
-            ]),
+            ...(d.activities || []).flatMap((a: any, activityIndex: number, arr: any[]) => {
+              const periodLabel = getActivityPeriodLabel(a, activityIndex, arr.length, d.duration || lessonPlanInput.duration);
+              return [
+                ...(periodLabel ? [new Paragraph({ children: [new TextRun({ text: periodLabel, bold: true, color: "0F172A" })], spacing: { before: 180, after: 60 } })] : []),
+                new Paragraph({ children: [new TextRun({ text: a.name, bold: true })], spacing: { before: 160, after: 80 } }),
+                new Paragraph({ children: [new TextRun({ text: t("a) Mục tiêu:"), bold: true })], indent: { left: 360 } }),
+                ...parseContentAndInsertDocx(a.objective),
+                new Paragraph({ children: [new TextRun({ text: t("b) Nội dung:"), bold: true })], indent: { left: 360 }, spacing: { before: 80 } }),
+                ...parseContentAndInsertDocx(a.content),
+                new Paragraph({ children: [new TextRun({ text: "Nội dung ghi bài của HS:", bold: true })], indent: { left: 360 }, spacing: { before: 80 } }),
+                ...parseContentAndInsertDocx(a.studentNotes),
+                new Paragraph({ children: [new TextRun({ text: t("c) Sản phẩm:"), bold: true })], indent: { left: 360 }, spacing: { before: 80 } }),
+                ...parseContentAndInsertDocx(a.product),
+                new Paragraph({ children: [new TextRun({ text: `${t("d) Tổ chức thực hiện:")} 4 bước: Chuyển giao - Thực hiện - Báo cáo, thảo luận - Kết luận, nhận định`, bold: true })], indent: { left: 360 }, spacing: { before: 100, after: 80 } }),
+                ...(a.procedure || []).flatMap((p: any) => [
+                  new Paragraph({ children: [new TextRun({ text: `• ${p.stepName}`, bold: true })], indent: { left: 540 }, spacing: { before: 100, after: 60 } }),
+                  ...parseContentAndInsertDocx(p.teacherStudentActivities),
+                  ...(p.expectedProduct ? [
+                    new Paragraph({ children: [new TextRun({ text: "Dự kiến sản phẩm: ", bold: true, italics: true }), ...parseMarkdownToTextRunsDocx(p.expectedProduct)], indent: { left: 720 }, spacing: { before: 40, after: 80 } })
+                  ] : [])
+                ])
+              ];
+            }),
 
             new Paragraph({ children: [new TextRun({ text: t("IV. KẾ HOẠCH ĐÁNH GIÁ"), bold: true, size: 24 })], spacing: { before: 200, after: 100 } }),
             ...(d.assessment || []).flatMap((a: string) => a.split('\n').filter((l: string) => l.trim()).map((line: string) => new Paragraph({ children: parseMarkdownToTextRunsDocx(`- ${line.trim()}`), indent: { left: 720 } }))),
@@ -2772,10 +2787,31 @@ export default function App() {
     };
 
     const strip = (text: string) => text ? text.replace(/<bold>|<\/bold>|<ai>|<\/ai>|\*\*|#/gi, '') : '';
+    const formatKhbdActivityText = (a: any, index: number, arr: any[], duration?: string) => {
+      const periodLabel = getActivityPeriodLabel(a, index, arr.length, duration);
+      return [
+        periodLabel,
+        a.name,
+        `${t("a) Mục tiêu:")} ${a.objective || ""}`,
+        `${t("b) Nội dung:")} ${a.content || ""}`,
+        `Nội dung ghi bài của HS: ${strip(a.studentNotes || "")}`,
+        `${t("c) Sản phẩm:")} ${a.product || ""}`,
+        `${t("d) Tổ chức thực hiện:")}`,
+        ...(a.procedure || []).map((p: any) => [
+          `${p.stepName}`,
+          `  ${strip(p.teacherStudentActivities)}`,
+          p.expectedProduct ? `  ${t("Dự kiến sản phẩm:")} ${strip(p.expectedProduct)}` : ""
+        ].filter(Boolean).join("\n"))
+      ].filter(Boolean).join("\n");
+    };
 
     if (result.type === "khbd") {
       const d = normalizeKhbdToCv5512(result.data);
       content = `${t("KẾ HOẠCH BÀI DẠY (KHBD)")}\n\n${t("Tên bài dạy:")} ${d.title}\n\n${t("I. MỤC TIÊU")}\n${t("1. Kiến thức:")}\n${(d.objectives.knowledge || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("2. Năng lực môn học:")}\n${(d.objectives.subjectSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("3. Năng lực số:")}\n${(d.objectives.digitalSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("4. Năng lực AI:")}\n${(d.objectives.aiSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("5. Năng lực chung:")}\n${(d.objectives.general || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("6. Phẩm chất:")}\n${(d.objectives.qualities || []).map((q: string) => `- ${q}`).join("\n")}\n\n${t("II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU")}\n${t("1. Thiết bị truyền thống:")} ${(d.materials?.traditional || []).join(", ")}\n${t("2. Công cụ số và AI:")}\n- ${t("Phương án triển khai:")} ${d.materials?.digitalAndAI?.implementationMethod || ""}\n- ${t("Học liệu/công cụ cụ thể:")} ${(d.materials?.digitalAndAI?.specificTools || []).join(", ")}\n\n${t("III. TIẾN TRÌNH DẠY HỌC")}\n${(d.activities || []).map((a: any) => `${a.name}\n${t("a) Mục tiêu:")} ${a.objective}\n${t("b) Nội dung:")} ${a.content}\n${t("c) Sản phẩm:")} ${a.product}\n${t("d) Tổ chức thực hiện:")}\n${(a.procedure || []).map((p: any) => `${p.stepName}\n  - ${t("Hoạt động của GV và HS:")} ${strip(p.teacherStudentActivities)}\n  - ${t("Dự kiến sản phẩm:")} ${strip(p.expectedProduct)}`).join("\n")}`).join("\n\n")}\n\n${t("IV. KẾ HOẠCH ĐÁNH GIÁ")}\n${(d.assessment || []).map((a: string) => `- ${strip(a)}`).join("\n")}\n\n${t("V. PHỤ LỤC")}\n- ${t("Mẫu Prompt:")} ${(d.appendix?.prompts || []).join(", ")}\n- ${t("Bảng kiểm:")}\n${(d.appendix?.checklist || []).map((c: string) => `- ${strip(c)}`).join("\n")}`;
+
+      const legacyActivityText = (d.activities || []).map((a: any) => `${a.name}\n${t("a) Mục tiêu:")} ${a.objective}\n${t("b) Nội dung:")} ${a.content}\n${t("c) Sản phẩm:")} ${a.product}\n${t("d) Tổ chức thực hiện:")}\n${(a.procedure || []).map((p: any) => `${p.stepName}\n  - ${t("Hoạt động của GV và HS:")} ${strip(p.teacherStudentActivities)}\n  - ${t("Dự kiến sản phẩm:")} ${strip(p.expectedProduct)}`).join("\n")}`).join("\n\n");
+      const upgradedActivityText = (d.activities || []).map((a: any, index: number, arr: any[]) => formatKhbdActivityText(a, index, arr, d.duration || lessonPlanInput.duration)).join("\n\n");
+      if (legacyActivityText) content = content.replace(legacyActivityText, upgradedActivityText);
 
       if (evaluationResult) {
         content += `\n\nVI. HỆ THỐNG ĐÁNH GIÁ NĂNG LỤC (CHUẨN CV 3439/BGDĐT & CT GDPT 2018)\n\n`;
@@ -3873,9 +3909,12 @@ export default function App() {
                               III. TIẾN TRÌNH DẠY HỌC
                             </h4>
                             <div className="space-y-8 pl-4">
-                              {(result.data.activities || []).map((act: any, i: number) => (
+                              {(result.data.activities || []).map((act: any, i: number) => {
+                                const periodLabel = getActivityPeriodLabel(act, i, result.data.activities?.length || 0, result.data.duration || lessonPlanInput.duration);
+                                return (
                                 <div key={i} className="space-y-4 border-l-2 border-slate-100 pl-6 relative">
                                   <div className="absolute -left-[9px] top-1 w-4 h-4 bg-white border-2 border-brand-accent rounded-full"></div>
+                                  {periodLabel && <p className="inline-block rounded bg-slate-100 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-brand-sidebar">{periodLabel}</p>}
                                   <h5 className="font-extrabold text-brand-accent text-sm uppercase">{highlightAI(act.name)}</h5>
                                   <div className="grid grid-cols-1 gap-4 text-[13px] leading-relaxed">
                                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
@@ -3892,29 +3931,30 @@ export default function App() {
                                         <div className="text-brand-muted">{renderRichTextBlock(act.product)}</div>
                                       </div>
                                     </div>
+                                    <div className="bg-white/70 p-4 rounded-xl border border-cyan-100">
+                                      <p className="font-bold text-brand-sidebar mb-1 uppercase text-[10px] tracking-wider text-opacity-70">Nội dung ghi bài của HS</p>
+                                      <div className="text-brand-dark font-medium">{renderRichTextBlock(act.studentNotes)}</div>
+                                    </div>
                                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                                       <p className="font-bold text-brand-sidebar mb-3 uppercase text-[10px] tracking-wider text-opacity-70">d) Tổ chức thực hiện - 4 bước CV 5512</p>
                                       <div className="space-y-6">
                                         {(act.procedure || []).map((step: any, idx: number) => (
-                                          <div key={idx} className="space-y-3">
-                                            <p className="font-bold text-brand-sidebar text-[11px] bg-slate-200/50 px-2 py-1 rounded inline-block">{highlightAI(step.stepName)}</p>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2">
-                                              <div className="space-y-1">
-                                                <p className="text-[9px] font-bold text-brand-muted uppercase">Hoạt động của GV và HS</p>
-                                                <div className="text-brand-dark text-[12px] leading-relaxed pl-3 border-l-2 border-brand-accent/20">{renderRichTextBlock(step.teacherStudentActivities)}</div>
+                                          <div key={idx} className="space-y-2 pl-3 border-l-2 border-brand-accent/20">
+                                            <p className="font-bold text-brand-sidebar text-[12px]">{highlightAI(step.stepName)}</p>
+                                            <div className="text-brand-dark text-[12px] leading-relaxed">{renderRichTextBlock(step.teacherStudentActivities)}</div>
+                                            {step.expectedProduct && (
+                                              <div className="text-brand-dark text-[12px] leading-relaxed italic">
+                                                <span className="font-bold not-italic">Dự kiến sản phẩm: </span>{renderRichTextBlock(step.expectedProduct)}
                                               </div>
-                                              <div className="space-y-1">
-                                                <p className="text-[9px] font-bold text-brand-muted uppercase">Dự kiến sản phẩm</p>
-                                                <div className="text-brand-dark text-[12px] leading-relaxed pl-3 border-l-2 border-emerald-500/20 font-medium italic">{renderRichTextBlock(step.expectedProduct)}</div>
-                                              </div>
-                                            </div>
+                                            )}
                                           </div>
                                         ))}
                                       </div>
                                     </div>
                                   </div>
                                 </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </section>
 

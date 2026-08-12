@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import * as mammoth from "mammoth";
 // @ts-ignore
 import html2pdf from "html2pdf.js";
-import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye } from "lucide-react";
+import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye, FileDown, FileCode, Printer, ClipboardCheck } from "lucide-react";
 import { analyzeExistingPlan, generateDirectSnippets } from "../services/geminiService";
 import { injectSnippetsIntoDocx, InjectionResult } from "../utils/docxInjector";
 import { saveAs } from "file-saver";
@@ -289,18 +289,24 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
             return { ...snippet, text: `${snippet.text}\n\n${geoBlock}` };
         });
 
-    const buildObjectiveText = (suggestions = selectedIntegrations) => {
-        const nlsLines = suggestions.map((sug: any, idx: number) => {
+    const buildNlsObjectiveLines = (suggestions = selectedIntegrations) =>
+        suggestions.map((sug: any, idx: number) => {
             const code = sug.suggestedNLS || "Không gán mã - cần đối chiếu YCCĐ theo TT 02/CV 3456.";
             const evidence = sug.yccdEvidence || sug.reason || "Căn cứ từ hoạt động học tập đã chọn.";
             return `${idx + 1}. NLS ${code}: Học sinh ${plain(sug.action).replace(/^Học sinh\s*/i, "")}. Căn cứ YCCĐ: ${plain(evidence)}`;
         });
-        const aiLines = suggestions.map((sug: any, idx: number) => {
+
+    const buildAiObjectiveLines = (suggestions = selectedIntegrations) =>
+        suggestions.map((sug: any, idx: number) => {
             const code = sug.suggestedAI || "Không gán mã";
             return `${idx + 1}. NL AI ${code}: ${plain(sug.reason || sug.action)}`;
         });
+
+    const buildObjectiveText = (suggestions = selectedIntegrations) => {
+        const nlsLines = buildNlsObjectiveLines(suggestions);
+        const aiLines = buildAiObjectiveLines(suggestions);
         return [
-            "Bổ sung trong mục I. MỤC TIÊU - thành phần Năng lực:",
+            "Bổ sung trong mục I. MỤC TIÊU - thành phần Năng lực, đặt sau Năng lực chung và Năng lực đặc thù môn học:",
             "a) Năng lực số (NLS) bám sát YCCĐ môn học:",
             ...(nlsLines.length ? nlsLines : ["- Không có gợi ý NLS được chọn."]),
             "b) Năng lực AI (NL AI) bám sát YCCĐ môn học:",
@@ -436,6 +442,20 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
             assessmentPreview.join("\n")
         );
     };
+
+    const handleStartOver = () => {
+        setStep(1);
+        setFile(null);
+        setAnalysisResult(null);
+        setInjectionResult(null);
+        setReadyBlob(null);
+        setFullPreviewText("");
+        setFullPreviewHtml("");
+        setPreviewHtmlWarning("");
+        setAssessmentPreview([]);
+    };
+
+    const previewToolbarButtonClass = "p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed";
 
     const handleOpenFullLessonPlan = () => {
         const objectiveText = buildObjectiveText();
@@ -758,7 +778,54 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
 
                     {/* ===== STEP 3: PREVIEW BEFORE DOWNLOAD ===== */}
                     {step === 3 && injectionResult && (
-                        <div className="space-y-5">
+                        <div className="space-y-6">
+                            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 sticky top-6 z-10 bg-brand-bg/85 backdrop-blur-md py-2 px-1">
+                                <div className="min-w-0">
+                                    <h3 className="text-xl font-extrabold text-brand-sidebar line-clamp-1">
+                                        KẾ HOẠCH BÀI DẠY: {analysisResult?.topic || file?.name || "Giáo án đã nâng cấp"}
+                                    </h3>
+                                    <div className="text-[10px] text-brand-muted font-bold uppercase flex flex-wrap items-center gap-2 mt-1">
+                                        DOCX gốc + NLS/NL AI
+                                        <span className="w-1 h-1 bg-brand-muted rounded-full"></span>
+                                        Môn: {analysisResult?.subject || "..."}
+                                        <span className="w-1 h-1 bg-brand-muted rounded-full"></span>
+                                        Lớp: {analysisResult?.grade || "..."}
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button onClick={handleConfirmDownload} className={previewToolbarButtonClass} title="Tải xuống Word DOCX giữ nguyên giáo án gốc">
+                                        <FileDown className="w-4 h-4 text-blue-600" />
+                                    </button>
+                                    <button onClick={handleDownloadPreviewPdf} className={previewToolbarButtonClass} title="Tải xuống PDF xem nhanh">
+                                        <FileDown className="w-4 h-4 text-red-500" />
+                                    </button>
+                                    <button onClick={handleDownloadPreviewText} className={previewToolbarButtonClass} title="Tải xuống Text (.txt)">
+                                        <FileText className="w-4 h-4 text-brand-muted" />
+                                    </button>
+                                    <button onClick={handleDownloadPreviewHtml} className={previewToolbarButtonClass} title="Tải xuống HTML xem nhanh">
+                                        <FileCode className="w-4 h-4 text-orange-500" />
+                                    </button>
+                                    <button onClick={handleDownloadAssessmentText} disabled={!assessmentPreview.length} className={previewToolbarButtonClass} title="Tải nội dung đánh giá">
+                                        <ClipboardCheck className="w-4 h-4 text-emerald-600" />
+                                    </button>
+                                    <button onClick={() => window.print()} className={previewToolbarButtonClass} title="In">
+                                        <Printer className="w-4 h-4 text-brand-muted" />
+                                    </button>
+                                    <button
+                                        onClick={() => setStep(2)}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow-md hover:bg-indigo-700 transition-colors"
+                                    >
+                                        Chỉnh sửa
+                                    </button>
+                                    <button
+                                        onClick={handleStartOver}
+                                        className="px-4 py-2 bg-brand-sidebar text-white rounded-lg text-xs font-bold shadow-md hover:bg-slate-900 transition-colors"
+                                    >
+                                        Tạo mới
+                                    </button>
+                                </div>
+                            </div>
+
                             {/* Header Summary */}
                             <div className={`rounded-xl p-4 border flex items-start gap-3 ${injectionResult.injectedCount > 0 ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
                                 <div className={`rounded-full p-1.5 mt-0.5 ${injectionResult.injectedCount > 0 ? "bg-green-100" : "bg-amber-100"}`}>
@@ -784,7 +851,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                         <p className="text-sm font-bold text-emerald-950">Đã kiểm tra bảo toàn giáo án gốc trong file DOCX</p>
                                         <p className="text-xs text-emerald-900 mt-1">
                                             File tải xuống được tạo bằng cách chèn bổ sung vào chính DOCX gốc. App không tái tạo lại giáo án bằng văn bản nên hình ảnh, bảng, biểu đồ, hình vẽ, đối tượng nhúng và công thức trong gói Word được giữ lại.
-                                            Phần NLS/NL AI được đặt trong I. MỤC TIÊU - thành phần Năng lực; các hoạt động dạy học có tích hợp đều được đánh dấu bằng chữ màu đỏ.
+                                            Phần NLS/NL AI được đặt trong I. MỤC TIÊU - thành phần Năng lực, sau Năng lực chung và Năng lực đặc thù môn học; các hoạt động dạy học có tích hợp đều được đánh dấu bằng chữ màu đỏ.
                                         </p>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
                                             {[
@@ -807,27 +874,51 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                 </div>
                             </div>
 
+                            <div className="glass rounded-[24px] p-6 shadow-xl border border-white/70">
+                                <section className="space-y-5">
+                                    <h4 className="text-base font-extrabold text-brand-sidebar border-t border-slate-100 pt-4 uppercase tracking-tight flex items-center gap-3">
+                                        <span className="w-1 h-6 bg-brand-accent rounded-full"></span>
+                                        I. MỤC TIÊU - THỨ TỰ THÀNH PHẦN NĂNG LỰC
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-2">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-brand-muted uppercase mb-3 border border-slate-200">1. Năng lực chung</span>
+                                                <p className="text-xs leading-relaxed text-brand-dark">Giữ nguyên nội dung trong giáo án gốc.</p>
+                                            </div>
+                                            <div>
+                                                <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-emerald-700 uppercase mb-3 border border-slate-200">2. Năng lực đặc thù môn học</span>
+                                                <p className="text-xs leading-relaxed text-brand-dark">Giữ nguyên nội dung trong giáo án gốc.</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">3. Năng lực số</span>
+                                                <ul className="list-disc list-inside space-y-2 text-red-600 text-xs leading-relaxed font-medium">
+                                                    {buildNlsObjectiveLines().map((line, idx) => <li key={idx}>{line.replace(/^\d+\.\s*/, "")}</li>)}
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">4. Năng lực AI đặc thù (3439)</span>
+                                                <ul className="list-disc list-inside space-y-2 text-red-600 text-xs leading-relaxed italic font-medium">
+                                                    {buildAiObjectiveLines().map((line, idx) => <li key={idx}>{line.replace(/^\d+\.\s*/, "")}</li>)}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+
                             {/* Full lesson preview */}
                             {fullPreviewText && (
                                 <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+                                    <div className="flex items-center gap-2 mb-3">
                                         <div className="flex items-center gap-2">
                                             <Eye className="w-4 h-4 text-blue-700" />
                                             <div>
                                                 <p className="text-sm font-bold text-blue-900">Xem trước giáo án DOCX sau tích hợp trên màn hình</p>
                                                 <p className="text-xs text-blue-800 mt-0.5">Bản xem trước HTML dùng để kiểm tra nhanh. Bản DOCX tải xuống là bản giữ nguyên định dạng gốc đầy đủ nhất.</p>
                                             </div>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={handleDownloadPreviewText} className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50">
-                                                Tải TXT kiểm tra
-                                            </button>
-                                            <button onClick={handleDownloadPreviewPdf} className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50">
-                                                Tải PDF xem nhanh
-                                            </button>
-                                            <button onClick={handleDownloadPreviewHtml} className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50">
-                                                Tải HTML xem nhanh
-                                            </button>
                                         </div>
                                     </div>
                                     <div className="mb-3 rounded-lg border border-indigo-100 bg-white/80 p-3 text-xs leading-relaxed text-indigo-900">
@@ -907,7 +998,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                 </button>
                                 <div className="flex flex-wrap gap-3 justify-end">
                                     <button
-                                        onClick={() => { setStep(1); setFile(null); setAnalysisResult(null); setInjectionResult(null); setReadyBlob(null); setFullPreviewText(""); setFullPreviewHtml(""); setPreviewHtmlWarning(""); setAssessmentPreview([]); }}
+                                        onClick={handleStartOver}
                                         className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition-colors border border-slate-200"
                                     >
                                         Tải file khác

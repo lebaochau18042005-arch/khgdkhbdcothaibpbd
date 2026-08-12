@@ -181,6 +181,20 @@ function insertBodyElementsAfter(xmlDoc: Document, reference: Element | null, el
     return !!reference;
 }
 
+function insertBodyElementsBefore(xmlDoc: Document, reference: Element | null, elements: Element[]): boolean {
+    const body = xmlDoc.getElementsByTagName("w:body")[0];
+    if (!body || elements.length === 0) return false;
+
+    const beforeNode = reference?.parentNode === body
+        ? reference
+        : Array.from(body.children).find(child => child.tagName === "w:sectPr") || null;
+
+    for (const element of elements) {
+        body.insertBefore(element, beforeNode);
+    }
+    return !!reference;
+}
+
 function createStyledParagraph(xmlDoc: Document, text: string, colorValue: string, boldText = false, leftIndent = "360"): Element {
     const ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     const paragraph = xmlDoc.createElementNS(ns, "w:p");
@@ -279,6 +293,26 @@ function findParagraphByKeywords(
     return null;
 }
 
+function findLastParagraphByKeywords(
+    paragraphs: HTMLCollectionOf<Element>,
+    keywords: string[],
+    startIndex = 0,
+    endIndex = paragraphs.length
+): Element | null {
+    const normalizedKeywords = keywords.map(normalizeVietnamese);
+    const safeStart = Math.max(0, startIndex);
+    const safeEnd = Math.min(endIndex, paragraphs.length);
+
+    for (let i = safeEnd - 1; i >= safeStart; i--) {
+        const paragraphText = normalizeVietnamese(paragraphs[i].textContent || "");
+        if (normalizedKeywords.some(keyword => paragraphText.includes(keyword))) {
+            return paragraphs[i];
+        }
+    }
+
+    return null;
+}
+
 function insertObjectivesInCompetencySection(
     xmlDoc: Document,
     paragraphs: HTMLCollectionOf<Element>,
@@ -291,6 +325,7 @@ function insertObjectivesInCompetencySection(
     if (!body || !text.trim()) return false;
 
     const objectiveKeywords = headingKeywords.length ? headingKeywords : ["mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu"];
+    const normalizedObjectiveKeywords = objectiveKeywords.map(normalizeVietnamese);
     const competencyKeywords = [
         "năng lực",
         "nang luc",
@@ -303,6 +338,27 @@ function insertObjectivesInCompetencySection(
         "năng lực số",
         "năng lực ai"
     ];
+    const requiredCompetencyKeywords = [
+        "năng lực chung",
+        "nang luc chung",
+        "năng lực đặc thù",
+        "nang luc dac thu",
+        "năng lực môn học",
+        "nang luc mon hoc",
+        "năng lực đặc thù môn học",
+        "nang luc dac thu mon hoc"
+    ];
+    const qualityKeywords = [
+        "phẩm chất",
+        "pham chat",
+        "về phẩm chất",
+        "ve pham chat",
+        "3. phẩm chất",
+        "3 phẩm chất",
+        "6. phẩm chất",
+        "6 phẩm chất"
+    ];
+    const normalizedQualityKeywords = qualityKeywords.map(normalizeVietnamese);
     const nextMajorSectionKeywords = [
         "thiết bị dạy học",
         "thiet bi day hoc",
@@ -313,27 +369,45 @@ function insertObjectivesInCompetencySection(
         "ii.",
         "ii "
     ];
+    const normalizedNextMajorSectionKeywords = nextMajorSectionKeywords.map(normalizeVietnamese);
 
     let objectivesIndex = -1;
     let sectionEndIndex = paragraphs.length;
+    let qualityIndex = -1;
     for (let i = 0; i < paragraphs.length; i++) {
         const paragraphText = normalizeVietnamese(paragraphs[i].textContent || "");
-        if (objectivesIndex < 0 && objectiveKeywords.map(normalizeVietnamese).some(keyword => paragraphText.includes(keyword))) {
+        if (objectivesIndex < 0 && normalizedObjectiveKeywords.some(keyword => paragraphText.includes(keyword))) {
             objectivesIndex = i;
             continue;
         }
-        if (objectivesIndex >= 0 && nextMajorSectionKeywords.map(normalizeVietnamese).some(keyword => paragraphText.includes(keyword))) {
+        if (objectivesIndex >= 0 && qualityIndex < 0 && normalizedQualityKeywords.some(keyword => paragraphText.includes(keyword))) {
+            qualityIndex = i;
+        }
+        if (objectivesIndex >= 0 && normalizedNextMajorSectionKeywords.some(keyword => paragraphText.includes(keyword))) {
             sectionEndIndex = i;
             break;
         }
     }
 
-    const target =
-        objectivesIndex >= 0
-            ? findParagraphByKeywords(paragraphs, competencyKeywords, objectivesIndex + 1, sectionEndIndex)
-            : null;
+    if (objectivesIndex >= 0) {
+        const sectionInsertEnd = qualityIndex >= 0 ? qualityIndex : sectionEndIndex;
+        const target = findParagraphByKeywords(paragraphs, requiredCompetencyKeywords, objectivesIndex + 1, sectionInsertEnd) ||
+            findParagraphByKeywords(paragraphs, competencyKeywords, objectivesIndex + 1, sectionInsertEnd);
+        const beforeTargetIndex = qualityIndex >= 0 ? qualityIndex : (sectionEndIndex < paragraphs.length ? sectionEndIndex : -1);
+
+        if (target && beforeTargetIndex >= 0) {
+            const beforeReference = getTopLevelBodyChild(paragraphs[beforeTargetIndex], body);
+            return insertBodyElementsBefore(xmlDoc, beforeReference, createStyledBlock(xmlDoc, label, text, colorValue));
+        }
+
+        if (target) {
+            const afterTarget = findLastParagraphByKeywords(paragraphs, competencyKeywords, objectivesIndex + 1, sectionEndIndex) || target;
+            const reference = getTopLevelBodyChild(afterTarget, body);
+            return insertBodyElementsAfter(xmlDoc, reference, createStyledBlock(xmlDoc, label, text, colorValue));
+        }
+    }
+
     const fallbackTarget =
-        target ||
         findParagraphByKeywords(paragraphs, competencyKeywords) ||
         findParagraphByKeywords(paragraphs, objectiveKeywords);
 
@@ -364,12 +438,12 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
             xmlDoc,
             paragraphs,
             ["mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu"],
-            "[BỔ SUNG TRONG THÀNH PHẦN NĂNG LỰC: NLS/NL AI]",
+            "[BỔ SUNG SAU NĂNG LỰC CHUNG VÀ NĂNG LỰC ĐẶC THÙ: NLS/NL AI]",
             options.objectivesText,
             "C0392B"
         );
         previewItems.push({
-            activityName: "I. MỤC TIÊU / NĂNG LỰC - bổ sung NLS/NL AI",
+            activityName: "I. MỤC TIÊU / NĂNG LỰC - bổ sung NLS/NL AI sau NL chung và NL đặc thù",
             injectedText: options.objectivesText,
             found
         });

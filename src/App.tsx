@@ -1329,18 +1329,21 @@ export default function App() {
 
   // Hàm generate giáo án trực tiếp từ input (không phụ thuộc vào lessonPlanInput state)
   const handleGenerateKHBDWithInput = async (input: typeof lessonPlanInput) => {
-    if (!requireOnlineForAi("Tạo kế hoạch bài dạy")) return;
+    if (!requireOnlineForAi("Tạo kế hoạch bài dạy")) return null;
     if (!apiKey.trim()) {
       alert("Vui lòng lấy API key để sử dụng app!");
       setShowSettings(true);
-      return;
+      return null;
     }
     setLoading(true);
     setResult(null);
     setEvaluationResult(null);
+    setCouncilEvaluation(null);
     try {
       const data = await generateLessonPlan(input);
-      setResult({ type: "khbd", data: normalizeKhbdToCv5512(data) });
+      const normalized = normalizeKhbdToCv5512(data);
+      setResult({ type: "khbd", data: normalized });
+      return normalized;
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
@@ -1355,6 +1358,7 @@ export default function App() {
         alert(`❌ Lỗi khi tạo giáo án: ${msg || "Lỗi không xác định."}`);
       }
       console.error("[KHBD WithInput Error]", err);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -3103,7 +3107,16 @@ export default function App() {
                     <UpgradePlan
                       apiKey={apiKey}
                       isOnline={isOnline}
-                      onUpgradeReady={(data) => {
+                      onCreateTeacherPlan={(data) => {
+                        setEduPlanInput({
+                          ...eduPlanInput,
+                          subject: data.subject,
+                          grade: data.grade
+                        });
+                        setMode("khgd-gen");
+                        setResult(null);
+                      }}
+                      onUpgradeReady={async (data, nextAction = "khbd") => {
                         const newInput = {
                           subject: data.subject,
                           grade: data.grade,
@@ -3124,10 +3137,45 @@ export default function App() {
                           indicatorCode: data.indicatorCode,
                           selectedNlsIndicators: data.selectedNlsIndicators || [],
                         };
+                        if (nextAction === "teacher-plan") {
+                          setEduPlanInput({
+                            ...eduPlanInput,
+                            subject: data.subject,
+                            grade: data.grade
+                          });
+                          setMode("khgd-gen");
+                          setResult(null);
+                          return;
+                        }
                         setLessonPlanInput(newInput);
                         setMode("khbd-gen");
                         // Tự động tạo giáo án ngay với input trực tiếp (tránh vấn đề state chưa update kịp)
-                        handleGenerateKHBDWithInput(newInput);
+                        const generatedKhbd = await handleGenerateKHBDWithInput(newInput);
+                        if (!generatedKhbd) return;
+
+                        if (nextAction === "assessment") {
+                          setEvaluationLoading(true);
+                          try {
+                            const evaluation = await generateCompetencyEvaluation(generatedKhbd);
+                            setEvaluationResult(evaluation);
+                          } catch (err: any) {
+                            alert(`❌ Lỗi khi thiết kế đánh giá: ${err?.message || "Lỗi không xác định."}`);
+                          } finally {
+                            setEvaluationLoading(false);
+                          }
+                        }
+
+                        if (nextAction === "council") {
+                          setEvaluatingCouncil(true);
+                          try {
+                            const council = await evaluateLessonPlan(JSON.stringify(generatedKhbd), { apiKey, aiModel });
+                            setCouncilEvaluation(council);
+                          } catch (err: any) {
+                            alert(`❌ Lỗi khi gọi Hội đồng AI đánh giá: ${err?.message || "Lỗi không xác định."}`);
+                          } finally {
+                            setEvaluatingCouncil(false);
+                          }
+                        }
                       }}
                     />
                   </motion.div>

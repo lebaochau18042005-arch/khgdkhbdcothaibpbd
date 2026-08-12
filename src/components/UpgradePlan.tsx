@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import * as mammoth from "mammoth";
 // @ts-ignore
 import html2pdf from "html2pdf.js";
-import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye, FileDown, FileCode, Printer, ClipboardCheck } from "lucide-react";
+import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye, FileDown, FileCode, Printer, ClipboardCheck, Calendar, BrainCircuit } from "lucide-react";
 import { analyzeExistingPlan, generateDirectSnippets } from "../services/geminiService";
 import { injectSnippetsIntoDocx, InjectionResult } from "../utils/docxInjector";
 import { saveAs } from "file-saver";
@@ -15,7 +15,19 @@ interface TextbookImage {
     name: string;
 }
 
-export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }: { onUpgradeReady: (data: any) => void, apiKey: string, isOnline?: boolean }) {
+type UpgradeNextAction = "khbd" | "teacher-plan" | "assessment" | "council";
+
+export default function UpgradePlan({
+    onUpgradeReady,
+    onCreateTeacherPlan,
+    apiKey,
+    isOnline = true
+}: {
+    onUpgradeReady: (data: any, nextAction?: UpgradeNextAction) => void | Promise<void>,
+    onCreateTeacherPlan?: (data: any) => void,
+    apiKey: string,
+    isOnline?: boolean
+}) {
     const [step, setStep] = useState(1);
     const [file, setFile] = useState<File | null>(null);
     const [rawText, setRawText] = useState("");
@@ -457,14 +469,14 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
 
     const previewToolbarButtonClass = "p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed";
 
-    const handleOpenFullLessonPlan = () => {
+    const buildUpgradePayload = () => {
         const objectiveText = buildObjectiveText();
         const assessmentText = buildAssessmentText();
         const geoDataText = buildGeoDataText();
         const selectedNlsIndicators = selectedIntegrations
             .map((sug: any) => ({ code: sug.suggestedNLS, description: `${sug.activityName}: ${sug.yccdEvidence || sug.reason || sug.action}` }))
             .filter((item: any) => item.code && !String(item.code).toLowerCase().includes("không"));
-        onUpgradeReady({
+        return {
             subject: analysisResult.subject || "Khác",
             grade: analysisResult.grade || "10",
             topic: analysisResult.topic || "Bài học nâng cấp",
@@ -482,7 +494,20 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
             additionalNotes: `Nội dung tích hợp đã duyệt:\n${objectiveText}\n\n${geoDataText ? `${geoDataText}\n\n` : ""}Gợi ý đánh giá:\n${assessmentText}`,
             indicatorCode: selectedIntegrations.find((sug: any) => hasValidAiCode(sug.suggestedAI))?.suggestedAI,
             selectedNlsIndicators
-        });
+        };
+    };
+
+    const handleOpenFullLessonPlan = (nextAction: UpgradeNextAction = "khbd") => {
+        onUpgradeReady(buildUpgradePayload(), nextAction);
+    };
+
+    const handleCreateTeacherPlan = () => {
+        const payload = buildUpgradePayload();
+        if (onCreateTeacherPlan) {
+            onCreateTeacherPlan(payload);
+            return;
+        }
+        onUpgradeReady(payload, "teacher-plan");
     };
 
     return (
@@ -822,6 +847,24 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                         className="px-4 py-2 bg-brand-sidebar text-white rounded-lg text-xs font-bold shadow-md hover:bg-slate-900 transition-colors"
                                     >
                                         Tạo mới
+                                    </button>
+                                    <button
+                                        onClick={handleCreateTeacherPlan}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow-md hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                                    >
+                                        <Calendar className="w-3 h-3" /> Lập KH Giáo dục GV
+                                    </button>
+                                    <button
+                                        onClick={() => handleOpenFullLessonPlan("assessment")}
+                                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-md hover:bg-emerald-700 transition-colors flex items-center gap-2"
+                                    >
+                                        <ClipboardCheck className="w-3 h-3" /> Thiết kế đánh giá
+                                    </button>
+                                    <button
+                                        onClick={() => handleOpenFullLessonPlan("council")}
+                                        className="px-4 py-2 bg-brand-accent text-white rounded-lg text-xs font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                    >
+                                        <BrainCircuit className="w-3 h-3" /> Đánh giá Hội đồng AI
                                     </button>
                                 </div>
                             </div>

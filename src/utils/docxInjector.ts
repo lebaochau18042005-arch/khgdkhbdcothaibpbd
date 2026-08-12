@@ -540,3 +540,65 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
     const blob = await zip.generateAsync({ type: "blob" });
     return { blob, injectedCount, skippedActivities, previewItems, preservationReport };
 }
+
+export async function appendAssessmentDesignToDocx(source: Blob | File, assessmentText: string): Promise<{ blob: Blob; preservationReport: PreservationReport }> {
+    if (!assessmentText.trim()) {
+        throw new Error("Không có nội dung thiết kế đánh giá để chèn vào DOCX.");
+    }
+
+    const zip = await JSZip.loadAsync(source);
+    const originalPackageParts = getPackageParts(zip);
+    const xmlContent = await zip.file("word/document.xml")?.async("string");
+
+    if (!xmlContent) {
+        throw new Error("Không tìm thấy word/document.xml trong file DOCX này. File có thể bị hỏng.");
+    }
+
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlContent, "application/xml");
+    const paragraphs = xmlDoc.getElementsByTagName("w:p");
+    const originalStats = await countWordXmlStructures(zip);
+
+    insertBlockNearHeading(
+        xmlDoc,
+        paragraphs,
+        [
+            "gợi ý đánh giá nls",
+            "goi y danh gia nls",
+            "thiết kế đánh giá",
+            "thiet ke danh gia",
+            "đánh giá nl ai",
+            "danh gia nl ai",
+            "đánh giá nls",
+            "danh gia nls",
+            "kiểm tra đánh giá",
+            "kiem tra danh gia",
+            "đánh giá kết quả học tập",
+            "danh gia ket qua hoc tap"
+        ],
+        "[THIẾT KẾ ĐÁNH GIÁ NLS/NL AI]",
+        assessmentText,
+        "C0392B"
+    );
+
+    const serializer = new XMLSerializer();
+    const newXml = serializer.serializeToString(xmlDoc);
+    zip.file("word/document.xml", newXml);
+
+    const outputStats = await countWordXmlStructures(zip, { "word/document.xml": newXml });
+    const outputPackageParts = getPackageParts(zip);
+    const preservationReport = buildPreservationReport(
+        originalPackageParts,
+        outputPackageParts,
+        originalStats,
+        outputStats
+    );
+
+    if (preservationReport.status !== "passed") {
+        const details = preservationReport.warnings.join(" ");
+        throw new Error(`Không xuất file vì kiểm tra bảo toàn giáo án gốc chưa đạt. ${details}`);
+    }
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    return { blob, preservationReport };
+}

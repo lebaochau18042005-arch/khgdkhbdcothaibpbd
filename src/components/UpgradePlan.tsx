@@ -5,7 +5,7 @@ import * as mammoth from "mammoth";
 import html2pdf from "html2pdf.js";
 import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye, FileDown, FileCode, Printer, ClipboardCheck, Calendar, BrainCircuit, Search, LayoutGrid, AlertCircle } from "lucide-react";
 import { analyzeExistingPlan, generateDirectSnippets } from "../services/geminiService";
-import { injectSnippetsIntoDocx, InjectionResult } from "../utils/docxInjector";
+import { appendAssessmentDesignToDocx, injectSnippetsIntoDocx, InjectionResult } from "../utils/docxInjector";
 import { saveAs } from "file-saver";
 
 interface TextbookImage {
@@ -53,6 +53,8 @@ export default function UpgradePlan({
     const [showAssessmentDesign, setShowAssessmentDesign] = useState(false);
     const [preservedAssessmentResult, setPreservedAssessmentResult] = useState<any>(null);
     const [isDesigningAssessment, setIsDesigningAssessment] = useState(false);
+    const [assessmentEmbeddedInDocx, setAssessmentEmbeddedInDocx] = useState(false);
+    const [isUpdatingDocxWithAssessment, setIsUpdatingDocxWithAssessment] = useState(false);
     const [preservedCouncilEvaluation, setPreservedCouncilEvaluation] = useState<any>(null);
     const [isEvaluatingPreservedCouncil, setIsEvaluatingPreservedCouncil] = useState(false);
 
@@ -146,6 +148,8 @@ export default function UpgradePlan({
         setShowAssessmentDesign(false);
         setPreservedAssessmentResult(null);
         setIsDesigningAssessment(false);
+        setAssessmentEmbeddedInDocx(false);
+        setIsUpdatingDocxWithAssessment(false);
         setPreservedCouncilEvaluation(null);
         setIsEvaluatingPreservedCouncil(false);
         setIsAnalyzing(true);
@@ -248,6 +252,8 @@ export default function UpgradePlan({
             setShowAssessmentDesign(false);
             setPreservedAssessmentResult(null);
             setIsDesigningAssessment(false);
+            setAssessmentEmbeddedInDocx(false);
+            setIsUpdatingDocxWithAssessment(false);
             setPreservedCouncilEvaluation(null);
             setStep(3);
 
@@ -261,9 +267,16 @@ export default function UpgradePlan({
         }
     };
 
-    const handleConfirmDownload = () => {
+    const handleConfirmDownload = async () => {
         if (!readyBlob || !file) return;
-        saveAs(readyBlob, file.name.replace(/\.docx$/i, "_AI_NangCap.docx"));
+        try {
+            const blobToSave = await ensureAssessmentResultInDocx();
+            if (!blobToSave) return;
+            saveAs(blobToSave, file.name.replace(/\.docx$/i, "_AI_NangCap.docx"));
+        } catch (err) {
+            console.error("Không chèn được thiết kế đánh giá vào DOCX trước khi tải", err);
+            alert("❌ Chưa thể chèn nội dung thiết kế đánh giá vào file DOCX. Vui lòng thử bấm lại nút Thiết kế đánh giá hoặc tải lại giáo án.");
+        }
     };
 
 
@@ -538,6 +551,44 @@ export default function UpgradePlan({
         return lines.filter(line => line !== undefined && line !== null).join("\n");
     };
 
+    const embedAssessmentResultInDocx = async (evaluation: any, sourceBlob: Blob | null = readyBlob) => {
+        if (!sourceBlob || !evaluation) return sourceBlob;
+        const assessmentText = formatPreservedAssessmentText(evaluation);
+        setIsUpdatingDocxWithAssessment(true);
+        try {
+            const updated = await appendAssessmentDesignToDocx(sourceBlob, assessmentText);
+            const preview = await buildDocxHtmlPreview(updated.blob);
+            setReadyBlob(updated.blob);
+            setAssessmentEmbeddedInDocx(true);
+            setFullPreviewText(preview.text || [fullPreviewText, "", "V. THIẾT KẾ ĐÁNH GIÁ NLS/NL AI", assessmentText].filter(Boolean).join("\n"));
+            setFullPreviewHtml(preview.html);
+            setPreviewHtmlWarning(preview.warning);
+            setInjectionResult(prev => prev ? {
+                ...prev,
+                blob: updated.blob,
+                injectedCount: prev.injectedCount + 1,
+                preservationReport: updated.preservationReport,
+                previewItems: [
+                    ...prev.previewItems,
+                    {
+                        activityName: "Thiết kế đánh giá NLS/NL AI",
+                        injectedText: assessmentText,
+                        found: true
+                    }
+                ]
+            } : prev);
+            return updated.blob;
+        } finally {
+            setIsUpdatingDocxWithAssessment(false);
+        }
+    };
+
+    const ensureAssessmentResultInDocx = async () => {
+        if (!readyBlob) return null;
+        if (!preservedAssessmentResult || assessmentEmbeddedInDocx) return readyBlob;
+        return embedAssessmentResultInDocx(preservedAssessmentResult, readyBlob);
+    };
+
     const escapeHtml = (text: string) => text
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -609,6 +660,8 @@ export default function UpgradePlan({
         setShowAssessmentDesign(false);
         setPreservedAssessmentResult(null);
         setIsDesigningAssessment(false);
+        setAssessmentEmbeddedInDocx(false);
+        setIsUpdatingDocxWithAssessment(false);
         setPreservedCouncilEvaluation(null);
         setIsEvaluatingPreservedCouncil(false);
     };
@@ -677,6 +730,12 @@ export default function UpgradePlan({
             });
             if (result) {
                 setPreservedAssessmentResult(result);
+                try {
+                    await embedAssessmentResultInDocx(result);
+                } catch (err) {
+                    console.error("Không chèn được thiết kế đánh giá vào DOCX", err);
+                    alert("⚠️ Đã tạo được thiết kế đánh giá, nhưng chưa chèn được vào file DOCX tải xuống. Vui lòng bấm tải lại DOCX sau khi kiểm tra kết nối.");
+                }
                 setTimeout(() => {
                     document.getElementById("upgrade-assessment-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }, 50);
@@ -1022,8 +1081,13 @@ export default function UpgradePlan({
                                     </div>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <button onClick={handleConfirmDownload} className={previewToolbarButtonClass} title="Tải xuống Word DOCX giữ nguyên giáo án gốc">
-                                        <FileDown className="w-4 h-4 text-blue-600" />
+                                    <button
+                                        onClick={handleConfirmDownload}
+                                        disabled={isUpdatingDocxWithAssessment}
+                                        className={`${previewToolbarButtonClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                        title="Tải xuống Word DOCX giữ nguyên giáo án gốc"
+                                    >
+                                        {isUpdatingDocxWithAssessment ? <Loader2 className="w-4 h-4 text-blue-600 animate-spin" /> : <FileDown className="w-4 h-4 text-blue-600" />}
                                     </button>
                                     <button onClick={handleDownloadPreviewPdf} className={previewToolbarButtonClass} title="Tải xuống PDF xem nhanh">
                                         <FileDown className="w-4 h-4 text-red-500" />
@@ -1215,6 +1279,23 @@ export default function UpgradePlan({
                                         <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-800">
                                             <Loader2 className="w-5 h-5 animate-spin" />
                                             Đang thiết kế bộ đánh giá đầy đủ như PL4 từ giáo án DOCX đã bảo toàn...
+                                        </div>
+                                    )}
+
+                                    {preservedAssessmentResult && (
+                                        <div className="mb-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-white/85 px-3 py-2 text-xs font-semibold text-emerald-800">
+                                            {isUpdatingDocxWithAssessment ? (
+                                                <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
+                                            ) : (
+                                                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                                            )}
+                                            <span>
+                                                {isUpdatingDocxWithAssessment
+                                                    ? "Đang đưa thiết kế đánh giá vào KHBD để xuất file..."
+                                                    : assessmentEmbeddedInDocx
+                                                        ? "Thiết kế đánh giá đã được đưa vào file KHBD tải xuống, giữ nguyên giáo án gốc và bổ sung bằng chữ màu đỏ."
+                                                        : "Khi tải DOCX, app sẽ tự đưa thiết kế đánh giá vào KHBD và giữ nguyên giáo án gốc."}
+                                            </span>
                                         </div>
                                     )}
 
@@ -1480,9 +1561,11 @@ export default function UpgradePlan({
                                     </button>
                                     <button
                                         onClick={handleConfirmDownload}
-                                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 transition-colors"
+                                        disabled={isUpdatingDocxWithAssessment}
+                                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                     >
-                                        <Download className="w-4 h-4" /> Tải DOCX giữ nguyên giáo án gốc
+                                        {isUpdatingDocxWithAssessment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                        {isUpdatingDocxWithAssessment ? "Đang chèn đánh giá..." : "Tải DOCX giữ nguyên giáo án gốc"}
                                     </button>
                                 </div>
                             </div>

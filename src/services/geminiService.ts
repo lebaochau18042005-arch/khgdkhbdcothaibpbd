@@ -141,6 +141,11 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
 const CONTENT_INTEGRITY_RULES = `
 ==== NGUYÊN TẮc NỘI DUNG BẮT BUỘC (KHÔNG ĐƯỢC VI PHẠM) ====
 
+0. BẢO TOÀN FILE GIÁO ÁN TẢI LÊN:
+- Khi giáo viên tải lên giáo án gốc, nội dung gốc là nền bắt buộc phải giữ nguyên. Không được rút gọn, viết lại, sắp xếp lại hoặc thay thế bằng bản do AI tái tạo.
+- Nếu giáo án gốc có bảng số liệu, biểu đồ, hình vẽ, ảnh, sơ đồ, công thức Toán/Lí/Hóa/Sinh/Địa lí hoặc đối tượng nhúng, phải giữ đúng định dạng trong file gốc. Không được chuyển chúng thành đoạn mô tả văn bản thay thế.
+- AI chỉ được tạo phần BỔ SUNG NLS/NL AI. Phần bổ sung phải được đánh dấu bằng chữ màu đỏ khi chèn vào DOCX; phần gốc giữ nguyên màu sắc, bố cục và định dạng.
+
 3.1. NGHIÊM CẤM TỰ ĐOÁN NỘI DUNG - BẨT BUỘC TUÂN THỦ:
 - TUYỆT ĐỐI KHÔNG tự bịa đặt hoặc khẳng định bất kỳ thông tin nào nếu chưa có dữ liệu nguồn rõ ràng từ file tải lên hoặc CURRICULUM_DB.
 - Các thông tin NGHIÊM CẤM tự suy đoán bao gồm: Tên bài học, số lượng bài, thứ tự bài, số tiết, nội dung Yêu cầu cần đạt, số liệu địa lí, tên địa danh, nội dung biểu đồ/bản đồ/bảng số liệu, đáp án câu hỏi không có cơ sở, mã năng lực số, mã năng lực AI.
@@ -921,7 +926,8 @@ ${JSON.stringify(sanitizedSuggestions, null, 2)}
 
 ${competencyGuardrails}
 
-Nhiệm vụ: Viết MỘT ĐOẠN VĂN BẢN CHI TIẾT cho mỗi hoạt động để giáo viên có thể CHÈN TRỰC TIẾP vào giáo án Word của họ. Đoạn văn này phải mô tả rõ:
+Nhiệm vụ: Viết MỘT ĐOẠN GHI CHÚ BỔ SUNG cho mỗi hoạt động để app CHÈN THÊM vào chính file DOCX gốc của giáo viên. TUYỆT ĐỐI KHÔNG viết lại giáo án, không tóm tắt giáo án, không thay thế bảng/biểu/hình/công thức đang có trong file gốc. Đoạn bổ sung này sẽ được app tự định dạng chữ màu đỏ trong Word, vì vậy không cần bọc thẻ <ai>.
+Đoạn văn này phải mô tả rõ:
 1. Nhiệm vụ cụ thể của học sinh với công cụ AI.
 2. Câu lệnh Prompt gợi ý (nếu có).
 3. Yêu cầu sản phẩm.

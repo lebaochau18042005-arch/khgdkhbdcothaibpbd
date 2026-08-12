@@ -91,6 +91,35 @@ function countXmlStructure(xmlDoc: Document): XmlStructureStats {
     };
 }
 
+function emptyXmlStats(): XmlStructureStats {
+    return { tableCount: 0, drawingCount: 0, mathCount: 0 };
+}
+
+function addXmlStats(a: XmlStructureStats, b: XmlStructureStats): XmlStructureStats {
+    return {
+        tableCount: a.tableCount + b.tableCount,
+        drawingCount: a.drawingCount + b.drawingCount,
+        mathCount: a.mathCount + b.mathCount
+    };
+}
+
+async function countWordXmlStructures(zip: JSZip, overrides: Record<string, string> = {}): Promise<XmlStructureStats> {
+    const parser = new DOMParser();
+    const xmlPartNames = getPackageParts(zip).filter(part =>
+        /^word\/.*\.xml$/i.test(part) && !/^word\/_rels\//i.test(part)
+    );
+    let stats = emptyXmlStats();
+
+    for (const partName of xmlPartNames) {
+        const xml = overrides[partName] ?? await zip.file(partName)?.async("string");
+        if (!xml) continue;
+        const xmlDoc = parser.parseFromString(xml, "application/xml");
+        stats = addXmlStats(stats, countXmlStructure(xmlDoc));
+    }
+
+    return stats;
+}
+
 function buildPreservationReport(
     originalParts: string[],
     outputParts: string[],
@@ -182,7 +211,7 @@ function createStyledParagraph(xmlDoc: Document, text: string, colorValue: strin
     run.appendChild(rPr);
 
     const wT = xmlDoc.createElementNS(ns, "w:t");
-    wT.textContent = text;
+    wT.textContent = cleanInjectedText(text);
     wT.setAttribute("xml:space", "preserve");
     run.appendChild(wT);
 
@@ -190,8 +219,16 @@ function createStyledParagraph(xmlDoc: Document, text: string, colorValue: strin
     return paragraph;
 }
 
+function cleanInjectedText(text: string): string {
+    return (text || "")
+        .replace(/<\/?ai>/gi, "")
+        .replace(/<\/?bold>/gi, "")
+        .replace(/\*\*/g, "")
+        .trim();
+}
+
 function createStyledBlock(xmlDoc: Document, label: string, text: string, colorValue: string): Element[] {
-    const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
+    const lines = text.split("\n").map(line => cleanInjectedText(line)).filter(Boolean);
     return [
         createStyledParagraph(xmlDoc, label, colorValue, true, "0"),
         ...lines.map(line => createStyledParagraph(xmlDoc, line, colorValue, false, "360"))
@@ -235,7 +272,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlContent, "application/xml");
     const paragraphs = xmlDoc.getElementsByTagName("w:p");
-    const originalStats = countXmlStructure(xmlDoc);
+    const originalStats = await countWordXmlStructures(zip);
 
     let injectedCount = 0;
     const skippedActivities: string[] = [];
@@ -265,7 +302,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
             ["đánh giá", "danh gia", "kiểm tra", "kiem tra"],
             "[GỢI Ý ĐÁNH GIÁ NLS/NL AI]",
             options.assessmentText,
-            "1E40AF"
+            "C0392B"
         );
         previewItems.push({
             activityName: "IV. ĐÁNH GIÁ - bổ sung tiêu chí NLS/NL AI",
@@ -331,7 +368,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
     const serializer = new XMLSerializer();
     const newXml = serializer.serializeToString(xmlDoc);
     zip.file("word/document.xml", newXml);
-    const outputStats = countXmlStructure(xmlDoc);
+    const outputStats = await countWordXmlStructures(zip, { "word/document.xml": newXml });
     const outputPackageParts = getPackageParts(zip);
     const preservationReport = buildPreservationReport(
         originalPackageParts,

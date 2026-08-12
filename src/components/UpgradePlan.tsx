@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 // @ts-ignore
 import * as mammoth from "mammoth";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye } from "lucide-react";
 import { analyzeExistingPlan, generateDirectSnippets } from "../services/geminiService";
 import { injectSnippetsIntoDocx, InjectionResult } from "../utils/docxInjector";
@@ -214,7 +216,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
             setInjectionResult(result);
             setReadyBlob(result.blob);
             setAssessmentPreview(assessmentText.split("\n").filter(line => line.trim()));
-            setFullPreviewText(buildFullPreview(snippets, objectiveText, assessmentText));
+            setFullPreviewText(preview.text || buildFullPreview(snippets, objectiveText, assessmentText));
             setFullPreviewHtml(preview.html);
             setPreviewHtmlWarning(preview.warning);
             setStep(3);
@@ -291,17 +293,17 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
         const nlsLines = suggestions.map((sug: any, idx: number) => {
             const code = sug.suggestedNLS || "Không gán mã - cần đối chiếu YCCĐ theo TT 02/CV 3456.";
             const evidence = sug.yccdEvidence || sug.reason || "Căn cứ từ hoạt động học tập đã chọn.";
-            return `${idx + 1}. Năng lực số: ${code} - Học sinh ${plain(sug.action).replace(/^Học sinh\s*/i, "")}. Căn cứ: ${plain(evidence)}`;
+            return `${idx + 1}. NLS ${code}: Học sinh ${plain(sug.action).replace(/^Học sinh\s*/i, "")}. Căn cứ YCCĐ: ${plain(evidence)}`;
         });
         const aiLines = suggestions.map((sug: any, idx: number) => {
             const code = sug.suggestedAI || "Không gán mã";
-            return `${idx + 1}. Năng lực AI: ${code} - ${plain(sug.reason || sug.action)}`;
+            return `${idx + 1}. NL AI ${code}: ${plain(sug.reason || sug.action)}`;
         });
         return [
-            "Bổ sung vào mục I. MỤC TIÊU:",
-            "a) Năng lực số:",
+            "Bổ sung trong mục I. MỤC TIÊU - thành phần Năng lực:",
+            "a) Năng lực số (NLS) bám sát YCCĐ môn học:",
             ...(nlsLines.length ? nlsLines : ["- Không có gợi ý NLS được chọn."]),
-            "b) Năng lực AI:",
+            "b) Năng lực AI (NL AI) bám sát YCCĐ môn học:",
             ...(aiLines.length ? aiLines : ["- Không có gợi ý NL AI được chọn."])
         ].join("\n");
     };
@@ -342,25 +344,31 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
         ].join("\n");
     };
 
-    const buildDocxHtmlPreview = async (blob: Blob): Promise<{ html: string; warning: string }> => {
+    const buildDocxHtmlPreview = async (blob: Blob): Promise<{ html: string; text: string; warning: string }> => {
         try {
             const arrayBuffer = await blob.arrayBuffer();
-            const result = await mammoth.convertToHtml(
-                { arrayBuffer },
-                {
-                    convertImage: mammoth.images.imgElement(async (image: any) => ({
-                        src: `data:${image.contentType};base64,${await image.read("base64")}`
-                    }))
-                }
-            );
+            const htmlBuffer = arrayBuffer.slice(0);
+            const textBuffer = arrayBuffer.slice(0);
+            const [result, raw] = await Promise.all([
+                mammoth.convertToHtml(
+                    { arrayBuffer: htmlBuffer },
+                    {
+                        convertImage: mammoth.images.imgElement(async (image: any) => ({
+                            src: `data:${image.contentType};base64,${await image.read("base64")}`
+                        }))
+                    }
+                ),
+                mammoth.extractRawText({ arrayBuffer: textBuffer })
+            ]);
             const warning = (result.messages || []).length
                 ? "Một số thành phần Word phức tạp có thể không hiển thị hoàn hảo trong bản xem nhanh HTML, nhưng vẫn được giữ trong DOCX tải xuống."
                 : "";
-            return { html: result.value || "", warning };
+            return { html: result.value || "", text: raw.value || "", warning };
         } catch (err) {
             console.warn("Không tạo được bản xem trước HTML từ DOCX", err);
             return {
                 html: "",
+                text: "",
                 warning: "Không tạo được bản xem trước HTML. File DOCX đã tích hợp vẫn là bản giữ nguyên cấu trúc gốc để tải xuống."
             };
         }
@@ -376,6 +384,15 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 
+    const buildPreviewBodyHtml = () => fullPreviewHtml
+        ? `<div class="note">Bản HTML/PDF dùng để xem nhanh trên màn hình. Bản DOCX tải xuống mới là bản bảo toàn nghiêm ngặt hình ảnh, bảng, biểu đồ, hình vẽ và công thức.</div><div class="docx">${fullPreviewHtml}</div>`
+        : `<pre>${escapeHtml(fullPreviewText)}</pre>`;
+
+    const buildPreviewHtmlDocument = () => {
+        const body = buildPreviewBodyHtml();
+        return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(analysisResult?.topic || "Giáo án tích hợp AI")}</title><style>body{font-family:Arial,sans-serif;line-height:1.6;margin:32px;color:#0f172a}.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;color:#1e3a8a;font-weight:700}.docx table{border-collapse:collapse;width:100%;margin:12px 0}.docx td,.docx th{border:1px solid #cbd5e1;padding:6px;vertical-align:top}.docx img{max-width:100%;height:auto}pre{white-space:pre-wrap;font-family:Arial,sans-serif}</style></head><body>${body}</body></html>`;
+    };
+
     const handleDownloadPreviewText = () => {
         if (!fullPreviewText) return;
         downloadTextFile(`${analysisResult?.topic || "Giao_an"}_AI_ToanVan.txt`, fullPreviewText);
@@ -383,11 +400,41 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
 
     const handleDownloadPreviewHtml = () => {
         if (!fullPreviewText && !fullPreviewHtml) return;
-        const body = fullPreviewHtml
-            ? `<div class="note">Bản HTML chỉ dùng để xem nhanh. Bản DOCX tải xuống mới là bản bảo toàn nghiêm ngặt hình ảnh, bảng, biểu đồ, hình vẽ và công thức.</div><div class="docx">${fullPreviewHtml}</div>`
-            : `<pre>${escapeHtml(fullPreviewText)}</pre>`;
-        const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(analysisResult?.topic || "Giáo án tích hợp AI")}</title><style>body{font-family:Arial,sans-serif;line-height:1.6;margin:32px;color:#0f172a}.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;color:#1e3a8a;font-weight:700}.docx table{border-collapse:collapse;width:100%;margin:12px 0}.docx td,.docx th{border:1px solid #cbd5e1;padding:6px;vertical-align:top}.docx img{max-width:100%;height:auto}pre{white-space:pre-wrap;font-family:Arial,sans-serif}</style></head><body>${body}</body></html>`;
-        downloadTextFile(`${analysisResult?.topic || "Giao_an"}_AI_ToanVan.html`, html, "text/html;charset=utf-8");
+        downloadTextFile(`${analysisResult?.topic || "Giao_an"}_AI_ToanVan.html`, buildPreviewHtmlDocument(), "text/html;charset=utf-8");
+    };
+
+    const handleDownloadPreviewPdf = async () => {
+        if (!fullPreviewText && !fullPreviewHtml) return;
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = buildPreviewBodyHtml();
+        wrapper.style.cssText = "font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a; background: #ffffff; padding: 24px; max-width: 760px;";
+        const style = document.createElement("style");
+        style.textContent = ".docx table{border-collapse:collapse;width:100%;margin:12px 0}.docx td,.docx th{border:1px solid #cbd5e1;padding:6px;vertical-align:top}.docx img{max-width:100%;height:auto}.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;color:#1e3a8a;font-weight:700}pre{white-space:pre-wrap;font-family:Arial,sans-serif}";
+        wrapper.prepend(style);
+        document.body.appendChild(wrapper);
+
+        try {
+            await html2pdf()
+                .set({
+                    margin: 10,
+                    filename: `${analysisResult?.topic || "Giao_an"}_AI_XemTruoc.pdf`,
+                    image: { type: "jpeg", quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+                })
+                .from(wrapper)
+                .save();
+        } finally {
+            wrapper.remove();
+        }
+    };
+
+    const handleDownloadAssessmentText = () => {
+        if (!assessmentPreview.length) return;
+        downloadTextFile(
+            `${analysisResult?.topic || "Giao_an"}_DanhGia_NLS_NLAI.txt`,
+            assessmentPreview.join("\n")
+        );
     };
 
     const handleOpenFullLessonPlan = () => {
@@ -737,6 +784,7 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                         <p className="text-sm font-bold text-emerald-950">Đã kiểm tra bảo toàn giáo án gốc trong file DOCX</p>
                                         <p className="text-xs text-emerald-900 mt-1">
                                             File tải xuống được tạo bằng cách chèn bổ sung vào chính DOCX gốc. App không tái tạo lại giáo án bằng văn bản nên hình ảnh, bảng, biểu đồ, hình vẽ, đối tượng nhúng và công thức trong gói Word được giữ lại.
+                                            Phần NLS/NL AI được đặt trong I. MỤC TIÊU - thành phần Năng lực; các hoạt động dạy học có tích hợp đều được đánh dấu bằng chữ màu đỏ.
                                         </p>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
                                             {[
@@ -774,6 +822,9 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
                                             <button onClick={handleDownloadPreviewText} className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50">
                                                 Tải TXT kiểm tra
                                             </button>
+                                            <button onClick={handleDownloadPreviewPdf} className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50">
+                                                Tải PDF xem nhanh
+                                            </button>
                                             <button onClick={handleDownloadPreviewHtml} className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50">
                                                 Tải HTML xem nhanh
                                             </button>
@@ -806,9 +857,14 @@ export default function UpgradePlan({ onUpgradeReady, apiKey, isOnline = true }:
 
                             {assessmentPreview.length > 0 && (
                                 <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <Bot className="w-4 h-4 text-emerald-700" />
-                                        <p className="text-sm font-bold text-emerald-900">Đề xuất nội dung đánh giá sau tích hợp</p>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <Bot className="w-4 h-4 text-emerald-700" />
+                                            <p className="text-sm font-bold text-emerald-900">Đề xuất nội dung đánh giá sau tích hợp</p>
+                                        </div>
+                                        <button onClick={handleDownloadAssessmentText} className="px-3 py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-50 w-fit">
+                                            Tải nội dung đánh giá
+                                        </button>
                                     </div>
                                     <ul className="space-y-2">
                                         {assessmentPreview.map((line, idx) => (

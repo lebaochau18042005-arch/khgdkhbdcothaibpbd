@@ -260,6 +260,87 @@ function insertBlockNearHeading(
     return insertBodyElementsAfter(xmlDoc, reference, createStyledBlock(xmlDoc, label, text, colorValue));
 }
 
+function findParagraphByKeywords(
+    paragraphs: HTMLCollectionOf<Element>,
+    keywords: string[],
+    startIndex = 0,
+    endIndex = paragraphs.length
+): Element | null {
+    const normalizedKeywords = keywords.map(normalizeVietnamese);
+    const safeEnd = Math.min(endIndex, paragraphs.length);
+
+    for (let i = Math.max(0, startIndex); i < safeEnd; i++) {
+        const paragraphText = normalizeVietnamese(paragraphs[i].textContent || "");
+        if (normalizedKeywords.some(keyword => paragraphText.includes(keyword))) {
+            return paragraphs[i];
+        }
+    }
+
+    return null;
+}
+
+function insertObjectivesInCompetencySection(
+    xmlDoc: Document,
+    paragraphs: HTMLCollectionOf<Element>,
+    headingKeywords: string[],
+    label: string,
+    text: string,
+    colorValue: string
+): boolean {
+    const body = xmlDoc.getElementsByTagName("w:body")[0];
+    if (!body || !text.trim()) return false;
+
+    const objectiveKeywords = headingKeywords.length ? headingKeywords : ["mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu"];
+    const competencyKeywords = [
+        "năng lực",
+        "nang luc",
+        "2. năng lực",
+        "2 năng lực",
+        "về năng lực",
+        "ve nang luc",
+        "năng lực chung",
+        "năng lực đặc thù",
+        "năng lực số",
+        "năng lực ai"
+    ];
+    const nextMajorSectionKeywords = [
+        "thiết bị dạy học",
+        "thiet bi day hoc",
+        "học liệu",
+        "hoc lieu",
+        "tiến trình dạy học",
+        "tien trinh day hoc",
+        "ii.",
+        "ii "
+    ];
+
+    let objectivesIndex = -1;
+    let sectionEndIndex = paragraphs.length;
+    for (let i = 0; i < paragraphs.length; i++) {
+        const paragraphText = normalizeVietnamese(paragraphs[i].textContent || "");
+        if (objectivesIndex < 0 && objectiveKeywords.map(normalizeVietnamese).some(keyword => paragraphText.includes(keyword))) {
+            objectivesIndex = i;
+            continue;
+        }
+        if (objectivesIndex >= 0 && nextMajorSectionKeywords.map(normalizeVietnamese).some(keyword => paragraphText.includes(keyword))) {
+            sectionEndIndex = i;
+            break;
+        }
+    }
+
+    const target =
+        objectivesIndex >= 0
+            ? findParagraphByKeywords(paragraphs, competencyKeywords, objectivesIndex + 1, sectionEndIndex)
+            : null;
+    const fallbackTarget =
+        target ||
+        findParagraphByKeywords(paragraphs, competencyKeywords) ||
+        findParagraphByKeywords(paragraphs, objectiveKeywords);
+
+    const reference = fallbackTarget ? getTopLevelBodyChild(fallbackTarget, body) : null;
+    return insertBodyElementsAfter(xmlDoc, reference, createStyledBlock(xmlDoc, label, text, colorValue));
+}
+
 export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], options: InjectionOptions = {}): Promise<InjectionResult> {
     const zip = await JSZip.loadAsync(file);
     const originalPackageParts = getPackageParts(zip);
@@ -279,16 +360,16 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
     const previewItems: InjectionResult["previewItems"] = [];
 
     if (options.objectivesText?.trim()) {
-        const found = insertBlockNearHeading(
+        const found = insertObjectivesInCompetencySection(
             xmlDoc,
             paragraphs,
             ["mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu"],
-            "[MỤC TIÊU BỔ SUNG NLS/NL AI]",
+            "[BỔ SUNG TRONG THÀNH PHẦN NĂNG LỰC: NLS/NL AI]",
             options.objectivesText,
             "C0392B"
         );
         previewItems.push({
-            activityName: "I. MỤC TIÊU - bổ sung NLS/NL AI",
+            activityName: "I. MỤC TIÊU / NĂNG LỰC - bổ sung NLS/NL AI",
             injectedText: options.objectivesText,
             found
         });

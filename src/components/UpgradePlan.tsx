@@ -359,12 +359,27 @@ export default function UpgradePlan({
 
     const buildAssessmentText = (suggestions = selectedIntegrations) => {
         if (!suggestions.length) return "Chưa có hoạt động tích hợp được chọn để đề xuất đánh giá.";
-        return suggestions.map((sug: any, idx: number) => {
+        const headers = ["Hoạt động tích hợp", "NLS", "NL AI", "Tiêu chí đánh giá", "Minh chứng"];
+        const rows = suggestions.map((sug: any) => {
             const nls = sug.suggestedNLS || "NLS cần đối chiếu";
             const ai = sug.suggestedAI || "NL AI cần đối chiếu";
-            const geoCriteria = sug.geoDataRequirement ? " Riêng nhiệm vụ Địa lí phải có bảng số liệu đúng nguồn, biểu đồ phù hợp, nhận xét xu hướng và giải thích nguyên nhân bằng kiến thức Địa lí." : "";
-            return `${idx + 1}. ${sug.activityName}: đánh giá sản phẩm học tập số/AI của học sinh theo 4 tiêu chí: đúng kiến thức môn học; biết kiểm chứng nguồn/đầu ra AI; sản phẩm rõ ràng, có minh chứng; giải thích được cách dùng công cụ.${geoCriteria} Minh chứng: prompt, bảng số liệu/biểu đồ nếu có, bản chỉnh sửa của học sinh, sản phẩm cuối. Mã liên quan: ${nls}; ${ai}.`;
-        }).join("\n");
+            const geoCriteria = sug.geoDataRequirement
+                ? "Riêng nhiệm vụ Địa lí phải có bảng số liệu đúng nguồn, biểu đồ phù hợp, nhận xét xu hướng và giải thích nguyên nhân bằng kiến thức Địa lí."
+                : "";
+            return markdownTableRow([
+                sug.activityName,
+                nls,
+                ai,
+                `Đúng kiến thức môn học; biết kiểm chứng nguồn/đầu ra AI; sản phẩm rõ ràng, có minh chứng; giải thích được cách dùng công cụ. ${geoCriteria}`,
+                "Prompt, bảng số liệu/biểu đồ nếu có, bản chỉnh sửa của học sinh, sản phẩm cuối."
+            ]);
+        });
+        return [
+            "Bảng tóm tắt gợi ý đánh giá theo từng hoạt động tích hợp:",
+            markdownTableRow(headers),
+            markdownTableSeparator(headers.length),
+            ...rows
+        ].join("\n");
     };
 
     const buildFullPreview = (snippets: { activityName: string; text: string }[], objectiveText: string, assessmentText: string) => {
@@ -440,6 +455,63 @@ export default function UpgradePlan({
     const markdownTableRow = (cells: any[]) => `| ${cells.map(tableCellText).join(" | ")} |`;
 
     const markdownTableSeparator = (count: number) => `| ${Array.from({ length: count }, () => "---").join(" | ")} |`;
+
+    const splitPreviewTableRow = (line: string) => line
+        .replace(/^\|/, "")
+        .replace(/\|$/, "")
+        .split("|")
+        .map(cell => cell.trim());
+
+    const isPreviewTableLine = (line: string) => line.includes("|") && splitPreviewTableRow(line).length >= 2;
+
+    const isPreviewTableSeparator = (line: string) =>
+        splitPreviewTableRow(line).every(cell => /^:?-{3,}:?$/.test(cell));
+
+    const renderAssessmentPreviewLines = () => {
+        const nodes: React.ReactNode[] = [];
+        for (let i = 0; i < assessmentPreview.length; i++) {
+            if (isPreviewTableLine(assessmentPreview[i])) {
+                const tableRows: string[][] = [];
+                let cursor = i;
+                while (cursor < assessmentPreview.length && isPreviewTableLine(assessmentPreview[cursor])) {
+                    if (!isPreviewTableSeparator(assessmentPreview[cursor])) {
+                        tableRows.push(splitPreviewTableRow(assessmentPreview[cursor]));
+                    }
+                    cursor++;
+                }
+
+                if (tableRows.length >= 2) {
+                    nodes.push(
+                        <div key={`assessment-table-${i}`} className="overflow-x-auto rounded-lg border border-emerald-200 bg-white">
+                            <table className="w-full min-w-[760px] border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-emerald-50">
+                                        {tableRows[0].map((cell, ci) => (
+                                            <th key={ci} className="border border-emerald-200 px-2 py-2 text-left font-bold text-emerald-900">{cell}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {tableRows.slice(1).map((row, ri) => (
+                                        <tr key={ri}>
+                                            {row.map((cell, ci) => (
+                                                <td key={ci} className="border border-emerald-100 px-2 py-2 align-top text-emerald-950">{cell}</td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    );
+                    i = cursor - 1;
+                    continue;
+                }
+            }
+
+            nodes.push(<p key={`assessment-line-${i}`} className="text-sm text-emerald-950 leading-relaxed">{assessmentPreview[i]}</p>);
+        }
+        return nodes;
+    };
 
     const hasAssessmentTable = (tableData: any) =>
         Array.isArray(tableData?.headers) &&
@@ -553,15 +625,26 @@ export default function UpgradePlan({
             lines.push(`Đáp án: ${question?.answer || ""}`);
         });
         lines.push("Bảng kiểm:");
-        list(formative?.checklists).forEach((item: any) => lines.push(`- ${item}`));
+        const checklistHeaders = ["STT", "Nội dung quan sát/đánh giá"];
+        lines.push(markdownTableRow(checklistHeaders));
+        lines.push(markdownTableSeparator(checklistHeaders.length));
+        list(formative?.checklists).forEach((item: any, idx: number) => lines.push(markdownTableRow([idx + 1, item])));
 
         lines.push("", "3. ĐÁNH GIÁ ĐỊNH KỲ");
-        lines.push(`Nội dung yêu cầu: ${evaluation?.summativeAssessment?.projectOrTest || ""}`);
-        list(evaluation?.summativeAssessment?.requirements).forEach((item: any) => lines.push(`- ${item}`));
+        const summativeHeaders = ["Thành phần", "Nội dung"];
+        lines.push(markdownTableRow(summativeHeaders));
+        lines.push(markdownTableSeparator(summativeHeaders.length));
+        lines.push(markdownTableRow(["Nội dung yêu cầu", evaluation?.summativeAssessment?.projectOrTest || ""]));
+        list(evaluation?.summativeAssessment?.requirements).forEach((item: any, idx: number) => {
+            lines.push(markdownTableRow([`Yêu cầu ${idx + 1}`, item]));
+        });
 
         lines.push("", "4. MẪU NHẬN XÉT CHI TIẾT");
+        const feedbackHeaders = ["Mức độ", "Mẫu nhận xét"];
+        lines.push(markdownTableRow(feedbackHeaders));
+        lines.push(markdownTableSeparator(feedbackHeaders.length));
         list(evaluation?.feedbackSamples).forEach((feedback: any) => {
-            lines.push(`${feedback?.level || "Mức độ"}: ${feedback?.sampleText || ""}`);
+            lines.push(markdownTableRow([feedback?.level || "Mức độ", feedback?.sampleText || ""]));
         });
 
         return lines.filter(line => line !== undefined && line !== null).join("\n");
@@ -1499,11 +1582,9 @@ export default function UpgradePlan({
                                     )}
 
                                     {!preservedAssessmentResult && !isDesigningAssessment && (
-                                        <ul className="space-y-2">
-                                            {assessmentPreview.map((line, idx) => (
-                                                <li key={idx} className="text-sm text-emerald-950 leading-relaxed">{line}</li>
-                                            ))}
-                                        </ul>
+                                        <div className="space-y-3">
+                                            {renderAssessmentPreviewLines()}
+                                        </div>
                                     )}
                                 </div>
                             )}

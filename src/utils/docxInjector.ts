@@ -68,6 +68,53 @@ function matchScore(paragraphText: string, activityName: string): number {
     return ratio >= 0.6 ? Math.round(ratio * 80) : 0;
 }
 
+function extractActivityNumber(text: string): string | null {
+    const match = normalizeVietnamese(text).match(/\b(?:hoat dong|hd)\s*(\d+)/i);
+    return match?.[1] || null;
+}
+
+function looksLikeActivityHeading(text: string): boolean {
+    const normalized = normalizeVietnamese(text);
+    return /\b(?:hoat dong|hd)\s*\d+/i.test(normalized) ||
+        /\b(khoi dong|hinh thanh kien thuc|luyen tap|van dung)\b/i.test(normalized);
+}
+
+function activityAnchorScore(paragraphText: string, activityName: string): number {
+    let score = matchScore(paragraphText, activityName);
+    const paragraphActivityNumber = extractActivityNumber(paragraphText);
+    const snippetActivityNumber = extractActivityNumber(activityName);
+
+    if (snippetActivityNumber && paragraphActivityNumber) {
+        score += snippetActivityNumber === paragraphActivityNumber ? 60 : -50;
+    }
+    if (looksLikeActivityHeading(paragraphText)) {
+        score += 20;
+    }
+    if ((paragraphText || "").length > 260) {
+        score -= 10;
+    }
+
+    return Math.max(0, score);
+}
+
+function findBestActivityParagraph(paragraphs: HTMLCollectionOf<Element>, activityName: string): { paragraph: Element | null; score: number } {
+    let bestP: Element | null = null;
+    let bestScore = 0;
+
+    for (let i = 0; i < paragraphs.length; i++) {
+        const text = paragraphs[i].textContent || "";
+        if (text.trim().length < 3) continue;
+
+        const score = activityAnchorScore(text, activityName);
+        if (score > bestScore) {
+            bestScore = score;
+            bestP = paragraphs[i];
+        }
+    }
+
+    return { paragraph: bestP, score: bestScore };
+}
+
 function getPackageParts(zip: JSZip): string[] {
     return Object.values(zip.files)
         .filter(part => !part.dir)
@@ -410,21 +457,21 @@ function insertBlockNearHeading(
     text: string,
     colorValue: string
 ): boolean {
+    void paragraphs;
+    void headingKeywords;
+    return appendBlockToDocumentEnd(xmlDoc, label, text, colorValue);
+}
+
+function appendBlockToDocumentEnd(
+    xmlDoc: Document,
+    label: string,
+    text: string,
+    colorValue: string
+): boolean {
     const body = xmlDoc.getElementsByTagName("w:body")[0];
     if (!body || !text.trim()) return false;
-
-    const normalizedKeywords = headingKeywords.map(normalizeVietnamese);
-    let target: Element | null = null;
-    for (let i = 0; i < paragraphs.length; i++) {
-        const paragraphText = normalizeVietnamese(paragraphs[i].textContent || "");
-        if (normalizedKeywords.some(keyword => paragraphText.includes(keyword))) {
-            target = paragraphs[i];
-            break;
-        }
-    }
-
-    const reference = target ? getTopLevelBodyChild(target, body) : null;
-    return insertBodyElementsAfter(xmlDoc, reference, createStyledBlock(xmlDoc, label, text, colorValue));
+    insertBodyElementsAfter(xmlDoc, null, createStyledBlock(xmlDoc, label, text, colorValue));
+    return true;
 }
 
 function findParagraphByKeywords(
@@ -603,7 +650,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
         injectedCount++;
     }
 
-    if (options.assessmentText?.trim()) {
+    if (false && options.assessmentText?.trim()) {
         const found = insertBlockNearHeading(
             xmlDoc,
             paragraphs,
@@ -621,20 +668,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
     }
 
     for (const snippet of snippets) {
-        let bestP: Element | null = null;
-        let bestScore = 0;
-        
-        // Find best matching paragraph
-        for (let i = 0; i < paragraphs.length; i++) {
-            const text = paragraphs[i].textContent || "";
-            if (text.trim().length < 3) continue;
-            
-            const score = matchScore(text, snippet.activityName);
-            if (score > bestScore) {
-                bestScore = score;
-                bestP = paragraphs[i];
-            }
-        }
+        const { paragraph: bestP, score: bestScore } = findBestActivityParagraph(paragraphs, snippet.activityName);
 
         if (bestP && bestScore >= 40) {
             const body = xmlDoc.getElementsByTagName("w:body")[0];
@@ -671,6 +705,21 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
                 injectedCount++;
             }
         }
+    }
+
+    if (options.assessmentText?.trim()) {
+        const found = appendBlockToDocumentEnd(
+            xmlDoc,
+            "[GỢI Ý ĐÁNH GIÁ NLS/NL AI - ĐẶT CUỐI GIÁO ÁN]",
+            options.assessmentText,
+            "C0392B"
+        );
+        previewItems.push({
+            activityName: "CUỐI GIÁO ÁN - GỢI Ý ĐÁNH GIÁ NLS/NL AI",
+            injectedText: options.assessmentText,
+            found
+        });
+        injectedCount++;
     }
 
     const serializer = new XMLSerializer();

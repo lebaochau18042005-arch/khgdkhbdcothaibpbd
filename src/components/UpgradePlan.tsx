@@ -20,11 +20,13 @@ type UpgradeNextAction = "khbd" | "teacher-plan" | "assessment" | "council";
 export default function UpgradePlan({
     onUpgradeReady,
     onCreateTeacherPlan,
+    onEvaluatePreservedLesson,
     apiKey,
     isOnline = true
 }: {
     onUpgradeReady: (data: any, nextAction?: UpgradeNextAction) => void | Promise<void>,
     onCreateTeacherPlan?: (data: any) => void,
+    onEvaluatePreservedLesson?: (data: any) => Promise<any>,
     apiKey: string,
     isOnline?: boolean
 }) {
@@ -46,6 +48,9 @@ export default function UpgradePlan({
     const [fullPreviewHtml, setFullPreviewHtml] = useState("");
     const [previewHtmlWarning, setPreviewHtmlWarning] = useState("");
     const [assessmentPreview, setAssessmentPreview] = useState<string[]>([]);
+    const [showAssessmentDesign, setShowAssessmentDesign] = useState(false);
+    const [preservedCouncilEvaluation, setPreservedCouncilEvaluation] = useState<any>(null);
+    const [isEvaluatingPreservedCouncil, setIsEvaluatingPreservedCouncil] = useState(false);
 
     const handleTextbookImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -134,6 +139,9 @@ export default function UpgradePlan({
         setFullPreviewHtml("");
         setPreviewHtmlWarning("");
         setAssessmentPreview([]);
+        setShowAssessmentDesign(false);
+        setPreservedCouncilEvaluation(null);
+        setIsEvaluatingPreservedCouncil(false);
         setIsAnalyzing(true);
 
         try {
@@ -231,6 +239,8 @@ export default function UpgradePlan({
             setFullPreviewText(preview.text || buildFullPreview(snippets, objectiveText, assessmentText));
             setFullPreviewHtml(preview.html);
             setPreviewHtmlWarning(preview.warning);
+            setShowAssessmentDesign(false);
+            setPreservedCouncilEvaluation(null);
             setStep(3);
 
             // DOCX là nguồn đầy đủ nhất: giữ nguyên giáo án gốc và chỉ chèn phần AI vào file.
@@ -465,6 +475,9 @@ export default function UpgradePlan({
         setFullPreviewHtml("");
         setPreviewHtmlWarning("");
         setAssessmentPreview([]);
+        setShowAssessmentDesign(false);
+        setPreservedCouncilEvaluation(null);
+        setIsEvaluatingPreservedCouncil(false);
     };
 
     const previewToolbarButtonClass = "p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed";
@@ -508,6 +521,41 @@ export default function UpgradePlan({
             return;
         }
         onUpgradeReady(payload, "teacher-plan");
+    };
+
+    const handleShowAssessmentDesign = () => {
+        setShowAssessmentDesign(true);
+        setTimeout(() => {
+            document.getElementById("upgrade-assessment-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 50);
+    };
+
+    const handleEvaluatePreservedCouncil = async () => {
+        if (!onEvaluatePreservedLesson) {
+            handleShowAssessmentDesign();
+            return;
+        }
+        setIsEvaluatingPreservedCouncil(true);
+        try {
+            const payload = buildUpgradePayload();
+            const council = await onEvaluatePreservedLesson({
+                ...payload,
+                preservedLessonText: fullPreviewText,
+                preservedLessonHtml: fullPreviewHtml,
+                assessmentText: buildAssessmentText(),
+                injectedItems: injectionResult?.previewItems || [],
+                preservationReport: injectionResult?.preservationReport,
+                strictRule: "Đánh giá dựa trên DOCX gốc đã được chèn trực tiếp; không tái tạo hoặc rút gọn giáo án."
+            });
+            if (council) {
+                setPreservedCouncilEvaluation(council);
+                setTimeout(() => {
+                    document.getElementById("upgrade-council-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 50);
+            }
+        } finally {
+            setIsEvaluatingPreservedCouncil(false);
+        }
     };
 
     return (
@@ -807,7 +855,7 @@ export default function UpgradePlan({
                             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 sticky top-6 z-10 bg-brand-bg/85 backdrop-blur-md py-2 px-1">
                                 <div className="min-w-0">
                                     <h3 className="text-xl font-extrabold text-brand-sidebar line-clamp-1">
-                                        KẾ HOẠCH BÀI DẠY: {analysisResult?.topic || file?.name || "Giáo án đã nâng cấp"}
+                                        GIÁO ÁN GỐC ĐÃ NÂNG CẤP: {analysisResult?.topic || file?.name || "Bản DOCX bảo toàn"}
                                     </h3>
                                     <div className="text-[10px] text-brand-muted font-bold uppercase flex flex-wrap items-center gap-2 mt-1">
                                         DOCX gốc + NLS/NL AI
@@ -855,16 +903,18 @@ export default function UpgradePlan({
                                         <Calendar className="w-3 h-3" /> Lập KH Giáo dục GV
                                     </button>
                                     <button
-                                        onClick={() => handleOpenFullLessonPlan("assessment")}
+                                        onClick={handleShowAssessmentDesign}
                                         className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-md hover:bg-emerald-700 transition-colors flex items-center gap-2"
                                     >
                                         <ClipboardCheck className="w-3 h-3" /> Thiết kế đánh giá
                                     </button>
                                     <button
-                                        onClick={() => handleOpenFullLessonPlan("council")}
-                                        className="px-4 py-2 bg-brand-accent text-white rounded-lg text-xs font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                        onClick={handleEvaluatePreservedCouncil}
+                                        disabled={isEvaluatingPreservedCouncil}
+                                        className="px-4 py-2 bg-brand-accent text-white rounded-lg text-xs font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50"
                                     >
-                                        <BrainCircuit className="w-3 h-3" /> Đánh giá Hội đồng AI
+                                        {isEvaluatingPreservedCouncil ? <Loader2 className="w-3 h-3 animate-spin" /> : <BrainCircuit className="w-3 h-3" />}
+                                        {isEvaluatingPreservedCouncil ? "Đang phản biện..." : "Đánh giá Hội đồng AI"}
                                     </button>
                                 </div>
                             </div>
@@ -990,11 +1040,14 @@ export default function UpgradePlan({
                             )}
 
                             {assessmentPreview.length > 0 && (
-                                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+                                <div id="upgrade-assessment-panel" className={`rounded-xl border p-4 ${showAssessmentDesign ? "border-emerald-400 bg-emerald-50 shadow-lg shadow-emerald-100/70" : "border-emerald-200 bg-emerald-50/60"}`}>
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                                         <div className="flex items-center gap-2">
                                             <Bot className="w-4 h-4 text-emerald-700" />
-                                            <p className="text-sm font-bold text-emerald-900">Đề xuất nội dung đánh giá sau tích hợp</p>
+                                            <div>
+                                                <p className="text-sm font-bold text-emerald-900">Thiết kế đánh giá sau tích hợp</p>
+                                                <p className="text-xs text-emerald-800 mt-0.5">Thiết kế này bám trên giáo án gốc đã được chèn trực tiếp, không thay thế hoặc rút gọn nội dung giáo án.</p>
+                                            </div>
                                         </div>
                                         <button onClick={handleDownloadAssessmentText} className="px-3 py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-50 w-fit">
                                             Tải nội dung đánh giá
@@ -1005,6 +1058,35 @@ export default function UpgradePlan({
                                             <li key={idx} className="text-sm text-emerald-950 leading-relaxed">{line}</li>
                                         ))}
                                     </ul>
+                                </div>
+                            )}
+
+                            {preservedCouncilEvaluation && (
+                                <div id="upgrade-council-panel" className="glass rounded-[24px] p-6 shadow-xl border-l-4 border-l-brand-accent animate-in fade-in slide-in-from-top-4">
+                                    <h3 className="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                        <BrainCircuit className="w-6 h-6 text-brand-accent" />
+                                        Báo cáo đánh giá trên giáo án gốc đã nâng cấp
+                                        {preservedCouncilEvaluation.overallScore && (
+                                            <span className="ml-auto text-brand-accent text-2xl font-black">{preservedCouncilEvaluation.overallScore}/10</span>
+                                        )}
+                                    </h3>
+                                    <p className="text-xs text-slate-600 mb-5">
+                                        Hội đồng AI chỉ phản biện bản DOCX gốc đã được chèn NLS/NL AI. App không tạo lại, không thay thế và không lược bỏ nội dung giáo án gốc trong bước này.
+                                    </p>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {[
+                                            ["Chuyên gia giáo dục", preservedCouncilEvaluation.educationalExpert],
+                                            ["Chuyên gia công nghệ", preservedCouncilEvaluation.digitalExpert],
+                                            ["Chuyên gia phản biện AI", preservedCouncilEvaluation.aiExpert]
+                                        ].map(([title, item]: any) => (
+                                            <div key={title} className="space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                <h4 className="font-bold text-sm text-brand-sidebar uppercase border-b border-slate-200 pb-2">{title}</h4>
+                                                <div><span className="text-xs font-bold text-emerald-600">Ưu điểm:</span><p className="text-xs text-slate-700 mt-1">{item?.strengths || "Đã ghi nhận nội dung bảo toàn giáo án gốc."}</p></div>
+                                                <div><span className="text-xs font-bold text-amber-600">Hạn chế:</span><p className="text-xs text-slate-700 mt-1">{item?.weaknesses || "Cần đối chiếu lại bản DOCX tải xuống nếu giáo án có công thức hoặc đối tượng Word phức tạp."}</p></div>
+                                                <div><span className="text-xs font-bold text-brand-accent">Đề xuất:</span><p className="text-xs text-slate-700 mt-1">{item?.suggestions || "Tiếp tục sử dụng bản DOCX giữ nguyên làm bản chính thức."}</p></div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 

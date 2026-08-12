@@ -3116,6 +3116,19 @@ export default function App() {
                         setMode("khgd-gen");
                         setResult(null);
                       }}
+                      onEvaluatePreservedLesson={async (data) => {
+                        if (!requireOnlineForAi("Hội đồng AI đánh giá giáo án đã bảo toàn")) return null;
+                        if (!apiKey.trim()) {
+                          setShowSettings(true);
+                          return null;
+                        }
+                        try {
+                          return await evaluateLessonPlan(JSON.stringify(data), { apiKey, aiModel });
+                        } catch (err: any) {
+                          alert(`❌ Lỗi khi gọi Hội đồng AI đánh giá: ${err?.message || "Lỗi không xác định."}`);
+                          return null;
+                        }
+                      }}
                       onUpgradeReady={async (data, nextAction = "khbd") => {
                         const newInput = {
                           subject: data.subject,
@@ -3147,35 +3160,14 @@ export default function App() {
                           setResult(null);
                           return;
                         }
+                        if (nextAction === "assessment" || nextAction === "council") {
+                          alert("Tính năng đánh giá trong mục Nâng cấp giáo án sẽ dùng trực tiếp bản DOCX gốc đã chèn, không tạo lại KHBD để tránh lược bỏ nội dung.");
+                          return;
+                        }
                         setLessonPlanInput(newInput);
                         setMode("khbd-gen");
                         // Tự động tạo giáo án ngay với input trực tiếp (tránh vấn đề state chưa update kịp)
-                        const generatedKhbd = await handleGenerateKHBDWithInput(newInput);
-                        if (!generatedKhbd) return;
-
-                        if (nextAction === "assessment") {
-                          setEvaluationLoading(true);
-                          try {
-                            const evaluation = await generateCompetencyEvaluation(generatedKhbd);
-                            setEvaluationResult(evaluation);
-                          } catch (err: any) {
-                            alert(`❌ Lỗi khi thiết kế đánh giá: ${err?.message || "Lỗi không xác định."}`);
-                          } finally {
-                            setEvaluationLoading(false);
-                          }
-                        }
-
-                        if (nextAction === "council") {
-                          setEvaluatingCouncil(true);
-                          try {
-                            const council = await evaluateLessonPlan(JSON.stringify(generatedKhbd), { apiKey, aiModel });
-                            setCouncilEvaluation(council);
-                          } catch (err: any) {
-                            alert(`❌ Lỗi khi gọi Hội đồng AI đánh giá: ${err?.message || "Lỗi không xác định."}`);
-                          } finally {
-                            setEvaluatingCouncil(false);
-                          }
-                        }
+                        await handleGenerateKHBDWithInput(newInput);
                       }}
                     />
                   </motion.div>

@@ -1733,13 +1733,31 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 };
 
 export const generateCompetencyEvaluation = async (lessonPlan: any) => {
+  const objectives = lessonPlan?.objectives || {};
+  const preservedLessonText = typeof lessonPlan?.preservedLessonText === "string"
+    ? lessonPlan.preservedLessonText.slice(0, 18000)
+    : "";
+  const preservationContext = preservedLessonText
+    ? `
+    TOÀN VĂN GIÁO ÁN GỐC ĐÃ NÂNG CẤP (bản đọc từ DOCX đã bảo toàn):
+    """
+    ${preservedLessonText}
+    """
+
+    Báo cáo bảo toàn DOCX: ${JSON.stringify(lessonPlan?.preservationReport || {})}
+    Ghi chú bắt buộc: Thiết kế đánh giá dựa trên nội dung giáo án DOCX gốc đã được chèn trực tiếp. Không viết lại giáo án, không thay thế giáo án, không rút gọn hoặc bỏ sót nội dung gốc. Nếu giáo án có bảng số liệu, biểu đồ, bản đồ, hình vẽ, công thức hoặc dữ liệu môn học, hãy khai thác chúng trong câu hỏi/rubrics khi phù hợp.
+    `
+    : "";
   const prompt = `
     Dựa trên Kế hoạch bài dạy (KHBD) sau đây, hãy thiết kế một "Hệ thống đánh giá năng lực" chi tiết theo Công văn 3439/BGDĐT và Chương trình GDPT 2018.
     
-    Tên bài: ${lessonPlan.title}
-    Mục tiêu kiến thức: ${JSON.stringify(lessonPlan.objectives.knowledge)}
-    Mục tiêu năng lực: ${JSON.stringify(lessonPlan.objectives.subjectSpecific)}
-    Mục tiêu AI: ${JSON.stringify(lessonPlan.objectives.aiSpecific)}
+    Tên bài: ${lessonPlan?.title || "Giáo án đã nâng cấp"}
+    Môn học: ${lessonPlan?.subject || ""}
+    Lớp: ${lessonPlan?.grade || ""}
+    Mục tiêu kiến thức: ${JSON.stringify(objectives.knowledge || [])}
+    Mục tiêu năng lực: ${JSON.stringify(objectives.subjectSpecific || [])}
+    Mục tiêu AI: ${JSON.stringify(objectives.aiSpecific || [])}
+    ${preservationContext}
     
     Yêu cầu hệ thống đánh giá bao gồm:
     1. TIÊU CHÍ ĐÁNH GIÁ (Rubrics): Thiết kế bảng Rubric cho ít nhất 3 năng lực cốt lõi được thể hiện trong bài dạy (bao gồm năng lực chung và năng lực đặc thù môn học/năng lực AI). Mỗi năng lực cần có các mức độ đạt được (VD: Mức 1: Chưa đạt; Mức 2: Đạt; Mức 3: Khá; Mức 4: Tốt).

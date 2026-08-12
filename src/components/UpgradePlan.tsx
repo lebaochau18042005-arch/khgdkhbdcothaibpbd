@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import * as mammoth from "mammoth";
 // @ts-ignore
 import html2pdf from "html2pdf.js";
-import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye, FileDown, FileCode, Printer, ClipboardCheck, Calendar, BrainCircuit } from "lucide-react";
+import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye, FileDown, FileCode, Printer, ClipboardCheck, Calendar, BrainCircuit, Search, LayoutGrid, AlertCircle } from "lucide-react";
 import { analyzeExistingPlan, generateDirectSnippets } from "../services/geminiService";
 import { injectSnippetsIntoDocx, InjectionResult } from "../utils/docxInjector";
 import { saveAs } from "file-saver";
@@ -21,12 +21,14 @@ export default function UpgradePlan({
     onUpgradeReady,
     onCreateTeacherPlan,
     onEvaluatePreservedLesson,
+    onDesignPreservedAssessment,
     apiKey,
     isOnline = true
 }: {
     onUpgradeReady: (data: any, nextAction?: UpgradeNextAction) => void | Promise<void>,
     onCreateTeacherPlan?: (data: any) => void,
     onEvaluatePreservedLesson?: (data: any) => Promise<any>,
+    onDesignPreservedAssessment?: (data: any) => Promise<any>,
     apiKey: string,
     isOnline?: boolean
 }) {
@@ -49,6 +51,8 @@ export default function UpgradePlan({
     const [previewHtmlWarning, setPreviewHtmlWarning] = useState("");
     const [assessmentPreview, setAssessmentPreview] = useState<string[]>([]);
     const [showAssessmentDesign, setShowAssessmentDesign] = useState(false);
+    const [preservedAssessmentResult, setPreservedAssessmentResult] = useState<any>(null);
+    const [isDesigningAssessment, setIsDesigningAssessment] = useState(false);
     const [preservedCouncilEvaluation, setPreservedCouncilEvaluation] = useState<any>(null);
     const [isEvaluatingPreservedCouncil, setIsEvaluatingPreservedCouncil] = useState(false);
 
@@ -140,6 +144,8 @@ export default function UpgradePlan({
         setPreviewHtmlWarning("");
         setAssessmentPreview([]);
         setShowAssessmentDesign(false);
+        setPreservedAssessmentResult(null);
+        setIsDesigningAssessment(false);
         setPreservedCouncilEvaluation(null);
         setIsEvaluatingPreservedCouncil(false);
         setIsAnalyzing(true);
@@ -240,6 +246,8 @@ export default function UpgradePlan({
             setFullPreviewHtml(preview.html);
             setPreviewHtmlWarning(preview.warning);
             setShowAssessmentDesign(false);
+            setPreservedAssessmentResult(null);
+            setIsDesigningAssessment(false);
             setPreservedCouncilEvaluation(null);
             setStep(3);
 
@@ -407,6 +415,129 @@ export default function UpgradePlan({
         saveAs(blob, filename);
     };
 
+    const list = (value: any) => Array.isArray(value) ? value : [];
+
+    const textValue = (value: any) => value === undefined || value === null ? "" : String(value);
+
+    const hasAssessmentTable = (tableData: any) =>
+        Array.isArray(tableData?.headers) &&
+        tableData.headers.length > 0 &&
+        Array.isArray(tableData?.rows) &&
+        tableData.rows.length > 0;
+
+    const renderAssessmentDataTable = (tableData: any) => {
+        if (!hasAssessmentTable(tableData)) return null;
+        return (
+            <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                {tableData.caption && (
+                    <p className="px-3 pt-3 text-[11px] font-bold text-slate-700">{tableData.caption}</p>
+                )}
+                <table className="w-full min-w-[420px] border-collapse text-[11px]">
+                    <thead>
+                        <tr className="bg-slate-50">
+                            {list(tableData.headers).map((header: any, hi: number) => (
+                                <th key={hi} className="border border-slate-200 px-2 py-1.5 text-left font-bold text-slate-700">{textValue(header)}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {list(tableData.rows).map((row: any, ri: number) => (
+                            <tr key={ri}>
+                                {list(row).map((cell: any, ci: number) => (
+                                    <td key={ci} className="border border-slate-200 px-2 py-1.5 text-slate-700">{textValue(cell)}</td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                {tableData.source && (
+                    <p className="px-3 pb-3 pt-2 text-[10px] italic text-slate-500">Nguồn: {tableData.source}</p>
+                )}
+            </div>
+        );
+    };
+
+    const renderAssessmentQuestionSupport = (question: any) => (
+        <>
+            {renderAssessmentDataTable(question?.tableData)}
+            {question?.imagePlaceholder && (
+                <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] font-semibold text-blue-800">
+                    {question.imagePlaceholder}
+                </div>
+            )}
+        </>
+    );
+
+    const appendAssessmentQuestionSupportText = (lines: string[], question: any) => {
+        const tableData = question?.tableData;
+        if (hasAssessmentTable(tableData)) {
+            if (tableData.caption) lines.push(`Bảng số liệu: ${tableData.caption}`);
+            lines.push(list(tableData.headers).map(textValue).join(" | "));
+            list(tableData.rows).forEach((row: any) => lines.push(list(row).map(textValue).join(" | ")));
+            if (tableData.source) lines.push(`Nguồn: ${tableData.source}`);
+        }
+        if (question?.imagePlaceholder) lines.push(`Hình/Bản đồ/Biểu đồ: ${question.imagePlaceholder}`);
+    };
+
+    const formatPreservedAssessmentText = (evaluation: any) => {
+        const lines: string[] = [
+            "HỆ THỐNG ĐÁNH GIÁ NĂNG LỰC",
+            "Chuẩn CV 3439/BGDĐT & Chương trình GDPT 2018",
+            "Ghi chú: Bộ đánh giá này được thiết kế từ giáo án DOCX gốc đã bảo toàn; không thay thế hoặc rút gọn nội dung giáo án gốc.",
+            ""
+        ];
+
+        lines.push("1. TIÊU CHÍ ĐÁNH GIÁ (RUBRICS)");
+        list(evaluation?.rubrics).forEach((rubric: any, idx: number) => {
+            lines.push(`${idx + 1}. ${rubric?.competencyName || "Năng lực cần đánh giá"}`);
+            list(rubric?.criteria).forEach((criteria: any) => lines.push(`- Tiêu chí: ${criteria}`));
+            lines.push(`Mức 1: ${rubric?.levels?.level1 || ""}`);
+            lines.push(`Mức 2: ${rubric?.levels?.level2 || ""}`);
+            lines.push(`Mức 3: ${rubric?.levels?.level3 || ""}`);
+            lines.push(`Mức 4: ${rubric?.levels?.level4 || ""}`);
+        });
+
+        const formative = evaluation?.formativeAssessment || {};
+        lines.push("", "2. ĐÁNH GIÁ THƯỜNG XUYÊN");
+        list(formative?.quizzes).forEach((question: any, idx: number) => {
+            lines.push(`Câu ${idx + 1}: ${question?.question || ""}`);
+            list(question?.options).forEach((option: any, oi: number) => lines.push(`${String.fromCharCode(65 + oi)}. ${option}`));
+            appendAssessmentQuestionSupportText(lines, question);
+            lines.push(`Đáp án: ${question?.answer || ""}`);
+        });
+        list(formative?.part1_multipleChoice).forEach((question: any, idx: number) => {
+            lines.push(`Phần I - Câu ${idx + 1}: ${question?.question || ""}`);
+            list(question?.options).forEach((option: any, oi: number) => lines.push(`${String.fromCharCode(65 + oi)}. ${option}`));
+            appendAssessmentQuestionSupportText(lines, question);
+            lines.push(`Đáp án: ${question?.answer || ""}`);
+        });
+        list(formative?.part2_trueFalse).forEach((question: any, idx: number) => {
+            lines.push(`Phần II - Câu ${idx + 1}: ${question?.question || ""}`);
+            list(question?.statements).forEach((statement: any, oi: number) => {
+                lines.push(`${String.fromCharCode(65 + oi)}. ${statement} (${question?.answers?.[oi] || ""})`);
+            });
+            appendAssessmentQuestionSupportText(lines, question);
+        });
+        list(formative?.part3_shortAnswer).forEach((question: any, idx: number) => {
+            lines.push(`Phần III - Câu ${idx + 1}: ${question?.question || ""}`);
+            appendAssessmentQuestionSupportText(lines, question);
+            lines.push(`Đáp án: ${question?.answer || ""}`);
+        });
+        lines.push("Bảng kiểm:");
+        list(formative?.checklists).forEach((item: any) => lines.push(`- ${item}`));
+
+        lines.push("", "3. ĐÁNH GIÁ ĐỊNH KỲ");
+        lines.push(`Nội dung yêu cầu: ${evaluation?.summativeAssessment?.projectOrTest || ""}`);
+        list(evaluation?.summativeAssessment?.requirements).forEach((item: any) => lines.push(`- ${item}`));
+
+        lines.push("", "4. MẪU NHẬN XÉT CHI TIẾT");
+        list(evaluation?.feedbackSamples).forEach((feedback: any) => {
+            lines.push(`${feedback?.level || "Mức độ"}: ${feedback?.sampleText || ""}`);
+        });
+
+        return lines.filter(line => line !== undefined && line !== null).join("\n");
+    };
+
     const escapeHtml = (text: string) => text
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -458,10 +589,10 @@ export default function UpgradePlan({
     };
 
     const handleDownloadAssessmentText = () => {
-        if (!assessmentPreview.length) return;
+        if (!assessmentPreview.length && !preservedAssessmentResult) return;
         downloadTextFile(
             `${analysisResult?.topic || "Giao_an"}_DanhGia_NLS_NLAI.txt`,
-            assessmentPreview.join("\n")
+            preservedAssessmentResult ? formatPreservedAssessmentText(preservedAssessmentResult) : assessmentPreview.join("\n")
         );
     };
 
@@ -476,6 +607,8 @@ export default function UpgradePlan({
         setPreviewHtmlWarning("");
         setAssessmentPreview([]);
         setShowAssessmentDesign(false);
+        setPreservedAssessmentResult(null);
+        setIsDesigningAssessment(false);
         setPreservedCouncilEvaluation(null);
         setIsEvaluatingPreservedCouncil(false);
     };
@@ -523,11 +656,34 @@ export default function UpgradePlan({
         onUpgradeReady(payload, "teacher-plan");
     };
 
-    const handleShowAssessmentDesign = () => {
+    const handleShowAssessmentDesign = async () => {
         setShowAssessmentDesign(true);
         setTimeout(() => {
             document.getElementById("upgrade-assessment-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 50);
+        if (preservedAssessmentResult || isDesigningAssessment || !onDesignPreservedAssessment) return;
+
+        setIsDesigningAssessment(true);
+        try {
+            const payload = buildUpgradePayload();
+            const result = await onDesignPreservedAssessment({
+                ...payload,
+                preservedLessonText: fullPreviewText,
+                preservedLessonHtml: fullPreviewHtml,
+                assessmentText: buildAssessmentText(),
+                injectedItems: injectionResult?.previewItems || [],
+                preservationReport: injectionResult?.preservationReport,
+                strictRule: "Thiết kế đánh giá dựa trên DOCX gốc đã được chèn trực tiếp; không tái tạo, không thay thế và không rút gọn giáo án gốc."
+            });
+            if (result) {
+                setPreservedAssessmentResult(result);
+                setTimeout(() => {
+                    document.getElementById("upgrade-assessment-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 50);
+            }
+        } finally {
+            setIsDesigningAssessment(false);
+        }
     };
 
     const handleEvaluatePreservedCouncil = async () => {
@@ -878,7 +1034,7 @@ export default function UpgradePlan({
                                     <button onClick={handleDownloadPreviewHtml} className={previewToolbarButtonClass} title="Tải xuống HTML xem nhanh">
                                         <FileCode className="w-4 h-4 text-orange-500" />
                                     </button>
-                                    <button onClick={handleDownloadAssessmentText} disabled={!assessmentPreview.length} className={previewToolbarButtonClass} title="Tải nội dung đánh giá">
+                                    <button onClick={handleDownloadAssessmentText} disabled={!assessmentPreview.length && !preservedAssessmentResult} className={previewToolbarButtonClass} title="Tải nội dung đánh giá">
                                         <ClipboardCheck className="w-4 h-4 text-emerald-600" />
                                     </button>
                                     <button onClick={() => window.print()} className={previewToolbarButtonClass} title="In">
@@ -904,9 +1060,11 @@ export default function UpgradePlan({
                                     </button>
                                     <button
                                         onClick={handleShowAssessmentDesign}
-                                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-md hover:bg-emerald-700 transition-colors flex items-center gap-2"
+                                        disabled={isDesigningAssessment}
+                                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-md hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50"
                                     >
-                                        <ClipboardCheck className="w-3 h-3" /> Thiết kế đánh giá
+                                        {isDesigningAssessment ? <Loader2 className="w-3 h-3 animate-spin" /> : <ClipboardCheck className="w-3 h-3" />}
+                                        {isDesigningAssessment ? "Đang thiết kế..." : "Thiết kế đánh giá"}
                                     </button>
                                     <button
                                         onClick={handleEvaluatePreservedCouncil}
@@ -1039,7 +1197,7 @@ export default function UpgradePlan({
                                 </div>
                             )}
 
-                            {assessmentPreview.length > 0 && (
+                            {(assessmentPreview.length > 0 || showAssessmentDesign || preservedAssessmentResult || isDesigningAssessment) && (
                                 <div id="upgrade-assessment-panel" className={`rounded-xl border p-4 ${showAssessmentDesign ? "border-emerald-400 bg-emerald-50 shadow-lg shadow-emerald-100/70" : "border-emerald-200 bg-emerald-50/60"}`}>
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                                         <div className="flex items-center gap-2">
@@ -1049,15 +1207,207 @@ export default function UpgradePlan({
                                                 <p className="text-xs text-emerald-800 mt-0.5">Thiết kế này bám trên giáo án gốc đã được chèn trực tiếp, không thay thế hoặc rút gọn nội dung giáo án.</p>
                                             </div>
                                         </div>
-                                        <button onClick={handleDownloadAssessmentText} className="px-3 py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-50 w-fit">
+                                        <button onClick={handleDownloadAssessmentText} disabled={!assessmentPreview.length && !preservedAssessmentResult} className="px-3 py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-50 w-fit disabled:opacity-50">
                                             Tải nội dung đánh giá
                                         </button>
                                     </div>
-                                    <ul className="space-y-2">
-                                        {assessmentPreview.map((line, idx) => (
-                                            <li key={idx} className="text-sm text-emerald-950 leading-relaxed">{line}</li>
-                                        ))}
-                                    </ul>
+                                    {isDesigningAssessment && (
+                                        <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-800">
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            Đang thiết kế bộ đánh giá đầy đủ như PL4 từ giáo án DOCX đã bảo toàn...
+                                        </div>
+                                    )}
+
+                                    {preservedAssessmentResult && (
+                                        <div className="space-y-8 pt-2">
+                                            <header className="flex items-center gap-3 border-t border-emerald-100 pt-5">
+                                                <div className="p-3 bg-emerald-100 rounded-2xl">
+                                                    <ClipboardCheck className="w-6 h-6 text-emerald-600" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-xl font-black text-brand-sidebar uppercase tracking-tight">Hệ thống đánh giá năng lực</h4>
+                                                    <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">Chuẩn CV 3439/BGDĐT & Chương trình GDPT 2018</p>
+                                                </div>
+                                            </header>
+
+                                            <div className="space-y-6">
+                                                <h5 className="text-sm font-extrabold text-emerald-700 bg-white px-4 py-2 rounded-lg inline-flex items-center gap-2 border border-emerald-100">
+                                                    <CheckCircle2 className="w-4 h-4" /> 1. TIÊU CHÍ ĐÁNH GIÁ (RUBRICS)
+                                                </h5>
+                                                <div className="grid grid-cols-1 gap-6">
+                                                    {list(preservedAssessmentResult.rubrics).map((rubric: any, idx: number) => (
+                                                        <div key={idx} className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                                                            <table className="w-full text-left border-collapse min-w-[600px]">
+                                                                <thead>
+                                                                    <tr className="bg-slate-50 border-b border-slate-200">
+                                                                        <th className="p-4 text-[10px] font-black text-brand-sidebar uppercase tracking-wider w-1/4">Năng lực: {rubric?.competencyName || "Năng lực cần đánh giá"}</th>
+                                                                        <th className="p-4 text-[10px] font-black text-red-500 uppercase tracking-wider w-[18.75%]">Mức 1: Chưa đạt</th>
+                                                                        <th className="p-4 text-[10px] font-black text-orange-500 uppercase tracking-wider w-[18.75%]">Mức 2: Đạt</th>
+                                                                        <th className="p-4 text-[10px] font-black text-blue-500 uppercase tracking-wider w-[18.75%]">Mức 3: Khá</th>
+                                                                        <th className="p-4 text-[10px] font-black text-emerald-600 uppercase tracking-wider w-[18.75%]">Mức 4: Tốt</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-slate-100">
+                                                                    <tr>
+                                                                        <td className="p-4 align-top">
+                                                                            <ul className="list-disc list-inside space-y-1 text-[11px] text-brand-muted italic">
+                                                                                {list(rubric?.criteria).map((c: string, ci: number) => <li key={ci}>{c}</li>)}
+                                                                            </ul>
+                                                                        </td>
+                                                                        <td className="p-4 text-[11px] text-brand-dark align-top leading-relaxed">{rubric?.levels?.level1 || ""}</td>
+                                                                        <td className="p-4 text-[11px] text-brand-dark align-top leading-relaxed">{rubric?.levels?.level2 || ""}</td>
+                                                                        <td className="p-4 text-[11px] text-brand-dark align-top leading-relaxed">{rubric?.levels?.level3 || ""}</td>
+                                                                        <td className="p-4 text-[11px] text-brand-dark align-top leading-relaxed">{rubric?.levels?.level4 || ""}</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="space-y-4">
+                                                    <h5 className="text-sm font-extrabold text-blue-700 bg-white px-4 py-2 rounded-lg inline-flex items-center gap-2 border border-blue-100">
+                                                        <Search className="w-4 h-4" /> 2. ĐÁNH GIÁ THƯỜNG XUYÊN
+                                                    </h5>
+                                                    <div className="space-y-4">
+                                                        {list(preservedAssessmentResult.formativeAssessment?.quizzes).map((q: any, qi: number) => (
+                                                            <div key={`quiz-${qi}`} className="p-4 bg-white rounded-xl border border-slate-100 space-y-3">
+                                                                <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q?.question}</p>
+                                                                {renderAssessmentQuestionSupport(q)}
+                                                                <div className="grid grid-cols-1 gap-2">
+                                                                    {list(q?.options).map((opt: string, oi: number) => (
+                                                                        <div key={oi} className="flex items-center gap-2 text-[11px] text-brand-muted bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                                                            <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full text-[9px] font-bold">{String.fromCharCode(65 + oi)}</span>
+                                                                            {opt}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                                <p className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded inline-block">Đáp án: {q?.answer}</p>
+                                                            </div>
+                                                        ))}
+
+                                                        {list(preservedAssessmentResult.formativeAssessment?.part1_multipleChoice).length > 0 && (
+                                                            <div className="space-y-3">
+                                                                <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần I: Trắc nghiệm khách quan nhiều lựa chọn</h6>
+                                                                {list(preservedAssessmentResult.formativeAssessment?.part1_multipleChoice).map((q: any, qi: number) => (
+                                                                    <div key={`mc-${qi}`} className="p-4 bg-white rounded-xl border border-slate-100 space-y-3">
+                                                                        <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q?.question}</p>
+                                                                        {renderAssessmentQuestionSupport(q)}
+                                                                        <div className="grid grid-cols-1 gap-2">
+                                                                            {list(q?.options).map((opt: string, oi: number) => (
+                                                                                <div key={oi} className="flex items-center gap-2 text-[11px] text-brand-muted bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                                                                    <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full text-[9px] font-bold">{String.fromCharCode(65 + oi)}</span>
+                                                                                    {opt}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                        <p className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded inline-block">Đáp án: {q?.answer}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {list(preservedAssessmentResult.formativeAssessment?.part2_trueFalse).length > 0 && (
+                                                            <div className="space-y-3 mt-4">
+                                                                <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần II: Trắc nghiệm Đúng/Sai</h6>
+                                                                {list(preservedAssessmentResult.formativeAssessment?.part2_trueFalse).map((q: any, qi: number) => (
+                                                                    <div key={`tf-${qi}`} className="p-4 bg-white rounded-xl border border-slate-100 space-y-3">
+                                                                        <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q?.question}</p>
+                                                                        {renderAssessmentQuestionSupport(q)}
+                                                                        <div className="grid grid-cols-1 gap-2">
+                                                                            {list(q?.statements).map((stmt: string, oi: number) => (
+                                                                                <div key={oi} className="flex flex-col gap-1 text-[11px] text-brand-muted bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                                                                    <div className="flex items-start gap-2">
+                                                                                        <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full text-[9px] font-bold shrink-0">{String.fromCharCode(65 + oi)}</span>
+                                                                                        <span>{stmt}</span>
+                                                                                    </div>
+                                                                                    <p className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded self-start mt-1">Đáp án: {q?.answers?.[oi]}</p>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {list(preservedAssessmentResult.formativeAssessment?.part3_shortAnswer).length > 0 && (
+                                                            <div className="space-y-3 mt-4">
+                                                                <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần III: Trả lời ngắn / Tính toán</h6>
+                                                                {list(preservedAssessmentResult.formativeAssessment?.part3_shortAnswer).map((q: any, qi: number) => (
+                                                                    <div key={`short-${qi}`} className="p-4 bg-white rounded-xl border border-slate-100 space-y-3">
+                                                                        <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q?.question}</p>
+                                                                        {renderAssessmentQuestionSupport(q)}
+                                                                        <p className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-2 rounded-lg border border-emerald-100">Đáp án: {q?.answer}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {list(preservedAssessmentResult.formativeAssessment?.checklists).length > 0 && (
+                                                            <div className="p-4 border-2 border-dashed border-slate-200 rounded-xl bg-white">
+                                                                <p className="text-[10px] font-black text-brand-sidebar uppercase mb-3 opacity-70">Bảng kiểm (Checklist) tiến trình</p>
+                                                                <ul className="space-y-2">
+                                                                    {list(preservedAssessmentResult.formativeAssessment?.checklists).map((c: string, ci: number) => (
+                                                                        <li key={ci} className="flex items-start gap-2 text-[11px] text-brand-muted">
+                                                                            <div className="w-4 h-4 border border-slate-300 rounded mt-0.5 shrink-0"></div>
+                                                                            {c}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    <h5 className="text-sm font-extrabold text-indigo-700 bg-white px-4 py-2 rounded-lg inline-flex items-center gap-2 border border-indigo-100">
+                                                        <LayoutGrid className="w-4 h-4" /> 3. ĐÁNH GIÁ ĐỊNH KỲ
+                                                    </h5>
+                                                    <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-6 rounded-2xl text-white space-y-4 shadow-lg shadow-indigo-100 relative overflow-hidden">
+                                                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                                                            <Sparkles className="w-12 h-12" />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <p className="text-[9px] font-black uppercase opacity-70 tracking-widest">Nội dung yêu cầu</p>
+                                                            <h6 className="text-base font-bold leading-tight">{preservedAssessmentResult.summativeAssessment?.projectOrTest}</h6>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <p className="text-[9px] font-black uppercase opacity-70 tracking-widest">Tiêu chí bổ sung</p>
+                                                            <ul className="list-disc list-inside space-y-1 text-[11px] opacity-90 leading-relaxed font-medium">
+                                                                {list(preservedAssessmentResult.summativeAssessment?.requirements).map((r: string, ri: number) => <li key={ri}>{r}</li>)}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+
+                                                    {list(preservedAssessmentResult.feedbackSamples).length > 0 && (
+                                                        <div className="space-y-4 pt-4">
+                                                            <h5 className="text-sm font-extrabold text-brand-muted flex items-center gap-2">
+                                                                <AlertCircle className="w-4 h-4 text-emerald-500" /> 4. MẪU NHẬN XÉT CHI TIẾT
+                                                            </h5>
+                                                            <div className="grid grid-cols-1 gap-3">
+                                                                {list(preservedAssessmentResult.feedbackSamples).map((fb: any, fi: number) => (
+                                                                    <div key={fi} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm space-y-1">
+                                                                        <p className="text-[9px] font-black uppercase tracking-wider text-brand-muted">{fb?.level}</p>
+                                                                        <p className="text-[11px] text-brand-dark italic leading-relaxed">"{fb?.sampleText}"</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {!preservedAssessmentResult && !isDesigningAssessment && (
+                                        <ul className="space-y-2">
+                                            {assessmentPreview.map((line, idx) => (
+                                                <li key={idx} className="text-sm text-emerald-950 leading-relaxed">{line}</li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </div>
                             )}
 

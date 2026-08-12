@@ -3116,6 +3116,48 @@ export default function App() {
                         setMode("khgd-gen");
                         setResult(null);
                       }}
+                      onDesignPreservedAssessment={async (data) => {
+                        if (!requireOnlineForAi("Thiết kế đánh giá từ giáo án đã bảo toàn")) return null;
+                        if (!apiKey.trim()) {
+                          setShowSettings(true);
+                          return null;
+                        }
+                        try {
+                          const preservedLessonText = typeof data?.preservedLessonText === "string" ? data.preservedLessonText : "";
+                          return await generateCompetencyEvaluation({
+                            title: data.topic || "Giáo án gốc đã nâng cấp",
+                            subject: data.subject,
+                            grade: data.grade,
+                            preservedLessonText,
+                            preservationReport: data.preservationReport,
+                            assessment: data.assessmentText ? [data.assessmentText] : [],
+                            objectives: {
+                              knowledge: [data.objectivesKnowledge, preservedLessonText.slice(0, 7000)].filter(Boolean),
+                              subjectSpecific: [data.objectivesCompetency, data.additionalNotes].filter(Boolean),
+                              aiSpecific: [
+                                ...(data.injectedItems || []).map((item: any) => `${item.activityName}: ${item.injectedText}`),
+                                data.assessmentText,
+                                data.strictRule
+                              ].filter(Boolean)
+                            }
+                          });
+                        } catch (err: any) {
+                          const msg = err?.message || "";
+                          if (msg.includes("QUOTA_EXHAUSTED")) {
+                            alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+                            setShowSettings(true);
+                          } else if (msg.includes("MODEL_OVERLOADED")) {
+                            alert("⚠️ Model Gemini đang quá tải tạm thời. Vui lòng thử lại sau 30 giây.");
+                          } else if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
+                            alert("❌ API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.");
+                            setShowSettings(true);
+                          } else {
+                            alert(`❌ Lỗi khi thiết kế đánh giá từ giáo án đã bảo toàn: ${msg || "Lỗi không xác định. Vui lòng thử lại."}`);
+                          }
+                          console.error("[Upgrade Assessment Error]", err);
+                          return null;
+                        }
+                      }}
                       onEvaluatePreservedLesson={async (data) => {
                         if (!requireOnlineForAi("Hội đồng AI đánh giá giáo án đã bảo toàn")) return null;
                         if (!apiKey.trim()) {

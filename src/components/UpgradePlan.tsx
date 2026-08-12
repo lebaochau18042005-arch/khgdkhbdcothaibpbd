@@ -432,6 +432,15 @@ export default function UpgradePlan({
 
     const textValue = (value: any) => value === undefined || value === null ? "" : String(value);
 
+    const tableCellText = (value: any) => textValue(value)
+        .replace(/\|/g, "/")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const markdownTableRow = (cells: any[]) => `| ${cells.map(tableCellText).join(" | ")} |`;
+
+    const markdownTableSeparator = (count: number) => `| ${Array.from({ length: count }, () => "---").join(" | ")} |`;
+
     const hasAssessmentTable = (tableData: any) =>
         Array.isArray(tableData?.headers) &&
         tableData.headers.length > 0 &&
@@ -484,9 +493,11 @@ export default function UpgradePlan({
     const appendAssessmentQuestionSupportText = (lines: string[], question: any) => {
         const tableData = question?.tableData;
         if (hasAssessmentTable(tableData)) {
+            const headers = list(tableData.headers);
             if (tableData.caption) lines.push(`Bảng số liệu: ${tableData.caption}`);
-            lines.push(list(tableData.headers).map(textValue).join(" | "));
-            list(tableData.rows).forEach((row: any) => lines.push(list(row).map(textValue).join(" | ")));
+            lines.push(markdownTableRow(headers));
+            lines.push(markdownTableSeparator(headers.length));
+            list(tableData.rows).forEach((row: any) => lines.push(markdownTableRow(list(row))));
             if (tableData.source) lines.push(`Nguồn: ${tableData.source}`);
         }
         if (question?.imagePlaceholder) lines.push(`Hình/Bản đồ/Biểu đồ: ${question.imagePlaceholder}`);
@@ -502,12 +513,17 @@ export default function UpgradePlan({
 
         lines.push("1. TIÊU CHÍ ĐÁNH GIÁ (RUBRICS)");
         list(evaluation?.rubrics).forEach((rubric: any, idx: number) => {
-            lines.push(`${idx + 1}. ${rubric?.competencyName || "Năng lực cần đánh giá"}`);
-            list(rubric?.criteria).forEach((criteria: any) => lines.push(`- Tiêu chí: ${criteria}`));
-            lines.push(`Mức 1: ${rubric?.levels?.level1 || ""}`);
-            lines.push(`Mức 2: ${rubric?.levels?.level2 || ""}`);
-            lines.push(`Mức 3: ${rubric?.levels?.level3 || ""}`);
-            lines.push(`Mức 4: ${rubric?.levels?.level4 || ""}`);
+            lines.push(`${idx + 1}. Năng lực: ${rubric?.competencyName || "Năng lực cần đánh giá"}`);
+            const rubricHeaders = ["Tiêu chí", "Mức 1: Chưa đạt", "Mức 2: Đạt", "Mức 3: Khá", "Mức 4: Tốt"];
+            lines.push(markdownTableRow(rubricHeaders));
+            lines.push(markdownTableSeparator(rubricHeaders.length));
+            lines.push(markdownTableRow([
+                list(rubric?.criteria).map((criteria: any) => `- ${tableCellText(criteria)}`).join("; "),
+                rubric?.levels?.level1 || "",
+                rubric?.levels?.level2 || "",
+                rubric?.levels?.level3 || "",
+                rubric?.levels?.level4 || ""
+            ]));
         });
 
         const formative = evaluation?.formativeAssessment || {};

@@ -241,12 +241,165 @@ function cleanInjectedText(text: string): string {
         .trim();
 }
 
+const WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+
+function createWordElement(xmlDoc: Document, tagName: string): Element {
+    return xmlDoc.createElementNS(WORD_NS, tagName);
+}
+
+function isPipeTableLine(line: string): boolean {
+    if (!line.includes("|")) return false;
+    return splitPipeTableRow(line).length >= 2;
+}
+
+function isMarkdownTableSeparator(line: string): boolean {
+    const cells = splitPipeTableRow(line);
+    return cells.length >= 2 && cells.every(cell => /^:?-{3,}:?$/.test(cell.trim()));
+}
+
+function splitPipeTableRow(line: string): string[] {
+    return cleanInjectedText(line)
+        .replace(/^\|/, "")
+        .replace(/\|$/, "")
+        .split("|")
+        .map(cell => cell.trim());
+}
+
+function normalizeTableRows(rows: string[][]): string[][] {
+    const columnCount = Math.max(...rows.map(row => row.length), 0);
+    return rows.map(row => [
+        ...row,
+        ...Array(Math.max(0, columnCount - row.length)).fill("")
+    ].slice(0, columnCount));
+}
+
+function createTableCellParagraph(xmlDoc: Document, text: string, colorValue: string, boldText = false): Element {
+    const paragraph = createWordElement(xmlDoc, "w:p");
+    const run = createWordElement(xmlDoc, "w:r");
+    const rPr = createWordElement(xmlDoc, "w:rPr");
+
+    const fonts = createWordElement(xmlDoc, "w:rFonts");
+    fonts.setAttribute("w:ascii", "Times New Roman");
+    fonts.setAttribute("w:hAnsi", "Times New Roman");
+    fonts.setAttribute("w:cs", "Times New Roman");
+    rPr.appendChild(fonts);
+
+    const color = createWordElement(xmlDoc, "w:color");
+    color.setAttribute("w:val", colorValue);
+    rPr.appendChild(color);
+
+    if (boldText) {
+        rPr.appendChild(createWordElement(xmlDoc, "w:b"));
+    }
+
+    const sz = createWordElement(xmlDoc, "w:sz");
+    sz.setAttribute("w:val", "20");
+    rPr.appendChild(sz);
+
+    run.appendChild(rPr);
+
+    const wT = createWordElement(xmlDoc, "w:t");
+    wT.textContent = cleanInjectedText(text);
+    wT.setAttribute("xml:space", "preserve");
+    run.appendChild(wT);
+    paragraph.appendChild(run);
+
+    return paragraph;
+}
+
+function createTableCell(xmlDoc: Document, text: string, colorValue: string, boldText: boolean, columnWidth: number): Element {
+    const cell = createWordElement(xmlDoc, "w:tc");
+    const tcPr = createWordElement(xmlDoc, "w:tcPr");
+
+    const tcW = createWordElement(xmlDoc, "w:tcW");
+    tcW.setAttribute("w:w", String(columnWidth));
+    tcW.setAttribute("w:type", "dxa");
+    tcPr.appendChild(tcW);
+
+    if (boldText) {
+        const shd = createWordElement(xmlDoc, "w:shd");
+        shd.setAttribute("w:val", "clear");
+        shd.setAttribute("w:color", "auto");
+        shd.setAttribute("w:fill", "F8FAFC");
+        tcPr.appendChild(shd);
+    }
+
+    const tcMar = createWordElement(xmlDoc, "w:tcMar");
+    ["top", "bottom", "left", "right"].forEach(side => {
+        const margin = createWordElement(xmlDoc, `w:${side}`);
+        margin.setAttribute("w:w", "100");
+        margin.setAttribute("w:type", "dxa");
+        tcMar.appendChild(margin);
+    });
+    tcPr.appendChild(tcMar);
+
+    cell.appendChild(tcPr);
+    cell.appendChild(createTableCellParagraph(xmlDoc, text, colorValue, boldText));
+    return cell;
+}
+
+function createWordTable(xmlDoc: Document, rows: string[][], colorValue: string): Element {
+    const normalizedRows = normalizeTableRows(rows);
+    const columnCount = normalizedRows[0]?.length || 1;
+    const columnWidth = Math.max(1200, Math.floor(9000 / columnCount));
+    const table = createWordElement(xmlDoc, "w:tbl");
+
+    const tblPr = createWordElement(xmlDoc, "w:tblPr");
+    const tblW = createWordElement(xmlDoc, "w:tblW");
+    tblW.setAttribute("w:w", "0");
+    tblW.setAttribute("w:type", "auto");
+    tblPr.appendChild(tblW);
+
+    const borders = createWordElement(xmlDoc, "w:tblBorders");
+    ["top", "left", "bottom", "right", "insideH", "insideV"].forEach(side => {
+        const border = createWordElement(xmlDoc, `w:${side}`);
+        border.setAttribute("w:val", "single");
+        border.setAttribute("w:sz", "6");
+        border.setAttribute("w:space", "0");
+        border.setAttribute("w:color", "CBD5E1");
+        borders.appendChild(border);
+    });
+    tblPr.appendChild(borders);
+    table.appendChild(tblPr);
+
+    normalizedRows.forEach((row, rowIndex) => {
+        const tr = createWordElement(xmlDoc, "w:tr");
+        row.forEach(cellText => {
+            tr.appendChild(createTableCell(xmlDoc, cellText, colorValue, rowIndex === 0, columnWidth));
+        });
+        table.appendChild(tr);
+    });
+
+    return table;
+}
+
 function createStyledBlock(xmlDoc: Document, label: string, text: string, colorValue: string): Element[] {
     const lines = text.split("\n").map(line => cleanInjectedText(line)).filter(Boolean);
-    return [
-        createStyledParagraph(xmlDoc, label, colorValue, true, "0"),
-        ...lines.map(line => createStyledParagraph(xmlDoc, line, colorValue, false, "360"))
-    ];
+    const elements: Element[] = [createStyledParagraph(xmlDoc, label, colorValue, true, "0")];
+
+    for (let i = 0; i < lines.length; i++) {
+        if (isPipeTableLine(lines[i])) {
+            const tableRows: string[][] = [];
+            let cursor = i;
+
+            while (cursor < lines.length && isPipeTableLine(lines[cursor])) {
+                if (!isMarkdownTableSeparator(lines[cursor])) {
+                    tableRows.push(splitPipeTableRow(lines[cursor]));
+                }
+                cursor++;
+            }
+
+            if (tableRows.length >= 2) {
+                elements.push(createWordTable(xmlDoc, tableRows, colorValue));
+                i = cursor - 1;
+                continue;
+            }
+        }
+
+        elements.push(createStyledParagraph(xmlDoc, lines[i], colorValue, false, "360"));
+    }
+
+    return elements;
 }
 
 function insertBlockNearHeading(

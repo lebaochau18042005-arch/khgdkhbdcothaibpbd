@@ -1817,10 +1817,35 @@ export default function App() {
     alert("Đã sao chép vào bộ nhớ tạm!");
   };
 
+  const getExportSubject = () => {
+    if (!result) return eduPlanInput.subject || lessonPlanInput.subject || "Mon_hoc";
+    if (result.type === "khbd" || result.type === "evaluation") {
+      return lessonPlanInput.subject || eduPlanInput.subject || "Mon_hoc";
+    }
+    const firstRow = Array.isArray(result.data) ? result.data[0] : result.data;
+    return eduPlanInput.subject || firstRow?.subject || lessonPlanInput.subject || "Mon_hoc";
+  };
+
+  const getExportGrade = () => {
+    if (!result) return eduPlanInput.grade || lessonPlanInput.grade || "";
+    if (result.type === "khbd" || result.type === "evaluation") {
+      return lessonPlanInput.grade || eduPlanInput.grade || "";
+    }
+    const firstRow = Array.isArray(result.data) ? result.data[0] : result.data;
+    return eduPlanInput.grade || firstRow?.grade || lessonPlanInput.grade || "";
+  };
+
+  const safeExportName = (value: string) =>
+    String(value || "Mon_hoc")
+      .replace(/[\\/:*?"<>|]+/g, "")
+      .replace(/\s+/g, "_")
+      .trim();
+
   // ===== EXPORT HTML =====
   const downloadHTML = () => {
     if (!result || !result.data) return;
-    const currentSubject = lessonPlanInput.subject || eduPlanInput.subject;
+    const currentSubject = getExportSubject();
+    const currentGrade = getExportGrade();
     const element = result.type === "khbd" ? contentRef.current : tableRef.current;
     if (!element) return;
 
@@ -1858,7 +1883,7 @@ export default function App() {
 <div class="container">
   <div class="header-bar">
     <h1>khgdkhbdcothaibpbd — Kế hoạch Giáo dục</h1>
-    <p>Môn: ${currentSubject} | Khối: ${lessonPlanInput.grade || eduPlanInput.grade} | Chuẩn CV 5512 + QĐ 3439/BGDĐT</p>
+    <p>Môn: ${currentSubject} | Khối: ${currentGrade} | Chuẩn CV 5512 + QĐ 3439/BGDĐT</p>
   </div>
   ${element.innerHTML}
   <div class="footer">Tạo bởi khgdkhbdcothaibpbd • Hệ thống Kế hoạch Giáo dục Thông minh • ${new Date().toLocaleDateString('vi-VN')}</div>
@@ -1870,7 +1895,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${result.type.toUpperCase()}_${currentSubject}.html`;
+    link.download = `${result.type.toUpperCase()}_${safeExportName(currentSubject)}_Lop${safeExportName(currentGrade)}.html`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -1878,8 +1903,8 @@ export default function App() {
   // ===== EXPORT PPTX (via JSZip Open XML) =====
   const downloadPPTX = async () => {
     if (!result || !result.data) return;
-    const currentSubject = lessonPlanInput.subject || eduPlanInput.subject;
-    const grade = lessonPlanInput.grade || eduPlanInput.grade;
+    const currentSubject = getExportSubject();
+    const grade = getExportGrade();
 
     // Build slide content based on result type
     const slides: Array<{ title: string; bullets: string[] }> = [];
@@ -2055,7 +2080,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${result.type.toUpperCase()}_${currentSubject}.pptx`;
+    link.download = `${result.type.toUpperCase()}_${safeExportName(currentSubject)}_Lop${safeExportName(grade)}.pptx`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -2064,12 +2089,14 @@ export default function App() {
 
     const element = result.type === "khbd" ? contentRef.current : tableRef.current;
     if (!element) return;
+    const currentSubject = getExportSubject();
+    const currentGrade = getExportGrade();
 
     // Use a small timeout to ensure DOM is fully rendered
     setTimeout(() => {
       const opt = {
         margin: [10, 10, 10, 10] as [number, number, number, number],
-        filename: `${result.type.toUpperCase()}_${lessonPlanInput.subject || eduPlanInput.subject}_Lop${lessonPlanInput.grade || eduPlanInput.grade}.pdf`,
+        filename: `${result.type.toUpperCase()}_${safeExportName(currentSubject)}_Lop${safeExportName(currentGrade)}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
           scale: 2,
@@ -2091,7 +2118,8 @@ export default function App() {
   const downloadWord = async () => {
     if (!result || !result.data) return;
 
-    const currentSubject = lessonPlanInput.subject || eduPlanInput.subject;
+    const currentSubject = getExportSubject();
+    const currentGrade = getExportGrade();
     const isEnglish = currentSubject === "Tiếng Anh" || currentSubject.toLowerCase().includes("english");
 
     const t = (text: string) => {
@@ -2329,7 +2357,25 @@ export default function App() {
       return paragraphs;
     };
 
-    const fileName = `${result.type.toUpperCase()}_${currentSubject}_Lop${lessonPlanInput.grade || eduPlanInput.grade}.docx`;
+    const wordCell = (
+      value: any,
+      options: { bold?: boolean; red?: boolean; fill?: string; center?: boolean; size?: number } = {}
+    ) => new TableCell({
+      children: String(value ?? "")
+        .split(/\n/)
+        .map((line) => new Paragraph({
+          children: (options.red || options.bold || options.size)
+            ? [new TextRun({ text: line, color: options.red ? "FF0000" : undefined, bold: options.bold, size: options.size })]
+            : parseMarkdownToTextRunsDocx(line),
+          alignment: options.center ? AlignmentType.CENTER : undefined,
+          spacing: { before: 20, after: 20 }
+        })),
+      margins: { top: 100, bottom: 100, left: 100, right: 100 },
+      verticalAlign: VerticalAlign.TOP,
+      ...(options.fill ? { shading: { fill: options.fill } } : {})
+    });
+
+    const fileName = `${result.type.toUpperCase()}_${safeExportName(currentSubject)}_Lop${safeExportName(currentGrade)}.docx`;
 
     let doc;
 
@@ -2362,7 +2408,7 @@ export default function App() {
                 width: { size: 50, type: WidthType.PERCENTAGE },
                 children: [
                   new Paragraph({ children: [new TextRun({ text: `Môn học: ${currentSubject}`, bold: true, size: 22 })] }),
-                  new Paragraph({ children: [new TextRun({ text: `Khối lớp: ${lessonPlanInput.grade || eduPlanInput.grade}`, size: 22 })] }),
+                  new Paragraph({ children: [new TextRun({ text: `Khối lớp: ${currentGrade}`, size: 22 })] }),
                   new Paragraph({ children: [new TextRun({ text: "Người thực hiện: .........................", size: 22 })] })
                 ]
               })
@@ -2674,18 +2720,14 @@ export default function App() {
         new TableRow({
           children: [
             t("Thứ tự tiết"), t("Bài học"), t("Số tiết"), t("Thời điểm"), t("Thiết bị"), t("Địa điểm"), t("Định hướng năng lực số")
-          ].map(h => new TableCell({
-            children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })], alignment: AlignmentType.CENTER })],
-            verticalAlign: VerticalAlign.CENTER,
-            shading: { fill: "F1F5F9" }
-          }))
+          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx === 6 }))
         }),
         ...(Array.isArray(result.data) ? result.data : []).map((item: any) => new TableRow({
           children: [
-            new TableCell({ children: [new Paragraph({ text: String(item.order), alignment: AlignmentType.CENTER })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: item.lesson, bold: true })] })] }),
-            new TableCell({ children: [new Paragraph({ text: String(item.periods), alignment: AlignmentType.CENTER })] }),
-            new TableCell({ children: [new Paragraph({ text: String(item.timing) })] }),
+            wordCell(item.order, { center: true }),
+            wordCell(item.lesson, { bold: true }),
+            wordCell(item.periods, { center: true }),
+            wordCell(item.timing),
             new TableCell({
               children: [
                 new Paragraph({ children: [new TextRun({ text: t("TRUYỀN THỐNG:"), bold: true, size: 16 })] }),
@@ -2696,8 +2738,8 @@ export default function App() {
                 new Paragraph({ children: [new TextRun({ text: `- Công cụ: ${item.digitalToolsAndAI?.tools || ""}`, color: "FF0000", size: 16 })] }),
               ]
             }),
-            new TableCell({ children: [new Paragraph({ text: String(item.location) })] }),
-            new TableCell({ children: [new Paragraph({ text: String(item.digitalCompetency) })] }),
+            wordCell(item.location),
+            wordCell(item.digitalCompetency, { red: true, bold: true, fill: "FEF2F2" }),
           ]
         }))
       ];
@@ -2748,19 +2790,25 @@ export default function App() {
         new TableRow({
           children: [
             t("STT"), t("Thời gian"), t("Nội dung"), t("Số tiết"), t("Yêu cầu cần đạt"), t("Năng lực số"), t("Mục tiêu & YCCĐ 3439 Tích hợp GD AI")
-          ].map(h => new TableCell({
-            children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })], alignment: AlignmentType.CENTER })],
-            verticalAlign: VerticalAlign.CENTER,
-            shading: { fill: "F1F5F9" }
-          }))
+          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx === 6 }))
         }),
         ...planRows.map((item: any, i: number) => {
           const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
           const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
           return new TableRow({
             children: [
-              i + 1, item.time || item.topic || item.lessonName, item.lessonContent || item.lessonName, item.periods, item.lessonGoal, item.digitalCompetencyTT02 || "Không", isNotIntegrated ? aiText : item.aiCompetency3439Integrated
-            ].map(v => new TableCell({ children: [new Paragraph({ text: String(v) })] }))
+              wordCell(i + 1, { center: true }),
+              wordCell(item.time || item.topic || item.lessonName),
+              wordCell(item.lessonContent || item.lessonName),
+              wordCell(item.periods, { center: true }),
+              wordCell(item.lessonGoal),
+              wordCell(item.digitalCompetencyTT02 || "Không"),
+              wordCell(isNotIntegrated ? aiText : item.aiCompetency3439Integrated, {
+                red: !isNotIntegrated,
+                bold: !isNotIntegrated,
+                fill: !isNotIntegrated ? "FEF2F2" : undefined
+              })
+            ]
           });
         })
       ];
@@ -2822,17 +2870,23 @@ export default function App() {
         new TableRow({
           children: [
             t("STT"), t("Chủ đề/Hoạt động"), t("Yêu cầu cần đạt"), t("Số tiết"), t("Thời điểm"), t("Địa điểm"), t("Người chủ trì"), t("Phối hợp"), t("Điều kiện thực hiện"), t("Tích hợp NLS/AI")
-          ].map(h => new TableCell({
-            children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })], alignment: AlignmentType.CENTER })],
-            verticalAlign: VerticalAlign.CENTER,
-            shading: { fill: "F1F5F9" }
-          }))
+          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx === 9 }))
         }),
         ...(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => {
+          const hasAiIntegration = hasMeaningfulText(item.aiIntegration) && !String(item.aiIntegration).toLowerCase().includes("không");
           return new TableRow({
             children: [
-              i + 1, item.theme, item.requirements, item.periods, item.timing, item.location, item.host, item.collaborator, item.conditions, item.aiIntegration
-            ].map(v => new TableCell({ children: [new Paragraph({ text: String(v) })] }))
+              wordCell(i + 1, { center: true }),
+              wordCell(item.theme),
+              wordCell(item.requirements),
+              wordCell(item.periods, { center: true }),
+              wordCell(item.timing),
+              wordCell(item.location),
+              wordCell(item.host),
+              wordCell(item.collaborator),
+              wordCell(item.conditions),
+              wordCell(item.aiIntegration, { red: hasAiIntegration, bold: hasAiIntegration, fill: hasAiIntegration ? "FEF2F2" : undefined })
+            ]
           });
         })
       ];
@@ -2884,7 +2938,8 @@ export default function App() {
   const downloadText = () => {
     let content = "";
 
-    const currentSubject = lessonPlanInput.subject || eduPlanInput.subject;
+    const currentSubject = getExportSubject();
+    const currentGrade = getExportGrade();
     const isEnglish = currentSubject === "Tiếng Anh" || currentSubject.toLowerCase().includes("english");
 
     const t = (text: string) => {
@@ -3021,7 +3076,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${result.type.toUpperCase()}_${currentSubject}.txt`;
+    link.download = `${result.type.toUpperCase()}_${safeExportName(currentSubject)}_Lop${safeExportName(currentGrade)}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   };

@@ -692,7 +692,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
             ["mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu"],
             "[BỔ SUNG SAU NĂNG LỰC CHUNG VÀ NĂNG LỰC ĐẶC THÙ: NLS/NL AI]",
             options.objectivesText,
-            "C0392B"
+            "FF0000"
         );
         previewItems.push({
             activityName: "I. MỤC TIÊU / NĂNG LỰC - bổ sung NLS/NL AI sau NL chung và NL đặc thù",
@@ -711,7 +711,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
             insertBodyElementsAfter(
                 xmlDoc,
                 reference,
-                createStyledBlock(xmlDoc, `[TÍCH HỢP AI - QĐ 3439] ${snippet.activityName}`, snippet.text, "C0392B")
+                createStyledBlock(xmlDoc, `[TÍCH HỢP AI - QĐ 3439] ${snippet.activityName}`, snippet.text, "FF0000")
             );
             
             injectedCount++;
@@ -735,7 +735,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
                 insertBodyElementsAfter(
                     xmlDoc,
                     null,
-                    createStyledBlock(xmlDoc, `[TÍCH HỢP AI - ${snippet.activityName}]`, snippet.text, "E74C3C")
+                    createStyledBlock(xmlDoc, `[TÍCH HỢP AI - ${snippet.activityName}]`, snippet.text, "FF0000")
                 );
                 injectedCount++;
             }
@@ -748,7 +748,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
             xmlDoc,
             "[GỢI Ý ĐÁNH GIÁ NLS/NL AI - ĐẶT CUỐI GIÁO ÁN]",
             options.assessmentText,
-            "C0392B"
+            "FF0000"
         );
         previewItems.push({
             activityName: "CUỐI GIÁO ÁN - GỢI Ý ĐÁNH GIÁ NLS/NL AI",
@@ -817,7 +817,7 @@ export async function appendAssessmentDesignToDocx(source: Blob | File, assessme
         ],
         "[THIẾT KẾ ĐÁNH GIÁ NLS/NL AI]",
         assessmentText,
-        "C0392B"
+        "FF0000"
     );
 
     const serializer = new XMLSerializer();

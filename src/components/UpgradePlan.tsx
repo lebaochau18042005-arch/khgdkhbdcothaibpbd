@@ -272,11 +272,25 @@ export default function UpgradePlan({
         try {
             const blobToSave = await ensureAssessmentResultInDocx();
             if (!blobToSave) return;
-            saveAs(blobToSave, file.name.replace(/\.docx$/i, "_AI_NangCap.docx"));
+            saveAs(blobToSave, buildUpgradeFileName("AI_NangCap", ".docx"));
         } catch (err) {
             console.error("Không chèn được thiết kế đánh giá vào DOCX trước khi tải", err);
             alert("❌ Chưa thể chèn nội dung thiết kế đánh giá vào file DOCX. Vui lòng thử bấm lại nút Thiết kế đánh giá hoặc tải lại giáo án.");
         }
+    };
+
+    const safeFileSegment = (value?: string) =>
+        String(value || "")
+            .replace(/\.[^.]+$/g, "")
+            .replace(/[\\/:*?"<>|]+/g, "")
+            .replace(/\s+/g, "_")
+            .trim();
+
+    const buildUpgradeFileName = (suffix: string, extension: string) => {
+        const baseTopic = safeFileSegment(analysisResult?.topic || file?.name || "Giao_an") || "Giao_an";
+        const subject = safeFileSegment(analysisResult?.subject || "Mon_hoc") || "Mon_hoc";
+        const grade = safeFileSegment(analysisResult?.grade || "");
+        return [baseTopic, subject, grade ? `Lop${grade}` : "", suffix].filter(Boolean).join("_") + extension;
     };
 
 
@@ -769,12 +783,12 @@ export default function UpgradePlan({
 
     const handleDownloadPreviewText = () => {
         if (!fullPreviewText) return;
-        downloadTextFile(`${analysisResult?.topic || "Giao_an"}_AI_ToanVan.txt`, fullPreviewText);
+        downloadTextFile(buildUpgradeFileName("AI_XemTruoc", ".txt"), fullPreviewText);
     };
 
     const handleDownloadPreviewHtml = () => {
         if (!fullPreviewText && !fullPreviewHtml) return;
-        downloadTextFile(`${analysisResult?.topic || "Giao_an"}_AI_ToanVan.html`, buildPreviewHtmlDocument(), "text/html;charset=utf-8");
+        downloadTextFile(buildUpgradeFileName("AI_XemTruoc", ".html"), buildPreviewHtmlDocument(), "text/html;charset=utf-8");
     };
 
     const handleDownloadPreviewPdf = async () => {
@@ -791,7 +805,7 @@ export default function UpgradePlan({
             await html2pdf()
                 .set({
                     margin: 10,
-                    filename: `${analysisResult?.topic || "Giao_an"}_AI_XemTruoc.pdf`,
+                    filename: buildUpgradeFileName("AI_XemTruoc", ".pdf"),
                     image: { type: "jpeg", quality: 0.98 },
                     html2canvas: { scale: 2, useCORS: true },
                     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
@@ -806,7 +820,7 @@ export default function UpgradePlan({
     const handleDownloadAssessmentText = () => {
         if (!assessmentPreview.length && !preservedAssessmentResult) return;
         downloadTextFile(
-            `${analysisResult?.topic || "Giao_an"}_DanhGia_NLS_NLAI.txt`,
+            buildUpgradeFileName("DanhGia_NLS_NLAI", ".txt"),
             preservedAssessmentResult ? formatPreservedAssessmentText(preservedAssessmentResult) : assessmentPreview.join("\n")
         );
     };

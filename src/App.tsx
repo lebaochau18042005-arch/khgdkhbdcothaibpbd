@@ -62,7 +62,7 @@ const mapAiCompetencyText = (code: string) => {
   else if (/\.D\./i.test(code) || code.includes("NLd")) groupName = "Thiết kế hệ thống và GQVD (NLd)";
   else return code; // return raw code if no match
 
-  return `${code} - ${groupName}`;
+  return `${groupName} - Mã NL AI: ${code}`;
 };
 
 type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "kh-hdgd-gen" | "upgrade-plan" | "ai-framework-gen" | "su-dia-skills" | "nls-lookup" | "history";
@@ -5132,8 +5132,8 @@ export default function App() {
                             </h3>
                             <div className="flex gap-2">
                               <button onClick={() => {
-                                const tableText = (result.data as any[]).map(row => `${row.code}\t${row.content}\t${row.component}\t${row.level}\t${row.evidence}\t${row.activities}\t${row.tools}\t${row.rubric}`).join('\n');
-                                const header = "Mã chỉ báo\tNội dung chỉ báo\tThành phần năng lực\tMức độ nhận thức\tMinh chứng đánh giá\tHoạt động học tập gợi ý\tCông cụ AI phù hợp\tTiêu chí đánh giá (Rubric)\n";
+                                const tableText = (result.data as any[]).map(row => `${row.component}\t${row.activities}\t${row.content}\t${row.code}\t${row.product || "Sản phẩm học tập theo hoạt động gợi ý"}\t${row.rubric}\t${row.evidence}\t${row.level}\t${row.tools}`).join('\n');
+                                const header = "Tên thành phần năng lực AI\tHành vi học sinh\tYêu cầu cần đạt AI\tMã NL AI\tSản phẩm\tTiêu chí\tMinh chứng\tMức độ nhận thức\tCông cụ AI phù hợp\n";
                                 navigator.clipboard.writeText(header + tableText);
                                 alert("Đã sao chép Khung năng lực vào Clipboard. Bạn có thể dán vào Excel/Word.");
                               }} className="p-2 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors shadow-sm" title="Sao chép (Dán vào Excel/Word)">
@@ -5146,31 +5146,33 @@ export default function App() {
                             <table className="w-full text-sm text-left border-collapse">
                               <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                                 <tr>
-                                  <th className="px-4 py-3 border border-slate-200 whitespace-nowrap">Mã chỉ báo</th>
-                                  <th className="px-4 py-3 border border-slate-200 min-w-[200px]">Nội dung chỉ báo</th>
-                                  <th className="px-4 py-3 border border-slate-200 whitespace-nowrap">Thành phần</th>
-                                  <th className="px-4 py-3 border border-slate-200 whitespace-nowrap">Mức độ</th>
+                                  <th className="px-4 py-3 border border-slate-200 whitespace-nowrap">Tên thành phần NL AI</th>
+                                  <th className="px-4 py-3 border border-slate-200 min-w-[200px]">Hành vi học sinh</th>
+                                  <th className="px-4 py-3 border border-slate-200 min-w-[200px]">Yêu cầu cần đạt AI</th>
+                                  <th className="px-4 py-3 border border-slate-200 whitespace-nowrap">Mã NL AI</th>
+                                  <th className="px-4 py-3 border border-slate-200 min-w-[180px]">Sản phẩm</th>
+                                  <th className="px-4 py-3 border border-slate-200 min-w-[200px]">Tiêu chí</th>
                                   <th className="px-4 py-3 border border-slate-200 min-w-[150px]">Minh chứng</th>
-                                  <th className="px-4 py-3 border border-slate-200 min-w-[200px]">Hoạt động học tập</th>
+                                  <th className="px-4 py-3 border border-slate-200 whitespace-nowrap">Mức độ</th>
                                   <th className="px-4 py-3 border border-slate-200 min-w-[120px]">Công cụ AI</th>
-                                  <th className="px-4 py-3 border border-slate-200 min-w-[200px]">Rubric</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-100">
                                 {(result.data as any[]).map((row, index) => (
                                   <tr key={index} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-4 py-3 border border-slate-200 font-semibold text-brand-accent">{row.code}</td>
-                                    <td className="px-4 py-3 border border-slate-200">{row.content}</td>
                                     <td className="px-4 py-3 border border-slate-200">
                                       <span className="inline-flex items-center px-2 py-1 rounded text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">{row.component}</span>
                                     </td>
+                                    <td className="px-4 py-3 border border-slate-200">{row.activities}</td>
+                                    <td className="px-4 py-3 border border-slate-200">{row.content}</td>
+                                    <td className="px-4 py-3 border border-slate-200 font-semibold text-brand-accent">{row.code}</td>
+                                    <td className="px-4 py-3 border border-slate-200">{row.product || "Sản phẩm học tập theo hoạt động gợi ý"}</td>
+                                    <td className="px-4 py-3 border border-slate-200">{row.rubric}</td>
+                                    <td className="px-4 py-3 border border-slate-200">{row.evidence}</td>
                                     <td className="px-4 py-3 border border-slate-200">
                                       <span className="inline-flex items-center px-2 py-1 rounded text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">{row.level}</span>
                                     </td>
-                                    <td className="px-4 py-3 border border-slate-200">{row.evidence}</td>
-                                    <td className="px-4 py-3 border border-slate-200">{row.activities}</td>
                                     <td className="px-4 py-3 border border-slate-200">{row.tools}</td>
-                                    <td className="px-4 py-3 border border-slate-200">{row.rubric}</td>
                                   </tr>
                                 ))}
                               </tbody>

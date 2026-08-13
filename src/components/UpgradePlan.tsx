@@ -299,6 +299,43 @@ export default function UpgradePlan({
 
     const plain = (value?: string) => (value || "").replace(/<bold>|<\/bold>|<ai>|<\/ai>|\*\*/gi, "").trim();
 
+    const getAiCompetencyNameFromCode = (code?: string) => {
+        const normalized = (code || "").toUpperCase();
+        if (/\.(A\d+)\./.test(normalized) || normalized.includes("NLA")) return "NLa - Tư duy lấy con người làm trung tâm";
+        if (/\.(B\d+)\./.test(normalized) || normalized.includes("NLB")) return "NLb - Đạo đức và trách nhiệm xã hội";
+        if (/\.(C\d+)\./.test(normalized) || normalized.includes("NLC")) return "NLc - Kỹ thuật và ứng dụng";
+        if (/\.(D\d+)\./.test(normalized) || normalized.includes("NLD")) return "NLd - Giải quyết vấn đề và thiết kế hệ thống";
+        return "Thành phần năng lực AI cần đối chiếu theo CV/QĐ 3439";
+    };
+
+    const buildAiOrderedFields = (sug: any) => {
+        const code = sug?.suggestedAI || "Không gán mã";
+        const behavior = plain(sug?.aiStudentBehavior || sug?.action || "Học sinh thực hiện nhiệm vụ học tập có sử dụng AI dưới sự hướng dẫn của giáo viên.");
+        const yccd = plain(sug?.aiYccd || sug?.yccdEvidence || sug?.reason || "Căn cứ YCCĐ cần được giáo viên đối chiếu trước khi sử dụng.");
+        return {
+            competencyName: plain(sug?.aiCompetencyName || sug?.aiComponentName || getAiCompetencyNameFromCode(code)),
+            behavior,
+            yccd,
+            code,
+            product: plain(sug?.aiProduct || sug?.product || "Sản phẩm học tập có sử dụng AI và được học sinh chỉnh sửa/kiểm chứng."),
+            criteria: plain(sug?.aiCriteria || sug?.criteria || "Đúng kiến thức môn học; dùng AI đúng mục đích; biết kiểm chứng nguồn và giải thích cách điều chỉnh kết quả AI."),
+            evidence: plain(sug?.aiEvidence || sug?.evidence || "Prompt đã dùng, nguồn kiểm chứng, bản chỉnh sửa của học sinh và sản phẩm cuối.")
+        };
+    };
+
+    const buildAiOrderedText = (sug: any) => {
+        const fields = buildAiOrderedFields(sug);
+        return [
+            `Tên thành phần năng lực AI: ${fields.competencyName}`,
+            `Hành vi học sinh: ${fields.behavior}`,
+            `Yêu cầu cần đạt AI: ${fields.yccd}`,
+            `Mã NL AI: ${fields.code}`,
+            `Sản phẩm: ${fields.product}`,
+            `Tiêu chí: ${fields.criteria}`,
+            `Minh chứng: ${fields.evidence}`
+        ].join("; ");
+    };
+
     const buildGeoDataBlockForSuggestion = (sug: any) => {
         const geo = sug?.geoDataRequirement;
         if (!geo) return "";
@@ -341,8 +378,7 @@ export default function UpgradePlan({
 
     const buildAiObjectiveLines = (suggestions = selectedIntegrations) =>
         suggestions.map((sug: any, idx: number) => {
-            const code = sug.suggestedAI || "Không gán mã";
-            return `${idx + 1}. NL AI ${code}: ${plain(sug.reason || sug.action)}`;
+            return `${idx + 1}. ${buildAiOrderedText(sug)}`;
         });
 
     const buildObjectiveText = (suggestions = selectedIntegrations) => {
@@ -362,16 +398,16 @@ export default function UpgradePlan({
         const headers = ["Hoạt động tích hợp", "NLS", "NL AI", "Tiêu chí đánh giá", "Minh chứng"];
         const rows = suggestions.map((sug: any) => {
             const nls = sug.suggestedNLS || "NLS cần đối chiếu";
-            const ai = sug.suggestedAI || "NL AI cần đối chiếu";
+            const aiFields = buildAiOrderedFields(sug);
             const geoCriteria = sug.geoDataRequirement
                 ? "Riêng nhiệm vụ Địa lí phải có bảng số liệu đúng nguồn, biểu đồ phù hợp, nhận xét xu hướng và giải thích nguyên nhân bằng kiến thức Địa lí."
                 : "";
             return markdownTableRow([
                 sug.activityName,
                 nls,
-                ai,
-                `Đúng kiến thức môn học; biết kiểm chứng nguồn/đầu ra AI; sản phẩm rõ ràng, có minh chứng; giải thích được cách dùng công cụ. ${geoCriteria}`,
-                "Prompt, bảng số liệu/biểu đồ nếu có, bản chỉnh sửa của học sinh, sản phẩm cuối."
+                buildAiOrderedText(sug),
+                `${aiFields.criteria} ${geoCriteria}`,
+                aiFields.evidence
             ]);
         });
         return [
@@ -1126,6 +1162,7 @@ export default function UpgradePlan({
                             <div className="space-y-3">
                                 {analysisResult.aiSuggestions?.map((sug: any, idx: number) => {
                                     const validCode = hasValidAiCode(sug.suggestedAI);
+                                    const aiFields = buildAiOrderedFields(sug);
                                     const isSelected = validCode && selectedIntegrations.includes(sug);
                                     const isSelClass = isSelected
                                         ? "border-blue-600 bg-blue-50 shadow-sm"
@@ -1154,6 +1191,7 @@ export default function UpgradePlan({
                                                     </div>
                                                 </div>
                                                 {sug.yccdEvidence && <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Căn cứ YCCĐ:</span> {sug.yccdEvidence}</p>}
+                                                <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Thành phần NL AI:</span> {aiFields.competencyName} <span className="font-semibold text-slate-700">- Mã:</span> {aiFields.code}</p>
                                                 <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Lý do:</span> {sug.reason}</p>
                                                 <p className="text-sm text-slate-600"><span className="font-semibold text-slate-700">Hành động của HS:</span> {sug.action}</p>
                                                 {sug.geoDataRequirement && (

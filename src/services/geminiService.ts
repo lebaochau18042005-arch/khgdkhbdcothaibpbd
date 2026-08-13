@@ -1387,16 +1387,29 @@ ${JSON.stringify(normalizedCurriculumDbData.map(l => ({ topic: l.topic, indicato
 LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. Trước khi ghi mã AI phải ghi tên thành phần năng lực AI. Chỉ dùng indicatorCode nếu trường này còn tồn tại sau khi hệ thống lọc. Nếu indicatorCode bị bỏ trống hoặc có indicatorNote báo mã tạm/không hợp lệ, phải tự đối chiếu YCCĐ theo QĐ 3439; không đủ căn cứ thì ghi "Không tích hợp/Không gán mã".`
       : CURRICULUM_DATA;
 
-  const referencePrompt = referencePlan
+  const referenceRows = Array.isArray(referencePlan)
+    ? referencePlan.map((i, index) => ({
+        stt: index + 1,
+        thoi_gian: i.time || i.timing || "",
+        thu_tu_tiet: i.order || "",
+        bai_hoc: i.lessonContent || i.lesson || i.topic || i.lessonName || i.title || "",
+        so_tiet: i.periods || "",
+        yccd_CT2018: i.lessonGoal || i.yccd || [i.objectivesKnowledge, i.objectivesCompetency, i.objectivesQuality].filter(Boolean).join("; "),
+        nls_TT02_CV3456: i.digitalCompetencyTT02 || i.digitalCompetency || i.nls || "",
+        nl_ai_3439: i.aiCompetency3439Integrated || i.aiCompetency3439 || i.ai || i.nlai || "",
+        ghi_chu_dong_bo: i.sourceStatus || ""
+      }))
+    : [];
+
+  const referencePrompt = referenceRows.length
     ? `DỰA TRÊN KẾ HOẠCH TỔ CHUYÊN MÔN SAU ĐÂY ĐỂ ĐỒNG NHẤT NỘI DUNG(BẮT BUỘC):
-       ${JSON.stringify(referencePlan.map(i => ({ 
-           bài: i.lessonContent, 
-           mục_tiêu: i.lessonGoal, 
-           ai: i.aiCompetency3439,
-           năng_lực_số_TT02: i.digitalCompetencyTT02 
-       })), null, 2)}
+       ${JSON.stringify(referenceRows, null, 2)}
        
-       Yêu cầu: Bạn phải giữ nguyên tên các bài học, mục tiêu AI, và đặc biệt là cột Năng lực số (TT 02) đã có trong kế hoạch tổ chuyên môn ở trên.`
+       Yêu cầu bắt buộc:
+       - Phải tạo ĐÚNG ${referenceRows.length} dòng PL3, tương ứng từng dòng PL1 theo đúng thứ tự. Không bỏ dòng, không gộp dòng, không tự rút gọn.
+       - Phải giữ nguyên tên bài học, số tiết, thời điểm, YCCĐ CT 2018, NLS TT02/CV3456 và NL AI 3439 đã có trong PL1.
+       - PL3 chỉ được khai triển thêm thiết bị, học liệu, địa điểm và phương án tổ chức; không thay thế hoặc làm mất dữ liệu PL1.
+       - Nếu một ô PL1 ghi "Không tích hợp - lý do: ..." thì phải giữ đủ lý do đó trong PL3.`
     : "";
 
   const prompt = `
@@ -1424,6 +1437,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
     - ĐỐI VỚI MÔN GIÁO DỤC ĐỊA PHƯƠNG: Chỉ trong trường hợp này mới sử dụng nội dung đặc thù của ${province}.
     
     ${curriculumConstraint}
+    ${referenceRows.length ? "LƯU Ý ĐỒNG NHẤT PL3 TỪ PL1: PL1 ở trên là nguồn dữ liệu ưu tiên cao nhất. Dữ liệu chương trình mặc định chỉ dùng để kiểm tra và bù ô trống, tuyệt đối không được làm mất hoặc thay thế dòng PL1." : ""}
 
     2. Cấu trúc bảng Phân phối chương trình:
     - Thứ tự tiết: Số thứ tự tiết học.
@@ -1444,6 +1458,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
        - Nếu bài nào không phù hợp để tích hợp, tại cột "YCCĐ AI" và "Mục tiêu tích hợp AI" ghi rõ: "Không tích hợp".
 
     3. Định dạng đầu ra: Trình bày dưới dạng JSON Array các đối tượng.
+    ${referenceRows.length ? `LỆNH KIỂM ĐẾM PL1 -> PL3: JSON Array đầu ra bắt buộc có đúng ${referenceRows.length} object, không ít hơn. Mỗi object PL3 phải chứa đủ dữ liệu đồng bộ từ object PL1 cùng vị trí: bài_học, so_tiet, thoi_gian, yccd_CT2018, nls_TT02_CV3456, nl_ai_3439.` : ""}
   `;
 
   try {

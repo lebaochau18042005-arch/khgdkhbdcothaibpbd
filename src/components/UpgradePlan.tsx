@@ -447,6 +447,35 @@ export default function UpgradePlan({
 
     const textValue = (value: any) => value === undefined || value === null ? "" : String(value);
 
+    const stripChoicePrefix = (value: any) => textValue(value)
+        .replace(/^\s*(?:(?:[A-Da-d])\s*[\.\)\-:]\s*)+/, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const stripQuestionPrefix = (value: any) => textValue(value)
+        .replace(/^\s*(?:(?:phần|phan)\s*[ivxlcdm0-9]+\s*[-–—.]?\s*)?(?:câu|cau)\s*\d+\s*[:\.\-\)]\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const uniqueByText = <T,>(items: T[], mapper: (item: T) => string = (item) => textValue(item)) => {
+        const seen = new Set<string>();
+        return list(items).filter((item: T) => {
+            const key = mapper(item)
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/\s+/g, " ")
+                .trim();
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    };
+
+    const optionLabel = (idx: number) => String.fromCharCode(65 + idx);
+
+    const formatChoiceLine = (value: any, idx: number) => `${optionLabel(idx)}. ${stripChoicePrefix(value)}`;
+
     const tableCellText = (value: any) => textValue(value)
         .replace(/\|/g, "/")
         .replace(/\s+/g, " ")
@@ -601,26 +630,26 @@ export default function UpgradePlan({
         const formative = evaluation?.formativeAssessment || {};
         lines.push("", "2. ĐÁNH GIÁ THƯỜNG XUYÊN");
         list(formative?.quizzes).forEach((question: any, idx: number) => {
-            lines.push(`Câu ${idx + 1}: ${question?.question || ""}`);
-            list(question?.options).forEach((option: any, oi: number) => lines.push(`${String.fromCharCode(65 + oi)}. ${option}`));
+            lines.push(`Câu ${idx + 1}: ${stripQuestionPrefix(question?.question)}`);
+            uniqueByText(list(question?.options), stripChoicePrefix).forEach((option: any, oi: number) => lines.push(formatChoiceLine(option, oi)));
             appendAssessmentQuestionSupportText(lines, question);
             lines.push(`Đáp án: ${question?.answer || ""}`);
         });
         list(formative?.part1_multipleChoice).forEach((question: any, idx: number) => {
-            lines.push(`Phần I - Câu ${idx + 1}: ${question?.question || ""}`);
-            list(question?.options).forEach((option: any, oi: number) => lines.push(`${String.fromCharCode(65 + oi)}. ${option}`));
+            lines.push(`Phần I - Câu ${idx + 1}: ${stripQuestionPrefix(question?.question)}`);
+            uniqueByText(list(question?.options), stripChoicePrefix).forEach((option: any, oi: number) => lines.push(formatChoiceLine(option, oi)));
             appendAssessmentQuestionSupportText(lines, question);
             lines.push(`Đáp án: ${question?.answer || ""}`);
         });
         list(formative?.part2_trueFalse).forEach((question: any, idx: number) => {
-            lines.push(`Phần II - Câu ${idx + 1}: ${question?.question || ""}`);
-            list(question?.statements).forEach((statement: any, oi: number) => {
-                lines.push(`${String.fromCharCode(65 + oi)}. ${statement} (${question?.answers?.[oi] || ""})`);
+            lines.push(`Phần II - Câu ${idx + 1}: ${stripQuestionPrefix(question?.question)}`);
+            uniqueByText(list(question?.statements), stripChoicePrefix).forEach((statement: any, oi: number) => {
+                lines.push(`${formatChoiceLine(statement, oi)} (${question?.answers?.[oi] || ""})`);
             });
             appendAssessmentQuestionSupportText(lines, question);
         });
         list(formative?.part3_shortAnswer).forEach((question: any, idx: number) => {
-            lines.push(`Phần III - Câu ${idx + 1}: ${question?.question || ""}`);
+            lines.push(`Phần III - Câu ${idx + 1}: ${stripQuestionPrefix(question?.question)}`);
             appendAssessmentQuestionSupportText(lines, question);
             lines.push(`Đáp án: ${question?.answer || ""}`);
         });
@@ -628,14 +657,14 @@ export default function UpgradePlan({
         const checklistHeaders = ["STT", "Nội dung quan sát/đánh giá"];
         lines.push(markdownTableRow(checklistHeaders));
         lines.push(markdownTableSeparator(checklistHeaders.length));
-        list(formative?.checklists).forEach((item: any, idx: number) => lines.push(markdownTableRow([idx + 1, item])));
+        uniqueByText(list(formative?.checklists)).forEach((item: any, idx: number) => lines.push(markdownTableRow([idx + 1, item])));
 
         lines.push("", "3. ĐÁNH GIÁ ĐỊNH KỲ");
         const summativeHeaders = ["Thành phần", "Nội dung"];
         lines.push(markdownTableRow(summativeHeaders));
         lines.push(markdownTableSeparator(summativeHeaders.length));
         lines.push(markdownTableRow(["Nội dung yêu cầu", evaluation?.summativeAssessment?.projectOrTest || ""]));
-        list(evaluation?.summativeAssessment?.requirements).forEach((item: any, idx: number) => {
+        uniqueByText(list(evaluation?.summativeAssessment?.requirements)).forEach((item: any, idx: number) => {
             lines.push(markdownTableRow([`Yêu cầu ${idx + 1}`, item]));
         });
 
@@ -643,7 +672,7 @@ export default function UpgradePlan({
         const feedbackHeaders = ["Mức độ", "Mẫu nhận xét"];
         lines.push(markdownTableRow(feedbackHeaders));
         lines.push(markdownTableSeparator(feedbackHeaders.length));
-        list(evaluation?.feedbackSamples).forEach((feedback: any) => {
+        uniqueByText(list(evaluation?.feedbackSamples), (feedback: any) => `${feedback?.level || ""} ${feedback?.sampleText || ""}`).forEach((feedback: any) => {
             lines.push(markdownTableRow([feedback?.level || "Mức độ", feedback?.sampleText || ""]));
         });
 
@@ -1454,13 +1483,13 @@ export default function UpgradePlan({
                                                     <div className="space-y-4">
                                                         {list(preservedAssessmentResult.formativeAssessment?.quizzes).map((q: any, qi: number) => (
                                                             <div key={`quiz-${qi}`} className="p-4 bg-white rounded-xl border border-slate-100 space-y-3">
-                                                                <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q?.question}</p>
+                                                                <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {stripQuestionPrefix(q?.question)}</p>
                                                                 {renderAssessmentQuestionSupport(q)}
                                                                 <div className="grid grid-cols-1 gap-2">
-                                                                    {list(q?.options).map((opt: string, oi: number) => (
+                                                                    {uniqueByText(list(q?.options), stripChoicePrefix).map((opt: string, oi: number) => (
                                                                         <div key={oi} className="flex items-center gap-2 text-[11px] text-brand-muted bg-slate-50 p-2 rounded-lg border border-slate-200">
-                                                                            <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full text-[9px] font-bold">{String.fromCharCode(65 + oi)}</span>
-                                                                            {opt}
+                                                                            <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full text-[9px] font-bold">{optionLabel(oi)}</span>
+                                                                            {stripChoicePrefix(opt)}
                                                                         </div>
                                                                     ))}
                                                                 </div>
@@ -1473,13 +1502,13 @@ export default function UpgradePlan({
                                                                 <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần I: Trắc nghiệm khách quan nhiều lựa chọn</h6>
                                                                 {list(preservedAssessmentResult.formativeAssessment?.part1_multipleChoice).map((q: any, qi: number) => (
                                                                     <div key={`mc-${qi}`} className="p-4 bg-white rounded-xl border border-slate-100 space-y-3">
-                                                                        <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q?.question}</p>
+                                                                        <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {stripQuestionPrefix(q?.question)}</p>
                                                                         {renderAssessmentQuestionSupport(q)}
                                                                         <div className="grid grid-cols-1 gap-2">
-                                                                            {list(q?.options).map((opt: string, oi: number) => (
+                                                                            {uniqueByText(list(q?.options), stripChoicePrefix).map((opt: string, oi: number) => (
                                                                                 <div key={oi} className="flex items-center gap-2 text-[11px] text-brand-muted bg-slate-50 p-2 rounded-lg border border-slate-200">
-                                                                                    <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full text-[9px] font-bold">{String.fromCharCode(65 + oi)}</span>
-                                                                                    {opt}
+                                                                                    <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full text-[9px] font-bold">{optionLabel(oi)}</span>
+                                                                                    {stripChoicePrefix(opt)}
                                                                                 </div>
                                                                             ))}
                                                                         </div>
@@ -1494,14 +1523,14 @@ export default function UpgradePlan({
                                                                 <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần II: Trắc nghiệm Đúng/Sai</h6>
                                                                 {list(preservedAssessmentResult.formativeAssessment?.part2_trueFalse).map((q: any, qi: number) => (
                                                                     <div key={`tf-${qi}`} className="p-4 bg-white rounded-xl border border-slate-100 space-y-3">
-                                                                        <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q?.question}</p>
+                                                                        <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {stripQuestionPrefix(q?.question)}</p>
                                                                         {renderAssessmentQuestionSupport(q)}
                                                                         <div className="grid grid-cols-1 gap-2">
-                                                                            {list(q?.statements).map((stmt: string, oi: number) => (
+                                                                            {uniqueByText(list(q?.statements), stripChoicePrefix).map((stmt: string, oi: number) => (
                                                                                 <div key={oi} className="flex flex-col gap-1 text-[11px] text-brand-muted bg-slate-50 p-2 rounded-lg border border-slate-200">
                                                                                     <div className="flex items-start gap-2">
-                                                                                        <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full text-[9px] font-bold shrink-0">{String.fromCharCode(65 + oi)}</span>
-                                                                                        <span>{stmt}</span>
+                                                                                        <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full text-[9px] font-bold shrink-0">{optionLabel(oi)}</span>
+                                                                                        <span>{stripChoicePrefix(stmt)}</span>
                                                                                     </div>
                                                                                     <p className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded self-start mt-1">Đáp án: {q?.answers?.[oi]}</p>
                                                                                 </div>
@@ -1517,7 +1546,7 @@ export default function UpgradePlan({
                                                                 <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần III: Trả lời ngắn / Tính toán</h6>
                                                                 {list(preservedAssessmentResult.formativeAssessment?.part3_shortAnswer).map((q: any, qi: number) => (
                                                                     <div key={`short-${qi}`} className="p-4 bg-white rounded-xl border border-slate-100 space-y-3">
-                                                                        <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q?.question}</p>
+                                                                        <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {stripQuestionPrefix(q?.question)}</p>
                                                                         {renderAssessmentQuestionSupport(q)}
                                                                         <p className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-2 rounded-lg border border-emerald-100">Đáp án: {q?.answer}</p>
                                                                     </div>

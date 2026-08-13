@@ -474,6 +474,58 @@ function appendBlockToDocumentEnd(
     return true;
 }
 
+function isGeneratedAssessmentLabel(text: string): boolean {
+    const normalized = normalizeVietnamese(text);
+    return normalized.includes("goi y danh gia nls/nl ai") ||
+        normalized.includes("thiet ke danh gia nls/nl ai");
+}
+
+function isGeneratedNonAssessmentLabel(text: string): boolean {
+    const normalized = normalizeVietnamese(text);
+    return normalized.startsWith("[") &&
+        !isGeneratedAssessmentLabel(normalized) &&
+        (
+            normalized.includes("tich hop ai") ||
+            normalized.includes("bo sung sau nang luc") ||
+            normalized.includes("muc tieu")
+        );
+}
+
+function removeTrailingGeneratedAssessmentBlocks(xmlDoc: Document): number {
+    const body = xmlDoc.getElementsByTagName("w:body")[0];
+    if (!body) return 0;
+
+    const children = Array.from(body.children);
+    let lastContentIndex = children.length - 1;
+    while (lastContentIndex >= 0 && children[lastContentIndex].tagName === "w:sectPr") {
+        lastContentIndex--;
+    }
+
+    let startIndex = -1;
+    for (let i = lastContentIndex; i >= 0; i--) {
+        const text = children[i].textContent || "";
+        if (isGeneratedAssessmentLabel(text)) {
+            startIndex = i;
+            continue;
+        }
+        if (startIndex >= 0 && isGeneratedNonAssessmentLabel(text)) {
+            break;
+        }
+    }
+
+    if (startIndex < 0) return 0;
+
+    let removed = 0;
+    for (let i = startIndex; i <= lastContentIndex; i++) {
+        if (children[i]?.parentNode === body) {
+            body.removeChild(children[i]);
+            removed++;
+        }
+    }
+
+    return removed;
+}
+
 function findParagraphByKeywords(
     paragraphs: HTMLCollectionOf<Element>,
     keywords: string[],
@@ -650,23 +702,6 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
         injectedCount++;
     }
 
-    if (false && options.assessmentText?.trim()) {
-        const found = insertBlockNearHeading(
-            xmlDoc,
-            paragraphs,
-            ["đánh giá", "danh gia", "kiểm tra", "kiem tra"],
-            "[GỢI Ý ĐÁNH GIÁ NLS/NL AI]",
-            options.assessmentText,
-            "C0392B"
-        );
-        previewItems.push({
-            activityName: "IV. ĐÁNH GIÁ - bổ sung tiêu chí NLS/NL AI",
-            injectedText: options.assessmentText,
-            found
-        });
-        injectedCount++;
-    }
-
     for (const snippet of snippets) {
         const { paragraph: bestP, score: bestScore } = findBestActivityParagraph(paragraphs, snippet.activityName);
 
@@ -708,6 +743,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
     }
 
     if (options.assessmentText?.trim()) {
+        removeTrailingGeneratedAssessmentBlocks(xmlDoc);
         const found = appendBlockToDocumentEnd(
             xmlDoc,
             "[GỢI Ý ĐÁNH GIÁ NLS/NL AI - ĐẶT CUỐI GIÁO ÁN]",
@@ -761,6 +797,7 @@ export async function appendAssessmentDesignToDocx(source: Blob | File, assessme
     const paragraphs = xmlDoc.getElementsByTagName("w:p");
     const originalStats = await countWordXmlStructures(zip);
 
+    removeTrailingGeneratedAssessmentBlocks(xmlDoc);
     insertBlockNearHeading(
         xmlDoc,
         paragraphs,

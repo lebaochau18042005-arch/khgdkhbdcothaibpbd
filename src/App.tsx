@@ -100,6 +100,35 @@ const hasMeaningfulText = (value: any) => {
 
 const isGeographySubject = (subject: string) => /địa|dia/i.test(subject.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
 
+const stripChoicePrefix = (value: any) => String(value ?? "")
+  .replace(/^\s*(?:(?:[A-Da-d])\s*[\.\)\-:]\s*)+/, "")
+  .replace(/\s+/g, " ")
+  .trim();
+
+const stripQuestionPrefix = (value: any) => String(value ?? "")
+  .replace(/^\s*(?:(?:phần|phan)\s*[ivxlcdm0-9]+\s*[-–—.]?\s*)?(?:câu|cau)\s*\d+\s*[:\.\-\)]\s*/i, "")
+  .replace(/\s+/g, " ")
+  .trim();
+
+const optionLabel = (idx: number) => String.fromCharCode(65 + idx);
+
+const formatChoiceLine = (value: any, idx: number) => `${optionLabel(idx)}. ${stripChoicePrefix(value)}`;
+
+const uniqueByCleanedText = <T,>(items: T[] = [], mapper: (item: T) => string = (item) => String(item ?? "")) => {
+  const seen = new Set<string>();
+  return (Array.isArray(items) ? items : []).filter((item: T) => {
+    const key = mapper(item)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const CV5512_ACTIVITY_ORDER = [
   {
     prefix: "Hoạt động 1. KHỞI ĐỘNG",
@@ -2440,12 +2469,12 @@ export default function App() {
 
               new Paragraph({ children: [new TextRun({ text: "2. ĐÁNH GIÁ THƯỜNG XUYÊN", bold: true })], spacing: { before: 200, after: 60 } }),
               ...(evaluationResult.formativeAssessment?.quizzes || []).flatMap((q: any, qi: number) => [
-                new Paragraph({ children: [new TextRun({ text: `Câu ${qi + 1}: ${q.question}`, bold: true })], spacing: { before: 100 } }),
-                ...(q.options || []).map((opt: string, oi: number) => new Paragraph({ children: [new TextRun({ text: `${String.fromCharCode(65 + oi)}. ${opt}` })], indent: { left: 360 } })),
+                new Paragraph({ children: [new TextRun({ text: `Câu ${qi + 1}: ${stripQuestionPrefix(q.question)}`, bold: true })], spacing: { before: 100 } }),
+                ...uniqueByCleanedText(q.options || [], stripChoicePrefix).map((opt: string, oi: number) => new Paragraph({ children: [new TextRun({ text: formatChoiceLine(opt, oi) })], indent: { left: 360 } })),
                 new Paragraph({ children: [new TextRun({ text: `Đáp án: ${q.answer}`, bold: true, color: "008000" })], indent: { left: 360 }, spacing: { after: 60 } })
               ]),
               ...(evaluationResult.formativeAssessment?.part1_multipleChoice || []).flatMap((q: any, qi: number) => [
-                new Paragraph({ children: [new TextRun({ text: `Phần I. Câu ${qi + 1}: ${q.question}`, bold: true })], spacing: { before: 100 } }),
+                new Paragraph({ children: [new TextRun({ text: `Phần I. Câu ${qi + 1}: ${stripQuestionPrefix(q.question)}`, bold: true })], spacing: { before: 100 } }),
                 ...(q.imagePlaceholder ? [new Paragraph({ children: [new TextRun({ text: `[Khung chèn ảnh: ${q.imagePlaceholder}]`, color: "8B5CF6", italics: true })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
                 ...(q.tableData?.headers ? [
                   new Table({
@@ -2461,11 +2490,11 @@ export default function App() {
                   })
                 ] : []),
                 ...(q.tableData?.source ? [new Paragraph({ children: [new TextRun({ text: `Nguồn: ${q.tableData.source}`, italics: true, size: 18 })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
-                ...(q.options || []).map((opt: string, oi: number) => new Paragraph({ children: [new TextRun({ text: `${String.fromCharCode(65 + oi)}. ${opt}` })], indent: { left: 360 } })),
+                ...uniqueByCleanedText(q.options || [], stripChoicePrefix).map((opt: string, oi: number) => new Paragraph({ children: [new TextRun({ text: formatChoiceLine(opt, oi) })], indent: { left: 360 } })),
                 new Paragraph({ children: [new TextRun({ text: `Đáp án: ${q.answer}`, bold: true, color: "008000" })], indent: { left: 360 }, spacing: { after: 60 } })
               ]),
               ...(evaluationResult.formativeAssessment?.part2_trueFalse || []).flatMap((q: any, qi: number) => [
-                new Paragraph({ children: [new TextRun({ text: `Phần II. Câu ${qi + 1}: ${q.question}`, bold: true })], spacing: { before: 100 } }),
+                new Paragraph({ children: [new TextRun({ text: `Phần II. Câu ${qi + 1}: ${stripQuestionPrefix(q.question)}`, bold: true })], spacing: { before: 100 } }),
                 ...(q.imagePlaceholder ? [new Paragraph({ children: [new TextRun({ text: `[Khung chèn ảnh: ${q.imagePlaceholder}]`, color: "8B5CF6", italics: true })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
                 ...(q.tableData?.headers ? [
                   new Table({
@@ -2481,11 +2510,11 @@ export default function App() {
                   })
                 ] : []),
                 ...(q.tableData?.source ? [new Paragraph({ children: [new TextRun({ text: `Nguồn: ${q.tableData.source}`, italics: true, size: 18 })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
-                ...(q.statements || []).map((stmt: string, oi: number) => new Paragraph({ children: [new TextRun({ text: `${String.fromCharCode(65 + oi)}. ${stmt} - [${q.answers?.[oi]}]` })], indent: { left: 360 } })),
+                ...uniqueByCleanedText(q.statements || [], stripChoicePrefix).map((stmt: string, oi: number) => new Paragraph({ children: [new TextRun({ text: `${formatChoiceLine(stmt, oi)} - [${q.answers?.[oi]}]` })], indent: { left: 360 } })),
                 new Paragraph({ children: [], spacing: { after: 60 } })
               ]),
               ...(evaluationResult.formativeAssessment?.part3_shortAnswer || []).flatMap((q: any, qi: number) => [
-                new Paragraph({ children: [new TextRun({ text: `Phần III. Câu ${qi + 1}: ${q.question}`, bold: true })], spacing: { before: 100 } }),
+                new Paragraph({ children: [new TextRun({ text: `Phần III. Câu ${qi + 1}: ${stripQuestionPrefix(q.question)}`, bold: true })], spacing: { before: 100 } }),
                 ...(q.imagePlaceholder ? [new Paragraph({ children: [new TextRun({ text: `[Khung chèn ảnh: ${q.imagePlaceholder}]`, color: "8B5CF6", italics: true })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
                 ...(q.tableData?.headers ? [
                   new Table({
@@ -2832,9 +2861,9 @@ export default function App() {
         
         content += `2. ĐÁNH GIÁ THƯỜNG XUYÊN\n`;
         (evaluationResult.formativeAssessment?.quizzes || []).forEach((q: any, qi: number) => {
-          content += `Câu ${qi + 1}: ${q.question}\n`;
-          (q.options || []).forEach((opt: string, oi: number) => {
-            content += `${String.fromCharCode(65 + oi)}. ${opt}\n`;
+          content += `Câu ${qi + 1}: ${stripQuestionPrefix(q.question)}\n`;
+          uniqueByCleanedText(q.options || [], stripChoicePrefix).forEach((opt: string, oi: number) => {
+            content += `${formatChoiceLine(opt, oi)}\n`;
           });
           content += `Đáp án: ${q.answer}\n\n`;
         });
@@ -4227,12 +4256,12 @@ export default function App() {
                                     {/* Fallback for old cached data */}
                                     {evaluationResult.formativeAssessment?.quizzes && evaluationResult.formativeAssessment.quizzes.length > 0 && evaluationResult.formativeAssessment.quizzes.map((q: any, qi: number) => (
                                       <div key={qi} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
-                                        <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q.question}</p>
+                                        <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {stripQuestionPrefix(q.question)}</p>
                                         <div className="grid grid-cols-1 gap-2">
-                                          {q.options.map((opt: string, oi: number) => (
+                                          {uniqueByCleanedText(q.options || [], stripChoicePrefix).map((opt: string, oi: number) => (
                                             <div key={oi} className="flex items-center gap-2 text-[11px] text-brand-muted bg-white p-2 rounded-lg border border-slate-200">
-                                              <span className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-full text-[9px] font-bold">{String.fromCharCode(65 + oi)}</span>
-                                              {opt}
+                                              <span className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-full text-[9px] font-bold">{optionLabel(oi)}</span>
+                                              {stripChoicePrefix(opt)}
                                             </div>
                                           ))}
                                         </div>
@@ -4246,12 +4275,12 @@ export default function App() {
                                         <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần I: Trắc nghiệm khách quan nhiều lựa chọn</h6>
                                         {evaluationResult.formativeAssessment.part1_multipleChoice.map((q: any, qi: number) => (
                                           <div key={qi} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
-                                            <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q.question}</p>
+                                            <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {stripQuestionPrefix(q.question)}</p>
                                             <div className="grid grid-cols-1 gap-2">
-                                              {q.options?.map((opt: string, oi: number) => (
+                                              {uniqueByCleanedText(q.options || [], stripChoicePrefix).map((opt: string, oi: number) => (
                                                 <div key={oi} className="flex items-center gap-2 text-[11px] text-brand-muted bg-white p-2 rounded-lg border border-slate-200">
-                                                  <span className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-full text-[9px] font-bold">{String.fromCharCode(65 + oi)}</span>
-                                                  {opt}
+                                                  <span className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-full text-[9px] font-bold">{optionLabel(oi)}</span>
+                                                  {stripChoicePrefix(opt)}
                                                 </div>
                                               ))}
                                             </div>
@@ -4267,13 +4296,13 @@ export default function App() {
                                         <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần II: Trắc nghiệm Đúng/Sai</h6>
                                         {evaluationResult.formativeAssessment.part2_trueFalse.map((q: any, qi: number) => (
                                           <div key={qi} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
-                                            <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q.question}</p>
+                                            <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {stripQuestionPrefix(q.question)}</p>
                                             <div className="grid grid-cols-1 gap-2">
-                                              {q.statements?.map((stmt: string, oi: number) => (
+                                              {uniqueByCleanedText(q.statements || [], stripChoicePrefix).map((stmt: string, oi: number) => (
                                                 <div key={oi} className="flex flex-col gap-1 text-[11px] text-brand-muted bg-white p-2 rounded-lg border border-slate-200">
                                                   <div className="flex items-start gap-2">
-                                                    <span className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-full text-[9px] font-bold shrink-0">{String.fromCharCode(65 + oi)}</span>
-                                                    <span>{stmt}</span>
+                                                    <span className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-full text-[9px] font-bold shrink-0">{optionLabel(oi)}</span>
+                                                    <span>{stripChoicePrefix(stmt)}</span>
                                                   </div>
                                                   <p className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded self-start mt-1">Đáp án: {q.answers?.[oi]}</p>
                                                 </div>
@@ -4290,7 +4319,7 @@ export default function App() {
                                         <h6 className="text-[11px] font-bold text-slate-500 uppercase">Phần III: Trả lời ngắn / Tính toán</h6>
                                         {evaluationResult.formativeAssessment.part3_shortAnswer.map((q: any, qi: number) => (
                                           <div key={qi} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
-                                            <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {q.question}</p>
+                                            <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {stripQuestionPrefix(q.question)}</p>
                                             <p className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-2 rounded-lg border border-emerald-100">Đáp án: {q.answer}</p>
                                           </div>
                                         ))}

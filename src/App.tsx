@@ -469,6 +469,232 @@ const stripCompetencyDetailsFromTeachingAidText = (value: any, competencyReferen
     .join("\n");
 };
 
+type AuditSeverity = "error" | "warning" | "info";
+type PlanQualityIssue = {
+  severity: AuditSeverity;
+  location: string;
+  title: string;
+  detail: string;
+};
+type PlanQualityAudit = {
+  label: string;
+  rowCount: number;
+  checks: number;
+  issues: PlanQualityIssue[];
+};
+
+const getGradeNumber = (grade?: string) => String(grade || "").match(/\d{1,2}/)?.[0] || "";
+
+const readAllText = (value: any): string => {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.map(readAllText).join("\n");
+  if (typeof value === "object") return Object.values(value).map(readAllText).join("\n");
+  return "";
+};
+
+const extractAiCodes = (text: any) =>
+  Array.from(new Set((String(text || "").match(/\b(?:10|11|12)\.[ABCD]\d+\.\d{2}\b/g) || [])));
+
+const extractNlsCodes = (text: any) =>
+  Array.from(new Set((String(text || "").match(/\b\d+\.\d+\.(?:NC1|CB1|CB2)[a-z]\b/gi) || [])));
+
+const hasCompetencySignal = (text: any) => {
+  const raw = String(text || "");
+  const key = normalizeKey(raw);
+  return /(nls|nl ai|nang luc so|nang luc ai|ma nl ai|tt 02|cv 3456|qd 3439|3439|yccd|nc1|cb1|cb2)/i.test(key)
+    || extractAiCodes(raw).length > 0
+    || extractNlsCodes(raw).length > 0;
+};
+
+const hasDuplicateMeaningfulLines = (text: any) => {
+  const seen = new Set<string>();
+  return String(text || "")
+    .split(/\n|;|•|-/)
+    .map((line) => normalizeKey(line))
+    .filter((line) => line.length >= 18)
+    .some((line) => {
+      if (seen.has(line)) return true;
+      seen.add(line);
+      return false;
+    });
+};
+
+const validateCompetencyCodes = (
+  text: any,
+  grade: string,
+  location: string,
+  addIssue: (issue: PlanQualityIssue) => void
+) => {
+  const gradeNumber = getGradeNumber(grade);
+  if (!gradeNumber) return;
+  extractAiCodes(text).forEach((code) => {
+    if (!code.startsWith(`${gradeNumber}.`)) {
+      addIssue({
+        severity: "error",
+        location,
+        title: "Mã NL AI sai lớp",
+        detail: `Mã ${code} không khớp lớp ${gradeNumber}. Cần rà soát lại theo YCCĐ trước khi xuất file.`
+      });
+    }
+  });
+  extractNlsCodes(text).forEach((code) => {
+    if (/\.CB[12]/i.test(code) && ["10", "11", "12"].includes(gradeNumber)) {
+      addIssue({
+        severity: "warning",
+        location,
+        title: "Mã NLS chưa đúng mức THPT",
+        detail: `Mã ${code} thuộc mức cơ bản; cấp THPT nên dùng mức NC1 khi có căn cứ YCCĐ.`
+      });
+    }
+  });
+};
+
+const buildPlanQualityAudit = (type: string, data: any, subject: string, grade: string): PlanQualityAudit | null => {
+  if (!data) return null;
+  const issues: PlanQualityIssue[] = [];
+  let checks = 0;
+  const addIssue = (issue: PlanQualityIssue) => issues.push(issue);
+
+  if (type === "khgd" && Array.isArray(data)) {
+    data.forEach((item: any, index: number) => {
+      const location = `PL3 dòng ${index + 1}${item?.lesson ? ` - ${item.lesson}` : ""}`;
+      const aidText = mergeTextBlocks([item?.equipment, item?.digitalToolsAndAI?.method, item?.digitalToolsAndAI?.tools]);
+      const competencyText = String(item?.digitalCompetency || "");
+      checks += 4;
+      if (hasCompetencySignal(aidText)) {
+        addIssue({
+          severity: "warning",
+          location,
+          title: "NLS/NL AI đang nằm trong cột thiết bị/học liệu",
+          detail: "Cột thiết bị chỉ nên ghi công cụ, học liệu, dữ liệu, nền tảng. Mã và mô tả NLS/NL AI cần nằm ở cột Định hướng năng lực số/AI."
+        });
+      }
+      if (hasOverlappingMeaningfulText(aidText, competencyText)) {
+        addIssue({
+          severity: "warning",
+          location,
+          title: "Trùng nội dung giữa học liệu AI và năng lực",
+          detail: "Một phần nội dung năng lực đang lặp lại ở cột thiết bị/học liệu AI. Nên giữ mỗi nội dung đúng một vị trí."
+        });
+      }
+      if (!hasMeaningfulText(item?.digitalToolsAndAI?.tools)) {
+        addIssue({
+          severity: "info",
+          location,
+          title: "Thiếu học liệu/công cụ cụ thể",
+          detail: "Nên bổ sung tên học liệu, dữ liệu, phần mềm hoặc nền tảng sẽ dùng trong hoạt động."
+        });
+      }
+      validateCompetencyCodes(competencyText, grade, location, addIssue);
+    });
+    return { label: `Kiểm định PL3 - ${subject} ${grade}`, rowCount: data.length, checks, issues };
+  }
+
+  if (type === "kh-tcm" && Array.isArray(data)) {
+    data.forEach((item: any, index: number) => {
+      const location = `PL1 dòng ${index + 1}${readLessonTitle(item) ? ` - ${readLessonTitle(item)}` : ""}`;
+      const nlsText = String(item?.digitalCompetencyTT02 || "");
+      const aiText = String(item?.aiCompetency3439Integrated || "");
+      checks += 3;
+      if (hasOverlappingMeaningfulText(nlsText, aiText)) {
+        addIssue({
+          severity: "warning",
+          location,
+          title: "NLS và NL AI có nội dung chồng lặp",
+          detail: "NLS nên mô tả năng lực số theo TT 02/CV 3456; NL AI nên mô tả thành phần, hành vi, mã, sản phẩm, tiêu chí và minh chứng theo QĐ 3439."
+        });
+      }
+      if (hasDuplicateMeaningfulLines(`${nlsText}\n${aiText}`)) {
+        addIssue({
+          severity: "warning",
+          location,
+          title: "Có câu/mệnh đề bị lặp trong cùng dòng",
+          detail: "Nên rút gọn phần lặp để PL3 khi đồng bộ không nhân đôi nội dung."
+        });
+      }
+      validateCompetencyCodes(`${nlsText}\n${aiText}`, grade, location, addIssue);
+    });
+    return { label: `Kiểm định PL1 - ${subject} ${grade}`, rowCount: data.length, checks, issues };
+  }
+
+  if (type === "khbd") {
+    const allText = readAllText(data);
+    const activities = Array.isArray(data?.activities) ? data.activities : [];
+    checks += 4 + activities.length;
+    validateCompetencyCodes(allText, grade, "PL4/KHBD", addIssue);
+    if (hasDuplicateMeaningfulLines(allText)) {
+      addIssue({
+        severity: "info",
+        location: "PL4/KHBD",
+        title: "Có dấu hiệu lặp câu trong giáo án",
+        detail: "Bộ kiểm định phát hiện câu/mệnh đề giống nhau. Cần xem lại nếu phần NLS/NL AI bị chèn nhiều lần."
+      });
+    }
+    activities.forEach((activity: any, index: number) => {
+      const activityText = readAllText(activity);
+      const hasAiTag = /<ai>.*?<\/ai>/is.test(activityText) || hasCompetencySignal(activityText);
+      if (hasAiTag && !String(activityText).includes("<ai>")) {
+        addIssue({
+          severity: "warning",
+          location: `PL4 hoạt động ${index + 1}${activity?.name ? ` - ${activity.name}` : ""}`,
+          title: "Nội dung tích hợp chưa có đánh dấu màu đỏ",
+          detail: "Nên bọc phần tích hợp NLS/NL AI bằng thẻ <ai>...</ai> để màn hình và DOCX nhận diện màu đỏ."
+        });
+      }
+    });
+    return { label: `Kiểm định PL4/KHBD - ${subject} ${grade}`, rowCount: activities.length, checks, issues };
+  }
+
+  return null;
+};
+
+const PlanQualityAuditPanel = ({ audit }: { audit: PlanQualityAudit | null }) => {
+  if (!audit) return null;
+  const errors = audit.issues.filter((item) => item.severity === "error").length;
+  const warnings = audit.issues.filter((item) => item.severity === "warning").length;
+  const infos = audit.issues.filter((item) => item.severity === "info").length;
+  const isPassed = errors === 0 && warnings === 0;
+  const visibleIssues = audit.issues.slice(0, 8);
+
+  return (
+    <div className={`rounded-2xl border p-4 shadow-sm ${isPassed ? "bg-emerald-50 border-emerald-200" : errors ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"}`}>
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="flex items-start gap-3">
+          {isPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5" /> : <AlertCircle className={`w-5 h-5 mt-0.5 ${errors ? "text-red-600" : "text-amber-600"}`} />}
+          <div>
+            <p className={`text-sm font-black ${isPassed ? "text-emerald-900" : errors ? "text-red-900" : "text-amber-900"}`}>
+              {isPassed ? "Bộ kiểm định: chưa phát hiện trùng lặp/sai vị trí" : "Bộ kiểm định: cần rà soát trước khi xuất chính thức"}
+            </p>
+            <p className="text-xs text-slate-600 mt-1">{audit.label} • {audit.rowCount} dòng/hoạt động • {audit.checks} điểm kiểm tra</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center text-[11px] font-black">
+          <div className="rounded-lg bg-white/70 px-3 py-2 text-red-700">Lỗi: {errors}</div>
+          <div className="rounded-lg bg-white/70 px-3 py-2 text-amber-700">Cảnh báo: {warnings}</div>
+          <div className="rounded-lg bg-white/70 px-3 py-2 text-sky-700">Gợi ý: {infos}</div>
+        </div>
+      </div>
+      {visibleIssues.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {visibleIssues.map((issue, index) => (
+            <div key={index} className="rounded-xl bg-white/75 border border-white p-3">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs font-black text-slate-800">{issue.title}</p>
+                <span className="text-[10px] font-bold text-slate-500">{issue.location}</span>
+              </div>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">{issue.detail}</p>
+            </div>
+          ))}
+          {audit.issues.length > visibleIssues.length && (
+            <p className="text-[11px] font-bold text-slate-500">Còn {audit.issues.length - visibleIssues.length} cảnh báo khác. Hãy tải JSON hoặc tạo lại sau khi điều chỉnh nguồn dữ liệu.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const buildLessonPeriodOrder = (start: number, count: number) =>
   count > 1 ? `Tiết ${start} - ${start + count - 1}` : `Tiết ${start}`;
 
@@ -4091,6 +4317,8 @@ export default function App() {
                           </div>
                         </div>
 
+                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("khbd", result.data, lessonPlanInput.subject, lessonPlanInput.grade)} />
+
                         {councilEvaluation && (
                           <div className="glass rounded-[24px] p-6 shadow-xl border-l-4 border-l-brand-accent animate-in fade-in slide-in-from-top-4">
                             <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
@@ -4764,6 +4992,8 @@ export default function App() {
                           </div>
                         </div>
 
+                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("khgd", result.data, eduPlanInput.subject, eduPlanInput.grade)} />
+
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
                           <table className="w-full text-left text-[10px] border-collapse min-w-[1200px]">
                             <thead>
@@ -5008,6 +5238,8 @@ export default function App() {
                             </button>
                           </div>
                         </div>
+
+                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("kh-tcm", result.data, eduPlanInput.subject, eduPlanInput.grade)} />
 
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
                           <KhtcmSupplementSections subject={eduPlanInput.subject} grade={eduPlanInput.grade} rows={result.data} />

@@ -1409,6 +1409,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
        - Phải tạo ĐÚNG ${referenceRows.length} dòng PL3, tương ứng từng dòng PL1 theo đúng thứ tự. Không bỏ dòng, không gộp dòng, không tự rút gọn.
        - Phải giữ nguyên tên bài học, số tiết, thời điểm, YCCĐ CT 2018, NLS TT02/CV3456 và NL AI 3439 đã có trong PL1.
        - PL3 chỉ được khai triển thêm thiết bị, học liệu, địa điểm và phương án tổ chức; không thay thế hoặc làm mất dữ liệu PL1.
+       - KHÔNG chép lại mã/nội dung NLS, NL AI hoặc YCCĐ vào digitalToolsAndAI.method/tools. Phần thiết bị - học liệu chỉ ghi công cụ, học liệu, dữ liệu, nền tảng sử dụng; phần mã NLS/NL AI chỉ ghi tại digitalCompetency để tránh trùng lặp.
        - Nếu một ô PL1 ghi "Không tích hợp - lý do: ..." thì phải giữ đủ lý do đó trong PL3.`
     : "";
 
@@ -1448,6 +1449,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
        - Công cụ số và AI(BẮT BUỘC): Bám sát định hướng CV 3439:
     + Phương án triển khai: Sử dụng tình huống giả định, nghiên cứu tình huống(case study) hay có công cụ AI trực tiếp.
          + Học liệu / công cụ cụ thể: Các bài báo, video phân tích, các bộ dữ liệu giả định, hoặc tên phần mềm / nền tảng AI sẽ sử dụng.
+         + KHÔNG ghi lại mã NLS, mã NL AI, YCCĐ, TT 02/CV 3456 hoặc QĐ 3439 trong phần Công cụ số và AI. Những nội dung này chỉ nằm ở cột "Định hướng năng lực số/AI".
        - Địa điểm dạy học: Lớp học, phòng máy tính, thư viện...
     - Định hướng năng lực số/AI: Nếu có NL AI, trước khi ghi mã phải ghi tên thành phần năng lực AI. QUY TẮC MÃ: [Khối lớp].[Ký hiệu Mạch NL (A/B/C/D) + Số thứ tự Chủ đề (1,2,3...)].[STT YCCĐ] (Ví dụ: 10.A1.01, 11.C2.03). MÃ ĐÚNG CHỈ CÓ 2 DẤU CHẤM. TUYỆT ĐỐI tuân thủ dấu chấm phân tách và định dạng này, không được chế thêm định dạng (như 10.C2.A1.2 là SAI).
        - ĐỊNH DẠNG VĂN BẢN(RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \sin, \cos) trong bảng này.Các công thức toán / lý / hóa phải chuyển thành text thường dễ đọc nhất(vd: y = sin x).

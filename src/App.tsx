@@ -444,6 +444,31 @@ const mergeTextBlocks = (blocks: any[]) => {
     .join("\n");
 };
 
+const hasOverlappingMeaningfulText = (value: any, reference: any) => {
+  const valueKey = normalizeKey(String(value || ""));
+  const referenceKey = normalizeKey(String(reference || ""));
+  return valueKey.length >= 12 && referenceKey.length >= 12
+    && (valueKey.includes(referenceKey) || referenceKey.includes(valueKey));
+};
+
+const stripCompetencyDetailsFromTeachingAidText = (value: any, competencyReferences: any[] = []) => {
+  const references = competencyReferences
+    .map((item) => normalizeKey(String(item || "")))
+    .filter((item) => item.length >= 12);
+  const competencyPattern = /\b(nls|nl ai|nang luc so|nang luc ai|ma nl ai|yccd|tt\s*02|cv\s*3456|qd\s*3439|3439)\b/i;
+
+  return String(value || "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter((line) => {
+      const key = normalizeKey(line);
+      if (!key) return false;
+      if (competencyPattern.test(key)) return false;
+      return !references.some((reference) => key.includes(reference) || reference.includes(key));
+    })
+    .join("\n");
+};
+
 const buildLessonPeriodOrder = (start: number, count: number) =>
   count > 1 ? `Tiết ${start} - ${start + count - 1}` : `Tiết ${start}`;
 
@@ -477,26 +502,33 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
     const sourceGoal = sourceItem ? readLessonGoal(sourceItem) : "";
     const sourceNls = sourceItem ? readNlsFromPlanRow(sourceItem) : "";
     const sourceAi = sourceItem ? readAiFromPlanRow(sourceItem) : "";
-    const generatedCompetency = row?.digitalCompetency;
+    const generatedCompetency = hasMeaningfulText(row?.digitalCompetency) ? String(row.digitalCompetency) : "";
+    const generatedRepeatsSourceCompetency = [sourceNls, sourceAi]
+      .some((sourceText) => hasOverlappingMeaningfulText(generatedCompetency, sourceText));
     const digitalCompetency = sourceItem
       ? mergeTextBlocks([
           hasMeaningfulText(sourceNls) ? `Năng lực số từ PL1: ${sourceNls}` : "",
           hasMeaningfulText(sourceAi) ? `NL AI 3439 từ PL1: ${sourceAi}` : "",
           hasMeaningfulText(sourceGoal) ? `Căn cứ YCCĐ từ PL1: ${sourceGoal}` : "",
-          generatedCompetency && (!hasMeaningfulText(sourceNls) || !normalizeKey(generatedCompetency).includes(normalizeKey(sourceNls))) ? `Khai triển PL3: ${generatedCompetency}` : ""
+          generatedCompetency && !generatedRepeatsSourceCompetency ? `Khai triển PL3: ${generatedCompetency}` : ""
         ])
       : (hasMeaningfulText(generatedCompetency) ? String(generatedCompetency) : "Không tích hợp - cần rà soát YCCĐ trước khi gán NLS/NL AI.");
 
-    const method = mergeTextBlocks([
-      row?.digitalToolsAndAI?.method,
-      sourceItem ? `Đồng bộ từ PL1: bám đúng bài "${readLessonTitle(sourceItem)}", thời điểm ${timing}, số tiết ${periods}; không tự ý bỏ YCCĐ, NLS hoặc NL AI đã có.` : ""
-    ]) || "Sử dụng học liệu truyền thống; công cụ số/AI chỉ dùng khi có điểm chạm YCCĐ rõ.";
+    const method = stripCompetencyDetailsFromTeachingAidText(
+      mergeTextBlocks([
+        row?.digitalToolsAndAI?.method,
+        sourceItem ? `Đồng bộ từ PL1: bám đúng bài "${readLessonTitle(sourceItem)}", thời điểm ${timing}, số tiết ${periods}; chỉ bổ sung phương án tổ chức và học liệu phù hợp.` : ""
+      ]),
+      [sourceNls, sourceAi, sourceGoal, digitalCompetency]
+    ) || "Sử dụng học liệu truyền thống; công cụ số/AI chỉ dùng khi hoạt động cần khai thác dữ liệu, minh chứng hoặc sản phẩm số.";
 
-    const tools = mergeTextBlocks([
-      row?.digitalToolsAndAI?.tools,
-      sourceItem ? `Dữ liệu PL1 cần giữ: ${mergeTextBlocks([sourceNls, sourceAi]) || "không có mã tích hợp trong PL1"}` : "",
-      isGeographySubject(subject) ? "Atlat/bản đồ số/GIS, bảng tính, biểu đồ và nguồn số liệu chính thống khi bài học yêu cầu." : "SGK, tư liệu chính thống, công cụ trình chiếu/bảng cộng tác; chatbot AI chỉ dùng để gợi ý và phải kiểm chứng."
-    ]);
+    const tools = stripCompetencyDetailsFromTeachingAidText(
+      mergeTextBlocks([
+        row?.digitalToolsAndAI?.tools,
+        isGeographySubject(subject) ? "Atlat/bản đồ số/GIS, bảng tính, biểu đồ và nguồn số liệu chính thống khi bài học yêu cầu." : "SGK, tư liệu chính thống, công cụ trình chiếu/bảng cộng tác; chatbot AI chỉ dùng để gợi ý và phải kiểm chứng."
+      ]),
+      [sourceNls, sourceAi, sourceGoal, digitalCompetency]
+    );
 
     return {
       order,

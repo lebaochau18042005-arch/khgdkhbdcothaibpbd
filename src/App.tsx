@@ -1397,13 +1397,54 @@ export interface HistoryItem {
   evaluationResult?: any;
 }
 
+const AUTOSAVE_DRAFT_KEY = "khgdkhbdcothaibpbd.autosave.v3";
+
+type AutosaveDraft = {
+  version: number;
+  savedAt: number;
+  mode?: AppMode;
+  province?: string;
+  lessonPlanInput?: Partial<LessonPlanInput>;
+  eduPlanInput?: any;
+  suggestedNlsIndicators?: { code: string; rationale: string; name: string }[];
+};
+
+const readAutosaveDraft = (): AutosaveDraft | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(AUTOSAVE_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (error) {
+    console.warn("[Autosave] Cannot read draft", error);
+    return null;
+  }
+};
+
+const mergeDraftObject = <T extends Record<string, any>>(fallback: T, saved?: Partial<T>): T =>
+  saved && typeof saved === "object" ? { ...fallback, ...saved } : fallback;
+
+const formatSavedTime = (timestamp?: number | null) =>
+  timestamp ? new Date(timestamp).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "";
+
 export default function App() {
-  const [mode, setMode] = useState<AppMode>("dashboard");
+  const initialDraftRef = useRef<AutosaveDraft | null | undefined>(undefined);
+  if (initialDraftRef.current === undefined) {
+    initialDraftRef.current = readAutosaveDraft();
+  }
+
+  const initialDraft = initialDraftRef.current;
+  const initialMode = initialDraft?.mode && initialDraft.mode !== "history" ? initialDraft.mode : "dashboard";
+
+  const [mode, setMode] = useState<AppMode>(initialMode);
   const [loading, setLoading] = useState(false);
   const [evaluationLoading, setEvaluationLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [evaluationResult, setEvaluationResult] = useState<any>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(() => initialDraft?.savedAt || null);
+  const [showDraftNotice, setShowDraftNotice] = useState(() => Boolean(initialDraft?.savedAt));
   
   useEffect(() => {
     loadHistoryFromDB().then(h => {
@@ -1444,7 +1485,7 @@ export default function App() {
   const [departmentPlanRef, setDepartmentPlanRef] = useState<any[] | null>(null);
   const [customCurriculumData, setCustomCurriculumData] = useState<any[] | null>(null);
   const [isParsingCurriculum, setIsParsingCurriculum] = useState(false);
-  const [province, setProvince] = useState("TP. Hồ Chí Minh (Thành phố)");
+  const [province, setProvince] = useState(initialDraft?.province || "TP. Hồ Chí Minh (Thành phố)");
   const [uploadingSource, setUploadingSource] = useState(false);
   const [evaluatingCouncil, setEvaluatingCouncil] = useState(false);
   const [councilEvaluation, setCouncilEvaluation] = useState<any>(null);
@@ -1476,6 +1517,42 @@ export default function App() {
       window.removeEventListener("offline", updateOnlineState);
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.storage?.persist) return;
+    navigator.storage.persist().catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const timer = window.setTimeout(() => {
+      const draft: AutosaveDraft = {
+        version: 3,
+        savedAt: Date.now(),
+        mode,
+        province,
+        lessonPlanInput,
+        eduPlanInput,
+        suggestedNlsIndicators
+      };
+      try {
+        window.localStorage.setItem(AUTOSAVE_DRAFT_KEY, JSON.stringify(draft));
+        setDraftSavedAt(draft.savedAt);
+      } catch (error) {
+        console.warn("[Autosave] Cannot save draft", error);
+      }
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [mode, province, lessonPlanInput, eduPlanInput, suggestedNlsIndicators]);
+
+  const clearAutosaveDraft = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(AUTOSAVE_DRAFT_KEY);
+    }
+    setDraftSavedAt(null);
+    setShowDraftNotice(false);
+    alert("Đã xóa bản nháp tự lưu trên thiết bị.");
+  };
 
   const requireOnlineForAi = (featureName = "tính năng AI") => {
     if (isOnline) return true;
@@ -1532,7 +1609,7 @@ export default function App() {
   };
 
   // Lesson Plan Form State
-  const [lessonPlanInput, setLessonPlanInput] = useState<LessonPlanInput>({
+  const defaultLessonPlanInput: LessonPlanInput = {
     subject: "Toán học",
     grade: "10",
     topic: "",
@@ -1547,9 +1624,14 @@ export default function App() {
     detailDrawings: false,
     socialIntegrations: [],
     selectedNlsIndicators: []
-  });
+  };
+  const [lessonPlanInput, setLessonPlanInput] = useState<LessonPlanInput>(() =>
+    mergeDraftObject(defaultLessonPlanInput, initialDraft?.lessonPlanInput)
+  );
 
-  const [suggestedNlsIndicators, setSuggestedNlsIndicators] = useState<{ code: string; rationale: string; name: string }[]>([]);
+  const [suggestedNlsIndicators, setSuggestedNlsIndicators] = useState<{ code: string; rationale: string; name: string }[]>(
+    () => Array.isArray(initialDraft?.suggestedNlsIndicators) ? initialDraft.suggestedNlsIndicators : []
+  );
   const [isSuggestingNls, setIsSuggestingNls] = useState(false);
 
   const handleSuggestNls = async () => {
@@ -1589,13 +1671,16 @@ export default function App() {
   };
 
   // Edu Plan Form State
-  const [eduPlanInput, setEduPlanInput] = useState({
+  const defaultEduPlanInput = {
     subject: "Toán học",
     grade: "10",
     useLaTeX: false,
     detailDrawings: false,
     socialIntegrations: []
-  });
+  };
+  const [eduPlanInput, setEduPlanInput] = useState(() =>
+    mergeDraftObject(defaultEduPlanInput, initialDraft?.eduPlanInput)
+  );
 
   const highlightAI = (text: string) => {
     if (!text) return text;
@@ -3602,6 +3687,36 @@ export default function App() {
                   <p className="text-sm font-medium leading-relaxed">
                     App vẫn mở được để xem lịch sử, tải lại file đã tạo và chỉnh nội dung trên máy. Các thao tác tạo mới bằng AI cần Internet.
                   </p>
+                </div>
+              )}
+
+              {showDraftNotice && draftSavedAt && (
+                <div className="mb-6 mx-auto w-full max-w-4xl glass p-4 rounded-xl border border-emerald-300/50 bg-emerald-50/95 flex flex-col lg:flex-row lg:items-center justify-between gap-4 text-emerald-950">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 w-9 h-9 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black">Đã khôi phục bản nháp trên thiết bị</p>
+                      <p className="text-sm font-medium leading-relaxed text-emerald-900/80">
+                        App tự lưu nội dung đang nhập để hạn chế mất dữ liệu khi mất mạng, tắt trình duyệt hoặc đổi thiết bị dùng chung. Lần lưu gần nhất: {formatSavedTime(draftSavedAt)}.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => setShowDraftNotice(false)}
+                      className="px-3 py-2 rounded-lg border border-emerald-200 bg-white text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-colors"
+                    >
+                      Ẩn
+                    </button>
+                    <button
+                      onClick={clearAutosaveDraft}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-200 bg-white text-xs font-black text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Xóa bản nháp
+                    </button>
+                  </div>
                 </div>
               )}
 

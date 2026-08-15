@@ -1,4 +1,4 @@
-const CACHE_VERSION = "khgdkhbdcothaibpbd-v1";
+const CACHE_VERSION = "khgdkhbdcothaibpbd-v3";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -6,6 +6,7 @@ const APP_SHELL = [
   "/offline.html",
   "/icons/icon.svg"
 ];
+const CACHEABLE_DESTINATIONS = new Set(["script", "style", "image", "font", "manifest"]);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -38,7 +39,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (url.pathname.startsWith("/assets/") || APP_SHELL.includes(url.pathname)) {
+  if (url.pathname.startsWith("/assets/") || APP_SHELL.includes(url.pathname) || CACHEABLE_DESTINATIONS.has(request.destination)) {
     event.respondWith(cacheFirst(request));
   }
 });

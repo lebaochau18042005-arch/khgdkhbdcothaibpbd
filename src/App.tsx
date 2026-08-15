@@ -695,6 +695,45 @@ const PlanQualityAuditPanel = ({ audit }: { audit: PlanQualityAudit | null }) =>
   );
 };
 
+const getAuditCounts = (audit: PlanQualityAudit | null) => ({
+  errors: audit?.issues.filter((item) => item.severity === "error").length || 0,
+  warnings: audit?.issues.filter((item) => item.severity === "warning").length || 0,
+  infos: audit?.issues.filter((item) => item.severity === "info").length || 0
+});
+
+const ExportModePanel = ({ audit }: { audit: PlanQualityAudit | null }) => {
+  const { errors, warnings } = getAuditCounts(audit);
+  const ready = errors === 0;
+
+  return (
+    <div className={`rounded-2xl border p-4 shadow-sm ${ready ? "bg-sky-50 border-sky-200" : "bg-red-50 border-red-200"}`}>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-start gap-3">
+          <FileDown className={`w-5 h-5 mt-0.5 ${ready ? "text-sky-700" : "text-red-700"}`} />
+          <div>
+            <p className={`text-sm font-black ${ready ? "text-sky-950" : "text-red-950"}`}>Chế độ xuất file đã kiểm định</p>
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              DOCX là bản chuẩn để lưu/nộp/in. PDF và HTML chỉ dùng xem nhanh; TXT/JSON dùng đối chiếu dữ liệu; PPTX dùng trình bày tóm tắt.
+            </p>
+            {warnings > 0 && ready && (
+              <p className="text-xs text-amber-700 mt-1 font-semibold">Còn {warnings} cảnh báo. Có thể xuất, nhưng nên rà soát trước khi dùng chính thức.</p>
+            )}
+            {!ready && (
+              <p className="text-xs text-red-700 mt-1 font-semibold">Còn {errors} lỗi kiểm định. App sẽ hỏi xác nhận nếu tải DOCX chính thức.</p>
+            )}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-black">
+          <div className="rounded-xl bg-white/80 border border-white px-3 py-2 text-emerald-700">DOCX: bản chuẩn</div>
+          <div className="rounded-xl bg-white/80 border border-white px-3 py-2 text-sky-700">PDF/HTML: xem nhanh</div>
+          <div className="rounded-xl bg-white/80 border border-white px-3 py-2 text-slate-700">TXT/JSON: đối chiếu</div>
+          <div className="rounded-xl bg-white/80 border border-white px-3 py-2 text-orange-700">PPTX: trình bày</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const buildLessonPeriodOrder = (start: number, count: number) =>
   count > 1 ? `Tiết ${start} - ${start + count - 1}` : `Tiết ${start}`;
 
@@ -2099,11 +2138,37 @@ export default function App() {
       .replace(/\s+/g, "_")
       .trim();
 
+  const getCurrentExportAudit = () => {
+    if (!result || !result.data) return null;
+    if (!["khbd", "khgd", "kh-tcm"].includes(result.type)) return null;
+    return buildPlanQualityAudit(result.type, result.data, getExportSubject(), getExportGrade());
+  };
+
+  const confirmOfficialDocxExport = () => {
+    const audit = getCurrentExportAudit();
+    const { errors, warnings } = getAuditCounts(audit);
+    if (errors === 0) return true;
+    return window.confirm(
+      `Bộ kiểm định còn ${errors} lỗi và ${warnings} cảnh báo.\n\nDOCX là bản chuẩn để dùng chính thức. Bạn vẫn muốn tải DOCX ngay bây giờ?`
+    );
+  };
+
+  const buildHtmlExportNotice = (audit: PlanQualityAudit | null) => {
+    const { errors, warnings } = getAuditCounts(audit);
+    const status = errors > 0
+      ? `Còn ${errors} lỗi kiểm định và ${warnings} cảnh báo. Không khuyến nghị dùng bản này làm bản chính thức.`
+      : warnings > 0
+        ? `Không có lỗi nghiêm trọng, còn ${warnings} cảnh báo cần rà soát.`
+        : "Bộ kiểm định chưa phát hiện lỗi hoặc trùng lặp nghiêm trọng.";
+    return `<div class="export-note"><strong>Chế độ xuất file:</strong> HTML là bản xem nhanh/đối chiếu trên trình duyệt. DOCX mới là bản chuẩn để lưu, nộp hoặc in. <span>${status}</span></div>`;
+  };
+
   // ===== EXPORT HTML =====
   const downloadHTML = () => {
     if (!result || !result.data) return;
     const currentSubject = getExportSubject();
     const currentGrade = getExportGrade();
+    const audit = getCurrentExportAudit();
     const element = result.type === "khbd" ? contentRef.current : tableRef.current;
     if (!element) return;
 
@@ -2133,6 +2198,9 @@ export default function App() {
   .header-bar { background: linear-gradient(135deg, #1e40af, #4f46e5); color: white; padding: 20px 40px; margin: -40px -40px 32px; border-radius: 12px 12px 0 0; }
   .header-bar h1 { color: white; font-size: 20px; }
   .header-bar p { color: rgba(255,255,255,0.8); font-size: 13px; margin-top: 4px; }
+  .export-note { border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; padding: 12px 14px; border-radius: 10px; margin-bottom: 18px; font-size: 12px; line-height: 1.55; }
+  .export-note strong { font-weight: 800; }
+  .export-note span { font-weight: 700; color: #b45309; }
   .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 11px; }
   @media print { body { padding: 0; background: white; } .container { box-shadow: none; padding: 20px; } }
 </style>
@@ -2143,6 +2211,7 @@ export default function App() {
     <h1>khgdkhbdcothaibpbd — Kế hoạch Giáo dục</h1>
     <p>Môn: ${currentSubject} | Khối: ${currentGrade} | Chuẩn CV 5512 + QĐ 3439/BGDĐT</p>
   </div>
+  ${buildHtmlExportNotice(audit)}
   ${element.innerHTML}
   <div class="footer">Tạo bởi khgdkhbdcothaibpbd • Hệ thống Kế hoạch Giáo dục Thông minh • ${new Date().toLocaleDateString('vi-VN')}</div>
 </div>
@@ -2375,6 +2444,7 @@ export default function App() {
 
   const downloadWord = async () => {
     if (!result || !result.data) return;
+    if (!confirmOfficialDocxExport()) return;
 
     const currentSubject = getExportSubject();
     const currentGrade = getExportGrade();
@@ -4318,6 +4388,7 @@ export default function App() {
                         </div>
 
                         <PlanQualityAuditPanel audit={buildPlanQualityAudit("khbd", result.data, lessonPlanInput.subject, lessonPlanInput.grade)} />
+                        <ExportModePanel audit={buildPlanQualityAudit("khbd", result.data, lessonPlanInput.subject, lessonPlanInput.grade)} />
 
                         {councilEvaluation && (
                           <div className="glass rounded-[24px] p-6 shadow-xl border-l-4 border-l-brand-accent animate-in fade-in slide-in-from-top-4">
@@ -4993,6 +5064,7 @@ export default function App() {
                         </div>
 
                         <PlanQualityAuditPanel audit={buildPlanQualityAudit("khgd", result.data, eduPlanInput.subject, eduPlanInput.grade)} />
+                        <ExportModePanel audit={buildPlanQualityAudit("khgd", result.data, eduPlanInput.subject, eduPlanInput.grade)} />
 
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
                           <table className="w-full text-left text-[10px] border-collapse min-w-[1200px]">
@@ -5240,6 +5312,7 @@ export default function App() {
                         </div>
 
                         <PlanQualityAuditPanel audit={buildPlanQualityAudit("kh-tcm", result.data, eduPlanInput.subject, eduPlanInput.grade)} />
+                        <ExportModePanel audit={buildPlanQualityAudit("kh-tcm", result.data, eduPlanInput.subject, eduPlanInput.grade)} />
 
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
                           <KhtcmSupplementSections subject={eduPlanInput.subject} grade={eduPlanInput.grade} rows={result.data} />

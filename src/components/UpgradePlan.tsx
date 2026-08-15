@@ -1369,6 +1369,26 @@ export default function UpgradePlan({
                                 </div>
                             </div>
 
+                            <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-4">
+                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <div className="flex items-start gap-3">
+                                        <FileDown className="w-5 h-5 text-sky-700 mt-0.5 shrink-0" />
+                                        <div>
+                                            <p className="text-sm font-bold text-sky-950">Chế độ xuất file đã kiểm định</p>
+                                            <p className="text-xs text-sky-900 mt-1 leading-relaxed">
+                                                DOCX là bản chuẩn vì được chèn trực tiếp vào file gốc và đã kiểm tra bảo toàn. HTML/PDF/TXT chỉ dùng để xem nhanh, đối chiếu hoặc chia sẻ nội dung kiểm tra.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 text-[11px] font-black sm:grid-cols-4">
+                                        <span className="rounded-lg bg-white/80 px-3 py-2 text-emerald-700">DOCX: bản chuẩn</span>
+                                        <span className="rounded-lg bg-white/80 px-3 py-2 text-sky-700">HTML: xem nhanh</span>
+                                        <span className="rounded-lg bg-white/80 px-3 py-2 text-red-700">PDF: xem nhanh</span>
+                                        <span className="rounded-lg bg-white/80 px-3 py-2 text-slate-700">TXT: đối chiếu</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="glass rounded-[24px] p-6 shadow-xl border border-white/70">
                                 <section className="space-y-5">
                                     <h4 className="text-base font-extrabold text-brand-sidebar border-t border-slate-100 pt-4 uppercase tracking-tight flex items-center gap-3">
@@ -1419,18 +1439,21 @@ export default function UpgradePlan({
                                     <div className="mb-3 rounded-lg border border-indigo-100 bg-white/80 p-3 text-xs leading-relaxed text-indigo-900">
                                         Màn hình này là bản xem nhanh được bóc trực tiếp từ DOCX đã chèn. Bản DOCX tải xuống mới là bản bảo toàn nghiêm ngặt toàn bộ bảng, biểu đồ, hình vẽ, ảnh, đối tượng nhúng và công thức của giáo án gốc.
                                     </div>
-                                    <div className="max-h-[520px] overflow-y-auto rounded-lg bg-white border border-blue-100 p-4">
+                                    <div className="max-h-[620px] overflow-y-auto rounded-lg bg-slate-100 border border-blue-100 p-4">
                                         <style>{`
+                                            .docx-preview-page { max-width: 794px; min-height: 1123px; margin: 0 auto; background: #fff; padding: 42px 48px; box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16); color: #111827; font-family: "Times New Roman", Arial, sans-serif; }
                                             .docx-preview-html table { border-collapse: collapse; width: 100%; margin: 12px 0; }
                                             .docx-preview-html td, .docx-preview-html th { border: 1px solid #cbd5e1; padding: 6px; vertical-align: top; }
                                             .docx-preview-html img { max-width: 100%; height: auto; }
                                             .docx-preview-html p { margin: 0 0 8px; }
                                             .docx-preview-html ul, .docx-preview-html ol { padding-left: 24px; margin: 8px 0; }
+                                            .docx-preview-html span[style*="FF0000"], .docx-preview-html span[style*="ff0000"], .docx-preview-html span[style*="red"] { color: #dc2626 !important; font-weight: 700; }
+                                            @media (max-width: 768px) { .docx-preview-page { min-height: auto; padding: 24px 18px; } }
                                         `}</style>
                                         {fullPreviewHtml ? (
-                                            <div className="docx-preview-html text-xs leading-relaxed text-slate-800" dangerouslySetInnerHTML={{ __html: fullPreviewHtml }} />
+                                            <div className="docx-preview-page docx-preview-html text-[13px] leading-relaxed text-slate-900" dangerouslySetInnerHTML={{ __html: fullPreviewHtml }} />
                                         ) : (
-                                            <pre className="text-xs leading-relaxed text-slate-800 whitespace-pre-wrap font-sans">{fullPreviewText}</pre>
+                                            <pre className="docx-preview-page text-[13px] leading-relaxed text-slate-900 whitespace-pre-wrap">{fullPreviewText}</pre>
                                         )}
                                     </div>
                                     {previewHtmlWarning && (

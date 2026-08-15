@@ -369,6 +369,159 @@ const getKhtcmExpectedLessons = (subject: string, grade: string, customData?: an
   return CURRICULUM_DB[subject]?.[grade] || [];
 };
 
+type CurriculumCoverageStatus = "custom" | "strong" | "sample" | "missing" | "empty";
+
+const getSubjectMethodProfile = (subject: string) => {
+  const key = normalizeKey(subject);
+  if (!key) return {
+    label: "Chưa chọn môn",
+    focus: "Chọn môn và khối lớp để app kiểm tra dữ liệu nền.",
+    artifacts: "Chưa xác định"
+  };
+  if (key.includes("dia")) return {
+    label: "Địa lí",
+    focus: "Bản đồ/GIS, Atlat, biểu đồ, bảng số liệu, công thức tính toán địa lí và kiểm chứng nguồn.",
+    artifacts: "Bảng số liệu, biểu đồ, bản đồ/lược đồ, nhận xét xu hướng"
+  };
+  if (key.includes("lich su")) return {
+    label: "Lịch sử",
+    focus: "Tư liệu lịch sử, dòng thời gian, bối cảnh, nguyên nhân - hệ quả và kiểm chứng nguồn.",
+    artifacts: "Niên biểu, phiếu phân tích tư liệu, câu hỏi nhận thức lịch sử"
+  };
+  if (key.includes("toan")) return {
+    label: "Toán học",
+    focus: "Lập luận, mô hình hóa, kí hiệu, công thức, hình vẽ và bài toán thực tiễn.",
+    artifacts: "Công thức Word, bảng biến thiên, hình vẽ, bài tập phân hóa"
+  };
+  if (key.includes("ngu van")) return {
+    label: "Ngữ văn",
+    focus: "Đọc hiểu, viết, nói-nghe, phân tích văn bản, bản quyền và kiểm chứng nguồn.",
+    artifacts: "Phiếu đọc hiểu, dàn ý, rubric viết/nói, sản phẩm sáng tạo"
+  };
+  if (key.includes("tieng anh")) return {
+    label: "Tiếng Anh",
+    focus: "Toàn bộ sản phẩm bằng tiếng Anh, tích hợp kĩ năng nghe-nói-đọc-viết và giao tiếp số.",
+    artifacts: "Speaking task, writing rubric, vocabulary bank, worksheet"
+  };
+  if (key.includes("vat") || key.includes("hoa") || key.includes("sinh") || key.includes("khoa hoc tu nhien")) return {
+    label: "Khoa học tự nhiên",
+    focus: "Thí nghiệm, dữ liệu đo đạc, công thức, mô hình, an toàn phòng thực hành và giải thích hiện tượng.",
+    artifacts: "Bảng thí nghiệm, công thức, sơ đồ quy trình, báo cáo thực hành"
+  };
+  if (key.includes("tin hoc")) return {
+    label: "Tin học",
+    focus: "Thuật toán, dữ liệu, lập trình, sản phẩm số, an toàn thông tin và trách nhiệm số.",
+    artifacts: "Mã giả, bảng kiểm sản phẩm số, sơ đồ thuật toán"
+  };
+  if (key.includes("cong nghe")) return {
+    label: "Công nghệ",
+    focus: "Thiết kế kĩ thuật, quy trình, hệ thống, vật liệu, sản phẩm và đánh giá giải pháp.",
+    artifacts: "Sơ đồ quy trình, bản thiết kế, tiêu chí sản phẩm"
+  };
+  if (key.includes("kinh te") || key.includes("phap luat") || key.includes("cong dan")) return {
+    label: "GDCD/GDKT&PL",
+    focus: "Tình huống pháp luật, đạo đức số, quyết định công dân và phân tích hành vi.",
+    artifacts: "Tình huống, bảng tiêu chí, câu hỏi tranh biện"
+  };
+  if (key.includes("the chat") || key.includes("quoc phong") || key.includes("trai nghiem") || key.includes("huong nghiep")) return {
+    label: "Hoạt động/kĩ năng",
+    focus: "Nhiệm vụ trải nghiệm, kĩ năng thực hành, an toàn, hợp tác và tự đánh giá.",
+    artifacts: "Phiếu nhiệm vụ, bảng quan sát, minh chứng sản phẩm"
+  };
+  return {
+    label: subject || "Môn học",
+    focus: "Bám sát YCCĐ môn học, chỉ gán NLS/NL AI khi có hành vi học sinh và sản phẩm rõ.",
+    artifacts: "Phiếu học tập, rubric, sản phẩm/minh chứng"
+  };
+};
+
+const getCurriculumCoverage = (subject: string, grade: string, customData?: any[] | null) => {
+  const customCount = Array.isArray(customData) ? customData.length : 0;
+  if (!subject || !grade) {
+    return {
+      status: "empty" as CurriculumCoverageStatus,
+      count: 0,
+      title: "Chưa đủ thông tin",
+      detail: "Hãy chọn môn và khối lớp để app kiểm tra dữ liệu chương trình.",
+      tone: "slate"
+    };
+  }
+  if (customCount > 0) {
+    return {
+      status: "custom" as CurriculumCoverageStatus,
+      count: customCount,
+      title: "Đang dùng phụ lục giáo viên tải lên",
+      detail: `App sẽ ưu tiên ${customCount} dòng/bài trong phụ lục thay cho dữ liệu mặc định.`,
+      tone: "emerald"
+    };
+  }
+
+  const lessons = getKhtcmExpectedLessons(subject, grade, null);
+  const count = lessons.length;
+  if (count >= 8 || (isGeographySubject(subject) && grade === "10" && count >= 40)) {
+    return {
+      status: "strong" as CurriculumCoverageStatus,
+      count,
+      title: "Dữ liệu nền khá đầy đủ",
+      detail: `Có ${count} bài/chủ đề để app đối chiếu YCCĐ, tên bài và số tiết.`,
+      tone: "emerald"
+    };
+  }
+  if (count > 0) {
+    return {
+      status: "sample" as CurriculumCoverageStatus,
+      count,
+      title: "Dữ liệu nền đang ở mức mẫu",
+      detail: `Có ${count} bài/chủ đề. Nên tải thêm PPCT/YCCĐ nếu cần kế hoạch đủ chi tiết toàn năm.`,
+      tone: "amber"
+    };
+  }
+  return {
+    status: "missing" as CurriculumCoverageStatus,
+    count: 0,
+    title: "Chưa có dữ liệu nền cho môn-khối này",
+    detail: "App vẫn tạo được nếu giáo viên nhập YCCĐ hoặc tải phụ lục/giáo án, nhưng cần kiểm duyệt kỹ hơn.",
+    tone: "red"
+  };
+};
+
+const SubjectCoveragePanel = ({ subject, grade, customData }: { subject: string; grade: string; customData?: any[] | null }) => {
+  const coverage = getCurriculumCoverage(subject, grade, customData);
+  const profile = getSubjectMethodProfile(subject);
+  const toneClass = coverage.tone === "emerald"
+    ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+    : coverage.tone === "amber"
+      ? "border-amber-200 bg-amber-50 text-amber-950"
+      : coverage.tone === "red"
+        ? "border-red-200 bg-red-50 text-red-900"
+        : "border-slate-200 bg-slate-50 text-slate-700";
+  const Icon = coverage.status === "missing" ? AlertCircle : CheckCircle2;
+
+  return (
+    <div className={`rounded-2xl border p-4 ${toneClass}`}>
+      <div className="flex items-start gap-3">
+        <Icon className="w-5 h-5 mt-0.5 shrink-0" />
+        <div className="space-y-2">
+          <div>
+            <p className="text-sm font-black">{coverage.title}</p>
+            <p className="text-xs font-semibold leading-relaxed opacity-85">{coverage.detail}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div className="rounded-xl bg-white/65 border border-white/70 p-3">
+              <p className="font-black uppercase tracking-wide text-[10px] opacity-70">Hồ sơ môn học</p>
+              <p className="font-bold mt-1">{profile.label}: {profile.focus}</p>
+            </div>
+            <div className="rounded-xl bg-white/65 border border-white/70 p-3">
+              <p className="font-black uppercase tracking-wide text-[10px] opacity-70">Sản phẩm cần giữ đúng dạng</p>
+              <p className="font-bold mt-1">{profile.artifacts}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[]) => {
   const source = Array.isArray(sourceLessons) ? sourceLessons : [];
   const existing = (Array.isArray(rows) ? rows : []).map((row, index) => ({ ...row, __index: index }));
@@ -1893,6 +2046,15 @@ export default function App() {
     }
   };
 
+  const confirmCurriculumCoverageBeforeGenerate = (subject: string, grade: string, featureName: string, customData?: any[] | null) => {
+    const coverage = getCurriculumCoverage(subject, grade, customData);
+    if (coverage.status === "strong" || coverage.status === "custom") return true;
+    const advice = coverage.status === "missing"
+      ? "Môn-khối này chưa có dữ liệu chương trình nền trong app. Nên tải phụ lục PPCT/YCCĐ hoặc nhập YCCĐ thật kỹ trước khi tạo."
+      : "Dữ liệu chương trình nền của môn-khối này đang ở mức mẫu. Nên tải phụ lục PPCT/YCCĐ nếu cần kế hoạch đủ chi tiết toàn năm.";
+    return window.confirm(`${featureName}: ${advice}\n\nBạn vẫn muốn tiếp tục tạo bằng dữ liệu đang có?`);
+  };
+
   const handleGenerateKHBD = async () => {
     if (!requireOnlineForAi("Tạo kế hoạch bài dạy")) return;
     if (!apiKey.trim()) {
@@ -1900,6 +2062,7 @@ export default function App() {
       setShowSettings(true);
       return;
     }
+    if (!confirmCurriculumCoverageBeforeGenerate(lessonPlanInput.subject, lessonPlanInput.grade, "Tạo KHBD")) return;
     setLoading(true);
     setResult(null);
     setEvaluationResult(null);
@@ -1969,6 +2132,7 @@ export default function App() {
       setShowSettings(true);
       return;
     }
+    if (!confirmCurriculumCoverageBeforeGenerate(lessonPlanInput.subject, lessonPlanInput.grade, "Tạo khung NL AI")) return;
     setLoading(true);
     setResult(null);
     try {
@@ -2101,13 +2265,14 @@ export default function App() {
       setShowSettings(true);
       return;
     }
+    const storedRefMatches = !!departmentPlanRef?.length
+      && (!departmentPlanRef[0]?.subject || departmentPlanRef[0].subject === eduPlanInput.subject)
+      && (!departmentPlanRef[0]?.grade || departmentPlanRef[0].grade === eduPlanInput.grade);
+    const activeRef = customRef || (storedRefMatches ? departmentPlanRef : null);
+    if (!confirmCurriculumCoverageBeforeGenerate(eduPlanInput.subject, eduPlanInput.grade, "Tạo PL3/KHGD giáo viên", activeRef)) return;
     setLoading(true);
     setResult(null);
     try {
-      const storedRefMatches = !!departmentPlanRef?.length
-        && (!departmentPlanRef[0]?.subject || departmentPlanRef[0].subject === eduPlanInput.subject)
-        && (!departmentPlanRef[0]?.grade || departmentPlanRef[0].grade === eduPlanInput.grade);
-      const activeRef = customRef || (storedRefMatches ? departmentPlanRef : null);
       const data = await generateEducationalPlan(eduPlanInput.subject, eduPlanInput.grade, province, activeRef || undefined, {
         useLaTeX: eduPlanInput.useLaTeX,
         detailDrawings: eduPlanInput.detailDrawings,
@@ -2142,6 +2307,7 @@ export default function App() {
       setShowSettings(true);
       return;
     }
+    if (!confirmCurriculumCoverageBeforeGenerate(eduPlanInput.subject, eduPlanInput.grade, "Tạo PL1/KHTCM", customCurriculumData)) return;
     setLoading(true);
     setResult(null);
     try {
@@ -2181,6 +2347,7 @@ export default function App() {
       setShowSettings(true);
       return;
     }
+    if (!confirmCurriculumCoverageBeforeGenerate(eduPlanInput.subject, eduPlanInput.grade, "Tạo PL2/HĐGD")) return;
     setLoading(true);
     setResult(null);
     try {
@@ -4298,6 +4465,7 @@ export default function App() {
                               />
                             </div>
                           </div>
+                          <SubjectCoveragePanel subject={lessonPlanInput.subject} grade={lessonPlanInput.grade} />
                           <div className="space-y-4">
                             <div className="space-y-2">
                               <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Chọn bài dạy trong chương trình 2018</label>
@@ -5210,6 +5378,7 @@ export default function App() {
                               {GRADES.map(g => <option key={g} value={g}>Lớp {g}</option>)}
                             </select>
                           </div>
+                          <SubjectCoveragePanel subject={eduPlanInput.subject} grade={eduPlanInput.grade} customData={departmentPlanRef} />
                           <div className="grid grid-cols-2 gap-4 pt-2">
                             <label className="flex items-center gap-2 cursor-pointer group">
                               <input
@@ -5468,6 +5637,8 @@ export default function App() {
                             </div>
                           </div>
 
+                          <SubjectCoveragePanel subject={eduPlanInput.subject} grade={eduPlanInput.grade} customData={customCurriculumData} />
+
                           <div className="grid grid-cols-2 gap-4 pt-2">
                             <label className="flex items-center gap-2 cursor-pointer group">
                               <input
@@ -5680,6 +5851,7 @@ export default function App() {
                               </select>
                             </div>
                           </div>
+                          <SubjectCoveragePanel subject={eduPlanInput.subject} grade={eduPlanInput.grade} />
                         </div>
 
                         <div className="mt-8 flex justify-end">
@@ -5828,6 +6000,7 @@ export default function App() {
                               placeholder="VD: 10"
                             />
                           </div>
+                          <SubjectCoveragePanel subject={lessonPlanInput.subject} grade={lessonPlanInput.grade} />
 
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">

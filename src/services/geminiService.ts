@@ -330,6 +330,41 @@ const normalizeViText = (value?: string) =>
 const isGeographyLikeSubject = (subject?: string) => /dia l[yi]|giao duc dia phuong|lich su va dia l[yi]/.test(normalizeViText(subject));
 const needsScientificFormatting = (subject?: string) => /toan|vat l[yi]|hoa hoc|sinh hoc|dia l[yi]/.test(normalizeViText(subject));
 
+const getSubjectCompetencyRule = (subject: string) => {
+  const key = normalizeViText(subject);
+  if (/dia l[yi]|giao duc dia phuong|lich su va dia l[yi]/.test(key)) {
+    return "- Môn Địa lí/GD địa phương: chỉ gán mã khi YCCĐ yêu cầu/cho phép thao tác với bản đồ, Atlat, GIS, biểu đồ, bảng số liệu, dữ liệu địa phương hoặc công thức tính toán địa lí. Nếu có số liệu phải tạo bảng/biểu đồ đúng dạng, không chuyển thành đoạn văn.";
+  }
+  if (/lich su/.test(key)) {
+    return "- Môn Lịch sử: chỉ gán mã khi YCCĐ yêu cầu/cho phép phân tích tư liệu, kiểm chứng nguồn, lập timeline, so sánh bối cảnh, nguyên nhân - hệ quả hoặc đánh giá quan điểm lịch sử.";
+  }
+  if (/toan/.test(key)) {
+    return "- Môn Toán: ưu tiên lập luận, mô hình hóa, kí hiệu, bảng, hình vẽ và công thức Word; không làm mất cấu trúc bài toán, giả thiết, kết luận hoặc kí hiệu toán học.";
+  }
+  if (/vat l[yi]|hoa hoc|sinh hoc|khoa hoc tu nhien/.test(key)) {
+    return "- Nhóm KHTN/Vật lí/Hóa học/Sinh học: bám quy trình thí nghiệm, dữ liệu đo đạc, công thức, mô hình, an toàn học đường và giải thích hiện tượng; bảng thí nghiệm/công thức/hình vẽ phải giữ đúng định dạng.";
+  }
+  if (/ngu van/.test(key)) {
+    return "- Môn Ngữ văn: bám đọc hiểu, viết, nói-nghe, phân tích văn bản, phong cách, bản quyền và kiểm chứng nguồn; AI chỉ hỗ trợ gợi ý, không thay thế cảm thụ và lập luận của học sinh.";
+  }
+  if (/tieng anh|english/.test(key)) {
+    return "- Môn Tiếng Anh: toàn bộ giáo án và nội dung tích hợp phải viết bằng tiếng Anh; bám 4 kĩ năng nghe-nói-đọc-viết, giao tiếp số và đánh giá ngôn ngữ.";
+  }
+  if (/tin hoc/.test(key)) {
+    return "- Môn Tin học: bám thuật toán, dữ liệu, lập trình, sản phẩm số, an toàn thông tin và trách nhiệm số; cần có sản phẩm/mã giả/bảng kiểm rõ ràng.";
+  }
+  if (/cong nghe/.test(key)) {
+    return "- Môn Công nghệ: bám thiết kế kĩ thuật, quy trình, hệ thống, vật liệu, sản phẩm, tiêu chí kiểm thử và cải tiến giải pháp.";
+  }
+  if (/kinh te|phap luat|cong dan/.test(key)) {
+    return "- Môn GDCD/GDKT&PL: bám tình huống pháp luật/kinh tế, đạo đức số, ra quyết định công dân, tranh biện và minh chứng hành vi.";
+  }
+  if (/the chat|quoc phong|trai nghiem|huong nghiep/.test(key)) {
+    return "- Nhóm hoạt động/kĩ năng: bám nhiệm vụ thực hành, trải nghiệm, an toàn, hợp tác, tự đánh giá và minh chứng sản phẩm; không gán mã AI nếu không có thao tác số/AI thật.";
+  }
+  return "- Với môn học này, chỉ chọn mã dựa trên thao tác học tập thật sự được nêu trong YCCĐ; không gán mã theo tên bài một cách hình thức.";
+};
+
 const needsGeoDataArtifact = (analysis: any, suggestion: any, sourceText?: string) => {
   if (!isGeographyLikeSubject(analysis?.subject)) return false;
   const combined = normalizeViText([
@@ -442,11 +477,7 @@ const getThptCompetencyGuardrails = (subject: string, grade?: string, yccd?: str
   const gradeRule = isThptGrade(grade)
     ? `- Cấp THPT lớp ${currentGrade}: mã NLS phải dùng mức Nâng cao 1 (NC1), ví dụ 1.1.NC1a; không dùng CB1/CB2 cho lớp 10-12.\n- Mã NL AI phải bắt đầu bằng "${currentGrade}." và chỉ dùng các chủ đề được phép: ${allowedThemes?.join(", ") || "theo bảng lớp tương ứng trong QĐ 3439"}.`
     : `- Nếu bài thuộc lớp 10, 11, 12 thì mã NLS phải dùng mức NC1 và mã NL AI phải bắt đầu đúng số lớp.`;
-  const subjectRule = subject.toLowerCase().includes("địa")
-    ? "- Môn Địa lí: chỉ gán mã khi YCCĐ yêu cầu/cho phép thao tác với bản đồ, Atlat, GIS, biểu đồ, bảng số liệu, dữ liệu địa phương hoặc công thức tính toán địa lí."
-    : subject.toLowerCase().includes("sử")
-      ? "- Môn Lịch sử: chỉ gán mã khi YCCĐ yêu cầu/cho phép phân tích tư liệu, kiểm chứng nguồn, lập timeline, so sánh bối cảnh, nguyên nhân - hệ quả hoặc đánh giá quan điểm lịch sử."
-      : "- Với môn học này, chỉ chọn mã dựa trên thao tác học tập thật sự được nêu trong YCCĐ; không gán mã theo tên bài một cách hình thức.";
+  const subjectRule = getSubjectCompetencyRule(subject);
   return `
 ==== RÀ SOÁT BẮT BUỘC MÃ NLS / NL AI THEO YCCĐ ====
 Căn cứ áp dụng trong app:

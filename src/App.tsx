@@ -49,7 +49,6 @@ import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, ge
 import UpgradePlan from "./components/UpgradePlan";
 import NlsLookup, { INDICATORS } from "./components/NlsLookup";
 import SuDiaSkills from "./components/SuDiaSkills";
-import { GEO_10_KNTT } from "./services/curriculumData";
 
 // Add competency mapper utility function
 const mapAiCompetencyText = (code: string) => {
@@ -93,12 +92,81 @@ const readPeriods = (item: any) => {
   return match ? match[0] : raw;
 };
 
+const extractPeriodNumbers = (value: any) =>
+  (String(value || "").match(/\d+/g) || [])
+    .map((item) => parseInt(item, 10))
+    .filter((item) => Number.isFinite(item) && item > 0);
+
+const isGeographyThptSubject = (subject?: string, grade?: string) =>
+  isStandaloneGeographySubject(subject) && ["10", "11", "12"].includes(String(grade || "").trim());
+
+const mapGeographyMainPeriodToWeek = (period: number) =>
+  Math.min(35, Math.max(1, Math.ceil(period / 2)));
+
+const readPeriodRangeSource = (sourceItem: any) => {
+  const direct = String(sourceItem?.periodRange || sourceItem?.order || "").trim();
+  if (direct) return direct;
+  const time = String(sourceItem?.time || sourceItem?.timing || "").trim();
+  const match = time.match(/tiết\s*([0-9,\s-]+)/i);
+  return match?.[1]?.trim() || "";
+};
+
+const formatPeriodRangeLabel = (sourceItem: any, fallbackPeriods?: string) => {
+  const rawRange = readPeriodRangeSource(sourceItem);
+  const cleanedRange = rawRange
+    .replace(/^tiết\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (cleanedRange) return `Tiết ${cleanedRange}`;
+  return `Tiết ${String(fallbackPeriods || readPeriods(sourceItem) || "1").trim()}`;
+};
+
+const buildGeographyWeekLabel = (sourceItem: any) => {
+  const section = String(sourceItem?.section || "");
+  const periodNumbers = extractPeriodNumbers(readPeriodRangeSource(sourceItem));
+
+  if (/chuyên đề/i.test(section)) {
+    return "Chuyên đề lựa chọn";
+  }
+
+  if (!periodNumbers.length) {
+    const time = String(sourceItem?.time || sourceItem?.timing || "").trim();
+    const match = time.match(/tuần\s*\d+(?:\s*-\s*\d+)?/i);
+    return match ? match[0].replace(/\s+/g, " ") : "";
+  }
+
+  const weeks = periodNumbers.map(mapGeographyMainPeriodToWeek);
+  const startWeek = Math.min(...weeks);
+  const endWeek = Math.max(...weeks);
+  return startWeek === endWeek ? `Tuần ${startWeek}` : `Tuần ${startWeek}-${endWeek}`;
+};
+
+const buildGeographyDepartmentTime = (sourceItem: any, fallbackPeriods?: string) => {
+  const periodLabel = formatPeriodRangeLabel(sourceItem, fallbackPeriods);
+  const weekLabel = buildGeographyWeekLabel(sourceItem);
+  if (!weekLabel) return periodLabel;
+  return `${weekLabel} - ${periodLabel}`;
+};
+
 const hasMeaningfulText = (value: any) => {
   const text = String(value || "").trim();
   return !!text && !["undefined", "null", "...", "........"].includes(text.toLowerCase());
 };
 
-const isGeographySubject = (subject: string) => /địa|dia/i.test(subject.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+const isGeographySubject = (subject: string) =>
+  /dia/.test(
+    (subject || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .toLowerCase()
+  );
+
+const isStandaloneGeographySubject = (subject?: string) => {
+  const key = normalizeKey(subject);
+  return key === "dia li" || key === "dia ly";
+};
 
 const stripChoicePrefix = (value: any) => String(value ?? "")
   .replace(/^\s*(?:(?:[A-Da-d])\s*[\.\)\-:]\s*)+/, "")
@@ -365,7 +433,12 @@ const formulaToMathComponents = (formula: string): any[] => {
 
 const getKhtcmExpectedLessons = (subject: string, grade: string, customData?: any[] | null) => {
   if (Array.isArray(customData) && customData.length > 0) return customData;
-  if (isGeographySubject(subject) && grade === "10") return GEO_10_KNTT;
+  if (isStandaloneGeographySubject(subject)) {
+    return CURRICULUM_DB[subject]?.[grade]
+      || CURRICULUM_DB["Địa lí"]?.[grade]
+      || CURRICULUM_DB["Địa lý"]?.[grade]
+      || [];
+  }
   return CURRICULUM_DB[subject]?.[grade] || [];
 };
 
@@ -458,7 +531,7 @@ const getCurriculumCoverage = (subject: string, grade: string, customData?: any[
 
   const lessons = getKhtcmExpectedLessons(subject, grade, null);
   const count = lessons.length;
-  if (count >= 8 || (isGeographySubject(subject) && grade === "10" && count >= 40)) {
+  if (count >= 8 || (isGeographyThptSubject(subject, grade) && count >= 35)) {
     return {
       status: "strong" as CurriculumCoverageStatus,
       count,
@@ -522,25 +595,42 @@ const SubjectCoveragePanel = ({ subject, grade, customData }: { subject: string;
   );
 };
 
-const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[]) => {
+const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[], options: { subject?: string; grade?: string } = {}) => {
   const source = Array.isArray(sourceLessons) ? sourceLessons : [];
   const existing = (Array.isArray(rows) ? rows : []).map((row, index) => ({ ...row, __index: index }));
   const used = new Set<number>();
   let runningWeek = 1;
+  const shouldLockGeographySchedule = isGeographyThptSubject(options.subject, options.grade);
 
   const completeRow = (row: any, sourceItem: any | null, index: number) => {
-    const periods = hasMeaningfulText(row?.periods) ? String(row.periods) : readPeriods(sourceItem);
-    const lessonContent = hasMeaningfulText(row?.lessonContent || row?.lessonName || row?.topic)
+    const shouldLockSourceSchedule = Boolean(sourceItem?.scheduleLocked) || shouldLockGeographySchedule;
+    const periods = shouldLockSourceSchedule && sourceItem
+      ? readPeriods(sourceItem)
+      : hasMeaningfulText(row?.periods) ? String(row.periods) : readPeriods(sourceItem);
+    const lessonContent = shouldLockSourceSchedule && sourceItem
+      ? readLessonTitle(sourceItem)
+      : hasMeaningfulText(row?.lessonContent || row?.lessonName || row?.topic)
       ? String(row.lessonContent || row.lessonName || row.topic)
       : readLessonTitle(sourceItem);
-    const lessonGoal = hasMeaningfulText(row?.lessonGoal) ? String(row.lessonGoal) : readLessonGoal(sourceItem);
-    const time = hasMeaningfulText(row?.time) ? String(row.time) : `Tuần ${Math.max(1, runningWeek)}`;
+    const lessonGoal = shouldLockSourceSchedule && sourceItem
+      ? readLessonGoal(sourceItem)
+      : hasMeaningfulText(row?.lessonGoal) ? String(row.lessonGoal) : readLessonGoal(sourceItem);
+    const time = shouldLockSourceSchedule && sourceItem
+      ? (shouldLockGeographySchedule
+        ? buildGeographyDepartmentTime(sourceItem, periods)
+        : String(sourceItem?.time || sourceItem?.timing || `Tuần ${Math.max(1, runningWeek)}`).trim())
+      : hasMeaningfulText(row?.time) ? String(row.time) : `Tuần ${Math.max(1, runningWeek)}`;
     const periodCount = parseInt(String(periods).match(/\d+/)?.[0] || "1", 10);
     runningWeek += Math.max(1, Math.ceil(periodCount / 2));
 
     return {
       time,
+      order: sourceItem ? (hasMeaningfulText(sourceItem?.order) ? String(sourceItem.order) : formatPeriodRangeLabel(sourceItem, periods)) : (hasMeaningfulText(row?.order) ? String(row.order) : ""),
+      periodRange: sourceItem?.periodRange || row?.periodRange || "",
+      section: sourceItem?.section || row?.section || "",
       lessonContent,
+      lesson: sourceItem ? readLessonTitle(sourceItem) : (row?.lesson || lessonContent),
+      topic: sourceItem ? readLessonTitle(sourceItem) : (row?.topic || lessonContent),
       periods,
       lessonGoal,
       digitalCompetencyTT02: hasMeaningfulText(row?.digitalCompetencyTT02)
@@ -620,6 +710,77 @@ const stripCompetencyDetailsFromTeachingAidText = (value: any, competencyReferen
       return !references.some((reference) => key.includes(reference) || reference.includes(key));
     })
     .join("\n");
+};
+
+const stripPl3SyncNoise = (value: any) =>
+  String(value || "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter((line) => {
+      const key = normalizeKey(line);
+      if (!key) return false;
+      if (/^dong bo tu pl1\b/.test(key)) return false;
+      if (/bam dung bai/.test(key) && /chi bo sung phuong an/.test(key)) return false;
+      if (/^can cu yccd tu pl1\b/.test(key)) return false;
+      return true;
+    })
+    .join("\n")
+    .replace(/\b(?:Năng lực số từ PL1|NL AI 3439 từ PL1|Khai triển PL3)\s*:\s*/gi, "")
+    .replace(/\s+\./g, ".")
+    .trim();
+
+const uniqueRegexMatches = (texts: any[], regex: RegExp) => {
+  const seen = new Set<string>();
+  const matches: string[] = [];
+  texts.forEach((text) => {
+    const source = String(text || "");
+    for (const match of source.matchAll(regex)) {
+      const code = String(match[0] || "").replace(/[\[\]]/g, "").trim();
+      const key = code.toUpperCase();
+      if (code && !seen.has(key)) {
+        seen.add(key);
+        matches.push(code);
+      }
+    }
+  });
+  return matches;
+};
+
+const summarizePl3Competency = (sourceNls: any, sourceAi: any, sourceGoal: any, generatedCompetency: any) => {
+  const blocks = [sourceNls, sourceAi, generatedCompetency, sourceGoal];
+  const nlsCodes = uniqueRegexMatches(blocks, /\b\d+\.\d+\.NC\d+[a-z]?\b/gi);
+  const aiCodes = uniqueRegexMatches(blocks, /\b(?:10|11|12)\.[A-D]\d+\.\d{2}\b/gi);
+  const aiComponents = uniqueRegexMatches(blocks, /\bNL[abcd]\b/gi)
+    .map((code) => code.replace(/^NL([abcd])$/i, (_, c) => `NL${String(c).toLowerCase()}`));
+  const hasNoIntegration = blocks.some((block) => /không\s+(tích hợp|gán mã)|khong\s+(tich hop|gan ma)/i.test(String(block || "")));
+
+  const lines = [
+    nlsCodes.length ? `NLS: ${nlsCodes.join("; ")}` : "",
+    aiCodes.length
+      ? `NL AI: ${aiCodes.join("; ")}`
+      : aiComponents.length
+        ? `NL AI: ${aiComponents.join("; ")}`
+        : ""
+  ].filter(Boolean);
+
+  if (lines.length) return lines.join("\n");
+  if (hasNoIntegration) return "Không tích hợp NLS/NL AI";
+
+  const compactGenerated = stripPl3SyncNoise(generatedCompetency)
+    .replace(/\s+/g, " ")
+    .trim();
+  return compactGenerated
+    ? (compactGenerated.length > 160 ? `${compactGenerated.slice(0, 157).trim()}...` : compactGenerated)
+    : "Không tích hợp - cần rà soát YCCĐ trước khi gán NLS/NL AI.";
+};
+
+const compactPl3TeachingAidText = (value: any, fallback: string, maxLength = 180) => {
+  const cleaned = stripPl3SyncNoise(value)
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*[-•]\s*/, "").trim())
+    .filter(Boolean);
+  const text = uniqueByCleanedText(cleaned).slice(0, 2).join("\n") || fallback;
+  return text.length > maxLength ? `${text.slice(0, maxLength - 3).replace(/\s+\S*$/, "").trim()}...` : text;
 };
 
 type AuditSeverity = "error" | "warning" | "info";
@@ -900,19 +1061,31 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
   const existing = (Array.isArray(rows) ? rows : []).map((row, index) => ({ ...row, __index: index }));
   const used = new Set<number>();
   let runningPeriod = 1;
+  const shouldLockGeographySchedule = isGeographyThptSubject(subject, grade);
 
   const completeRow = (row: any, sourceItem: any | null, index: number) => {
-    const periods = hasMeaningfulText(row?.periods) ? String(row.periods) : readPeriods(sourceItem);
+    const shouldLockSourceSchedule = Boolean(sourceItem?.scheduleLocked) || shouldLockGeographySchedule;
+    const periods = shouldLockSourceSchedule && sourceItem
+      ? readPeriods(sourceItem)
+      : hasMeaningfulText(row?.periods) ? String(row.periods) : readPeriods(sourceItem);
     const periodCount = Math.max(1, parseInt(String(periods).match(/\d+/)?.[0] || "1", 10));
-    const lesson = hasMeaningfulText(row?.lesson || row?.lessonContent || row?.lessonName || row?.topic)
+    const lesson = shouldLockSourceSchedule && sourceItem
+      ? readLessonTitle(sourceItem)
+      : hasMeaningfulText(row?.lesson || row?.lessonContent || row?.lessonName || row?.topic)
       ? String(row.lesson || row.lessonContent || row.lessonName || row.topic)
       : readLessonTitle(sourceItem);
-    const timing = hasMeaningfulText(row?.timing || row?.time)
+    const timing = shouldLockSourceSchedule && sourceItem
+      ? (shouldLockGeographySchedule
+        ? (buildGeographyWeekLabel(sourceItem) || String(sourceItem?.timing || sourceItem?.time || "").replace(/\s*-\s*Tiết.+$/i, "").trim())
+        : String(sourceItem?.timing || sourceItem?.time || `Tuần ${Math.max(1, Math.ceil(runningPeriod / 2))}`).trim())
+      : hasMeaningfulText(row?.timing || row?.time)
       ? String(row.timing || row.time)
       : hasMeaningfulText(sourceItem?.time || sourceItem?.timing)
         ? String(sourceItem?.time || sourceItem?.timing)
         : `Tuần ${Math.max(1, Math.ceil(runningPeriod / 2))}`;
-    const order = hasMeaningfulText(row?.order)
+    const order = shouldLockSourceSchedule && sourceItem
+      ? (hasMeaningfulText(sourceItem?.order) ? String(sourceItem.order) : formatPeriodRangeLabel(sourceItem, periods))
+      : hasMeaningfulText(row?.order)
       ? String(row.order)
       : buildLessonPeriodOrder(runningPeriod, periodCount);
     runningPeriod += periodCount;
@@ -921,31 +1094,35 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
     const sourceNls = sourceItem ? readNlsFromPlanRow(sourceItem) : "";
     const sourceAi = sourceItem ? readAiFromPlanRow(sourceItem) : "";
     const generatedCompetency = hasMeaningfulText(row?.digitalCompetency) ? String(row.digitalCompetency) : "";
-    const generatedRepeatsSourceCompetency = [sourceNls, sourceAi]
-      .some((sourceText) => hasOverlappingMeaningfulText(generatedCompetency, sourceText));
     const digitalCompetency = sourceItem
-      ? mergeTextBlocks([
-          hasMeaningfulText(sourceNls) ? `Năng lực số từ PL1: ${sourceNls}` : "",
-          hasMeaningfulText(sourceAi) ? `NL AI 3439 từ PL1: ${sourceAi}` : "",
-          hasMeaningfulText(sourceGoal) ? `Căn cứ YCCĐ từ PL1: ${sourceGoal}` : "",
-          generatedCompetency && !generatedRepeatsSourceCompetency ? `Khai triển PL3: ${generatedCompetency}` : ""
-        ])
-      : (hasMeaningfulText(generatedCompetency) ? String(generatedCompetency) : "Không tích hợp - cần rà soát YCCĐ trước khi gán NLS/NL AI.");
+      ? summarizePl3Competency(sourceNls, sourceAi, sourceGoal, generatedCompetency)
+      : summarizePl3Competency("", "", "", generatedCompetency);
 
-    const method = stripCompetencyDetailsFromTeachingAidText(
-      mergeTextBlocks([
+    const method = compactPl3TeachingAidText(
+      stripCompetencyDetailsFromTeachingAidText(
         row?.digitalToolsAndAI?.method,
-        sourceItem ? `Đồng bộ từ PL1: bám đúng bài "${readLessonTitle(sourceItem)}", thời điểm ${timing}, số tiết ${periods}; chỉ bổ sung phương án tổ chức và học liệu phù hợp.` : ""
-      ]),
-      [sourceNls, sourceAi, sourceGoal, digitalCompetency]
-    ) || "Sử dụng học liệu truyền thống; công cụ số/AI chỉ dùng khi hoạt động cần khai thác dữ liệu, minh chứng hoặc sản phẩm số.";
+        [sourceNls, sourceAi, sourceGoal, digitalCompetency]
+      ),
+      "Tổ chức hoạt động số/AI ngắn gọn theo YCCĐ bài học."
+    );
 
-    const tools = stripCompetencyDetailsFromTeachingAidText(
-      mergeTextBlocks([
-        row?.digitalToolsAndAI?.tools,
-        isGeographySubject(subject) ? "Atlat/bản đồ số/GIS, bảng tính, biểu đồ và nguồn số liệu chính thống khi bài học yêu cầu." : "SGK, tư liệu chính thống, công cụ trình chiếu/bảng cộng tác; chatbot AI chỉ dùng để gợi ý và phải kiểm chứng."
-      ]),
-      [sourceNls, sourceAi, sourceGoal, digitalCompetency]
+    const tools = compactPl3TeachingAidText(
+      stripCompetencyDetailsFromTeachingAidText(
+        mergeTextBlocks([
+          row?.digitalToolsAndAI?.tools,
+          isGeographySubject(subject) ? "Atlat/bản đồ số, bảng tính, biểu đồ, nguồn số liệu chính thống." : "SGK, tư liệu chính thống, công cụ trình chiếu/bảng cộng tác."
+        ]),
+        [sourceNls, sourceAi, sourceGoal, digitalCompetency]
+      ),
+      isGeographySubject(subject)
+        ? "Atlat/bản đồ số, bảng tính, biểu đồ, nguồn số liệu chính thống."
+        : "SGK, tư liệu chính thống, công cụ trình chiếu/bảng cộng tác."
+    );
+
+    const equipment = compactPl3TeachingAidText(
+      row?.equipment,
+      buildDefaultEquipment(subject),
+      160
     );
 
     return {
@@ -953,7 +1130,7 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
       lesson,
       periods,
       timing,
-      equipment: hasMeaningfulText(row?.equipment) ? String(row.equipment) : buildDefaultEquipment(subject),
+      equipment,
       digitalToolsAndAI: { method, tools },
       location: hasMeaningfulText(row?.location) ? String(row.location) : "Lớp học/phòng học bộ môn; phòng máy tính khi hoạt động cần thiết bị số",
       digitalCompetency,
@@ -2295,7 +2472,9 @@ export default function App() {
         useLaTeX: eduPlanInput.useLaTeX,
         detailDrawings: eduPlanInput.detailDrawings,
         customCurriculumData: customCurriculumData || undefined,
-        curriculumDbData: (!customCurriculumData && province === "TP. Hồ Chí Minh (Thành phố)") ? (CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade] || CURRICULUM_DB["Địa lý"]?.[eduPlanInput.grade]) : undefined,
+        curriculumDbData: (!customCurriculumData && (isStandaloneGeographySubject(eduPlanInput.subject) || province === "TP. Hồ Chí Minh (Thành phố)"))
+          ? (CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade] || CURRICULUM_DB["Địa lí"]?.[eduPlanInput.grade] || CURRICULUM_DB["Địa lý"]?.[eduPlanInput.grade])
+          : undefined,
         socialIntegrations: eduPlanInput.socialIntegrations
       });
       const sourceForCompletion = activeRef?.length ? activeRef : getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData);
@@ -2337,7 +2516,7 @@ export default function App() {
         curriculumDbData: customCurriculumData ? undefined : (eduPlanInput.subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" ? undefined : CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade])
       });
       const expectedLessons = getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData);
-      const completedData = completeDepartmentPlanRows(data, expectedLessons)
+      const completedData = completeDepartmentPlanRows(data, expectedLessons, { subject: eduPlanInput.subject, grade: eduPlanInput.grade })
         .map((row: any) => ({ ...row, subject: eduPlanInput.subject, grade: eduPlanInput.grade }));
       setResult({ type: "kh-tcm", data: completedData });
       setDepartmentPlanRef(completedData);
@@ -2454,8 +2633,12 @@ export default function App() {
   };
 
   const handleCopy = () => {
-
-    navigator.clipboard.writeText(JSON.stringify(result.data, null, 2));
+    const dataToCopy = result?.type === "khgd"
+      ? getCurrentKhgdRows()
+      : result?.type === "kh-tcm"
+        ? getCurrentKhtcmRows()
+        : result?.data;
+    navigator.clipboard.writeText(JSON.stringify(dataToCopy, null, 2));
     alert("Đã sao chép vào bộ nhớ tạm!");
   };
 
@@ -2477,6 +2660,19 @@ export default function App() {
     return eduPlanInput.grade || firstRow?.grade || lessonPlanInput.grade || "";
   };
 
+  const getCurrentKhgdRows = () => completeEducationalPlanRows(
+    Array.isArray(result?.data) ? result.data : [],
+    getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
+    eduPlanInput.subject,
+    eduPlanInput.grade
+  );
+
+  const getCurrentKhtcmRows = () => completeDepartmentPlanRows(
+    Array.isArray(result?.data) ? result.data : [],
+    getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
+    { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
+  );
+
   const safeExportName = (value: string) =>
     String(value || "Mon_hoc")
       .replace(/[\\/:*?"<>|]+/g, "")
@@ -2486,7 +2682,12 @@ export default function App() {
   const getCurrentExportAudit = () => {
     if (!result || !result.data) return null;
     if (!["khbd", "khgd", "kh-tcm"].includes(result.type)) return null;
-    return buildPlanQualityAudit(result.type, result.data, getExportSubject(), getExportGrade());
+    const auditData = result.type === "khgd"
+      ? getCurrentKhgdRows()
+      : result.type === "kh-tcm"
+        ? getCurrentKhtcmRows()
+        : result.data;
+    return buildPlanQualityAudit(result.type, auditData, getExportSubject(), getExportGrade());
   };
 
   const confirmOfficialDocxExport = () => {
@@ -2592,7 +2793,8 @@ export default function App() {
     } else if (result.type === "kh-tcm") {
       const data = completeDepartmentPlanRows(
         Array.isArray(result.data) ? result.data : [],
-        getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData)
+        getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
+        { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
       );
       const supplement = buildKhtcmSupplement(eduPlanInput.subject, eduPlanInput.grade, data);
       slides.push({ title: "KẾ HOẠCH TỔ CHUYÊN MÔN TÍCH HỢP AI", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `Tổng số dòng PPCT: ${data.length}`] });
@@ -2603,6 +2805,16 @@ export default function App() {
       for (let i = 0; i < data.length; i += 8) {
         const chunk = data.slice(i, i + 8);
         slides.push({ title: `Phân phối chương trình (${i + 1}–${Math.min(i + 8, data.length)})`, bullets: chunk.map((item: any) => `${item.time || ""}: ${item.lessonContent || item.lessonName || ""} (${item.periods || ""} tiết)`) });
+      }
+    } else if (result.type === "khgd") {
+      const data = getCurrentKhgdRows();
+      slides.push({ title: "KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `Tổng số dòng PL3: ${data.length}`] });
+      for (let i = 0; i < data.length; i += 6) {
+        const chunk = data.slice(i, i + 6);
+        slides.push({
+          title: `PL3 (${i + 1}–${Math.min(i + 6, data.length)})`,
+          bullets: chunk.map((item: any) => `• ${item.order || ""} | ${item.timing || ""}: ${item.lesson || ""} (${item.periods || ""} tiết)`)
+        });
       }
     } else {
       const data = Array.isArray(result.data) ? result.data : [];
@@ -3389,13 +3601,14 @@ export default function App() {
         }]
       });
     } else if (result.type === "khgd") {
+      const khgdRows = getCurrentKhgdRows();
       const rows = [
         new TableRow({
           children: [
             t("Thứ tự tiết"), t("Bài học"), t("Số tiết"), t("Thời điểm"), t("Thiết bị"), t("Địa điểm"), t("Định hướng năng lực số")
           ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx === 6 }))
         }),
-        ...(Array.isArray(result.data) ? result.data : []).map((item: any) => new TableRow({
+        ...khgdRows.map((item: any) => new TableRow({
           children: [
             wordCell(item.order, { center: true }),
             wordCell(item.lesson, { bold: true }),
@@ -3441,7 +3654,8 @@ export default function App() {
     } else if (result.type === "kh-tcm") {
       const planRows = completeDepartmentPlanRows(
         Array.isArray(result.data) ? result.data : [],
-        getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData)
+        getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
+        { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
       );
       const supplement = buildKhtcmSupplement(eduPlanInput.subject, eduPlanInput.grade, planRows);
       const simpleCell = (value: any, bold = false, fill?: string) => new TableCell({
@@ -3729,11 +3943,13 @@ export default function App() {
         });
       }
     } else if (result.type === "khgd") {
-      content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Định hướng năng lực số")}\n${(Array.isArray(result.data) ? result.data : []).map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.digitalCompetency}`).join("\n")}`;
+      const khgdRows = getCurrentKhgdRows();
+      content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Định hướng năng lực số")}\n${khgdRows.map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.digitalCompetency}`).join("\n")}`;
     } else if (result.type === "kh-tcm") {
       const planRows = completeDepartmentPlanRows(
         Array.isArray(result.data) ? result.data : [],
-        getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData)
+        getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
+        { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
       );
       const supplement = buildKhtcmSupplement(eduPlanInput.subject, eduPlanInput.grade, planRows);
       content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n${supplement.situation.map((line, i) => `${i + 1}. ${line}`).join("\n")}\n\n3. Thiết bị dạy học\nThiết bị | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.equipmentRows.map(row => `${row.name} | ${row.lessons} | ${row.note}`).join("\n")}\n\n4. Phòng học bộ môn/phòng chức năng\nPhòng học | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.rooms.map(row => `${row.room} | ${row.lessons} | ${row.note}`).join("\n")}\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Năng lực số | Mục tiêu & YCCĐ 3439 Tích hợp GD AI\n${planRows.map((item: any, i: number) => {
@@ -5509,8 +5725,8 @@ export default function App() {
                           </div>
                         </div>
 
-                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("khgd", result.data, eduPlanInput.subject, eduPlanInput.grade)} />
-                        <ExportModePanel audit={buildPlanQualityAudit("khgd", result.data, eduPlanInput.subject, eduPlanInput.grade)} />
+                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade)} />
+                        <ExportModePanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade)} />
 
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
                           <table className="w-full text-left text-[10px] border-collapse min-w-[1200px]">
@@ -5527,7 +5743,7 @@ export default function App() {
                               </tr>
                             </thead>
                             <tbody>
-                              {result.data.map((item: any, i: number) => (
+                              {getCurrentKhgdRows().map((item: any, i: number) => (
                                 <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors align-top">
                                   <td className="p-3 text-center font-bold text-slate-500">{item.order}</td>
                                   <td className="p-3 font-bold text-brand-sidebar">{item.lesson}</td>
@@ -5759,15 +5975,31 @@ export default function App() {
                           </div>
                         </div>
 
-                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("kh-tcm", result.data, eduPlanInput.subject, eduPlanInput.grade)} />
-                        <ExportModePanel audit={buildPlanQualityAudit("kh-tcm", result.data, eduPlanInput.subject, eduPlanInput.grade)} />
+                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("kh-tcm", completeDepartmentPlanRows(
+                          Array.isArray(result.data) ? result.data : [],
+                          getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
+                          { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
+                        ), eduPlanInput.subject, eduPlanInput.grade)} />
+                        <ExportModePanel audit={buildPlanQualityAudit("kh-tcm", completeDepartmentPlanRows(
+                          Array.isArray(result.data) ? result.data : [],
+                          getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
+                          { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
+                        ), eduPlanInput.subject, eduPlanInput.grade)} />
 
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
-                          <KhtcmSupplementSections subject={eduPlanInput.subject} grade={eduPlanInput.grade} rows={result.data} />
+                          <KhtcmSupplementSections subject={eduPlanInput.subject} grade={eduPlanInput.grade} rows={completeDepartmentPlanRows(
+                            Array.isArray(result.data) ? result.data : [],
+                            getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
+                            { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
+                          )} />
                           <div className="mb-6">
                             <h4 className="text-lg font-extrabold text-brand-sidebar mt-8">II. Kế hoạch dạy học - 1. Phân phối chương trình</h4>
                             <p className="text-xs text-slate-500 font-semibold mt-1">
-                              Đã rà soát {Array.isArray(result.data) ? result.data.length : 0} dòng. Các ô trống được tự động bù từ danh mục chương trình/PL tải lên để tránh thiếu nội dung.
+                              Đã rà soát {completeDepartmentPlanRows(
+                                Array.isArray(result.data) ? result.data : [],
+                                getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
+                                { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
+                              ).length} dòng. Các ô trống được tự động bù từ danh mục chương trình/PL tải lên để tránh thiếu nội dung.
                             </p>
                           </div>
                           <table className="w-full text-left text-[11px] border-collapse min-w-[1000px]">
@@ -5784,7 +6016,11 @@ export default function App() {
                               </tr>
                             </thead>
                             <tbody>
-                              {result.data.map((item: any, i: number) => {
+                              {completeDepartmentPlanRows(
+                                Array.isArray(result.data) ? result.data : [],
+                                getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
+                                { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
+                              ).map((item: any, i: number) => {
                                 const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
                                 const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
                                 return (
@@ -5807,7 +6043,11 @@ export default function App() {
                                             grade: eduPlanInput.grade
                                           });
                                           setMode("khgd-gen");
-                                          handleGenerateKHGD(result.data);
+                                          handleGenerateKHGD(completeDepartmentPlanRows(
+                                            Array.isArray(result.data) ? result.data : [],
+                                            getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
+                                            { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
+                                          ));
                                         }}
                                         className="mx-auto p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2 px-4"
                                         title="Lập KH Giáo dục cá nhân"

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { GEO_10_KNTT } from './curriculumData';
+import { DiaLy } from '../data/curriculum/diaLy';
 
 // --- Google AI Key Validation (per google-api skill) ---
 // Accepts both legacy AIzaSy... keys and new AQ... keys from Google AI Studio
@@ -328,7 +328,13 @@ const normalizeViText = (value?: string) =>
     .replace(/đ/g, "d");
 
 const isGeographyLikeSubject = (subject?: string) => /dia l[yi]|giao duc dia phuong|lich su va dia l[yi]/.test(normalizeViText(subject));
+const isStandaloneGeographySubject = (subject?: string) => {
+  const key = normalizeViText(subject).replace(/[^a-z0-9]+/g, " ").trim();
+  return key === "dia li" || key === "dia ly";
+};
 const needsScientificFormatting = (subject?: string) => /toan|vat l[yi]|hoa hoc|sinh hoc|dia l[yi]/.test(normalizeViText(subject));
+const getGeographyCurriculumByGrade = (grade?: string) =>
+  ((DiaLy as Record<string, any[]>)[String(grade || "").trim()] || []);
 
 const getSubjectCompetencyRule = (subject: string) => {
   const key = normalizeViText(subject);
@@ -1201,7 +1207,7 @@ ${input.additionalNotes ? `\nGHI CHÚ TÍCH HỢP BẮT BUỘC TỪ GIÁO VIÊN/
 ${englishConstraint}
 ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
 ${LESSON_PLAN_STRICT_GUIDELINES}
-${input.subject.toLowerCase().includes("địa") ? GEOGRAPHY_AI_RULES : ""}
+${isGeographyLikeSubject(input.subject) ? GEOGRAPHY_AI_RULES : ""}
 ${SOCIAL_INTEGRATION_GUIDELINES}
 `;
     finalPromptContents = [
@@ -1243,7 +1249,7 @@ ${input.additionalNotes ? `\nGHI CHÚ TÍCH HỢP BẮT BUỘC TỪ GIÁO VIÊN/
 ${englishConstraint}
 ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
 ${LESSON_PLAN_STRICT_GUIDELINES}
-${input.subject.toLowerCase().includes("địa") ? GEOGRAPHY_AI_RULES : ""}
+${isGeographyLikeSubject(input.subject) ? GEOGRAPHY_AI_RULES : ""}
 ${SOCIAL_INTEGRATION_GUIDELINES}
 ` : "";
   }
@@ -1549,24 +1555,25 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || needsScientificFormatting(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
   const competencyGuardrails = getThptCompetencyGuardrails(subject, grade);
+  const geographyCurriculum = getGeographyCurriculumByGrade(grade);
+  const isGeographyThptBatch = isStandaloneGeographySubject(subject) && ["10", "11", "12"].includes(String(grade).trim()) && !options?.customCurriculumData && geographyCurriculum.length > 0;
 
-  // ===== BATCH PROCESSING FOR DIA LI 10 (prevents output token truncation) =====
-  const isGeo10Batch = (/\u0111\u1ecba/i.test(subject) || subject === "Địa lý" || subject === "Địa lí" || subject === "ĐỊA LÝ" || subject === "ĐỊA LÍ" || subject.includes("\u0111\u1ecba") || subject.includes("\u0110\u1ecaa")) && grade === "10" && !options?.customCurriculumData && Array.isArray(GEO_10_KNTT) && GEO_10_KNTT.length > 0;
-  if (isGeo10Batch) {
+  // ===== BATCH PROCESSING FOR DIA LI THPT (prevents output token truncation) =====
+  if (isGeographyThptBatch) {
     const GEO_BATCH_SIZE = 22;
     const allBatchResults: any[] = [];
     let weekCounter = 1;
     const geoRulesForBatch = `${GEOGRAPHY_AI_RULES}\n${competencyGuardrails}`;
 
-    for (let bIdx = 0; bIdx < (GEO_10_KNTT as any[]).length; bIdx += GEO_BATCH_SIZE) {
-      const batch = (GEO_10_KNTT as any[]).slice(bIdx, bIdx + GEO_BATCH_SIZE);
+    for (let bIdx = 0; bIdx < geographyCurriculum.length; bIdx += GEO_BATCH_SIZE) {
+      const batch = geographyCurriculum.slice(bIdx, bIdx + GEO_BATCH_SIZE);
       const batchNum = Math.floor(bIdx / GEO_BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil((GEO_10_KNTT as any[]).length / GEO_BATCH_SIZE);
+      const totalBatches = Math.ceil(geographyCurriculum.length / GEO_BATCH_SIZE);
 
       const bLines = [
         CONTENT_INTEGRITY_RULES,
         "",
-        "Ban la Chuyen gia xay dung Ke hoach giao duc To chuyen mon tich hop AI cho mon: Dia li, lop: 10.",
+        "Ban la Chuyen gia xay dung Ke hoach giao duc To chuyen mon tich hop AI cho mon: Dia li, lop: " + grade + ".",
         'TUYET DOI: Dung bo sach "Ket noi tri thuc voi cuoc song". KHONG dung sach Canh Dieu hay Chan Troi Sang Tao.',
         "",
         AI_SUBJECT_GUIDELINES,
@@ -1583,7 +1590,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
         "4. digitalCompetencyTT02: voi THPT dung ma NLS muc NC1 (VD: 1.1.NC1a: Khai thac nguon du lieu...; 2.4.NC1b: Hop tac tren cong cu so...). Moi ma phai bam vao YCCD va san pham hoc tap.",
         "5. aiCompetency3439Integrated: truoc khi ghi ma NL AI phai ghi ten thanh phan nang luc AI; chi dung ma NL AI hop le theo lop va chu de QD 3439, kem YCCD cu the.",
         AI_COMPETENCY_ORDER_RULE,
-        "   Quy uoc ma: [10].[Mach(A/B/C/D)+So chu de].[STT] - VD: 10.A1.01, 10.A2.03, 10.B2.01, 10.C2.01, 10.D2.02",
+        "   Quy uoc ma: [" + grade + "].[Mach(A/B/C/D)+So chu de].[STT] - VD: " + grade + ".A1.01, " + grade + ".B2.01, " + grade + ".C2.01, " + grade + ".D2.02",
         "   - Mach A: Tu duy lay con nguoi lam trung tam | Mach B: Dao duc & trach nhiem | Mach C: Ky thuat & ung dung | Mach D: Giai quyet van de",
         "   PHAI DA DANG: moi bai dung ma va chu de KHAC NHAU. KHONG lap lai cung ma.",
         "6. Phan bo thoi gian bat dau tu Tuan " + weekCounter + ".",
@@ -1661,9 +1668,9 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
     }
     if (allBatchResults.length > 0) return allBatchResults;
   }
-  // ===== END BATCH PROCESSING FOR DIA LI 10 =====
+  // ===== END BATCH PROCESSING FOR DIA LI THPT =====
 
-    const overrideCurriculumDbData = (subject.toLowerCase().includes("địa") && grade === "10") ? undefined : options?.curriculumDbData;
+    const overrideCurriculumDbData = isStandaloneGeographySubject(subject) && geographyCurriculum.length > 0 ? undefined : options?.curriculumDbData;
     const normalizedOverrideCurriculumDbData = overrideCurriculumDbData ? normalizeCurriculumCompetencyData(overrideCurriculumDbData, grade) : undefined;
     const systemCurriculum = normalizedOverrideCurriculumDbData ? `DỮ LIỆU BÀI HỌC TỪ HỆ THỐNG:
 ${JSON.stringify(normalizedOverrideCurriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode, indicatorNote: l.indicatorNote, yccd: [l.objectivesKnowledge, l.objectivesCompetency, l.objectivesQuality].filter(Boolean).join("; ") })), null, 2)}
@@ -1675,8 +1682,8 @@ QUY TẮC ĐÁNH MÃ CHỈ BÁO AI KHI TỰ ĐỀ XUẤT: Chỉ đề xuất mã
     let defaultCurriculum = "";
     if (subject === "Giáo dục địa phương") {
         defaultCurriculum = CURRICULUM_DATA_GDDP;
-    } else if (subject.toLowerCase().includes("địa") && grade === "10") {
-        defaultCurriculum = `MỤC LỤC VÀ YÊU CẦU CẦN ĐẠT (YCCĐ) CHÍNH XÁC TỪNG BÀI - ĐỊA LÍ 10 KẾT NỐI TRI THỨC VỚI CUỘC SỐNG:\n${JSON.stringify(GEO_10_KNTT, null, 2)}`;
+    } else if (isStandaloneGeographySubject(subject) && geographyCurriculum.length > 0) {
+        defaultCurriculum = `MỤC LỤC VÀ YÊU CẦU CẦN ĐẠT (YCCĐ) CHÍNH XÁC TỪNG BÀI - ĐỊA LÍ ${grade} KẾT NỐI TRI THỨC VỚI CUỘC SỐNG:\n${JSON.stringify(geographyCurriculum, null, 2)}`;
     }
 
     const curriculumConstraint = options?.customCurriculumData
@@ -1685,7 +1692,7 @@ ${JSON.stringify(options.customCurriculumData, null, 2)}
 LỆNH VỀ TÊN BÀI HỌC TỐI CAO: TUYỆT ĐỐI tuân thủ danh sách tên bài học và số tiết trong mảng dữ liệu trên. Phải sinh KHTCM cho TOÀN BỘ các bài học được mô tả trong mảng này. KHÔNG SỬ DỤNG DỮ LIỆU CHƯƠNG TRÌNH MẶC ĐỊNH KHÁC.
 LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có chứa thuộc tính "yccd" (Yêu cầu cần đạt), bạn BẮT BUỘC phải sao chép Y NGUYÊN nội dung "yccd" đó vào cột Yêu cầu cần đạt CT 2018 (lessonGoal), TUYỆT ĐỐI KHÔNG ĐƯỢC TỰ Ý RÚT GỌN HAY CẮT XÉN.`
     : `${systemCurriculum}\n\nDANH SÁCH BÀI HỌC BỔ SUNG TỪ HỆ THỐNG:\n${defaultCurriculum}`;
-    const geographyRules = subject.toLowerCase().includes("địa") ? GEOGRAPHY_AI_RULES : "";
+    const geographyRules = isGeographyLikeSubject(subject) ? GEOGRAPHY_AI_RULES : "";
 
   const prompt = `
     ${CONTENT_INTEGRITY_RULES}

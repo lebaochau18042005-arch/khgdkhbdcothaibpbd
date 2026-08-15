@@ -1560,6 +1560,7 @@ type AutosaveDraft = {
   lessonPlanInput?: Partial<LessonPlanInput>;
   eduPlanInput?: any;
   suggestedNlsIndicators?: { code: string; rationale: string; name: string }[];
+  customCurriculumData?: any[] | null;
 };
 
 const readAutosaveDraft = (): AutosaveDraft | null => {
@@ -1638,7 +1639,9 @@ export default function App() {
   }, [result, evaluationResult]);
 
   const [departmentPlanRef, setDepartmentPlanRef] = useState<any[] | null>(null);
-  const [customCurriculumData, setCustomCurriculumData] = useState<any[] | null>(null);
+  const [customCurriculumData, setCustomCurriculumData] = useState<any[] | null>(
+    () => Array.isArray(initialDraft?.customCurriculumData) ? initialDraft.customCurriculumData : null
+  );
   const [isParsingCurriculum, setIsParsingCurriculum] = useState(false);
   const [province, setProvince] = useState(initialDraft?.province || "TP. Hồ Chí Minh (Thành phố)");
   const [uploadingSource, setUploadingSource] = useState(false);
@@ -1735,6 +1738,7 @@ export default function App() {
         if (restoredDraft.lessonPlanInput) setLessonPlanInput(prev => mergeDraftObject(prev, restoredDraft.lessonPlanInput));
         if (restoredDraft.eduPlanInput) setEduPlanInput((prev: any) => mergeDraftObject(prev, restoredDraft.eduPlanInput));
         if (Array.isArray(restoredDraft.suggestedNlsIndicators)) setSuggestedNlsIndicators(restoredDraft.suggestedNlsIndicators);
+        if (Array.isArray(restoredDraft.customCurriculumData)) setCustomCurriculumData(restoredDraft.customCurriculumData);
         setDraftSavedAt(restoredDraft.savedAt || Date.now());
         setShowDraftNotice(true);
       }
@@ -1777,9 +1781,9 @@ export default function App() {
   const handleSubjectOrGradeChange = (subject: string, grade: string) => {
     // Chỉ nạp dữ liệu từ DB nếu môn học không phải Giáo dục địa phương 
     // HOẶC nếu địa phương là TP.HCM (vì DB hiện tại chỉ có dữ liệu TP.HCM)
-    const lessons = (subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)")
+    const lessons = (subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" && !customCurriculumData?.length)
       ? []
-      : (CURRICULUM_DB[subject]?.[grade] || []);
+      : getKhtcmExpectedLessons(subject, grade, customCurriculumData);
 
     setAvailableLessons(lessons);
     setLessonPlanInput(prev => ({
@@ -1798,11 +1802,16 @@ export default function App() {
   };
 
   const handleLessonSelect = (lessonTitle: string) => {
-    const lesson = availableLessons.find(l => l.topic === lessonTitle);
+    const lesson = availableLessons.find(l => readLessonTitle(l) === lessonTitle);
     if (lesson) {
       setLessonPlanInput(prev => ({
         ...prev,
-        ...lesson
+        ...lesson,
+        topic: readLessonTitle(lesson),
+        duration: readPeriods(lesson),
+        objectivesKnowledge: lesson.objectivesKnowledge || lesson.yccd || lesson.lessonGoal || prev.objectivesKnowledge,
+        objectivesCompetency: lesson.objectivesCompetency || prev.objectivesCompetency,
+        objectivesQuality: lesson.objectivesQuality || prev.objectivesQuality
       }));
     } else {
       setLessonPlanInput(prev => ({
@@ -1897,7 +1906,8 @@ export default function App() {
         province,
         lessonPlanInput,
         eduPlanInput,
-        suggestedNlsIndicators
+        suggestedNlsIndicators,
+        customCurriculumData
       };
       try {
         window.localStorage.setItem(AUTOSAVE_DRAFT_KEY, JSON.stringify(draft));
@@ -1907,7 +1917,7 @@ export default function App() {
       }
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [mode, province, lessonPlanInput, eduPlanInput, suggestedNlsIndicators]);
+  }, [mode, province, lessonPlanInput, eduPlanInput, suggestedNlsIndicators, customCurriculumData]);
 
   const highlightAI = (text: string) => {
     if (!text) return text;
@@ -2046,6 +2056,14 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    if (!lessonPlanInput.subject || !lessonPlanInput.grade) return;
+    const lessons = (lessonPlanInput.subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" && !customCurriculumData?.length)
+      ? []
+      : getKhtcmExpectedLessons(lessonPlanInput.subject, lessonPlanInput.grade, customCurriculumData);
+    setAvailableLessons(lessons);
+  }, [lessonPlanInput.subject, lessonPlanInput.grade, province, customCurriculumData]);
+
   const confirmCurriculumCoverageBeforeGenerate = (subject: string, grade: string, featureName: string, customData?: any[] | null) => {
     const coverage = getCurriculumCoverage(subject, grade, customData);
     if (coverage.status === "strong" || coverage.status === "custom") return true;
@@ -2062,7 +2080,7 @@ export default function App() {
       setShowSettings(true);
       return;
     }
-    if (!confirmCurriculumCoverageBeforeGenerate(lessonPlanInput.subject, lessonPlanInput.grade, "Tạo KHBD")) return;
+    if (!confirmCurriculumCoverageBeforeGenerate(lessonPlanInput.subject, lessonPlanInput.grade, "Tạo KHBD", customCurriculumData)) return;
     setLoading(true);
     setResult(null);
     setEvaluationResult(null);
@@ -2269,13 +2287,14 @@ export default function App() {
       && (!departmentPlanRef[0]?.subject || departmentPlanRef[0].subject === eduPlanInput.subject)
       && (!departmentPlanRef[0]?.grade || departmentPlanRef[0].grade === eduPlanInput.grade);
     const activeRef = customRef || (storedRefMatches ? departmentPlanRef : null);
-    if (!confirmCurriculumCoverageBeforeGenerate(eduPlanInput.subject, eduPlanInput.grade, "Tạo PL3/KHGD giáo viên", activeRef)) return;
+    if (!confirmCurriculumCoverageBeforeGenerate(eduPlanInput.subject, eduPlanInput.grade, "Tạo PL3/KHGD giáo viên", activeRef || customCurriculumData)) return;
     setLoading(true);
     setResult(null);
     try {
       const data = await generateEducationalPlan(eduPlanInput.subject, eduPlanInput.grade, province, activeRef || undefined, {
         useLaTeX: eduPlanInput.useLaTeX,
         detailDrawings: eduPlanInput.detailDrawings,
+        customCurriculumData: customCurriculumData || undefined,
         curriculumDbData: (!customCurriculumData && province === "TP. Hồ Chí Minh (Thành phố)") ? (CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade] || CURRICULUM_DB["Địa lý"]?.[eduPlanInput.grade]) : undefined,
         socialIntegrations: eduPlanInput.socialIntegrations
       });
@@ -4465,7 +4484,7 @@ export default function App() {
                               />
                             </div>
                           </div>
-                          <SubjectCoveragePanel subject={lessonPlanInput.subject} grade={lessonPlanInput.grade} />
+                          <SubjectCoveragePanel subject={lessonPlanInput.subject} grade={lessonPlanInput.grade} customData={customCurriculumData} />
                           <div className="space-y-4">
                             <div className="space-y-2">
                               <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Chọn bài dạy trong chương trình 2018</label>
@@ -4477,7 +4496,7 @@ export default function App() {
                                 >
                                   <option value="">-- Chọn bài dạy có sẵn --</option>
                                   {availableLessons.map((l, idx) => (
-                                    <option key={idx} value={l.topic}>{l.topic}</option>
+                                    <option key={idx} value={readLessonTitle(l)}>{readLessonTitle(l)}</option>
                                   ))}
                                   <option value="custom">-- Nhập tên bài bài dạy khác --</option>
                                 </select>
@@ -5378,7 +5397,7 @@ export default function App() {
                               {GRADES.map(g => <option key={g} value={g}>Lớp {g}</option>)}
                             </select>
                           </div>
-                          <SubjectCoveragePanel subject={eduPlanInput.subject} grade={eduPlanInput.grade} customData={departmentPlanRef} />
+                          <SubjectCoveragePanel subject={eduPlanInput.subject} grade={eduPlanInput.grade} customData={departmentPlanRef?.length ? departmentPlanRef : customCurriculumData} />
                           <div className="grid grid-cols-2 gap-4 pt-2">
                             <label className="flex items-center gap-2 cursor-pointer group">
                               <input

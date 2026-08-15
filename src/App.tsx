@@ -1443,6 +1443,8 @@ export default function App() {
   const [result, setResult] = useState<any>(null);
   const [evaluationResult, setEvaluationResult] = useState<any>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyTypeFilter, setHistoryTypeFilter] = useState("all");
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(() => initialDraft?.savedAt || null);
   const [showDraftNotice, setShowDraftNotice] = useState(() => Boolean(initialDraft?.savedAt));
   
@@ -1504,6 +1506,7 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
   const contentRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
+  const backupInputRef = useRef<HTMLInputElement>(null);
 
   const [availableLessons, setAvailableLessons] = useState<any[]>([]);
 
@@ -1553,6 +1556,77 @@ export default function App() {
     setShowDraftNotice(false);
     alert("Đã xóa bản nháp tự lưu trên thiết bị.");
   };
+
+  const exportDeviceBackup = () => {
+    const savedDraft = readAutosaveDraft();
+    const backup = {
+      app: "khgdkhbdcothaibpbd",
+      version: 5,
+      exportedAt: new Date().toISOString(),
+      note: "File sao lưu chỉ chứa lịch sử tạo và bản nháp trên thiết bị, không chứa API key.",
+      history,
+      autosaveDraft: savedDraft,
+      settings: {
+        province,
+        aiModel
+      }
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
+    const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
+    saveAs(blob, `SAO_LUU_khgdkhbdcothaibpbd_${stamp}.json`);
+  };
+
+  const restoreDeviceBackup = async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (!parsed || parsed.app !== "khgdkhbdcothaibpbd") {
+        alert("File sao lưu không đúng định dạng của app khgdkhbdcothaibpbd.");
+        return;
+      }
+
+      const restoredHistory: HistoryItem[] = Array.isArray(parsed.history)
+        ? parsed.history
+            .filter((item: any) => item && item.id && item.type && item.data)
+            .slice(0, 15)
+        : [];
+
+      if (restoredHistory.length) {
+        setHistory(restoredHistory);
+        await saveHistoryToDB(restoredHistory);
+      }
+
+      const restoredDraft = parsed.autosaveDraft && typeof parsed.autosaveDraft === "object" ? parsed.autosaveDraft as AutosaveDraft : null;
+      if (restoredDraft) {
+        window.localStorage.setItem(AUTOSAVE_DRAFT_KEY, JSON.stringify(restoredDraft));
+        if (restoredDraft.mode && restoredDraft.mode !== "history") setMode(restoredDraft.mode);
+        if (restoredDraft.province) setProvince(restoredDraft.province);
+        if (restoredDraft.lessonPlanInput) setLessonPlanInput(prev => mergeDraftObject(prev, restoredDraft.lessonPlanInput));
+        if (restoredDraft.eduPlanInput) setEduPlanInput((prev: any) => mergeDraftObject(prev, restoredDraft.eduPlanInput));
+        if (Array.isArray(restoredDraft.suggestedNlsIndicators)) setSuggestedNlsIndicators(restoredDraft.suggestedNlsIndicators);
+        setDraftSavedAt(restoredDraft.savedAt || Date.now());
+        setShowDraftNotice(true);
+      }
+
+      alert(`Đã khôi phục ${restoredHistory.length} mục lịch sử${restoredDraft ? " và bản nháp" : ""}.`);
+    } catch (error: any) {
+      console.error(error);
+      alert("Không thể đọc file sao lưu. Vui lòng chọn file JSON đã tải từ app.");
+    }
+  };
+
+  const handleBackupUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) await restoreDeviceBackup(file);
+    event.target.value = "";
+  };
+
+  const filteredHistory = history.filter((item) => {
+    const matchesType = historyTypeFilter === "all" || item.type === historyTypeFilter;
+    const query = normalizeKey(historySearch);
+    const matchesSearch = !query || normalizeKey(`${item.title} ${item.type}`).includes(query);
+    return matchesType && matchesSearch;
+  });
 
   const requireOnlineForAi = (featureName = "tính năng AI") => {
     if (isOnline) return true;
@@ -3898,15 +3972,84 @@ export default function App() {
                         <p className="text-sm font-medium text-brand-muted">Các kế hoạch đã được lưu lại tự động (15 bản gần nhất)</p>
                       </div>
                     </div>
+
+                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 md:p-5 space-y-4">
+                      <input
+                        ref={backupInputRef}
+                        type="file"
+                        accept="application/json,.json"
+                        onChange={handleBackupUpload}
+                        className="hidden"
+                      />
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black text-slate-900">Sao lưu dữ liệu thiết bị</p>
+                          <p className="text-xs font-semibold text-slate-500 leading-relaxed">
+                            Dùng để chuyển lịch sử và bản nháp sang máy khác hoặc khôi phục khi cài lại trình duyệt. File sao lưu không chứa API key.
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            onClick={exportDeviceBackup}
+                            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-black shadow-sm hover:bg-indigo-700 transition-colors"
+                          >
+                            <Download className="w-4 h-4" /> Tải sao lưu
+                          </button>
+                          <button
+                            onClick={() => backupInputRef.current?.click()}
+                            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-black hover:bg-slate-50 transition-colors"
+                          >
+                            <UploadCloud className="w-4 h-4" /> Khôi phục JSON
+                          </button>
+                          <button
+                            onClick={clearAutosaveDraft}
+                            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-red-200 text-red-600 text-xs font-black hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" /> Xóa bản nháp
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-3">
+                        <div className="relative">
+                          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                          <input
+                            value={historySearch}
+                            onChange={(event) => setHistorySearch(event.target.value)}
+                            placeholder="Tìm theo tên kế hoạch, loại file..."
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm font-semibold text-slate-700 outline-none focus:border-indigo-300 focus:bg-white"
+                          />
+                        </div>
+                        <select
+                          value={historyTypeFilter}
+                          onChange={(event) => setHistoryTypeFilter(event.target.value)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-300 focus:bg-white"
+                        >
+                          <option value="all">Tất cả loại kế hoạch</option>
+                          <option value="kh-tcm">PL1 - KHTCM</option>
+                          <option value="khgd">PL3 - KHGD GV</option>
+                          <option value="khbd">PL4 - KHBD</option>
+                          <option value="kh-hdgd">HĐGD</option>
+                          <option value="ai-framework">Khung NL AI</option>
+                        </select>
+                      </div>
+                      <p className="text-[11px] font-bold text-slate-400">
+                        Đang hiển thị {filteredHistory.length}/{history.length} mục. Bản nháp gần nhất: {draftSavedAt ? formatSavedTime(draftSavedAt) : "chưa có"}.
+                      </p>
+                    </div>
                     
                     {history.length === 0 ? (
                       <div className="text-center p-12 bg-white rounded-[32px] border border-slate-100 shadow-sm">
                         <Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                         <p className="text-slate-500 font-medium">Chưa có lịch sử tạo nào.</p>
                       </div>
+                    ) : filteredHistory.length === 0 ? (
+                      <div className="text-center p-12 bg-white rounded-[32px] border border-slate-100 shadow-sm">
+                        <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500 font-medium">Không tìm thấy mục phù hợp với bộ lọc hiện tại.</p>
+                      </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {history.map((item, idx) => (
+                        {filteredHistory.map((item, idx) => (
                           <div key={item.id} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group" onClick={() => {
                             setResult({ type: item.type, data: item.type === "khbd" ? normalizeKhbdToCv5512(item.data) : item.data, loadedFromHistory: true });
                             if (item.evaluationResult) {

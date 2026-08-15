@@ -327,7 +327,8 @@ const normalizeViText = (value?: string) =>
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/đ/g, "d");
 
-const isGeographyLikeSubject = (subject?: string) => /dia li|giao duc dia phuong|lich su va dia li/.test(normalizeViText(subject));
+const isGeographyLikeSubject = (subject?: string) => /dia l[yi]|giao duc dia phuong|lich su va dia l[yi]/.test(normalizeViText(subject));
+const needsScientificFormatting = (subject?: string) => /toan|vat l[yi]|hoa hoc|sinh hoc|dia l[yi]/.test(normalizeViText(subject));
 
 const needsGeoDataArtifact = (analysis: any, suggestion: any, sourceText?: string) => {
   if (!isGeographyLikeSubject(analysis?.subject)) return false;
@@ -1137,7 +1138,7 @@ Trạng thái: Trả về ĐÚNG định dạng JSON array (không có markdown,
 
 
 export const generateLessonPlan = async (input: LessonPlanInput) => {
-  const formattingNeed = input.useLaTeX || input.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(input.subject);
+  const formattingNeed = input.useLaTeX || input.detailDrawings || needsScientificFormatting(input.subject);
   const englishConstraint = (input.subject === "Tiếng Anh" || input.subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung giáo án (kịch bản GV-HS, mục tiêu, nội dung...) PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
   const lessonYccd = [input.objectivesKnowledge, input.objectivesCompetency, input.objectivesQuality].filter(Boolean).join("\n");
   const competencyGuardrails = getThptCompetencyGuardrails(input.subject, input.grade, lessonYccd);
@@ -1373,7 +1374,7 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
 };
 
 export const generateEducationalPlan = async (subject: string, grade: string, province?: string, referencePlan?: any[], options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[], curriculumDbData?: any[], socialIntegrations?: string[] }) => {
-  const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
+  const formattingNeed = options?.useLaTeX || options?.detailDrawings || needsScientificFormatting(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
   const competencyGuardrails = getThptCompetencyGuardrails(subject, grade);
   const normalizedCurriculumDbData = options?.curriculumDbData ? normalizeCurriculumCompetencyData(options.curriculumDbData, grade) : undefined;
@@ -1514,7 +1515,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
 };
 
 export const generateDepartmentPlan = async (subject: string, grade: string, province?: string, options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[], curriculumDbData?: any[] }) => {
-  const formattingNeed = options?.useLaTeX || options?.detailDrawings || ["Toán học", "Vật lý", "Hóa học", "Địa lí"].includes(subject);
+  const formattingNeed = options?.useLaTeX || options?.detailDrawings || needsScientificFormatting(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
   const competencyGuardrails = getThptCompetencyGuardrails(subject, grade);
 

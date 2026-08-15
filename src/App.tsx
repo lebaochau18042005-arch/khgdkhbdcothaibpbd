@@ -1526,28 +1526,6 @@ export default function App() {
     navigator.storage.persist().catch(() => undefined);
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const timer = window.setTimeout(() => {
-      const draft: AutosaveDraft = {
-        version: 3,
-        savedAt: Date.now(),
-        mode,
-        province,
-        lessonPlanInput,
-        eduPlanInput,
-        suggestedNlsIndicators
-      };
-      try {
-        window.localStorage.setItem(AUTOSAVE_DRAFT_KEY, JSON.stringify(draft));
-        setDraftSavedAt(draft.savedAt);
-      } catch (error) {
-        console.warn("[Autosave] Cannot save draft", error);
-      }
-    }, 700);
-    return () => window.clearTimeout(timer);
-  }, [mode, province, lessonPlanInput, eduPlanInput, suggestedNlsIndicators]);
-
   const clearAutosaveDraft = () => {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(AUTOSAVE_DRAFT_KEY);
@@ -1755,6 +1733,28 @@ export default function App() {
   const [eduPlanInput, setEduPlanInput] = useState(() =>
     mergeDraftObject(defaultEduPlanInput, initialDraft?.eduPlanInput)
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const timer = window.setTimeout(() => {
+      const draft: AutosaveDraft = {
+        version: 3,
+        savedAt: Date.now(),
+        mode,
+        province,
+        lessonPlanInput,
+        eduPlanInput,
+        suggestedNlsIndicators
+      };
+      try {
+        window.localStorage.setItem(AUTOSAVE_DRAFT_KEY, JSON.stringify(draft));
+        setDraftSavedAt(draft.savedAt);
+      } catch (error) {
+        console.warn("[Autosave] Cannot save draft", error);
+      }
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [mode, province, lessonPlanInput, eduPlanInput, suggestedNlsIndicators]);
 
   const highlightAI = (text: string) => {
     if (!text) return text;

@@ -27,6 +27,8 @@ export const CURRICULUM_DB: Record<string, Record<string, any[]>> = {
     "Công nghệ": CongNghe,
     "Khoa học tự nhiên": KhoaHocTuNhien,
     "Lịch sử và Địa lí": LichSuDiaLy,
+    "Vật lí": VatLy,
+    "Địa lí": DiaLy,
     "Giáo dục công dân": GDKTPL,
     ...Others
 };

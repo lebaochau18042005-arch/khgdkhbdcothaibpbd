@@ -256,7 +256,7 @@ export default function UpgradePlan({
             }
 
             setAnalysisResult(analysis);
-            setSelectedIntegrations((analysis.aiSuggestions || []).filter((sug: any) => hasUsableIntegration(sug)));
+            setSelectedIntegrations((analysis.aiSuggestions || []).filter((sug: any) => hasUsableIntegration(sug, analysis.grade)));
             setStep(2);
         } catch (err: any) {
             console.error("[UpgradePlan Error]", err);
@@ -378,13 +378,24 @@ export default function UpgradePlan({
         return "bg-green-50 border-green-300 text-green-800";
     };
 
-    const hasValidNlsCode = (code?: string) =>
-        /^[1-6]\.\d+\.(?:CB1|CB2|TC1|TC2|NC1|NC2)[a-z]$/i.test(String(code || "").trim());
+    const getGradeNumber = (grade?: string) => String(grade || "").match(/\b(10|11|12|[1-9])\b/)?.[1] || "";
+    const expectedNlsLevelByGrade: Record<string, string> = {
+        "1": "CB1", "2": "CB1", "3": "CB1", "4": "CB2", "5": "CB2",
+        "6": "TC1", "7": "TC1", "8": "TC2", "9": "TC2",
+        "10": "NC1", "11": "NC1", "12": "NC1",
+    };
+    const hasValidNlsCode = (code?: string, grade = analysisResult?.grade) => {
+        const match = String(code || "").trim().match(/^[1-6]\.\d+\.(CB1|CB2|TC1|TC2|NC1|NC2)[a-z]$/i);
+        const expectedLevel = expectedNlsLevelByGrade[getGradeNumber(grade)];
+        return Boolean(match && (!expectedLevel || match[1].toUpperCase() === expectedLevel));
+    };
 
-
-    const hasValidAiCode = (code?: string) => {
-        const match = String(code || "").trim().match(/^NL([abcd])\s*[-–—:]\s*\d{1,2}\.([ABCD]\d+)\.\d{1,2}$/i);
-        return Boolean(match && match[1].toUpperCase() === match[2][0].toUpperCase());
+    const hasValidAiCode = (code?: string, grade = analysisResult?.grade) => {
+        const match = String(code || "").trim().match(/^NL([abcd])\s*[-–—:]\s*(\d{1,2})\.([ABCD]\d+)\.\d{1,2}$/i);
+        const expectedGrade = getGradeNumber(grade);
+        return Boolean(match
+            && match[1].toUpperCase() === match[3][0].toUpperCase()
+            && (!expectedGrade || match[2] === expectedGrade));
     };
     const getIntegrationDecision = (suggestion: any) => {
         const explicit = String(suggestion?.integrationDecision || "").trim();
@@ -399,9 +410,9 @@ export default function UpgradePlan({
     };
     const suggestionUsesNls = (suggestion: any) => /NLS/i.test(getIntegrationDecision(suggestion));
     const suggestionUsesAi = (suggestion: any) => /AI/i.test(getIntegrationDecision(suggestion));
-    const hasUsableIntegration = (suggestion: any) => {
-        if (suggestionUsesNls(suggestion) && !hasValidNlsCode(suggestion?.suggestedNLS)) return false;
-        if (suggestionUsesAi(suggestion) && !hasValidAiCode(suggestion?.suggestedAI)) return false;
+    const hasUsableIntegration = (suggestion: any, grade = analysisResult?.grade) => {
+        if (suggestionUsesNls(suggestion) && !hasValidNlsCode(suggestion?.suggestedNLS, grade)) return false;
+        if (suggestionUsesAi(suggestion) && !hasValidAiCode(suggestion?.suggestedAI, grade)) return false;
         const hasInsertionTarget = Boolean(String(suggestion?.activityName || "").trim())
             && Boolean(String(suggestion?.targetContent || "").trim());
         const hasYccd = Boolean(String(suggestion?.yccdEvidence || suggestion?.aiYccd || suggestion?.reason || "").trim());

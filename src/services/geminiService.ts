@@ -286,12 +286,48 @@ const NLS_LEVEL_BY_GRADE: Record<string, string> = {
 
 const getExpectedNlsLevel = (grade?: string) => NLS_LEVEL_BY_GRADE[extractGradeNumber(grade)];
 
-const detectGradeFromText = (...texts: Array<string | undefined>) => {
-  const combined = texts.filter(Boolean).join("\n").slice(0, 60000);
-  const contextualMatch = combined.match(/(?:lớp|lop|khối|khoi)\s*[:\-]?\s*(10|11|12|[1-9])\b/i);
-  if (contextualMatch) return contextualMatch[1];
-  const lessonPlanMatch = combined.match(/(?:kế hoạch bài dạy|giao án|giáo án)[\s\S]{0,800}?\b(10|11|12|[1-9])\b/i);
-  return lessonPlanMatch?.[1];
+type GradeCandidate = { grade: string; score: number };
+
+const findGradeCandidate = (text?: string): GradeCandidate | undefined => {
+  const lines = String(text || "").slice(0, 60000).split(/\r?\n/);
+  const scores = new Map<string, number>();
+
+  lines.forEach((line, lineIndex) => {
+    const normalizedLine = normalizeViText(line);
+    if (!normalizedLine) return;
+
+    // Generated integration lines may contain an old/wrong grade. They are not
+    // reliable evidence for the actual grade of the lesson plan.
+    if (/ma chi bao|thanh phan nl ai|tich hop nls|tich hop nl ai|nl[abcd]\s*[-:]/i.test(normalizedLine)) return;
+
+    const nearbyText = normalizeViText(lines.slice(Math.max(0, lineIndex - 2), lineIndex + 3).join(" "));
+    const gradePattern = /(?:khối\s*lớp|khoi\s*lop|lớp|lop|khối|khoi)\s*(?:học|hoc)?\s*([:\-–—]?)\s*(10|11|12|[1-9])\b/gi;
+    let match: RegExpExecArray | null;
+    while ((match = gradePattern.exec(line)) !== null) {
+      const grade = match[2];
+      let score = 4;
+      if (match[1]) score += 3;
+      if (lineIndex < 80) score += 4;
+      else if (lineIndex < 200) score += 2;
+      if (/ke hoach bai day|giao an|ke hoach giao duc|mon\s*[:\-]|khoi lop/i.test(nearbyText)) score += 7;
+      scores.set(grade, (scores.get(grade) || 0) + score);
+    }
+  });
+
+  const ranked = [...scores.entries()]
+    .map(([grade, score]) => ({ grade, score }))
+    .sort((a, b) => b.score - a.score);
+  return ranked[0];
+};
+
+const detectGradeFromText = (lessonPlanText?: string, pl1Text?: string) => {
+  const lessonGrade = findGradeCandidate(lessonPlanText);
+  const pl1Grade = findGradeCandidate(pl1Text);
+
+  if (lessonGrade && pl1Grade?.grade === lessonGrade.grade) return lessonGrade.grade;
+  if (lessonGrade && (!pl1Grade || lessonGrade.score >= pl1Grade.score - 3)) return lessonGrade.grade;
+  if (pl1Grade) return pl1Grade.grade;
+  return lessonGrade?.grade;
 };
 
 const KNOWN_NLS_CODE_SET = new Set(KNOWN_NLS_INDICATORS.map((indicator) => indicator.code.toUpperCase()));

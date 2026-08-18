@@ -1,7 +1,7 @@
 {
-  "name": "khgdkhbdcothaibpbd",
-  "short_name": "khgdkhbdcothaibpbd",
-  "description": "Tro ly so hoa ke hoach giao duc tich hop AI cho giao vien.",
+  "name": "EduPlan AI - Kế hoạch giáo dục",
+  "short_name": "EduPlan AI",
+  "description": "Trợ lý số hóa kế hoạch giáo dục tích hợp năng lực số và AI cho giáo viên.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -19,12 +19,12 @@
   ],
   "shortcuts": [
     {
-      "name": "Nang cap DOCX",
+      "name": "Nâng cấp DOCX",
       "short_name": "DOCX",
       "url": "/"
     },
     {
-      "name": "Su - Dia Skills",
+      "name": "Sử - Địa Skills",
       "short_name": "Skills",
       "url": "/"
     }

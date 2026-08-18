@@ -5,7 +5,7 @@ import * as mammoth from "mammoth";
 import html2pdf from "html2pdf.js";
 import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye, FileDown, FileCode, Printer, ClipboardCheck, Calendar, BrainCircuit, Search, LayoutGrid, AlertCircle } from "lucide-react";
 import { analyzeExistingPlan, generateDirectSnippets } from "../services/geminiService";
-import { appendAssessmentDesignToDocx, injectSnippetsIntoDocx, InjectionResult } from "../utils/docxInjector";
+import { appendAssessmentDesignToDocx, injectSnippetsIntoDocx, InjectionResult, Snippet } from "../utils/docxInjector";
 import { saveAs } from "file-saver";
 
 interface TextbookImage {
@@ -16,6 +16,76 @@ interface TextbookImage {
 }
 
 type UpgradeNextAction = "khbd" | "teacher-plan" | "assessment" | "council";
+
+const sanitizePreviewHtml = (html: string) => {
+    if (!html || typeof DOMParser === "undefined") return "";
+    const parsed = new DOMParser().parseFromString(html, "text/html");
+    parsed.querySelectorAll("script, style, iframe, object, embed, form, input, button, meta, link, base")
+        .forEach((element) => element.remove());
+
+    parsed.querySelectorAll("*").forEach((element) => {
+        const inlineStyle = element.getAttribute("style") || "";
+        if (/color\s*:\s*(?:#?ff0000|red|rgb\(\s*255\s*,\s*0\s*,\s*0\s*\))/i.test(inlineStyle)) {
+            element.classList.add("docx-ai-red");
+        }
+        for (const attribute of Array.from(element.attributes)) {
+            const name = attribute.name.toLowerCase();
+            const value = attribute.value.trim();
+            if (name.startsWith("on") || ["srcdoc", "formaction", "style"].includes(name)) {
+                element.removeAttribute(attribute.name);
+                continue;
+            }
+            if (name === "href" && !/^(https?:|mailto:|#|[/])/i.test(value)) {
+                element.removeAttribute(attribute.name);
+                continue;
+            }
+            if (name === "src" && !/^data:image[/](?:png|jpe?g|gif|webp);base64,/i.test(value)) {
+                element.removeAttribute(attribute.name);
+            }
+        }
+        if (element instanceof HTMLAnchorElement && element.target === "_blank") {
+            element.rel = "noopener noreferrer";
+        }
+    });
+
+    return parsed.body.innerHTML;
+};
+const normalizePreviewText = (value: string) =>
+    (value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+const markIntegratedPreviewHtml = (
+    html: string,
+    previewItems: InjectionResult["previewItems"] = []
+) => {
+    if (!html || typeof DOMParser === "undefined") return html || "";
+    const redLines = previewItems
+        .filter(item => item.found)
+        .flatMap(item => String(item.injectedText || "").split(/\r?\n/))
+        .map(normalizePreviewText)
+        .filter(line => line.length >= 6 && /[a-z0-9]/.test(line));
+    if (!redLines.length) return html;
+
+    const parsed = new DOMParser().parseFromString(html, "text/html");
+    parsed.querySelectorAll("p, li, h1, h2, h3, h4, h5, h6, td, th").forEach(element => {
+        if ((element.matches("td, th")) && element.querySelector("p, li")) return;
+        const text = normalizePreviewText(element.textContent || "");
+        if (!text) return;
+        const isIntegrationLabel = text.includes("tich hop nls nl ai");
+        const matchesInjectedLine = redLines.some(line =>
+            text === line || (text.length >= 12 && line.includes(text)) || (line.length >= 12 && text.includes(line))
+        );
+        if (isIntegrationLabel || matchesInjectedLine) element.classList.add("docx-ai-red");
+    });
+    return parsed.body.innerHTML;
+};
+
 
 export default function UpgradePlan({
     onUpgradeReady,
@@ -186,7 +256,7 @@ export default function UpgradePlan({
             }
 
             setAnalysisResult(analysis);
-            setSelectedIntegrations((analysis.aiSuggestions || []).filter((sug: any) => /^\d{1,2}\.[ABCD]\d+\.\d{1,2}$/i.test(sug?.suggestedAI || "")));
+            setSelectedIntegrations((analysis.aiSuggestions || []).filter((sug: any) => hasUsableIntegration(sug)));
             setStep(2);
         } catch (err: any) {
             console.error("[UpgradePlan Error]", err);
@@ -237,10 +307,9 @@ export default function UpgradePlan({
 
             // 2. Inject into DOCX and get preview data
             const result = await injectSnippetsIntoDocx(file, snippets, {
-                objectivesText: objectiveText,
-                assessmentText: assessmentText
+                objectivesText: objectiveText
             });
-            const preview = await buildDocxHtmlPreview(result.blob);
+            const preview = await buildDocxHtmlPreview(result.blob, result.previewItems);
 
             // 3. Go to preview step (step 3) instead of downloading directly
             setInjectionResult(result);
@@ -309,41 +378,108 @@ export default function UpgradePlan({
         return "bg-green-50 border-green-300 text-green-800";
     };
 
-    const hasValidAiCode = (code?: string) => /^\d{1,2}\.[ABCD]\d+\.\d{1,2}$/i.test(code || "");
+    const hasValidNlsCode = (code?: string) =>
+        /^[1-6]\.\d+\.(?:CB1|CB2|TC1|TC2|NC1|NC2)[a-z]$/i.test(String(code || "").trim());
+
+
+    const hasValidAiCode = (code?: string) => {
+        const match = String(code || "").trim().match(/^NL([abcd])\s*[-–—:]\s*\d{1,2}\.([ABCD]\d+)\.\d{1,2}$/i);
+        return Boolean(match && match[1].toUpperCase() === match[2][0].toUpperCase());
+    };
+    const getIntegrationDecision = (suggestion: any) => {
+        const explicit = String(suggestion?.integrationDecision || "").trim();
+        if (explicit) return explicit;
+        const hasNls = hasValidNlsCode(suggestion?.suggestedNLS);
+        const hasAi = hasValidAiCode(suggestion?.suggestedAI)
+            || /NL[abcd]/i.test(String(suggestion?.aiCompetencyName || suggestion?.aiComponentName || ""));
+        if (hasNls && hasAi) return "NLS và NL AI";
+        if (hasNls) return "Chỉ NLS";
+        if (hasAi) return "Chỉ NL AI";
+        return "Không tích hợp";
+    };
+    const suggestionUsesNls = (suggestion: any) => /NLS/i.test(getIntegrationDecision(suggestion));
+    const suggestionUsesAi = (suggestion: any) => /AI/i.test(getIntegrationDecision(suggestion));
+    const hasUsableIntegration = (suggestion: any) => {
+        if (suggestionUsesNls(suggestion) && !hasValidNlsCode(suggestion?.suggestedNLS)) return false;
+        if (suggestionUsesAi(suggestion) && !hasValidAiCode(suggestion?.suggestedAI)) return false;
+        const hasInsertionTarget = Boolean(String(suggestion?.activityName || "").trim())
+            && Boolean(String(suggestion?.targetContent || "").trim());
+        const hasYccd = Boolean(String(suggestion?.yccdEvidence || suggestion?.aiYccd || suggestion?.reason || "").trim());
+        const hasNlsEvidence = suggestionUsesNls(suggestion)
+            && hasYccd
+            && Boolean(String(suggestion?.nlsStudentBehavior || suggestion?.action || "").trim())
+            && Boolean(String(suggestion?.nlsProduct || suggestion?.product || "").trim());
+        const hasAiEvidence = suggestionUsesAi(suggestion)
+            && hasYccd
+            && Boolean(String(suggestion?.aiStudentBehavior || suggestion?.action || "").trim());
+        return hasInsertionTarget && getIntegrationDecision(suggestion) !== "Không tích hợp" && (hasNlsEvidence || hasAiEvidence);
+    };
 
     const plain = (value?: string) => (value || "").replace(/<bold>|<\/bold>|<ai>|<\/ai>|\*\*/gi, "").trim();
 
+    const compactSentence = (value?: string, maxLength = 220) => {
+        const normalized = plain(value).replace(/\s+/g, " ").trim();
+        if (normalized.length <= maxLength) return normalized;
+        const shortened = normalized.slice(0, maxLength + 1).replace(/\s+\S*$/, "").replace(/[,:;\-–—]+$/, "").trim();
+        return `${shortened || normalized.slice(0, maxLength).trim()}…`;
+    };
+
+
     const getAiCompetencyNameFromCode = (code?: string) => {
         const normalized = (code || "").toUpperCase();
-        if (/\.(A\d+)\./.test(normalized) || normalized.includes("NLA")) return "NLa - Tư duy lấy con người làm trung tâm";
-        if (/\.(B\d+)\./.test(normalized) || normalized.includes("NLB")) return "NLb - Đạo đức và trách nhiệm xã hội";
-        if (/\.(C\d+)\./.test(normalized) || normalized.includes("NLC")) return "NLc - Kỹ thuật và ứng dụng";
-        if (/\.(D\d+)\./.test(normalized) || normalized.includes("NLD")) return "NLd - Giải quyết vấn đề và thiết kế hệ thống";
+        if (/\bNLA\b/.test(normalized)) return "NLa - Tư duy lấy con người làm trung tâm";
+        if (/\bNLB\b/.test(normalized)) return "NLb - Đạo đức và trách nhiệm xã hội";
+        if (/\bNLC\b/.test(normalized)) return "NLc - Kỹ thuật và ứng dụng";
+        if (/\bNLD\b/.test(normalized)) return "NLd - Giải quyết vấn đề và thiết kế hệ thống";
         return "Thành phần năng lực AI cần đối chiếu theo CV/QĐ 3439";
     };
 
+    const getAiCompetencyDisplayName = (value?: string, code?: string) => {
+        const rawValue = plain(value);
+        const standardized = getAiCompetencyNameFromCode(`${rawValue} ${code || ""}`);
+        return standardized.startsWith("Thành phần năng lực AI cần đối chiếu")
+            ? rawValue || standardized
+            : standardized;
+    };
+
     const buildAiOrderedFields = (sug: any) => {
-        const code = sug?.suggestedAI || "Không gán mã";
+        const code = plain(sug?.suggestedAI || sug?.aiIndicatorCode || "");
+        const codeMatch = code.match(/^NL([abcd])\s*[-–—:]\s*(\d{1,2})\.([ABCD]\d+)\.(\d{1,2})$/i);
+        const isValidCode = hasValidAiCode(code);
+        const topicMatch = String(sug?.aiTopic || "").match(/\b([ABCD]\d+)\b/i);
+        const indicatorCode = codeMatch && isValidCode
+            ? `NL${codeMatch[1].toLowerCase()}- ${codeMatch[2]}.${codeMatch[3].toUpperCase()}.${codeMatch[4].padStart(2, "0")}`
+            : "Mã NL AI không hợp lệ — không thể chèn";
+        const grade = plain(sug?.aiGrade || codeMatch?.[2] || analysisResult?.grade || "");
+        const topic = plain(codeMatch?.[3]?.toUpperCase() || topicMatch?.[1]?.toUpperCase() || "");
+        const competencyName = getAiCompetencyDisplayName(sug?.aiCompetencyName || sug?.aiComponentName, code);
+        const componentCode = codeMatch && isValidCode ? `NL${codeMatch[1].toLowerCase()}` : "";
         const behavior = plain(sug?.aiStudentBehavior || sug?.action || "Học sinh thực hiện nhiệm vụ học tập có sử dụng AI dưới sự hướng dẫn của giáo viên.");
         const yccd = plain(sug?.aiYccd || sug?.yccdEvidence || sug?.reason || "Căn cứ YCCĐ cần được giáo viên đối chiếu trước khi sử dụng.");
         return {
-            competencyName: plain(sug?.aiCompetencyName || sug?.aiComponentName || getAiCompetencyNameFromCode(code)),
+            competencyName,
+            componentCode,
+            grade,
+            topic,
+            indicatorCode,
             behavior,
             yccd,
-            code,
+            code: indicatorCode,
             product: plain(sug?.aiProduct || sug?.product || "Sản phẩm học tập có sử dụng AI và được học sinh chỉnh sửa/kiểm chứng."),
             criteria: plain(sug?.aiCriteria || sug?.criteria || "Đúng kiến thức môn học; dùng AI đúng mục đích; biết kiểm chứng nguồn và giải thích cách điều chỉnh kết quả AI."),
             evidence: plain(sug?.aiEvidence || sug?.evidence || "Prompt đã dùng, nguồn kiểm chứng, bản chỉnh sửa của học sinh và sản phẩm cuối.")
         };
     };
 
+    const buildAiIdentityText = (fields: ReturnType<typeof buildAiOrderedFields>) =>
+        `Thành phần NL AI: ${fields.competencyName}; Khối lớp: ${fields.grade}; Chủ đề: ${fields.topic}; Mã chỉ báo NL AI: ${fields.indicatorCode}`;
+
     const buildAiOrderedText = (sug: any) => {
         const fields = buildAiOrderedFields(sug);
         return [
-            `Tên thành phần năng lực AI: ${fields.competencyName}`,
+            buildAiIdentityText(fields),
             `Hành vi học sinh: ${fields.behavior}`,
             `Yêu cầu cần đạt AI: ${fields.yccd}`,
-            `Mã NL AI: ${fields.code}`,
             `Sản phẩm: ${fields.product}`,
             `Tiêu chí: ${fields.criteria}`,
             `Minh chứng: ${fields.evidence}`
@@ -373,7 +509,7 @@ export default function UpgradePlan({
         return blocks.length ? `Bổ sung bảng số liệu, biểu đồ/bản đồ Địa lí:\n${blocks.join("\n\n")}` : "";
     };
 
-    const ensureGeoDataInSnippets = (snippets: { activityName: string; text: string }[]) =>
+    const ensureGeoDataInSnippets = (snippets: Snippet[]) =>
         snippets.map((snippet, idx) => {
             const suggestion = selectedIntegrations.find((sug: any) => sug.activityName === snippet.activityName) || selectedIntegrations[idx];
             const geoBlock = buildGeoDataBlockForSuggestion(suggestion);
@@ -384,44 +520,51 @@ export default function UpgradePlan({
         });
 
     const buildNlsObjectiveLines = (suggestions = selectedIntegrations) =>
-        suggestions.map((sug: any, idx: number) => {
-            const code = sug.suggestedNLS || "Không gán mã - cần đối chiếu YCCĐ theo TT 02/CV 3456.";
-            const evidence = sug.yccdEvidence || sug.reason || "Căn cứ từ hoạt động học tập đã chọn.";
-            return `${idx + 1}. NLS ${code}: Học sinh ${plain(sug.action).replace(/^Học sinh\s*/i, "")}. Căn cứ YCCĐ: ${plain(evidence)}`;
+        suggestions.filter((suggestion: any) => suggestionUsesNls(suggestion) && hasValidNlsCode(suggestion?.suggestedNLS)).map((sug: any, idx: number) => {
+            const code = sug.suggestedNLS;
+            const competencyName = plain(sug.nlsCompetencyName || `Năng lực số theo chỉ báo ${code}`);
+            const action = compactSentence(sug.nlsStudentBehavior || sug.action, 180);
+            return `${idx + 1}. Mã chỉ báo NLS: ${compactSentence(code, 80)}; Thành phần NLS: ${compactSentence(competencyName, 120)}; Hành vi học sinh: ${action}`;
         });
 
     const buildAiObjectiveLines = (suggestions = selectedIntegrations) =>
-        suggestions.map((sug: any, idx: number) => {
-            return `${idx + 1}. ${buildAiOrderedText(sug)}`;
+        suggestions.filter(suggestionUsesAi).map((sug: any, idx: number) => {
+            const fields = buildAiOrderedFields(sug);
+            return `${idx + 1}. ${buildAiIdentityText(fields)}; Yêu cầu cần đạt AI: ${compactSentence(fields.yccd, 190)}`;
         });
 
     const buildObjectiveText = (suggestions = selectedIntegrations) => {
         const nlsLines = buildNlsObjectiveLines(suggestions);
         const aiLines = buildAiObjectiveLines(suggestions);
-        return [
-            "Bổ sung trong mục I. MỤC TIÊU - thành phần Năng lực, đặt sau Năng lực chung và Năng lực đặc thù môn học:",
-            "a) Năng lực số (NLS) bám sát YCCĐ môn học:",
-            ...(nlsLines.length ? nlsLines : ["- Không có gợi ý NLS được chọn."]),
-            "b) Năng lực AI (NL AI) bám sát YCCĐ môn học:",
-            ...(aiLines.length ? aiLines : ["- Không có gợi ý NL AI được chọn."])
-        ].join("\n");
+        const sections: string[] = [];
+        if (nlsLines.length) sections.push("a) Năng lực số (NLS) bám sát YCCĐ môn học:", ...nlsLines);
+        if (aiLines.length) sections.push(`${nlsLines.length ? "b" : "a"}) Năng lực AI (NL AI) bám sát YCCĐ môn học:`, ...aiLines);
+        return sections.join("\n");
     };
 
     const buildAssessmentText = (suggestions = selectedIntegrations) => {
         if (!suggestions.length) return "Chưa có hoạt động tích hợp được chọn để đề xuất đánh giá.";
         const headers = ["Hoạt động tích hợp", "NLS", "NL AI", "Tiêu chí đánh giá", "Minh chứng"];
         const rows = suggestions.map((sug: any) => {
-            const nls = sug.suggestedNLS || "NLS cần đối chiếu";
-            const aiFields = buildAiOrderedFields(sug);
-            const geoCriteria = sug.geoDataRequirement
-                ? "Riêng nhiệm vụ Địa lí phải có bảng số liệu đúng nguồn, biểu đồ phù hợp, nhận xét xu hướng và giải thích nguyên nhân bằng kiến thức Địa lí."
-                : "";
+            const usesNls = suggestionUsesNls(sug);
+            const usesAi = suggestionUsesAi(sug);
+            const nls = usesNls && hasValidNlsCode(sug.suggestedNLS) ? sug.suggestedNLS : "Không tích hợp";
+            const aiFields = usesAi ? buildAiOrderedFields(sug) : null;
+            const criteria = [
+                usesNls ? sug.nlsCriteria : "",
+                aiFields?.criteria,
+                sug.geoDataRequirement ? "Nhiệm vụ Địa lí có bảng số liệu đúng nguồn, biểu đồ phù hợp, nhận xét xu hướng và giải thích nguyên nhân." : ""
+            ].filter(Boolean).join(" ");
+            const evidence = [
+                usesNls ? sug.nlsProduct || sug.product : "",
+                aiFields?.evidence
+            ].filter(Boolean).join("; ");
             return markdownTableRow([
-                sug.activityName,
-                nls,
-                buildAiOrderedText(sug),
-                `${aiFields.criteria} ${geoCriteria}`,
-                aiFields.evidence
+                compactSentence(sug.activityName, 110),
+                compactSentence(nls, 70),
+                compactSentence(aiFields ? buildAiIdentityText(aiFields) : "Không tích hợp", 230),
+                compactSentence(criteria, 210),
+                compactSentence(evidence, 170)
             ]);
         });
         return [
@@ -438,7 +581,7 @@ export default function UpgradePlan({
             : "Không có toàn văn bóc tách từ DOCX/PDF để hiển thị. File DOCX đã được chèn trực tiếp và có thể tải xuống.";
         const inserted = snippets.map((snippet, idx) => `${idx + 1}. ${snippet.activityName}\n${snippet.text}`).join("\n\n");
         return [
-            `KẾ HOẠCH BÀI DẠY SAU TÍCH HỢP AI`,
+            `KẾ HOẠCH BÀI DẠY SAU TÍCH HỢP NLS/NL AI`,
             `Môn: ${analysisResult?.subject || "..."}`,
             `Lớp: ${analysisResult?.grade || "..."}`,
             `Bài: ${analysisResult?.topic || "..."}`,
@@ -448,7 +591,7 @@ export default function UpgradePlan({
             "II. TOÀN VĂN GIÁO ÁN GỐC / NỘI DUNG ĐÃ BÓC TÁCH",
             original,
             "",
-            "III. CÁC ĐOẠN TÍCH HỢP AI ĐÃ CHÈN",
+            "III. CÁC ĐOẠN TÍCH HỢP NLS/NL AI ĐÃ CHÈN",
             inserted || "Chưa có đoạn tích hợp.",
             "",
             buildGeoDataText(),
@@ -458,7 +601,7 @@ export default function UpgradePlan({
         ].join("\n");
     };
 
-    const buildDocxHtmlPreview = async (blob: Blob): Promise<{ html: string; text: string; warning: string }> => {
+    const buildDocxHtmlPreview = async (blob: Blob, redItems: InjectionResult["previewItems"] = []): Promise<{ html: string; text: string; warning: string }> => {
         try {
             const arrayBuffer = await blob.arrayBuffer();
             const htmlBuffer = arrayBuffer.slice(0);
@@ -477,7 +620,8 @@ export default function UpgradePlan({
             const warning = (result.messages || []).length
                 ? "Một số thành phần Word phức tạp có thể không hiển thị hoàn hảo trong bản xem nhanh HTML, nhưng vẫn được giữ trong DOCX tải xuống."
                 : "";
-            return { html: result.value || "", text: raw.value || "", warning };
+            const safeHtml = sanitizePreviewHtml(result.value || "");
+            return { html: markIntegratedPreviewHtml(safeHtml, redItems), text: raw.value || "", warning };
         } catch (err) {
             console.warn("Không tạo được bản xem trước HTML từ DOCX", err);
             return {
@@ -657,7 +801,7 @@ export default function UpgradePlan({
     const formatPreservedAssessmentText = (evaluation: any) => {
         const lines: string[] = [
             "HỆ THỐNG ĐÁNH GIÁ NĂNG LỰC",
-            "Chuẩn CV 3439/BGDĐT & Chương trình GDPT 2018",
+            "Chuẩn QĐ 3439/QĐ-BGDĐT & Chương trình GDPT 2018",
             "Ghi chú: Bộ đánh giá này được thiết kế từ giáo án DOCX gốc đã bảo toàn; không thay thế hoặc rút gọn nội dung giáo án gốc.",
             ""
         ];
@@ -735,7 +879,13 @@ export default function UpgradePlan({
         setIsUpdatingDocxWithAssessment(true);
         try {
             const updated = await appendAssessmentDesignToDocx(sourceBlob, assessmentText);
-            const preview = await buildDocxHtmlPreview(updated.blob);
+            const assessmentPreviewItem = {
+                activityName: "Thiết kế đánh giá NLS/NL AI",
+                injectedText: assessmentText,
+                found: true
+            };
+            const redPreviewItems = [...(injectionResult?.previewItems || []), assessmentPreviewItem];
+            const preview = await buildDocxHtmlPreview(updated.blob, redPreviewItems);
             setReadyBlob(updated.blob);
             setAssessmentEmbeddedInDocx(true);
             setFullPreviewText(preview.text || [fullPreviewText, "", "V. THIẾT KẾ ĐÁNH GIÁ NLS/NL AI", assessmentText].filter(Boolean).join("\n"));
@@ -748,11 +898,7 @@ export default function UpgradePlan({
                 preservationReport: updated.preservationReport,
                 previewItems: [
                     ...prev.previewItems,
-                    {
-                        activityName: "Thiết kế đánh giá NLS/NL AI",
-                        injectedText: assessmentText,
-                        found: true
-                    }
+                    assessmentPreviewItem
                 ]
             } : prev);
             return updated.blob;
@@ -778,7 +924,7 @@ export default function UpgradePlan({
 
     const buildPreviewHtmlDocument = () => {
         const body = buildPreviewBodyHtml();
-        return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(analysisResult?.topic || "Giáo án tích hợp AI")}</title><style>body{font-family:Arial,sans-serif;line-height:1.6;margin:32px;color:#0f172a}.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;color:#1e3a8a;font-weight:700}.docx table{border-collapse:collapse;width:100%;margin:12px 0}.docx td,.docx th{border:1px solid #cbd5e1;padding:6px;vertical-align:top}.docx img{max-width:100%;height:auto}pre{white-space:pre-wrap;font-family:Arial,sans-serif}</style></head><body>${body}</body></html>`;
+        return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(analysisResult?.topic || "Giáo án tích hợp NLS/NL AI")}</title><style>body{font-family:Arial,sans-serif;line-height:1.6;margin:32px;color:#0f172a}.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;color:#1e3a8a;font-weight:700}.docx table{border-collapse:collapse;width:100%;margin:12px 0}.docx td,.docx th{border:1px solid #cbd5e1;padding:6px;vertical-align:top}.docx img{max-width:100%;height:auto}.docx-ai-red{color:#dc2626!important;font-weight:700}pre{white-space:pre-wrap;font-family:Arial,sans-serif}</style></head><body>${body}</body></html>`;
     };
 
     const handleDownloadPreviewText = () => {
@@ -797,7 +943,7 @@ export default function UpgradePlan({
         wrapper.innerHTML = buildPreviewBodyHtml();
         wrapper.style.cssText = "font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a; background: #ffffff; padding: 24px; max-width: 760px;";
         const style = document.createElement("style");
-        style.textContent = ".docx table{border-collapse:collapse;width:100%;margin:12px 0}.docx td,.docx th{border:1px solid #cbd5e1;padding:6px;vertical-align:top}.docx img{max-width:100%;height:auto}.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;color:#1e3a8a;font-weight:700}pre{white-space:pre-wrap;font-family:Arial,sans-serif}";
+        style.textContent = ".docx table{border-collapse:collapse;width:100%;margin:12px 0}.docx td,.docx th{border:1px solid #cbd5e1;padding:6px;vertical-align:top}.docx img{max-width:100%;height:auto}.docx-ai-red{color:#dc2626!important;font-weight:700}.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;color:#1e3a8a;font-weight:700}pre{white-space:pre-wrap;font-family:Arial,sans-serif}";
         wrapper.prepend(style);
         document.body.appendChild(wrapper);
 
@@ -851,6 +997,7 @@ export default function UpgradePlan({
         const assessmentText = buildAssessmentText();
         const geoDataText = buildGeoDataText();
         const selectedNlsIndicators = selectedIntegrations
+            .filter(suggestionUsesNls)
             .map((sug: any) => ({ code: sug.suggestedNLS, description: `${sug.activityName}: ${sug.yccdEvidence || sug.reason || sug.action}` }))
             .filter((item: any) => item.code && !String(item.code).toLowerCase().includes("không"));
         return {
@@ -1084,9 +1231,9 @@ export default function UpgradePlan({
                                 </div>
                                 <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                                     <h3 className="text-sm font-bold text-blue-600 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                        <Bot className="w-4 h-4" /> AI Đề xuất điểm chạm QĐ 3439
+                                        <Bot className="w-4 h-4" /> Đề xuất điểm chạm NLS/NL AI
                                     </h3>
-                                    <p className="text-xs text-slate-600">{analysisResult.aiSuggestions?.length || 0} điểm lồng ghép AI được tìm thấy.</p>
+                                    <p className="text-xs text-slate-600">{analysisResult.aiSuggestions?.length || 0} điểm tích hợp NLS/NL AI được tìm thấy.</p>
                                 </div>
                             </div>
 
@@ -1175,21 +1322,29 @@ export default function UpgradePlan({
                             {/* AI Activity Suggestions */}
                             <div className="space-y-3">
                                 {analysisResult.aiSuggestions?.map((sug: any, idx: number) => {
+                                    const usesNls = suggestionUsesNls(sug);
+                                    const usesAi = suggestionUsesAi(sug);
+                                    const validNlsCode = hasValidNlsCode(sug.suggestedNLS);
                                     const validCode = hasValidAiCode(sug.suggestedAI);
-                                    const aiFields = buildAiOrderedFields(sug);
-                                    const isSelected = validCode && selectedIntegrations.includes(sug);
+                                    const nlsNeedsReview = usesNls && !validNlsCode;
+                                    const aiNeedsReview = usesAi && !validCode;
+                                    const canApply = hasUsableIntegration(sug);
+                                    const aiFields = usesAi ? buildAiOrderedFields(sug) : null;
+                                    const isSelected = canApply && selectedIntegrations.includes(sug);
                                     const isSelClass = isSelected
                                         ? "border-blue-600 bg-blue-50 shadow-sm"
-                                        : validCode
+                                        : canApply && !nlsNeedsReview && !aiNeedsReview
                                             ? "border-slate-200 hover:border-slate-300"
-                                            : "border-amber-300 bg-amber-50 cursor-not-allowed";
+                                            : canApply
+                                                ? "border-amber-300 bg-amber-50 hover:border-amber-400"
+                                                : "border-amber-300 bg-amber-50 cursor-not-allowed";
                                     const circleClass = isSelected ? "bg-blue-600" : "bg-slate-200";
 
                                     return (
                                         <div
                                             key={idx}
-                                            onClick={() => validCode && toggleIntegration(sug)}
-                                            className={(validCode ? "cursor-pointer " : "") + "border-2 transition-all rounded-xl p-4 flex gap-4 " + isSelClass}
+                                            onClick={() => canApply && toggleIntegration(sug)}
+                                            className={(canApply ? "cursor-pointer " : "") + "border-2 transition-all rounded-xl p-4 flex gap-4 " + isSelClass}
                                         >
                                             <div className="pt-1">
                                                 <div className={"w-6 h-6 rounded-full flex items-center justify-center " + circleClass}>
@@ -1200,12 +1355,17 @@ export default function UpgradePlan({
                                                 <div className="flex justify-between items-start mb-1">
                                                     <h4 className="font-bold text-slate-800">{sug.activityName}</h4>
                                                     <div className="flex flex-col items-end gap-1">
-                                                        <span className="px-2 py-1 font-bold text-xs rounded-md bg-sky-100 text-sky-700">{sug.suggestedNLS || "NLS cần rà soát"}</span>
-                                                        <span className={`px-2 py-1 font-bold text-xs rounded-md ${validCode ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-800"}`}>{sug.suggestedAI}</span>
+                                                        <span className="px-2 py-1 font-bold text-xs rounded-md bg-slate-100 text-slate-700">{getIntegrationDecision(sug)}</span>
+                                                        {usesNls && <span className={`px-2 py-1 font-bold text-xs rounded-md ${nlsNeedsReview ? "bg-amber-100 text-amber-800" : "bg-sky-100 text-sky-700"}`}>{sug.suggestedNLS || "NLS cần rà soát"}</span>}
+                                                        {usesAi && <span className={`px-2 py-1 font-bold text-xs rounded-md ${validCode ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-800"}`}>{validCode ? sug.suggestedAI : "Mã NL AI không hợp lệ"}</span>}
                                                     </div>
                                                 </div>
+                                                {sug.targetContent && <p className="text-sm text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 mb-2"><span className="font-bold">Vị trí chèn — {sug.targetSection || "Nội dung"}:</span> “{compactSentence(sug.targetContent, 180)}”</p>}
                                                 {sug.yccdEvidence && <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Căn cứ YCCĐ:</span> {sug.yccdEvidence}</p>}
-                                                <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Thành phần NL AI:</span> {aiFields.competencyName} <span className="font-semibold text-slate-700">- Mã:</span> {aiFields.code}</p>
+                                                {aiNeedsReview && <p className="text-xs font-semibold text-amber-700 mb-2">Gợi ý này không có mã NL AI đầy đủ nên đã bị khóa, không thể chèn vào giáo án. Hãy rà soát lại để nhận mã đúng dạng NLa- 12.A1.01.</p>}
+                                                {nlsNeedsReview && <p className="text-xs font-semibold text-amber-700 mb-2">Gợi ý này không có mã NLS hợp lệ trong bảng mã đã cài nên đã bị khóa và không thể chèn vào giáo án.</p>}
+                                                {usesNls && <p className="text-sm text-red-600 font-semibold mb-2">Mã chỉ báo NLS: {sug.suggestedNLS}; Thành phần NLS: {sug.nlsCompetencyName}</p>}
+                                                {usesAi && aiFields && <p className="text-sm text-red-600 font-semibold mb-2">{buildAiIdentityText(aiFields)}</p>}
                                                 <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Lý do:</span> {sug.reason}</p>
                                                 <p className="text-sm text-slate-600"><span className="font-semibold text-slate-700">Hành động của HS:</span> {sug.action}</p>
                                                 {sug.geoDataRequirement && (
@@ -1235,9 +1395,9 @@ export default function UpgradePlan({
                                     className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 transition-colors"
                                 >
                                     {isGeneratingDocx ? (
-                                        <><Loader2 className="w-4 h-4 animate-spin" /> Đang chèn AI...</>
+                                        <><Loader2 className="w-4 h-4 animate-spin" /> Đang chèn nội dung...</>
                                     ) : (
-                                        <><Sparkles className="w-4 h-4" /> {file?.name.toLowerCase().endsWith(".docx") ? "Chèn AI vào File DOCX" : "Vui lòng tải DOCX để giữ nguyên"}</>
+                                        <><Sparkles className="w-4 h-4" /> {file?.name.toLowerCase().endsWith(".docx") ? "Chèn NLS/NL AI vào File DOCX" : "Vui lòng tải DOCX để giữ nguyên"}</>
                                     )}
                                 </button>
                             </div>
@@ -1328,12 +1488,12 @@ export default function UpgradePlan({
                                 </div>
                                 <div>
                                     <p className={`font-bold text-sm ${injectionResult.injectedCount > 0 ? "text-green-800" : "text-amber-800"}`}>
-                                        ✅ Đã chèn thành công {injectionResult.injectedCount}/{injectionResult.previewItems.length} hoạt động AI
+                                        ✅ Đã chèn thành công {injectionResult.injectedCount}/{injectionResult.previewItems.length} mục bổ sung
                                     </p>
                                     <p className="text-xs text-slate-600 mt-1">
                                         File: <span className="font-semibold">{file?.name.replace(".docx", "_AI_NangCap.docx")}</span> đã sẵn sàng tải xuống.
                                         {injectionResult.skippedActivities.length > 0 && (
-                                            <span className="text-amber-700"> ({injectionResult.skippedActivities.length} hoạt động không khớp vị trí – đã chèn cuối file.)</span>
+                                            <span className="text-amber-700"> ({injectionResult.skippedActivities.length} hoạt động chưa tìm được đoạn nguyên văn hoặc mục con tương ứng nên được bỏ qua để tránh chèn sai.)</span>
                                         )}
                                     </p>
                                 </div>
@@ -1447,7 +1607,7 @@ export default function UpgradePlan({
                                             .docx-preview-html img { max-width: 100%; height: auto; }
                                             .docx-preview-html p { margin: 0 0 8px; }
                                             .docx-preview-html ul, .docx-preview-html ol { padding-left: 24px; margin: 8px 0; }
-                                            .docx-preview-html span[style*="FF0000"], .docx-preview-html span[style*="ff0000"], .docx-preview-html span[style*="red"] { color: #dc2626 !important; font-weight: 700; }
+                                            .docx-preview-html .docx-ai-red, .docx-preview-html span[style*="FF0000"], .docx-preview-html span[style*="ff0000"], .docx-preview-html span[style*="red"] { color: #dc2626 !important; font-weight: 700; }
                                             @media (max-width: 768px) { .docx-preview-page { min-height: auto; padding: 24px 18px; } }
                                         `}</style>
                                         {fullPreviewHtml ? (
@@ -1510,7 +1670,7 @@ export default function UpgradePlan({
                                                 </div>
                                                 <div>
                                                     <h4 className="text-xl font-black text-brand-sidebar uppercase tracking-tight">Hệ thống đánh giá năng lực</h4>
-                                                    <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">Chuẩn CV 3439/BGDĐT & Chương trình GDPT 2018</p>
+                                                    <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">Chuẩn QĐ 3439/QĐ-BGDĐT & Chương trình GDPT 2018</p>
                                                 </div>
                                             </header>
 
@@ -1734,7 +1894,7 @@ export default function UpgradePlan({
                                             <div className="flex items-start justify-between gap-2 mb-2">
                                                 <p className="text-sm font-semibold text-slate-800 flex-1">{item.activityName}</p>
                                                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${item.found ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                                                    {item.found ? "✓ Chèn đúng vị trí" : "⚠ Chèn cuối file"}
+                                                    {item.found ? "✓ Đã chèn đúng hoạt động và nội dung" : "⚠ Chưa chèn — chưa tìm được đoạn nguyên văn hoặc mục con trong hoạt động"}
                                                 </span>
                                             </div>
                                             <div className="bg-white rounded-lg border border-red-200 p-3">

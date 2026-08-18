@@ -1,4 +1,4 @@
-const CACHE_VERSION = "khgdkhbdcothaibpbd-v3";
+const CACHE_VERSION = "eduplan-ai-v5";
 const APP_SHELL = [
   "/",
   "/index.html",

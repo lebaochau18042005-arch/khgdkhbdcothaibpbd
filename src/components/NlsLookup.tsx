@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
+import { ADVANCED_NLS_COMPONENTS, type AdvancedNlsLevel } from "../data/nlsAdvancedIndicators";
 
-type Level = "CB1" | "CB2";
+type Level = "CB1" | "CB2" | AdvancedNlsLevel;
 
 export type Indicator = {
   code: string;
@@ -26,6 +27,9 @@ type ComponentDefinition = {
 const LEVEL_NAMES: Record<Level, string> = {
   CB1: "L1–L2–L3",
   CB2: "L4–L5",
+  TC1: "L6–L7",
+  TC2: "L8–L9",
+  NC1: "L10–L11–L12",
 };
 
 const COMPONENTS: ComponentDefinition[] = [
@@ -108,12 +112,10 @@ const COMPONENTS: ComponentDefinition[] = [
     cb1: {
       a: "Xác định được các dịch vụ số đơn giản để có thể tham gia vào xã hội.",
       b: "Nhận biết được các công nghệ số đơn giản, phù hợp để nâng cao năng lực cho bản thân và tham gia vào xã hội với tư cách là một công dân.",
-      c: "Nhận biết được các công nghệ số phù hợp để tham gia vào các hoạt động cộng đồng ở mức đơn giản.",
     },
     cb2: {
       a: "Xác định được các dịch vụ số đơn giản để có thể tham gia vào xã hội.",
-      b: "Thảo luận về các công nghệ số phù hợp để nâng cao năng lực của bản thân và tham gia vào xã hội với tư cách là một công dân.",
-      c: "Lựa chọn được công nghệ số phù hợp để tham gia vào một hoạt động cộng đồng cụ thể.",
+      b: "Nhận biết được các công nghệ số đơn giản, phù hợp để nâng cao năng lực cho bản thân và tham gia vào xã hội với tư cách là một công dân.",
     },
   },
   {
@@ -139,7 +141,7 @@ const COMPONENTS: ComponentDefinition[] = [
       c: "Phân biệt được các khía cạnh đơn giản của sự đa dạng về văn hóa và thế hệ cần được tính đến trong môi trường số.",
     },
     cb2: {
-      a: "Phân biệt được các chuẩn mực hành vi và cách sử dụng công nghệ số, tương tác trong môi trường số.",
+      a: "Phân biệt được các chuẩn mực hành vi đơn giản và bí quyết sử dụng công nghệ số, tương tác trong môi trường số.",
       b: "Chọn được các phương thức và chiến lược giao tiếp đơn giản phù hợp trong môi trường số.",
       c: "Phân biệt được các khía cạnh đơn giản của sự đa dạng về văn hóa và thế hệ cần được tính đến trong môi trường số.",
     },
@@ -157,7 +159,7 @@ const COMPONENTS: ComponentDefinition[] = [
     cb2: {
       a: "Xác định được danh tính số.",
       b: "Mô tả được những cách đơn giản để bảo vệ danh tiếng trực tuyến của bản thân.",
-      c: "Nhận biết được dữ liệu do mình tạo ra thông qua các công cụ, môi trường hoặc dịch vụ số.",
+      c: "Nhận biết được dữ liệu đơn giản do mình tạo ra thông qua các công cụ, môi trường hoặc dịch vụ số.",
     },
   },
   {
@@ -170,7 +172,7 @@ const COMPONENTS: ComponentDefinition[] = [
       b: "Chọn được cách thể hiện bản thân thông qua việc tạo ra các nội dung số đơn giản.",
     },
     cb2: {
-      a: "Xác định được các cách tạo và chỉnh sửa nội dung ở các định dạng đơn giản.",
+      a: "Xác định được các cách tạo và chỉnh sửa nội dung đơn giản ở các định dạng đơn giản.",
       b: "Chọn được cách thể hiện bản thân thông qua việc tạo ra các nội dung số đơn giản.",
     },
   },
@@ -180,10 +182,10 @@ const COMPONENTS: ComponentDefinition[] = [
     component: "3.2",
     componentName: "Tích hợp và tạo lập lại nội dung số",
     cb1: {
-      a: "Chọn được các cách sửa đổi, tinh chỉnh, cải thiện và tích hợp các mục đơn giản có nội dung và thông tin mới để tạo ra nội dung mới, độc đáo.",
+      a: "Chọn được các cách sửa đổi, tinh chỉnh, cải thiện và tích hợp các mục đơn giản có nội dung và thông tin mới để tạo ra những nội dung và thông tin mới và độc đáo.",
     },
     cb2: {
-      a: "Chọn được các cách sửa đổi, tinh chỉnh, cải thiện và tích hợp nội dung, thông tin mới để tạo ra nội dung và thông tin mới, độc đáo.",
+      a: "Chọn được các cách sửa đổi, tinh chỉnh, cải thiện và tích hợp các mục đơn giản có nội dung và thông tin mới để tạo ra những nội dung và thông tin mới và độc đáo.",
     },
   },
   {
@@ -204,10 +206,10 @@ const COMPONENTS: ComponentDefinition[] = [
     component: "3.4",
     componentName: "Lập trình",
     cb1: {
-      a: "Liệt kê được các hướng dẫn đơn giản để hệ thống máy tính giải quyết một vấn đề hoặc thực hiện một nhiệm vụ đơn giản.",
+      a: "Liệt kê được các hướng dẫn đơn giản để hệ thống máy tính giải quyết một vấn đề đơn giản hoặc thực hiện một nhiệm vụ đơn giản.",
     },
     cb2: {
-      a: "Liệt kê được các hướng dẫn đơn giản để hệ thống máy tính giải quyết một vấn đề hoặc thực hiện một nhiệm vụ đơn giản.",
+      a: "Liệt kê được các hướng dẫn đơn giản để hệ thống máy tính giải quyết một vấn đề đơn giản hoặc thực hiện một nhiệm vụ đơn giản.",
     },
   },
   {
@@ -279,11 +281,11 @@ const COMPONENTS: ComponentDefinition[] = [
     componentName: "Giải quyết các vấn đề kỹ thuật",
     cb1: {
       a: "Xác định được các vấn đề kỹ thuật đơn giản khi vận hành thiết bị và sử dụng môi trường số.",
-      b: "Xác định được các giải pháp đơn giản để giải quyết những vấn đề kỹ thuật đó.",
+      b: "Xác định được các giải pháp đơn giản để giải quyết chúng.",
     },
     cb2: {
       a: "Xác định được các vấn đề kỹ thuật đơn giản khi vận hành thiết bị và sử dụng môi trường số.",
-      b: "Xác định được các giải pháp đơn giản để giải quyết những vấn đề kỹ thuật đó.",
+      b: "Xác định được các giải pháp đơn giản để giải quyết chúng.",
     },
   },
   {
@@ -293,12 +295,12 @@ const COMPONENTS: ComponentDefinition[] = [
     componentName: "Xác định nhu cầu và giải pháp công nghệ",
     cb1: {
       a: "Xác định được nhu cầu cá nhân.",
-      b: "Nhận ra được các công cụ số đơn giản và các giải pháp công nghệ có thể có để giải quyết nhu cầu đó.",
+      b: "Nhận ra được các công cụ số đơn giản và các giải pháp công nghệ có thể có để giải quyết những nhu cầu đó.",
       c: "Chọn được những cách đơn giản để điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân.",
     },
     cb2: {
       a: "Xác định được nhu cầu cá nhân.",
-      b: "Nhận ra được các công cụ số đơn giản và các giải pháp công nghệ có thể có để giải quyết nhu cầu đó.",
+      b: "Nhận ra được các công cụ số đơn giản và các giải pháp công nghệ có thể có để giải quyết những nhu cầu đó.",
       c: "Chọn được những cách đơn giản để điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân.",
     },
   },
@@ -308,12 +310,12 @@ const COMPONENTS: ComponentDefinition[] = [
     component: "5.3",
     componentName: "Sử dụng sáng tạo công nghệ số",
     cb1: {
-      a: "Xác định được các công cụ và công nghệ số đơn giản có thể được sử dụng để tạo ra kiến thức, đổi mới quy trình và sản phẩm.",
-      b: "Thể hiện được sự quan tâm của cá nhân và tập thể đến quá trình xử lý nhận thức đơn giản để hiểu và giải quyết vấn đề trong môi trường số.",
+      a: "Xác định được các công cụ và công nghệ số đơn giản có thể được sử dụng để tạo ra kiến thức và đổi mới quy trình cũng như sản phẩm.",
+      b: "Thể hiện được sự quan tâm của cá nhân và tập thể đến quá trình xử lý nhận thức đơn giản để hiểu và giải quyết các vấn đề khái niệm đơn giản và các tình huống có vấn đề trong môi trường số.",
     },
     cb2: {
-      a: "Xác định được các công cụ và công nghệ số đơn giản có thể được sử dụng để tạo ra kiến thức, đổi mới quy trình và sản phẩm.",
-      b: "Tuân theo quy trình nhận thức đơn giản của cá nhân và tập thể để hiểu và giải quyết vấn đề trong môi trường số.",
+      a: "Xác định được các công cụ và công nghệ số đơn giản có thể được sử dụng để tạo ra kiến thức và đổi mới quy trình cũng như sản phẩm.",
+      b: "Tuân theo quy trình nhận thức đơn giản của cá nhân và tập thể để hiểu và giải quyết các vấn đề khái niệm đơn giản và các tình huống có vấn đề trong môi trường số.",
     },
   },
   {
@@ -322,11 +324,11 @@ const COMPONENTS: ComponentDefinition[] = [
     component: "5.4",
     componentName: "Xác định các vấn đề cần cải thiện về năng lực số",
     cb1: {
-      a: "Nhận ra được năng lực số của bản thân cần được cải thiện hoặc cập nhật ở đâu.",
+      a: "Nhận ra được NLS của tôi cần được cải thiện hoặc cập nhật ở đâu.",
       b: "Xác định được nơi để tìm kiếm cơ hội phát triển bản thân và cập nhật sự phát triển công nghệ số.",
     },
     cb2: {
-      a: "Nhận ra được năng lực số của bản thân cần được cải thiện hoặc cập nhật ở đâu.",
+      a: "Nhận ra được NLS của tôi cần được cải thiện hoặc cập nhật ở đâu.",
       b: "Xác định được nơi để tìm kiếm cơ hội phát triển bản thân và cập nhật sự phát triển công nghệ số.",
     },
   },
@@ -338,7 +340,7 @@ const COMPONENTS: ComponentDefinition[] = [
     cb1: {},
     cb2: {
       a: "Xác định được các khái niệm cơ bản của AI.",
-      b: "Nhớ lại được các ứng dụng đơn giản của AI trong cuộc sống hằng ngày.",
+      b: "Nhớ lại được các ứng dụng đơn giản của AI trong cuộc sống hàng ngày.",
     },
   },
   {
@@ -373,7 +375,7 @@ const COMPONENTS: ComponentDefinition[] = [
   },
 ];
 
-export const INDICATORS: Indicator[] = COMPONENTS.flatMap((item) =>
+const BASE_INDICATORS: Indicator[] = COMPONENTS.flatMap((item) =>
   (["CB1", "CB2"] as Level[]).flatMap((level) =>
     Object.entries(level === "CB1" ? item.cb1 : item.cb2).map(([letter, description]) => ({
       code: `${item.component}.${level}${letter}`,
@@ -388,6 +390,27 @@ export const INDICATORS: Indicator[] = COMPONENTS.flatMap((item) =>
     })),
   ),
 );
+
+const ADVANCED_INDICATORS: Indicator[] = ADVANCED_NLS_COMPONENTS.flatMap((definition) => {
+  const item = COMPONENTS.find((component) => component.component === definition.component);
+  if (!item) return [];
+
+  return (Object.entries(definition.levels) as [AdvancedNlsLevel, Record<string, string>][]).flatMap(([level, descriptions]) =>
+    Object.entries(descriptions).map(([letter, description]) => ({
+      code: `${definition.component}.${level}${letter}`,
+      field: item.field,
+      fieldName: item.fieldName,
+      component: item.component,
+      componentName: item.componentName,
+      level,
+      levelName: LEVEL_NAMES[level],
+      letter,
+      description,
+    })),
+  );
+});
+
+export const INDICATORS: Indicator[] = [...BASE_INDICATORS, ...ADVANCED_INDICATORS];
 
 const FIELD_META: Record<string, { short: string; color: string; soft: string; icon: string }> = {
   "1": { short: "Dữ liệu", color: "#2563eb", soft: "#eff6ff", icon: "⌕" },
@@ -626,15 +649,15 @@ export default function NlsLookup() {
           <div>
             <div className="nls-kicker"><span className="nls-kicker-dot" /> Công cụ chuyên môn giáo viên</div>
             <h1>Tra cứu mã năng lực số</h1>
-            <p>Chọn đúng chỉ báo, đúng bậc năng lực và đưa trực tiếp vào kế hoạch bài dạy, hoạt động học tập hoặc minh chứng đánh giá. Với lớp 10-12, mã NLS cần đối chiếu phụ lục NC1 theo Công văn 3456 trước khi dùng.</p>
+            <p>Chọn đúng chỉ báo, đúng bậc năng lực và đưa trực tiếp vào kế hoạch bài dạy, hoạt động học tập hoặc minh chứng đánh giá. Danh mục đã có đủ năm mức từ CB1 đến NC1 để đối chiếu theo cấp lớp.</p>
           </div>
-          <div className="nls-source"><strong>Nguồn dữ liệu</strong>Bảng tra cứu hiện có gồm CB1/CB2. Cấp THPT dùng mức NC1 theo Công văn 3456; không lấy CB1/CB2 thay thế NC1 nếu chưa có phụ lục chính thức.</div>
+          <div className="nls-source"><strong>Nguồn dữ liệu</strong>Bảng tra cứu gồm đầy đủ CB1, CB2, TC1, TC2 và NC1 theo Bảng mã NLS đã cung cấp.</div>
         </header>
 
         <section className="nls-stat-grid" aria-label="Tổng quan dữ liệu">
           <div className="nls-stat"><span className="nls-stat-icon" style={{ background: "#eff6ff", color: "#2563eb" }}>▦</span><div><span className="nls-stat-value">{INDICATORS.length}</span><span className="nls-stat-label">Chỉ báo đang tra cứu</span></div></div>
           <div className="nls-stat"><span className="nls-stat-icon" style={{ background: "#f0fdfa", color: "#0f766e" }}>◉</span><div><span className="nls-stat-value">6</span><span className="nls-stat-label">Lĩnh vực năng lực</span></div></div>
-          <div className="nls-stat"><span className="nls-stat-icon" style={{ background: "#fff7ed", color: "#ea580c" }}>↕</span><div><span className="nls-stat-value">2</span><span className="nls-stat-label">Bậc hiện có CB1 / CB2</span></div></div>
+          <div className="nls-stat"><span className="nls-stat-icon" style={{ background: "#fff7ed", color: "#ea580c" }}>↕</span><div><span className="nls-stat-value">5</span><span className="nls-stat-label">Bậc năng lực CB1–NC1</span></div></div>
           <div className="nls-stat"><span className="nls-stat-icon" style={{ background: "#ecfeff", color: "#0891b2" }}>✓</span><div><span className="nls-stat-value">{selectedCodes.length}</span><span className="nls-stat-label">Mã đã chọn</span></div></div>
         </section>
 
@@ -653,6 +676,9 @@ export default function NlsLookup() {
                   <option value="all">Tất cả bậc</option>
                   <option value="CB1">CB1 · L1–L2–L3</option>
                   <option value="CB2">CB2 · L4–L5</option>
+                  <option value="TC1">TC1 · L6–L7</option>
+                  <option value="TC2">TC2 · L8–L9</option>
+                  <option value="NC1">NC1 · L10–L11–L12</option>
                 </select>
                 <button className={`nls-filter-button${showSelectedOnly ? " active" : ""}`} onClick={() => setShowSelectedOnly((value) => !value)}>{showSelectedOnly ? "Hiện tất cả" : "Mã đã chọn"}</button>
               </div>
@@ -672,7 +698,7 @@ export default function NlsLookup() {
           <aside className="nls-side">
             <section className="nls-side-card">
               <h2>Bộ mã cho kế hoạch bài dạy</h2>
-              <p>Chỉ chọn những mã có minh chứng rõ qua công cụ, thao tác, sản phẩm và tiêu chí đánh giá. Với THPT, cần mã NC1 từ phụ lục chính thức.</p>
+              <p>Chỉ chọn những mã có minh chứng rõ qua công cụ, thao tác, sản phẩm và tiêu chí đánh giá; cấp THPT ưu tiên mức NC1 phù hợp yêu cầu cần đạt.</p>
               {selectedIndicators.length ? (
                 <div className="nls-selected-list">
                   {selectedIndicators.map((indicator) => <div className="nls-selected-item" key={indicator.code}><div><code>{indicator.code}</code><small>{indicator.componentName}</small></div><button className="nls-remove" onClick={() => toggleSelected(indicator.code)} aria-label={`Bỏ chọn ${indicator.code}`}>×</button></div>)}

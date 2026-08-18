@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateEducationalActivitiesPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, suggestNlsIndicators, LessonPlanInput } from "./services/geminiService";
 import NlsLookup, { INDICATORS } from "./components/NlsLookup";
+import { SOCIAL_INTEGRATION_OPTIONS } from "./data/socialIntegrations";
 
 const UpgradePlan = React.lazy(() => import("./components/UpgradePlan"));
 const SuDiaSkills = React.lazy(() => import("./components/SuDiaSkills"));
@@ -82,6 +83,67 @@ const mapAiCompetencyText = (code: string) => {
 };
 
 type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "kh-hdgd-gen" | "upgrade-plan" | "ai-framework-gen" | "su-dia-skills" | "nls-lookup" | "history";
+
+const collectSelectedSocialIntegrations = (input: { socialIntegrations?: string[]; customSocialIntegration?: string }) => {
+  const selected = Array.isArray(input.socialIntegrations) ? input.socialIntegrations.filter(Boolean) : [];
+  const custom = String(input.customSocialIntegration || "").trim();
+  return Array.from(new Set([
+    ...selected,
+    ...(custom ? [`Custom:${custom}`] : [])
+  ]));
+};
+
+const SocialIntegrationSelector = ({
+  selected,
+  customValue,
+  onSelectedChange,
+  onCustomChange
+}: {
+  selected?: string[];
+  customValue?: string;
+  onSelectedChange: (value: string[]) => void;
+  onCustomChange: (value: string) => void;
+}) => {
+  const current = Array.isArray(selected) ? selected : [];
+  return (
+    <div className="space-y-3 pt-2 rounded-xl border border-red-100 bg-red-50/30 p-3">
+      <div>
+        <label className="text-[10px] font-bold text-red-700 uppercase tracking-[0.12em]">
+          Nội dung giáo dục tích hợp/lồng ghép (tùy chọn)
+        </label>
+        <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
+          Chỉ chèn tại bài/hoạt động phù hợp YCCĐ; kết quả tích hợp được hiển thị chữ đỏ trong cột riêng, không trộn với NLS/NL AI.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {SOCIAL_INTEGRATION_OPTIONS.map((item) => (
+          <label key={item.id} className="flex items-start gap-2 p-2 rounded-lg border border-red-100 bg-white hover:bg-red-50 cursor-pointer transition-all">
+            <input
+              type="checkbox"
+              checked={current.includes(item.id)}
+              onChange={(event) => onSelectedChange(
+                event.target.checked
+                  ? Array.from(new Set([...current, item.id]))
+                  : current.filter((id) => id !== item.id)
+              )}
+              className="mt-0.5 w-3 h-3 rounded text-red-600 focus:ring-red-500"
+            />
+            <span className="text-[10px] font-semibold leading-relaxed text-slate-700">{item.label}</span>
+          </label>
+        ))}
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-slate-600">Nội dung khác</label>
+        <input
+          value={customValue || ""}
+          onChange={(event) => onCustomChange(event.target.value)}
+          placeholder="Ví dụ: an toàn giao thông, bảo vệ môi trường..."
+          className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs outline-none focus:ring-2 focus:ring-red-300"
+        />
+      </div>
+    </div>
+  );
+};
 
 const normalizeKey = (value?: string) =>
   (value || "")
@@ -690,6 +752,10 @@ const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[], options: 
       topic: sourceItem ? readLessonTitle(sourceItem) : (row?.topic || lessonContent),
       periods,
       lessonGoal,
+      socialIntegration: hasMeaningfulText(row?.socialIntegration || row?.integratedEducation || row?.social)
+        ? String(row.socialIntegration || row.integratedEducation || row.social)
+        : hasMeaningfulText(sourceItem?.socialIntegration || sourceItem?.integratedEducation || sourceItem?.social)
+          ? String(sourceItem.socialIntegration || sourceItem.integratedEducation || sourceItem.social) : "",
       digitalCompetencyTT02: hasMeaningfulText(row?.digitalCompetencyTT02)
         ? String(row.digitalCompetencyTT02)
         : "Không tích hợp - cần tổ chuyên môn rà soát thêm căn cứ YCCĐ trước khi gán mã NLS.",
@@ -729,6 +795,9 @@ const readNlsFromPlanRow = (item: any) =>
 
 const readAiFromPlanRow = (item: any) =>
   String(item?.aiCompetency3439Integrated || item?.aiCompetency3439 || item?.ai || item?.nlai || item?.yccd3439 || "");
+
+const readSocialIntegrationFromPlanRow = (item: any) =>
+  String(item?.socialIntegration || item?.integratedEducation || item?.social || item?.noi_dung_giao_duc_tich_hop || "");
 
 const mergeTextBlocks = (blocks: any[]) => {
   const seen = new Set<string>();
@@ -960,11 +1029,60 @@ const validateCompetencyCodes = (
     }
   });
 };
-const buildPlanQualityAudit = (type: string, data: any, subject: string, grade: string): PlanQualityAudit | null => {
+const buildPlanQualityAudit = (type: string, data: any, subject: string, grade: string, selectedSocialIntegrations: string[] = []): PlanQualityAudit | null => {
   if (!data) return null;
   const issues: PlanQualityIssue[] = [];
   let checks = 0;
   const addIssue = (issue: PlanQualityIssue) => issues.push(issue);
+  const validateSocialIntegration = (item: any, location: string, otherText = "") => {
+    const socialText = readSocialIntegrationFromPlanRow(item).trim();
+    checks += 1;
+    if (!socialText) return;
+    const structureSignals = [
+      /căn cứ|yêu cầu cần đạt|YCCĐ/i,
+      /hành vi|học sinh|HS\b/i,
+      /sản phẩm/i,
+      /tiêu chí|minh chứng/i
+    ].filter((pattern) => pattern.test(socialText)).length;
+    if (structureSignals < 3) {
+      addIssue({
+        severity: "warning",
+        location,
+        title: "Nội dung giáo dục tích hợp còn ghi chung chung",
+        detail: "Cần ghi rõ ít nhất căn cứ YCCĐ, hành vi học sinh, sản phẩm và tiêu chí/minh chứng; không chỉ nêu tên chủ đề."
+      });
+    }
+    if (hasOverlappingMeaningfulText(socialText, otherText)) {
+      addIssue({
+        severity: "warning",
+        location,
+        title: "Nội dung giáo dục tích hợp đang trùng cột khác",
+        detail: "Giữ nội dung lồng ghép tại cột riêng; không sao chép nguyên đoạn sang thiết bị, NLS hoặc NL AI."
+      });
+    }
+  };
+  const validateSelectedSocialCoverage = (rows: any[], location: string) => {
+    const allSocialText = normalizeKey(rows.map((item) => readSocialIntegrationFromPlanRow(item)).join(" "));
+    selectedSocialIntegrations.forEach((selection) => {
+      const custom = String(selection || "").startsWith("Custom:") ? String(selection).slice(7).trim() : "";
+      const option = SOCIAL_INTEGRATION_OPTIONS.find((item) => item.id === selection);
+      const candidates = custom
+        ? [custom]
+        : [option?.shortLabel, option?.label].filter(Boolean) as string[];
+      const matched = candidates.some((candidate) => {
+        const key = normalizeKey(candidate);
+        const words = key.split(" ").filter((word) => word.length >= 4);
+        return key && (allSocialText.includes(key) || words.some((word) => allSocialText.includes(word)));
+      });
+      checks += 1;
+      if (!matched) addIssue({
+        severity: "info",
+        location,
+        title: "Nội dung đã chọn chưa xuất hiện trong kế hoạch",
+        detail: `${custom || option?.label || selection} chưa có dòng phù hợp. Đây có thể là kết quả đúng nếu toàn bộ YCCĐ không có điểm chạm; giáo viên cần xác nhận trước khi dùng.`
+      });
+    });
+  };
 
   if (type === "khgd" && Array.isArray(data)) {
     data.forEach((item: any, index: number) => {
@@ -997,7 +1115,9 @@ const buildPlanQualityAudit = (type: string, data: any, subject: string, grade: 
         });
       }
       validateCompetencyCodes(competencyText, grade, location, addIssue);
+      validateSocialIntegration(item, location, `${aidText}\n${competencyText}`);
     });
+    validateSelectedSocialCoverage(data, "Toàn bộ PL3");
     return { label: `Kiểm định PL3 - ${subject} ${grade}`, rowCount: data.length, checks, issues };
   }
 
@@ -1024,9 +1144,24 @@ const buildPlanQualityAudit = (type: string, data: any, subject: string, grade: 
         });
       }
       validateCompetencyCodes(`${nlsText}\n${aiText}`, grade, location, addIssue);
+      validateSocialIntegration(item, location, `${nlsText}\n${aiText}`);
     });
+    validateSelectedSocialCoverage(data, "Toàn bộ PL1");
     return { label: `Kiểm định PL1 - ${subject} ${grade}`, rowCount: data.length, checks, issues };
   }
+
+  if (type === "kh-hdgd" && Array.isArray(data)) {
+    data.forEach((item: any, index: number) => {
+      const location = `PL2 dòng ${index + 1}${item?.theme ? ` - ${item.theme}` : ""}`;
+      const competencyText = String(item?.aiIntegration || "");
+      checks += 1;
+      validateCompetencyCodes(competencyText, grade, location, addIssue);
+      validateSocialIntegration(item, location, competencyText);
+    });
+    validateSelectedSocialCoverage(data, "Toàn bộ PL2");
+    return { label: `Kiểm định PL2 - ${subject} ${grade}`, rowCount: data.length, checks, issues };
+  }
+
 
   if (type === "khbd") {
     const allText = readAllText(data);
@@ -1189,6 +1324,10 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
     const sourceGoal = sourceItem ? readLessonGoal(sourceItem) : "";
     const sourceNls = sourceItem ? readNlsFromPlanRow(sourceItem) : "";
     const sourceAi = sourceItem ? readAiFromPlanRow(sourceItem) : "";
+    const sourceSocialIntegration = sourceItem ? readSocialIntegrationFromPlanRow(sourceItem) : "";
+    const generatedSocialIntegration = readSocialIntegrationFromPlanRow(row);
+    const socialIntegration = hasMeaningfulText(sourceSocialIntegration)
+      ? sourceSocialIntegration : generatedSocialIntegration;
     const generatedCompetency = hasMeaningfulText(row?.digitalCompetency) ? String(row.digitalCompetency) : "";
     const digitalCompetency = sourceItem
       ? summarizePl3Competency(sourceNls, sourceAi, sourceGoal, generatedCompetency)
@@ -1197,7 +1336,7 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
     const method = compactPl3TeachingAidText(
       stripCompetencyDetailsFromTeachingAidText(
         row?.digitalToolsAndAI?.method,
-        [sourceNls, sourceAi, sourceGoal, digitalCompetency]
+        [sourceNls, sourceAi, sourceGoal, digitalCompetency, socialIntegration]
       ),
       "Tổ chức hoạt động số/AI ngắn gọn theo YCCĐ bài học."
     );
@@ -1208,7 +1347,7 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
           row?.digitalToolsAndAI?.tools,
           isGeographySubject(subject) ? "Atlat/bản đồ số, bảng tính, biểu đồ, nguồn số liệu chính thống." : "SGK, tư liệu chính thống, công cụ trình chiếu/bảng cộng tác."
         ]),
-        [sourceNls, sourceAi, sourceGoal, digitalCompetency]
+        [sourceNls, sourceAi, sourceGoal, digitalCompetency, socialIntegration]
       ),
       isGeographySubject(subject)
         ? "Atlat/bản đồ số, bảng tính, biểu đồ, nguồn số liệu chính thống."
@@ -1231,6 +1370,7 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
       location: hasMeaningfulText(row?.location) ? String(row.location) : "Lớp học/phòng học bộ môn; phòng máy tính khi hoạt động cần thiết bị số",
       digitalCompetency,
       sourceStatus: sourceItem ? "Đã đồng bộ và bù dữ liệu từ PL1" : "AI tạo, app đã rà soát đủ ô",
+      socialIntegration,
       subject,
       grade
     };
@@ -2153,6 +2293,7 @@ export default function App() {
     useLaTeX: false,
     detailDrawings: false,
     socialIntegrations: [],
+    customSocialIntegration: "",
     selectedNlsIndicators: []
   };
   const [lessonPlanInput, setLessonPlanInput] = useState<LessonPlanInput>(() =>
@@ -2211,7 +2352,8 @@ export default function App() {
     grade: "10",
     useLaTeX: false,
     detailDrawings: false,
-    socialIntegrations: []
+    socialIntegrations: [],
+    customSocialIntegration: ""
   };
   const [eduPlanInput, setEduPlanInput] = useState(() =>
     mergeDraftObject(defaultEduPlanInput, initialDraft?.eduPlanInput)
@@ -2434,7 +2576,10 @@ export default function App() {
     setResult(null);
     setEvaluationResult(null);
     try {
-      const data = await generateLessonPlan(lessonPlanInput);
+      const data = await generateLessonPlan({
+        ...lessonPlanInput,
+        socialIntegrations: collectSelectedSocialIntegrations(lessonPlanInput)
+      });
       setResult({ type: "khbd", data: normalizeKhbdForGrade(data, lessonPlanInput.grade) });
     } catch (err: any) {
       const msg = err?.message || "";
@@ -2468,7 +2613,10 @@ export default function App() {
     setEvaluationResult(null);
     setCouncilEvaluation(null);
     try {
-      const data = await generateLessonPlan(input);
+      const data = await generateLessonPlan({
+        ...input,
+        socialIntegrations: collectSelectedSocialIntegrations(input)
+      });
       const normalized = normalizeKhbdForGrade(data, input.grade);
       setResult({ type: "khbd", data: normalized });
       return normalized;
@@ -2648,7 +2796,7 @@ export default function App() {
         curriculumDbData: (!customCurriculumData && (isStandaloneGeographySubject(eduPlanInput.subject) || province === "TP. Hồ Chí Minh (Thành phố)"))
           ? (curriculumDbCache[eduPlanInput.subject]?.[eduPlanInput.grade] || curriculumDbCache["Địa lí"]?.[eduPlanInput.grade] || curriculumDbCache["Địa lý"]?.[eduPlanInput.grade])
           : undefined,
-        socialIntegrations: eduPlanInput.socialIntegrations
+        socialIntegrations: collectSelectedSocialIntegrations(eduPlanInput)
       });
       const sourceForCompletion = activeRef?.length ? activeRef : getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData);
       const completedData = completeEducationalPlanRows(data, sourceForCompletion, eduPlanInput.subject, eduPlanInput.grade);
@@ -2687,7 +2835,8 @@ export default function App() {
         useLaTeX: eduPlanInput.useLaTeX,
         detailDrawings: eduPlanInput.detailDrawings,
         customCurriculumData: customCurriculumData || undefined,
-        curriculumDbData: customCurriculumData ? undefined : (eduPlanInput.subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" ? undefined : curriculumDbCache[eduPlanInput.subject]?.[eduPlanInput.grade])
+        curriculumDbData: customCurriculumData ? undefined : (eduPlanInput.subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" ? undefined : curriculumDbCache[eduPlanInput.subject]?.[eduPlanInput.grade]),
+        socialIntegrations: collectSelectedSocialIntegrations(eduPlanInput)
       });
       const expectedLessons = getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData);
       const completedData = completeDepartmentPlanRows(data, expectedLessons, { subject: eduPlanInput.subject, grade: eduPlanInput.grade })
@@ -2726,6 +2875,7 @@ export default function App() {
     try {
       const data = await generateEducationalActivitiesPlan(eduPlanInput.subject, eduPlanInput.grade, {
         useLaTeX: eduPlanInput.useLaTeX,
+        socialIntegrations: collectSelectedSocialIntegrations(eduPlanInput)
       });
       setResult({ type: "kh-hdgd", data });
     } catch (err: any) {
@@ -2857,13 +3007,14 @@ export default function App() {
 
   const getCurrentExportAudit = () => {
     if (!result || !result.data) return null;
-    if (!["khbd", "khgd", "kh-tcm"].includes(result.type)) return null;
+    if (!["khbd", "khgd", "kh-tcm", "kh-hdgd"].includes(result.type)) return null;
     const auditData = result.type === "khgd"
       ? getCurrentKhgdRows()
       : result.type === "kh-tcm"
         ? getCurrentKhtcmRows()
         : result.data;
-    return buildPlanQualityAudit(result.type, auditData, getExportSubject(), getExportGrade());
+    const selectedSocial = result.type === "khbd" ? collectSelectedSocialIntegrations(lessonPlanInput) : collectSelectedSocialIntegrations(eduPlanInput);
+    return buildPlanQualityAudit(result.type, auditData, getExportSubject(), getExportGrade(), selectedSocial);
   };
 
   const confirmOfficialDocxExport = () => {
@@ -2923,6 +3074,8 @@ export default function App() {
   .export-note { border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; padding: 12px 14px; border-radius: 10px; margin-bottom: 18px; font-size: 12px; line-height: 1.55; }
   .export-note strong { font-weight: 800; }
   .export-note span { font-weight: 700; color: #b45309; }
+  .text-red-600, .text-red-700 { color: #dc2626 !important; }
+  .bg-red-50\/20, .bg-red-50 { background: #fef2f2 !important; }
   .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 11px; }
   @media print { body { padding: 0; background: white; } .container { box-shadow: none; padding: 20px; } }
 </style>
@@ -2980,7 +3133,7 @@ export default function App() {
       // Chunk lessons into groups of 8 per slide
       for (let i = 0; i < data.length; i += 8) {
         const chunk = data.slice(i, i + 8);
-        slides.push({ title: `Phân phối chương trình (${i + 1}–${Math.min(i + 8, data.length)})`, bullets: chunk.map((item: any) => `${item.time || ""}: ${item.lessonContent || item.lessonName || ""} (${item.periods || ""} tiết)`) });
+        slides.push({ title: `Phân phối chương trình (${i + 1}–${Math.min(i + 8, data.length)})`, bullets: chunk.map((item: any) => `${item.time || ""}: ${item.lessonContent || item.lessonName || ""} (${item.periods || ""} tiết)${item.socialIntegration ? `\nTích hợp: ${item.socialIntegration}` : ""}`) });
       }
     } else if (result.type === "khgd") {
       const data = getCurrentKhgdRows();
@@ -2989,14 +3142,14 @@ export default function App() {
         const chunk = data.slice(i, i + 6);
         slides.push({
           title: `PL3 (${i + 1}–${Math.min(i + 6, data.length)})`,
-          bullets: chunk.map((item: any) => `• ${item.order || ""} | ${item.timing || ""}: ${item.lesson || ""} (${item.periods || ""} tiết)`)
+          bullets: chunk.map((item: any) => `• ${item.order || ""} | ${item.timing || ""}: ${item.lesson || ""} (${item.periods || ""} tiết)${item.socialIntegration ? `\nTích hợp: ${item.socialIntegration}` : ""}`)
         });
       }
     } else {
       const data = Array.isArray(result.data) ? result.data : [];
       slides.push({ title: `KẾ HOẠCH GIÁO DỤC - ${currentSubject}`, bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `Tổng số mục: ${data.length}`] });
       data.slice(0, 20).forEach((item: any, i: number) => {
-        if (i % 6 === 0) slides.push({ title: `Nội dung (${i + 1}–${Math.min(i + 6, data.length)})`, bullets: data.slice(i, i + 6).map((it: any) => `• ${it.lesson || it.lessonContent || it.theme || ""} - ${it.periods || ""} tiết`) });
+        if (i % 6 === 0) slides.push({ title: `Nội dung (${i + 1}–${Math.min(i + 6, data.length)})`, bullets: data.slice(i, i + 6).map((it: any) => `• ${it.lesson || it.lessonContent || it.theme || ""} - ${it.periods || ""} tiết${it.socialIntegration ? `\nTích hợp: ${it.socialIntegration}` : ""}`) });
       });
     }
 
@@ -3793,8 +3946,8 @@ export default function App() {
       const rows = [
         new TableRow({
           children: [
-            t("Thứ tự tiết"), t("Bài học"), t("Số tiết"), t("Thời điểm"), t("Thiết bị"), t("Địa điểm"), t("Định hướng năng lực số")
-          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx === 6 }))
+            t("Thứ tự tiết"), t("Bài học"), t("Số tiết"), t("Thời điểm"), t("Thiết bị"), t("Địa điểm"), t("Nội dung giáo dục tích hợp/lồng ghép"), t("Định hướng năng lực số/AI")
+          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx >= 6 }))
         }),
         ...khgdRows.map((item: any) => new TableRow({
           children: [
@@ -3813,6 +3966,7 @@ export default function App() {
               ]
             }),
             wordCell(item.location),
+            wordCell(item.socialIntegration || "", { red: Boolean(item.socialIntegration), bold: Boolean(item.socialIntegration), fill: item.socialIntegration ? "FEF2F2" : undefined }),
             wordCell(item.digitalCompetency, { red: true, bold: true, fill: "FEF2F2" }),
           ]
         }))
@@ -3864,8 +4018,8 @@ export default function App() {
       const rows = [
         new TableRow({
           children: [
-            t("STT"), t("Thời gian"), t("Nội dung"), t("Số tiết"), t("Yêu cầu cần đạt"), t("Năng lực số"), t("Mục tiêu & YCCĐ 3439 Tích hợp GD AI")
-          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx === 6 }))
+            t("STT"), t("Thời gian"), t("Nội dung"), t("Số tiết"), t("Yêu cầu cần đạt"), t("Nội dung giáo dục tích hợp/lồng ghép"), t("Năng lực số"), t("Mục tiêu & YCCĐ 3439 Tích hợp GD AI")
+          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx >= 5 }))
         }),
         ...planRows.map((item: any, i: number) => {
           const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
@@ -3877,7 +4031,12 @@ export default function App() {
               wordCell(item.lessonContent || item.lessonName),
               wordCell(item.periods, { center: true }),
               wordCell(item.lessonGoal),
-              wordCell(item.digitalCompetencyTT02 || "Không"),
+              wordCell(item.socialIntegration || "", { red: Boolean(item.socialIntegration), bold: Boolean(item.socialIntegration), fill: item.socialIntegration ? "FEF2F2" : undefined }),
+              wordCell(item.digitalCompetencyTT02 || "Không", {
+                red: hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không"),
+                bold: hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không"),
+                fill: hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không") ? "FEF2F2" : undefined
+              }),
               wordCell(isNotIntegrated ? aiText : item.aiCompetency3439Integrated, {
                 red: !isNotIntegrated,
                 bold: !isNotIntegrated,
@@ -3944,8 +4103,8 @@ export default function App() {
       const rows = [
         new TableRow({
           children: [
-            t("STT"), t("Chủ đề/Hoạt động"), t("Yêu cầu cần đạt"), t("Số tiết"), t("Thời điểm"), t("Địa điểm"), t("Người chủ trì"), t("Phối hợp"), t("Điều kiện thực hiện"), t("Tích hợp NLS/AI")
-          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx === 9 }))
+            t("STT"), t("Chủ đề/Hoạt động"), t("Yêu cầu cần đạt"), t("Số tiết"), t("Thời điểm"), t("Địa điểm"), t("Người chủ trì"), t("Phối hợp"), t("Điều kiện thực hiện"), t("Nội dung giáo dục tích hợp/lồng ghép"), t("Tích hợp NLS/AI")
+          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx >= 9 }))
         }),
         ...(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => {
           const hasAiIntegration = hasMeaningfulText(item.aiIntegration) && !String(item.aiIntegration).toLowerCase().includes("không");
@@ -3960,6 +4119,7 @@ export default function App() {
               wordCell(item.host),
               wordCell(item.collaborator),
               wordCell(item.conditions),
+              wordCell(item.socialIntegration || "", { red: Boolean(item.socialIntegration), bold: Boolean(item.socialIntegration), fill: item.socialIntegration ? "FEF2F2" : undefined }),
               wordCell(item.aiIntegration, { red: hasAiIntegration, bold: hasAiIntegration, fill: hasAiIntegration ? "FEF2F2" : undefined })
             ]
           });
@@ -4132,7 +4292,7 @@ export default function App() {
       }
     } else if (result.type === "khgd") {
       const khgdRows = getCurrentKhgdRows();
-      content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Định hướng năng lực số")}\n${khgdRows.map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.digitalCompetency}`).join("\n")}`;
+      content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Nội dung giáo dục tích hợp/lồng ghép")} | ${t("Định hướng năng lực số/AI")}\n${khgdRows.map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.socialIntegration || ""} | ${item.digitalCompetency}`).join("\n")}`;
     } else if (result.type === "kh-tcm") {
       const planRows = completeDepartmentPlanRows(
         Array.isArray(result.data) ? result.data : [],
@@ -4140,13 +4300,13 @@ export default function App() {
         { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
       );
       const supplement = buildKhtcmSupplement(eduPlanInput.subject, eduPlanInput.grade, planRows);
-      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n${supplement.situation.map((line, i) => `${i + 1}. ${line}`).join("\n")}\n\n3. Thiết bị dạy học\nThiết bị | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.equipmentRows.map(row => `${row.name} | ${row.lessons} | ${row.note}`).join("\n")}\n\n4. Phòng học bộ môn/phòng chức năng\nPhòng học | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.rooms.map(row => `${row.room} | ${row.lessons} | ${row.note}`).join("\n")}\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Năng lực số | Mục tiêu & YCCĐ 3439 Tích hợp GD AI\n${planRows.map((item: any, i: number) => {
+      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n${supplement.situation.map((line, i) => `${i + 1}. ${line}`).join("\n")}\n\n3. Thiết bị dạy học\nThiết bị | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.equipmentRows.map(row => `${row.name} | ${row.lessons} | ${row.note}`).join("\n")}\n\n4. Phòng học bộ môn/phòng chức năng\nPhòng học | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.rooms.map(row => `${row.room} | ${row.lessons} | ${row.note}`).join("\n")}\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Nội dung giáo dục tích hợp/lồng ghép | Năng lực số | Mục tiêu & YCCĐ 3439 Tích hợp GD AI\n${planRows.map((item: any, i: number) => {
         const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
         const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
-        return `${i + 1} | ${item.time || item.topic || item.lessonName} | ${item.lessonContent || item.lessonName} | ${item.periods} | ${item.lessonGoal} | ${item.digitalCompetencyTT02 || "Không"} | ${isNotIntegrated ? aiText : item.aiCompetency3439Integrated}`;
+        return `${i + 1} | ${item.time || item.topic || item.lessonName} | ${item.lessonContent || item.lessonName} | ${item.periods} | ${item.lessonGoal} | ${item.socialIntegration || ""} | ${item.digitalCompetencyTT02 || "Không"} | ${isNotIntegrated ? aiText : item.aiCompetency3439Integrated}`;
       }).join("\n")}\n\n2. Chuyên đề lựa chọn (đối với cấp trung học phổ thông)\n${supplement.selectedTopics.length > 0 ? supplement.selectedTopics.map(row => `${row.topic} | ${row.periods} | ${row.time} | ${row.requirement}`).join("\n") : "Không áp dụng hoặc tổ chuyên môn bổ sung theo kế hoạch nhà trường."}\n\nIII. Kiểm tra, đánh giá định kỳ\nThời gian | Bài kiểm tra/đánh giá | Hình thức | Số tiết\n${supplement.assessmentRows.map(row => `${row.time} | ${row.content} | ${row.form} | ${row.duration}`).join("\n")}\n\nIV. Các nội dung khác (nếu có)\n${supplement.professionalActivities.map(line => `- ${line}`).join("\n")}`;
     } else if (result.type === "kh-hdgd") {
-      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH TỔ CHỨC CÁC HOẠT ĐỘNG GIÁO DỤC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nSTT | Chủ đề/Hoạt động | Yêu cầu cần đạt | Số tiết | Thời điểm | Địa điểm | Người chủ trì | Phối hợp | Điều kiện thực hiện | Tích hợp NLS/AI\n${(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => `${i + 1} | ${item.theme} | ${item.requirements} | ${item.periods} | ${item.timing} | ${item.location} | ${item.host} | ${item.collaborator} | ${item.conditions} | ${item.aiIntegration}`).join("\n")}`;
+      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH TỔ CHỨC CÁC HOẠT ĐỘNG GIÁO DỤC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nSTT | Chủ đề/Hoạt động | Yêu cầu cần đạt | Số tiết | Thời điểm | Địa điểm | Người chủ trì | Phối hợp | Điều kiện thực hiện | Nội dung giáo dục tích hợp/lồng ghép | Tích hợp NLS/AI\n${(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => `${i + 1} | ${item.theme} | ${item.requirements} | ${item.periods} | ${item.timing} | ${item.location} | ${item.host} | ${item.collaborator} | ${item.conditions} | ${item.socialIntegration || ""} | ${item.aiIntegration}`).join("\n")}`;
     }
 
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
@@ -5043,12 +5203,7 @@ export default function App() {
                               Tích hợp nội dung giáo dục xã hội (tùy chọn)
                             </label>
                             <div className="grid grid-cols-2 gap-2">
-                              {[
-                                { id: "Heritage", label: "Di sản" },
-                                { id: "DrugPrevention", label: "Ma túy" },
-                                { id: "Population", label: "Dân số" },
-                                { id: "Inclusive", label: "Hòa nhập" }
-                              ].map((item) => (
+                              {SOCIAL_INTEGRATION_OPTIONS.map((item) => (
                                 <label key={item.id} className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-all">
                                   <input
                                     type="checkbox"
@@ -5067,6 +5222,12 @@ export default function App() {
                                 </label>
                               ))}
                             </div>
+                            <input
+                              value={lessonPlanInput.customSocialIntegration || ""}
+                              onChange={(e) => setLessonPlanInput({ ...lessonPlanInput, customSocialIntegration: e.target.value })}
+                              placeholder="Nội dung khác: an toàn giao thông, bảo vệ môi trường..."
+                              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-red-300"
+                            />
                           </div>
 
                           {/* Giao diện Đề xuất Chỉ báo NLS */}
@@ -5847,12 +6008,7 @@ export default function App() {
                               Tích hợp nội dung giáo dục xã hội (tùy chọn)
                             </label>
                             <div className="grid grid-cols-2 gap-2">
-                              {[
-                                { id: "Heritage", label: "Di sản" },
-                                { id: "DrugPrevention", label: "Ma túy" },
-                                { id: "Population", label: "Dân số" },
-                                { id: "Inclusive", label: "Hòa nhập" }
-                              ].map((item) => (
+                              {SOCIAL_INTEGRATION_OPTIONS.map((item) => (
                                 <label key={item.id} className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-all">
                                   <input
                                     type="checkbox"
@@ -5871,6 +6027,12 @@ export default function App() {
                                 </label>
                               ))}
                             </div>
+                            <input
+                              value={eduPlanInput.customSocialIntegration || ""}
+                              onChange={(e) => setEduPlanInput({ ...eduPlanInput, customSocialIntegration: e.target.value })}
+                              placeholder="Nội dung khác: an toàn giao thông, bảo vệ môi trường..."
+                              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-red-300"
+                            />
                           </div>
 
                           <button
@@ -5932,8 +6094,8 @@ export default function App() {
                           </div>
                         </div>
 
-                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade)} />
-                        <ExportModePanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade)} />
+                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
+                        <ExportModePanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
 
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
                           <table className="w-full text-left text-[10px] border-collapse min-w-[1200px]">
@@ -5945,6 +6107,7 @@ export default function App() {
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Thời điểm</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-64">Thiết bị dạy học & Học liệu AI</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Địa điểm dạy học</th>
+                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest min-w-[240px]">Nội dung giáo dục tích hợp/lồng ghép</th>
                                 <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest">Định hướng năng lực số (AI)</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 print:hidden text-center">Thao tác</th>
                               </tr>
@@ -5972,6 +6135,9 @@ export default function App() {
                                     </div>
                                   </td>
                                   <td className="p-3 text-brand-muted">{item.location}</td>
+                                  <td className={`p-3 font-bold leading-relaxed whitespace-pre-line ${item.socialIntegration ? "text-red-700 bg-red-50/20" : "text-slate-300"}`}>
+                                    {item.socialIntegration || "—"}
+                                  </td>
                                   <td className="p-3 text-red-700 font-bold leading-relaxed whitespace-pre-line bg-red-50/20 border-l border-red-100">
                                     {item.digitalCompetency}
                                   </td>
@@ -6080,6 +6246,12 @@ export default function App() {
                           </div>
 
                           <SubjectCoveragePanel subject={eduPlanInput.subject} grade={eduPlanInput.grade} customData={customCurriculumData} />
+                          <SocialIntegrationSelector
+                            selected={eduPlanInput.socialIntegrations}
+                            customValue={eduPlanInput.customSocialIntegration}
+                            onSelectedChange={(socialIntegrations) => setEduPlanInput({ ...eduPlanInput, socialIntegrations })}
+                            onCustomChange={(customSocialIntegration) => setEduPlanInput({ ...eduPlanInput, customSocialIntegration })}
+                          />
 
                           <div className="grid grid-cols-2 gap-4 pt-2">
                             <label className="flex items-center gap-2 cursor-pointer group">
@@ -6186,12 +6358,12 @@ export default function App() {
                           Array.isArray(result.data) ? result.data : [],
                           getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
                           { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
-                        ), eduPlanInput.subject, eduPlanInput.grade)} />
+                        ), eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
                         <ExportModePanel audit={buildPlanQualityAudit("kh-tcm", completeDepartmentPlanRows(
                           Array.isArray(result.data) ? result.data : [],
                           getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
                           { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
-                        ), eduPlanInput.subject, eduPlanInput.grade)} />
+                        ), eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
 
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
                           <KhtcmSupplementSections subject={eduPlanInput.subject} grade={eduPlanInput.grade} rows={completeDepartmentPlanRows(
@@ -6214,10 +6386,11 @@ export default function App() {
                               <tr className="border-b-2 border-slate-100">
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-12 text-center">STT</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Thời gian</th>
+                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest min-w-[240px]">Nội dung giáo dục tích hợp/lồng ghép</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-48">Nội dung</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 text-center">Số tiết</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest">Yêu cầu cần đạt</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Năng lực số</th>
+                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest w-40">Năng lực số</th>
                                 <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Mục tiêu & YCCĐ 3439 Tích hợp GD AI</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-24 print:hidden text-center">Thao tác</th>
                               </tr>
@@ -6230,14 +6403,18 @@ export default function App() {
                               ).map((item: any, i: number) => {
                                 const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
                                 const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
+                                const hasNlsIntegration = hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không");
                                 return (
-                                  <tr key={i} className={`border-b border-slate-50 hover:bg-slate-50 transition-colors align-top ${isNotIntegrated ? "opacity-60" : ""}`}>
+                                  <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors align-top">
                                     <td className="p-4 text-center font-bold text-slate-400">{i + 1}</td>
                                     <td className="p-4 font-bold text-brand-sidebar">{item.time || item.topic || item.lessonName}</td>
+                                    <td className={`p-4 font-bold leading-relaxed whitespace-pre-line text-[10px] ${item.socialIntegration ? "text-red-700 bg-red-50/20" : "text-slate-300"}`}>
+                                      {item.socialIntegration || "—"}
+                                    </td>
                                     <td className="p-4 text-brand-sidebar leading-relaxed whitespace-pre-line text-[11px]">{item.lessonContent || item.lessonName}</td>
                                     <td className="p-4 text-center font-bold text-slate-600">{item.periods}</td>
                                     <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.lessonGoal}</td>
-                                    <td className="p-4 text-brand-sidebar leading-relaxed whitespace-pre-line text-[10px]">{item.digitalCompetencyTT02 || "Không"}</td>
+                                    <td className={`p-4 font-bold leading-relaxed whitespace-pre-line text-[10px] ${hasNlsIntegration ? "text-red-700 bg-red-50/20" : "text-slate-400"}`}>{item.digitalCompetencyTT02 || "Không"}</td>
                                     <td className={`p-4 font-bold ${isNotIntegrated ? "text-slate-400" : "text-red-700 bg-red-50/20"} whitespace-pre-line text-[11px]`}>
                                       {aiText}
                                     </td>
@@ -6319,6 +6496,12 @@ export default function App() {
                           </div>
                           <SubjectCoveragePanel subject={eduPlanInput.subject} grade={eduPlanInput.grade} />
                         </div>
+                          <SocialIntegrationSelector
+                            selected={eduPlanInput.socialIntegrations}
+                            customValue={eduPlanInput.customSocialIntegration}
+                            onSelectedChange={(socialIntegrations) => setEduPlanInput({ ...eduPlanInput, socialIntegrations })}
+                            onCustomChange={(customSocialIntegration) => setEduPlanInput({ ...eduPlanInput, customSocialIntegration })}
+                          />
 
                         <div className="mt-8 flex justify-end">
                           <button
@@ -6380,6 +6563,8 @@ export default function App() {
                           </div>
                         </div>
 
+                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("kh-hdgd", result.data, eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
+                        <ExportModePanel audit={buildPlanQualityAudit("kh-hdgd", result.data, eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
                           <div className="mb-6">
                             <h4 className="text-lg font-extrabold text-brand-sidebar">Kế hoạch tổ chức các hoạt động giáo dục</h4>
@@ -6391,6 +6576,7 @@ export default function App() {
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Chủ đề/Hoạt động</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest">Yêu cầu cần đạt</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-16 text-center">Số tiết</th>
+                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest min-w-[240px]">Nội dung giáo dục tích hợp/lồng ghép</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-24">Thời điểm</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Địa điểm</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Người chủ trì</th>
@@ -6406,6 +6592,9 @@ export default function App() {
                                   <td className="p-4 font-bold text-brand-sidebar">{item.theme}</td>
                                   <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.requirements}</td>
                                   <td className="p-4 text-center font-bold text-slate-600">{item.periods}</td>
+                                  <td className={`p-4 font-bold whitespace-pre-line text-[10px] ${item.socialIntegration ? "text-red-700 bg-red-50/20" : "text-slate-300"}`}>
+                                    {item.socialIntegration || "—"}
+                                  </td>
                                   <td className="p-4 text-brand-sidebar">{item.timing}</td>
                                   <td className="p-4 text-brand-sidebar">{item.location}</td>
                                   <td className="p-4 text-brand-sidebar font-medium">{item.host}</td>

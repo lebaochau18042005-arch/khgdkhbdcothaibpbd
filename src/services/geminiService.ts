@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { DiaLy } from '../data/curriculum/diaLy';
 import { INDICATORS as KNOWN_NLS_INDICATORS } from '../components/NlsLookup';
+import { buildSocialIntegrationSelectionPrompt } from '../data/socialIntegrations';
 
 // --- Google AI Key Validation (per google-api skill) ---
 // Accepts both legacy AIzaSy... keys and new AQ... keys from Google AI Studio
@@ -825,6 +826,10 @@ LƯU Ý QUAN TRỌNG: Thông tư 02/2025/TT-BGDĐT quy định về Khung Năng 
    - Căn cứ: Thông tư 03/2018/TT-BGDĐT về Giáo dục Hòa nhập.
    - Mục tiêu: Đảm bảo quyền được học tập của mọi học sinh, bao gồm học sinh khuyết tật hoặc có hoàn cảnh đặc biệt.
    - Nội dung: Thiết kế hoạt động linh hoạt, đa dạng hóa phương thức tiếp cận để mọi học sinh đều có thể tham gia.
+
+5. Giáo dục phòng, chống tham nhũng:
+   - Mục tiêu: Hình thành thái độ liêm chính, minh bạch, trách nhiệm và tôn trọng lợi ích chung.
+   - Nội dung: Nhận diện hành vi thiếu trung thực, xung đột lợi ích và lựa chọn cách ứng xử phù hợp lứa tuổi trong các tình huống có liên hệ tự nhiên với YCCĐ.
 `;
 
 const CURRICULUM_DATA_GDDP = `
@@ -1084,7 +1089,8 @@ export interface LessonPlanInput {
   existingRawText?: string;
   existingPdfBase64?: string;
   aiIntegrationOptions?: any[];
-  socialIntegrations?: string[]; // ["Heritage", "DrugPrevention", "Population", "Inclusive"]
+  socialIntegrations?: string[];
+  customSocialIntegration?: string;
   indicatorCode?: string;
   selectedNlsIndicators?: { code: string; description: string }[];
 }
@@ -1724,6 +1730,7 @@ export const generateLessonPlan = async (input: LessonPlanInput) => {
   const formattingNeed = input.useLaTeX || input.detailDrawings || needsScientificFormatting(input.subject);
   const primaryFramework = isPrimaryGrade(input.grade);
   const lessonFrameworkLabel = primaryFramework ? "CV 2345/BGDĐT-GDTH" : "CV 5512/BGDĐT-GDTrH";
+  const socialIntegrationPrompt = buildSocialIntegrationSelectionPrompt(input.socialIntegrations);
   const lessonPlanGuidelines = primaryFramework ? PRIMARY_LESSON_PLAN_GUIDELINES : LESSON_PLAN_STRICT_GUIDELINES;
   const activityFrameworkInstruction = primaryFramework
     ? "Tổ chức các hoạt động dạy học chủ yếu theo mạch phù hợp YCCĐ tiểu học; không ép bốn hoạt động hoặc bốn bước CV 5512."
@@ -1762,6 +1769,7 @@ ${englishConstraint}
 ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
 ${UPGRADE_IN_PLACE_GUIDELINES}
 ${isGeographyLikeSubject(input.subject) ? GEOGRAPHY_AI_RULES : ""}
+${socialIntegrationPrompt}
 ${SOCIAL_INTEGRATION_GUIDELINES}
 `;
     finalPromptContents = [
@@ -1804,6 +1812,7 @@ ${englishConstraint}
 ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
 ${UPGRADE_IN_PLACE_GUIDELINES}
 ${isGeographyLikeSubject(input.subject) ? GEOGRAPHY_AI_RULES : ""}
+${socialIntegrationPrompt}
 ${SOCIAL_INTEGRATION_GUIDELINES}
 ` : "";
   }
@@ -1824,8 +1833,8 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
 
     ${AI_SUBJECT_GUIDELINES}
     ${SOCIAL_INTEGRATION_GUIDELINES}
+    ${socialIntegrationPrompt}
     ${competencyGuardrails}
-    ${input.socialIntegrations && input.socialIntegrations.length > 0 ? `\nLỆNH BẮT BUỘC TÍCH HỢP NỘI DUNG XÃ HỘI: Bạn PHẢI tích hợp sâu sắc các nội dung sau vào kế hoạch bài dạy: ${input.socialIntegrations.join(", ")}. Hãy thể hiện rõ trong mục tiêu và các hoạt động học tập.` : ""}
     THAM CHIẾU QĐ 3439: ưu tiên lớp + chủ đề + nguyên văn YCCĐ. Chỉ dùng mã chi tiết khi bảng đối chiếu đầu vào đã cung cấp và khớp YCCĐ; không tự tạo số thứ tự từ ví dụ.
       ${safeIndicatorCode ? `\nMÃ NL AI HỢP LỆ TỪ HỆ THỐNG: ${safeIndicatorCode}. Chỉ khai báo trong mục "Năng lực AI đặc thù" nếu chứng minh được mã này bám sát YCCĐ môn học.` : ""}
       ${selectedIndicatorPrompt}
@@ -1966,6 +1975,7 @@ export const generateEducationalPlan = async (subject: string, grade: string, pr
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
   const competencyGuardrails = getCompetencyGuardrails(subject, grade);
   const normalizedCurriculumDbData = options?.curriculumDbData ? normalizeCurriculumCompetencyData(options.curriculumDbData, grade) : undefined;
+  const socialSelectionPrompt = buildSocialIntegrationSelectionPrompt(options?.socialIntegrations);
 
   const curriculumConstraint = options?.customCurriculumData
     ? `DỮ LIỆU BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC DO GIÁO VIÊN CUNG CẤP:
@@ -1986,6 +1996,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
         yccd_CT2018: i.lessonGoal || i.yccd || [i.objectivesKnowledge, i.objectivesCompetency, i.objectivesQuality].filter(Boolean).join("; "),
         nls_TT02_CV3456: i.digitalCompetencyTT02 || i.digitalCompetency || i.nls || "",
         nl_ai_3439: i.aiCompetency3439Integrated || i.aiCompetency3439 || i.ai || i.nlai || "",
+        noi_dung_giao_duc_tich_hop: i.socialIntegration || i.integratedEducation || i.social || "",
         ghi_chu_dong_bo: i.sourceStatus || ""
       }))
     : [];
@@ -1999,9 +2010,9 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
 
        Yêu cầu bắt buộc:
        - Phải tạo ĐÚNG ${referenceRows.length} dòng PL3, tương ứng từng dòng PL1 theo đúng thứ tự. Không bỏ dòng, không gộp dòng, không tự rút gọn.
-       - Phải giữ nguyên tên bài học, số tiết, thời điểm, YCCĐ CT 2018, NLS TT02/CV3456 và NL AI 3439 đã có trong PL1.
+       - Phải giữ nguyên tên bài học, số tiết, thời điểm, YCCĐ CT 2018, nội dung giáo dục tích hợp, NLS TT02/CV3456 và NL AI 3439 đã có trong PL1.
        - PL3 chỉ được khai triển thêm thiết bị, học liệu, địa điểm và phương án tổ chức; không thay thế hoặc làm mất dữ liệu PL1.
-       - KHÔNG chép lại mã/nội dung NLS, NL AI hoặc YCCĐ vào digitalToolsAndAI.method/tools. Phần thiết bị - học liệu chỉ ghi công cụ, học liệu, dữ liệu, nền tảng sử dụng; phần mã NLS/NL AI chỉ ghi tại digitalCompetency để tránh trùng lặp.
+       - KHÔNG chép lại nội dung giáo dục tích hợp, mã/nội dung NLS, NL AI hoặc YCCĐ vào digitalToolsAndAI.method/tools. Nội dung giáo dục tích hợp chỉ ghi tại socialIntegration; mã NLS/NL AI chỉ ghi tại digitalCompetency.
        - Nếu một ô PL1 ghi "Không tích hợp - lý do: ..." thì phải giữ đủ lý do đó trong PL3.`
     : "";
 
@@ -2019,7 +2030,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
     ${SOCIAL_INTEGRATION_GUIDELINES}
     ${competencyGuardrails}
     ${AI_COMPETENCY_ORDER_RULE}
-    ${options?.socialIntegrations?.length ? `\nYÊU CẦU TÍCH HỢP NỘI DUNG XÃ HỘI DO GIÁO VIÊN CHỌN: ${options.socialIntegrations.join(", ")}.` : ""}
+    ${socialSelectionPrompt}
     ${curriculumConstraint}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
@@ -2045,6 +2056,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
        - Địa điểm dạy học: Lớp học, phòng máy tính, thư viện...
     - Định hướng năng lực số/AI: Ghi cô đọng theo chuỗi YCCĐ -> hành vi HS -> sản phẩm -> tiêu chí -> mã/tham chiếu. Mã NLS theo đúng mức lớp. Với NL AI, khi có điểm chạm rõ phải ghi đúng tên thành phần và một mã đầy đủ theo lớp/chủ đề/chỉ báo, ví dụ NLa- 12.A1.01; mã phải bám YCCĐ và hành vi của bài, không ghi chung chung “Cần đối chiếu mã AI”.
        - ĐỊNH DẠNG VĂN BẢN(RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \sin, \cos) trong bảng này.Các công thức toán / lý / hóa phải chuyển thành text thường dễ đọc nhất(vd: y = sin x).
+    - Nội dung giáo dục tích hợp/lồng ghép (socialIntegration): Chỉ ghi khi bài có điểm chạm tự nhiên; bắt buộc theo chuỗi Chủ đề -> Căn cứ YCCĐ -> Hành vi học sinh -> Sản phẩm -> Tiêu chí/minh chứng. Không phù hợp thì để chuỗi rỗng.
 
     2. NGUYÊN TẮC TÍCH HỢP THEO BỘ QUY TẮC KHÓA:
     - Rà soát toàn bộ bài học trong chương trình.
@@ -2052,7 +2064,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
        - Nếu bài không phù hợp, tại digitalCompetency ghi “Không tích hợp - lý do: ...”; không ép dùng công cụ số/AI.
 
     3. Định dạng đầu ra: Trình bày dưới dạng JSON Array các đối tượng.
-    ${referenceRows.length ? `LỆNH KIỂM ĐẾM PL1 -> PL3: JSON Array đầu ra bắt buộc có đúng ${referenceRows.length} object, không ít hơn. Mỗi object PL3 phải chứa đủ dữ liệu đồng bộ từ object PL1 cùng vị trí: bài_học, so_tiet, thoi_gian, yccd_CT2018, nls_TT02_CV3456, nl_ai_3439.` : ""}
+    ${referenceRows.length ? `LỆNH KIỂM ĐẾM PL1 -> PL3: JSON Array đầu ra bắt buộc có đúng ${referenceRows.length} object, không ít hơn. Mỗi object PL3 phải chứa đủ dữ liệu đồng bộ từ object PL1 cùng vị trí, gồm cả noi_dung_giao_duc_tich_hop.` : ""}
   `;
 
   try {
@@ -2076,8 +2088,9 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
           },
           location: { type: Type.STRING, description: "Địa điểm dạy học" },
           digitalCompetency: { type: Type.STRING, description: "Định hướng năng lực số (AI)" },
+          socialIntegration: { type: Type.STRING, description: "Nội dung giáo dục tích hợp/lồng ghép đúng vị trí" },
         },
-        required: ["order", "lesson", "periods", "timing", "equipment", "digitalToolsAndAI", "location", "digitalCompetency"],
+        required: ["order", "lesson", "periods", "timing", "equipment", "digitalToolsAndAI", "location", "digitalCompetency", "socialIntegration"],
       },
     });
 
@@ -2105,11 +2118,12 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
   }
 };
 
-export const generateDepartmentPlan = async (subject: string, grade: string, province?: string, options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[], curriculumDbData?: any[] }) => {
+export const generateDepartmentPlan = async (subject: string, grade: string, province?: string, options?: { useLaTeX?: boolean, detailDrawings?: boolean, customCurriculumData?: any[], curriculumDbData?: any[], socialIntegrations?: string[] }) => {
   const formattingNeed = options?.useLaTeX || options?.detailDrawings || needsScientificFormatting(subject);
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH). ĐẶC BIỆT, KHI NỘI DUNG TÍCH HỢP NĂNG LỰC SỐ (NLS) VÀ NĂNG LỰC AI (NLAI) ĐƯỢC KHỞI TẠO, CHÚNG CŨNG BẮT BUỘC PHẢI ĐƯỢC VIẾT BẰNG TIẾNG ANH." : "";
   const competencyGuardrails = getCompetencyGuardrails(subject, grade);
   const geographyCurriculum = getGeographyCurriculumByGrade(grade);
+  const socialSelectionPrompt = buildSocialIntegrationSelectionPrompt(options?.socialIntegrations);
   const departmentAuthorizedAiCodes = collectAuthorizedAiCodes(grade, JSON.stringify(options?.customCurriculumData || []), JSON.stringify(options?.curriculumDbData || []));
   const departmentAuthorizedNlsCodes = collectAuthorizedNlsCodes(grade, JSON.stringify(options?.customCurriculumData || []), JSON.stringify(options?.curriculumDbData || []));
   const isGeographyThptBatch = isStandaloneGeographySubject(subject) && ["10", "11", "12"].includes(String(grade).trim()) && !options?.customCurriculumData && geographyCurriculum.length > 0;
@@ -2134,6 +2148,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
         "",
         AI_SUBJECT_GUIDELINES,
         SOCIAL_INTEGRATION_GUIDELINES,
+        socialSelectionPrompt,
         geoRulesForBatch,
         "",
         "DANH SACH " + batch.length + " BAI HOC CAN TAO (Lo " + batchNum + "/" + totalBatches + ", bat dau Tuan " + weekCounter + "):",
@@ -2150,8 +2165,9 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
         "   - Mach A: Tu duy lay con nguoi lam trung tam | Mach B: Dao duc & trach nhiem | Mach C: Ky thuat & ung dung | Mach D: Giai quyet van de",
         "   KHONG ép mã phải khác nhau giữa các bài; một mã chỉ được lặp khi từng bài đều có chuỗi minh chứng độc lập. Không tự tạo mã để làm đa dạng.",
         "6. Phan bo thoi gian bat dau tu Tuan " + weekCounter + ".",
+        "7. socialIntegration: chi ghi dung bai co diem cham; theo thu tu Chu de -> Can cu YCCD -> Hanh vi HS -> San pham -> Tieu chi/minh chung. Bai khong phu hop thi de chuoi rong.",
         "",
-        "Dau ra: JSON Array gom dung " + batch.length + " object voi cac truong: time, lessonContent, periods, lessonGoal, digitalCompetencyTT02, aiCompetency3439Integrated. KHONG duoc de trong bat ky truong nao."
+        "Dau ra: JSON Array gom dung " + batch.length + " object voi cac truong: time, lessonContent, periods, lessonGoal, socialIntegration, digitalCompetencyTT02, aiCompetency3439Integrated."
       ];
       const batchPrompt = bLines.join("\n");
 
@@ -2171,9 +2187,10 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
                 periods: { type: 'STRING' as any },
                 lessonGoal: { type: 'STRING' as any },
                 digitalCompetencyTT02: { type: 'STRING' as any },
-                aiCompetency3439Integrated: { type: 'STRING' as any }
+                aiCompetency3439Integrated: { type: 'STRING' as any },
+                socialIntegration: { type: 'STRING' as any }
               },
-              required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'digitalCompetencyTT02', 'aiCompetency3439Integrated'],
+              required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'socialIntegration', 'digitalCompetencyTT02', 'aiCompetency3439Integrated'],
             },
           },
         },
@@ -2260,6 +2277,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 
     ${AI_SUBJECT_GUIDELINES}
     ${SOCIAL_INTEGRATION_GUIDELINES}
+    ${socialSelectionPrompt}
     ${curriculumConstraint}
     ${geographyRules}
     ${AI_COMPETENCY_ORDER_RULE}
@@ -2269,7 +2287,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 
     Nhiệm vụ cụ thể:
     1. Rà soát toàn bộ dữ liệu nguồn: không bỏ sót, gộp hoặc tự thêm bài/chuyên đề/kiểm tra. Chỉ lập đủ 35 tuần khi nguồn chính thức đã cung cấp đủ; không tự bịa dòng để lấp lịch.
-    1b. KHÔNG ĐƯỢC ĐỂ THIẾU Ô: Mỗi dòng bắt buộc phải có đủ 6 trường time, lessonContent, periods, lessonGoal, digitalCompetencyTT02, aiCompetency3439Integrated. Không được trả chuỗi rỗng, "..." hoặc chỉ một chữ "Không". Nếu không tích hợp, phải ghi theo mẫu: "Không tích hợp - lý do: ..." và nêu căn cứ YCCĐ chưa phù hợp.
+    1b. KHÔNG ĐƯỢC ĐỂ THIẾU TRƯỜNG: Mỗi dòng bắt buộc có đủ 7 trường time, lessonContent, periods, lessonGoal, socialIntegration, digitalCompetencyTT02, aiCompetency3439Integrated. Riêng socialIntegration được để chuỗi rỗng khi không có điểm chạm; NLS/NL AI không phù hợp phải ghi rõ lý do.
     2. TÍCH HỢP NLS VÀ NL AI THEO YCCĐ, KHÔNG GƯỢNG ÉP:
     - Chỉ tích hợp Năng lực số (NLS) và Năng lực AI (NL AI) khi YCCĐ của bài có thao tác phù hợp: khai thác dữ liệu, kiểm chứng nguồn, tạo sản phẩm số, phân tích biểu đồ/bản đồ/bảng số liệu, mô phỏng, thiết kế, đánh giá rủi ro...
     - Không đặt chỉ tiêu 95%/100% số bài. Nếu bài không có điểm chạm rõ, ghi "Không tích hợp - lý do: ..." hoặc "Không gán mã - lý do: ..." và nêu lý do ngắn.
@@ -2282,6 +2300,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
        - Năng lực số (digitalCompetencyTT02): dùng mức tham chiếu đúng lớp theo bộ quy tắc khóa; mỗi dòng chỉ 1-2 mã có hành vi và minh chứng. Không phù hợp thì ghi “Không tích hợp - lý do: ...”.
        - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Trước khi ghi mã/tham chiếu AI phải ghi tên thành phần; bám đúng lớp, chủ đề và nguyên văn YCCĐ QĐ 3439. Nội dung bắt buộc theo thứ tự: Tên thành phần năng lực AI -> hành vi học sinh -> yêu cầu cần đạt AI -> mã NL AI -> sản phẩm -> tiêu chí -> minh chứng. Với bài có indicatorCode hợp lệ từ hệ thống, vẫn phải kiểm tra YCCĐ trước khi dùng. Với bài tự đề xuất, không bịa mã; nếu thiếu căn cứ ghi "Không tích hợp/Không gán mã - lý do: ..." kèm lý do cụ thể, không ghi cụt "Không".
 
+       - Nội dung giáo dục tích hợp/lồng ghép (socialIntegration): Chỉ chọn trong danh mục giáo viên đã chọn và chỉ đặt ở bài có điểm chạm tự nhiên; ghi Chủ đề -> Căn cứ YCCĐ -> Hành vi học sinh -> Sản phẩm -> Tiêu chí/minh chứng. Không phù hợp thì để chuỗi rỗng.
        - Mạch nội dung AI:
     - ĐỊNH DẠNG VĂN BẢN (RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \\sin, \\cos) HOẶC CÁC KÝ HIỆU ĐẶC BIỆT KÍCH ỨNG LỖI. Các công thức toán/lý/hóa phải được viết dưới dạng văn bản thường.
            * NLa(A): Tư duy lấy con người làm trung tâm.
@@ -2298,6 +2317,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
     - lessonGoal: Yêu cầu cần đạt CT 2018.
     - digitalCompetencyTT02: Năng lực số TT 02 (Mã và YCCĐ). Ghi "Không tích hợp - lý do: ..." nếu bài không phù hợp.
     - aiCompetency3439Integrated: Mục tiêu & YCCĐ 3439 Tích hợp GD AI. Kết hợp tên thành phần năng lực AI, hành vi học sinh, YCCĐ AI, mã/tham chiếu QĐ 3439, sản phẩm, tiêu chí và minh chứng theo đúng thứ tự. Ghi "Không tích hợp - lý do: ..." nếu bài không phù hợp.
+    - socialIntegration: Nội dung giáo dục tích hợp/lồng ghép đúng vị trí; để chuỗi rỗng nếu không phù hợp.
   `;
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
@@ -2322,9 +2342,10 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
             periods: { type: 'STRING' as any },
             lessonGoal: { type: 'STRING' as any },
             digitalCompetencyTT02: { type: 'STRING' as any },
-            aiCompetency3439Integrated: { type: 'STRING' as any }
+            aiCompetency3439Integrated: { type: 'STRING' as any },
+            socialIntegration: { type: 'STRING' as any }
           },
-          required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'digitalCompetencyTT02', 'aiCompetency3439Integrated'],
+          required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'socialIntegration', 'digitalCompetencyTT02', 'aiCompetency3439Integrated'],
         },
       },
     },
@@ -2804,19 +2825,23 @@ Hãy trả về kết quả đánh giá bằng JSON theo cấu trúc sau:
   }
 };
 
-export const generateEducationalActivitiesPlan = async (subject: string, grade: string, options?: { useLaTeX?: boolean }) => {
+export const generateEducationalActivitiesPlan = async (subject: string, grade: string, options?: { useLaTeX?: boolean, socialIntegrations?: string[] }) => {
   const englishConstraint = (subject === "Tiếng Anh" || subject.toLowerCase().includes("english")) ? "\\nLỆNH ĐẶC BIỆT TỐI QUAN TRỌNG: Môn học là Tiếng Anh nên TOÀN BỘ nội dung kế hoạch giáo dục PHẢI ĐƯỢC VIẾT 100% BẰNG TIẾNG ANH (ENGLISH)." : "";
   const competencyGuardrails = getCompetencyGuardrails(subject, grade);
+  const socialSelectionPrompt = buildSocialIntegrationSelectionPrompt(options?.socialIntegrations);
   const prompt = `
     Bạn là chuyên gia xây dựng chương trình giáo dục. Hãy lập “Kế hoạch tổ chức các hoạt động giáo dục” (Phụ lục 2 - CV 5512) cho môn ${subject}, lớp ${grade}.
 
     ${competencyGuardrails}
+    ${SOCIAL_INTEGRATION_GUIDELINES}
+    ${socialSelectionPrompt}
 
     YÊU CẦU QUAN TRỌNG:
     1. Đề xuất từ 3 đến 5 hoạt động giáo dục đặc sắc, mang tính trải nghiệm, câu lạc bộ, tham quan, hoặc dự án liên môn phù hợp với môn học và lứa tuổi.
     2. Các hoạt động phải ĐA DẠNG: Có thể bao gồm Sinh hoạt dưới cờ, Sinh hoạt lớp, Câu lạc bộ, Hoạt động trải nghiệm ngoài nhà trường, Dự án học tập...
     3. TÍCH HỢP CÓ ĐIỀU KIỆN: Rà từng hoạt động và chọn Không tích hợp / NLS / NL AI / NLS và NL AI. Chỉ ghi năng lực khi học sinh trực tiếp thực hiện và có sản phẩm; giáo viên dùng công cụ không tạo năng lực cho học sinh.
 
+    4. NỘI DUNG GIÁO DỤC TÍCH HỢP: Chỉ dùng nội dung giáo viên đã chọn, đặt tại đúng hoạt động có điểm chạm và không trộn vào cột NLS/NL AI.
     ${englishConstraint}
 
     Định dạng đầu ra: JSON Array các đối tượng với các trường sau:
@@ -2829,6 +2854,7 @@ export const generateEducationalActivitiesPlan = async (subject: string, grade: 
     - collaborator: Phối hợp (VD: GVCN, Phụ huynh...).
     - conditions: Điều kiện thực hiện (Cơ sở vật chất, kinh phí...).
     - aiIntegration: Viết tối đa 80 từ theo đúng thứ tự: quyết định tích hợp; căn cứ YCCĐ; NLS (mã-tên-hành vi-sản phẩm-tiêu chí); AI (thành phần-YCCĐ-mã/tham chiếu-sản phẩm-tiêu chí); mức độ; phương án thiết bị. Không có điểm chạm thì ghi “Không tích hợp - lý do: ...”.
+    - socialIntegration: Ghi theo thứ tự Chủ đề -> Căn cứ YCCĐ -> Hành vi học sinh -> Sản phẩm -> Tiêu chí/minh chứng; để chuỗi rỗng nếu hoạt động không phù hợp.
   `;
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
@@ -2857,8 +2883,9 @@ export const generateEducationalActivitiesPlan = async (subject: string, grade: 
             collaborator: { type: 'STRING' as any },
             conditions: { type: 'STRING' as any },
             aiIntegration: { type: 'STRING' as any },
+            socialIntegration: { type: 'STRING' as any },
           },
-          required: ['theme', 'requirements', 'periods', 'timing', 'location', 'host', 'collaborator', 'conditions', 'aiIntegration'],
+          required: ['theme', 'requirements', 'periods', 'timing', 'location', 'host', 'collaborator', 'conditions', 'socialIntegration', 'aiIntegration'],
         },
       },
     },

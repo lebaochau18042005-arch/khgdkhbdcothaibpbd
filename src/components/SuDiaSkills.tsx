@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { AlignmentType, Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
-import { generateSuDiaSkill, SuDiaSkillDomain, SuDiaSkillKind } from "../services/geminiService";
+import { generateSuDiaSkill, type ExamCognitiveLevel, type ExamScoreConfig, type SuDiaSkillDomain, type SuDiaSkillKind } from "../services/geminiService";
 
 type SkillCard = {
   id: SuDiaSkillKind | "upgrade-docx";
@@ -147,6 +147,13 @@ export default function SuDiaSkills({ apiKey, aiModel, isOnline = true, onOpenUp
   const [lessonGoal, setLessonGoal] = useState("");
   const [sourceText, setSourceText] = useState("");
   const [questionCount, setQuestionCount] = useState(8);
+  const [examScoreConfig, setExamScoreConfig] = useState<ExamScoreConfig>({
+    multipleChoice: 0.25,
+    trueFalse: 1,
+    shortAnswer: 0.25,
+    essay: { B: 1, H: 1, VD: 1 }
+  });
+  const [essayQuestions, setEssayQuestions] = useState<Record<ExamCognitiveLevel, string>>({ B: "", H: "", VD: "" });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -199,7 +206,9 @@ export default function SuDiaSkills({ apiKey, aiModel, isOnline = true, onOpenUp
         province,
         lessonGoal,
         sourceText,
-        questionCount
+        questionCount,
+        examScoreConfig,
+        essayQuestions
       });
       setResult(data);
     } catch (err: any) {
@@ -473,14 +482,75 @@ export default function SuDiaSkills({ apiKey, aiModel, isOnline = true, onOpenUp
               <input value={province} onChange={event => setProvince(event.target.value)} placeholder="Ví dụ: TP. Hồ Chí Minh, Đồng bằng sông Cửu Long" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold bg-slate-50" />
             </label>
             <label className="space-y-1 block">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">YCCĐ/ghi chú</span>
-              <textarea value={lessonGoal} onChange={event => setLessonGoal(event.target.value)} rows={3} placeholder="Dán yêu cầu cần đạt, mục tiêu bài học hoặc yêu cầu riêng..." className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 resize-none" />
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{kind === "geo-exam" ? "YCCĐ chính thức của bài học" : "YCCĐ/ghi chú"}</span>
+              <textarea value={lessonGoal} onChange={event => setLessonGoal(event.target.value)} rows={3} placeholder={kind === "geo-exam" ? "Dán nguyên văn YCCĐ CT GDPT 2018/SGK; để trống nếu tên bài khớp kho YCCĐ của hệ thống." : "Dán yêu cầu cần đạt, mục tiêu bài học hoặc yêu cầu riêng..."} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 resize-none" />
+              {kind === "geo-exam" && <span className="block text-[10px] leading-relaxed text-amber-700">Phần III chỉ được tạo khi hệ thống xác định được YCCĐ gốc; AI không được tự thêm YCCĐ “tính được...”.</span>}
             </label>
             {(isQuizKind(kind) || isExamKind(kind)) && (
               <label className="space-y-1 block">
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Số câu gợi ý</span>
                 <input type="number" min={4} max={40} value={questionCount} onChange={event => setQuestionCount(Number(event.target.value))} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold bg-slate-50" />
               </label>
+            )}
+            {isExamKind(kind) && (
+              <div className="space-y-4 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+                <div>
+                  <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Thiết lập thang điểm (điểm/câu)</p>
+                  <p className="text-[10px] text-slate-500 mt-1">Giáo viên tự chọn; kết quả AI được hậu kiểm và ép về đúng các giá trị này.</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <label className="space-y-1">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase">Nhiều lựa chọn</span>
+                    <input aria-label="Điểm câu nhiều lựa chọn" type="number" min={0} max={10} step={0.25} value={examScoreConfig.multipleChoice} onChange={event => setExamScoreConfig(current => ({ ...current, multipleChoice: Number(event.target.value) }))} className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-bold" />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase">Đúng - Sai</span>
+                    <input aria-label="Điểm câu đúng sai" type="number" min={0} max={10} step={0.25} value={examScoreConfig.trueFalse} onChange={event => setExamScoreConfig(current => ({ ...current, trueFalse: Number(event.target.value) }))} className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-bold" />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase">Trả lời ngắn</span>
+                    <input aria-label="Điểm câu trả lời ngắn" type="number" min={0} max={10} step={0.25} value={examScoreConfig.shortAnswer} onChange={event => setExamScoreConfig(current => ({ ...current, shortAnswer: Number(event.target.value) }))} className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-bold" />
+                  </label>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Tự luận theo mức độ</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["B", "H", "VD"] as ExamCognitiveLevel[]).map(level => (
+                      <label key={level} className="space-y-1">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase">{level === "B" ? "B - Biết" : level === "H" ? "H - Hiểu" : "VD - Vận dụng"}</span>
+                        <input
+                          aria-label={`Điểm tự luận ${level}`}
+                          type="number"
+                          min={0}
+                          max={10}
+                          step={0.25}
+                          value={examScoreConfig.essay[level]}
+                          onChange={event => setExamScoreConfig(current => ({ ...current, essay: { ...current.essay, [level]: Number(event.target.value) } }))}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-bold"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-3 border-t border-indigo-100 pt-3">
+                  <div>
+                    <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Câu tự luận — giáo viên tự ghi</p>
+                    <p className="text-[10px] text-slate-500 mt-1">AI không sinh hoặc sửa câu hỏi; chỉ hỗ trợ hướng dẫn chấm cho câu đã nhập.</p>
+                  </div>
+                  {(["B", "H", "VD"] as ExamCognitiveLevel[]).map(level => (
+                    <label key={level} className="block space-y-1">
+                      <span className="text-[9px] font-bold text-slate-500 uppercase">{level === "B" ? "Mức Biết (B)" : level === "H" ? "Mức Hiểu (H)" : "Mức Vận dụng (VD)"}</span>
+                      <textarea
+                        value={essayQuestions[level]}
+                        onChange={event => setEssayQuestions(current => ({ ...current, [level]: event.target.value }))}
+                        rows={2}
+                        placeholder={`Giáo viên nhập nguyên văn câu tự luận mức ${level}...`}
+                        className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
             )}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -565,11 +635,40 @@ function appendSlidesText(lines: string[], result: any) {
 }
 
 function appendExamText(lines: string[], result: any) {
-  lines.push("Ma trận đề:");
-  asList(result.exam?.matrix).forEach((row: any) => lines.push(`- ${row.competency} | ${row.level} | ${row.questionCount} câu | ${row.score} điểm`));
-  appendQuizText(lines, { quiz: { questions: asList(result.exam?.multipleChoice).map((q: any) => ({ ...q, level: "Trắc nghiệm" })) } });
-  lines.push("Tự luận:", ...asList(result.exam?.essay).map((q: any, index: number) => `${index + 1}. ${q.question}`));
-  lines.push("Đáp án:", ...asList(result.exam?.answerKey).map((item: string) => `- ${item}`));
+  const exam = result.exam || {};
+  const score = exam.scoreConfig || {};
+  lines.push(
+    "Thang điểm (điểm/câu):",
+    `- Phần I: ${score.multipleChoice ?? ""}`,
+    `- Phần II: ${score.trueFalse ?? ""}`,
+    `- Phần III: ${score.shortAnswer ?? ""}`,
+    `- Tự luận B: ${score.essay?.B ?? ""}; H: ${score.essay?.H ?? ""}; VD: ${score.essay?.VD ?? ""}`,
+    "",
+    "Ma trận đề:"
+  );
+  asList(exam.matrix).forEach((row: any) => lines.push(`- ${row.competency} | ${row.level} | ${row.questionCount} câu | ${row.score} điểm`));
+  appendQuizText(lines, { quiz: { questions: asList(exam.multipleChoice).map((q: any) => ({ ...q, level: `Phần I - ${q.score ?? score.multipleChoice ?? ""} điểm` })) } });
+  lines.push("Phần II - Đúng/Sai:");
+  asList(exam.trueFalse).forEach((q: any, index: number) => {
+    lines.push(`${index + 1}. ${q.stem || q.question || ""} (${q.score ?? score.trueFalse ?? ""} điểm)`);
+    asList(q.statements).forEach((statement: string, statementIndex: number) => lines.push(`   ${String.fromCharCode(65 + statementIndex)}. ${statement} — ${q.answers?.[statementIndex] || ""}`));
+  });
+  lines.push("Phần III - Trả lời ngắn/Tính toán:");
+  asList(exam.shortAnswer).forEach((q: any, index: number) => {
+    lines.push(`${index + 1}. ${q.question} (${q.score ?? score.shortAnswer ?? ""} điểm)`);
+    lines.push(`   YCCĐ gốc: ${q.originalRequirement || ""}`);
+    lines.push(`   Biểu hiện đánh giá: ${q.assessedIndicator || ""}`);
+    lines.push(`   Dạng câu hỏi/thao tác: ${q.questionTypeAndCalculation || ""}`);
+    lines.push(`   Mức độ: ${q.cognitiveLevel || ""}`);
+    lines.push(`   Yêu cầu kỹ thuật: ${q.technicalRequirements || ""}`);
+    lines.push(`   Đáp án: ${q.answer || ""}`);
+  });
+  lines.push("Tự luận — câu do giáo viên ghi:");
+  asList(exam.essay).forEach((q: any, index: number) => {
+    lines.push(`${index + 1}. [${q.level || ""} - ${q.levelLabel || ""}] ${q.question} (${q.score ?? ""} điểm)`);
+    asList(q.rubric).forEach((item: string) => lines.push(`   - ${item}`));
+  });
+  lines.push("Đáp án tổng hợp:", ...asList(exam.answerKey).map((item: string) => `- ${item}`));
 }
 
 function appendHistoryText(lines: string[], result: any) {
@@ -739,16 +838,84 @@ function GeoFormulaResult({ result }: { result: any }) {
 
 function ExamResult({ result }: { result: any }) {
   const exam = result.exam || {};
+  const score = exam.scoreConfig || {};
+  const scoreCards = [
+    { label: "Nhiều lựa chọn", value: score.multipleChoice },
+    { label: "Đúng - Sai", value: score.trueFalse },
+    { label: "Trả lời ngắn", value: score.shortAnswer },
+    { label: "Tự luận B", value: score.essay?.B },
+    { label: "Tự luận H", value: score.essay?.H },
+    { label: "Tự luận VD", value: score.essay?.VD }
+  ];
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Đề kiểm tra</h4>
+      <section>
+        <p className="text-xs font-black text-slate-600 uppercase tracking-widest mb-2">Thang điểm đã khóa (điểm/câu)</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
+          {scoreCards.map(item => (
+            <div key={item.label} className="rounded-lg border border-indigo-100 bg-indigo-50 p-3">
+              <p className="text-[9px] font-black uppercase text-indigo-600">{item.label}</p>
+              <p className="mt-1 text-lg font-black text-slate-900">{item.value ?? "—"}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      {exam.officialRequirementAvailable === false && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+          Phần III được để trống vì chưa xác định được YCCĐ gốc phù hợp. Hãy dán nguyên văn YCCĐ chính thức rồi tạo lại đề.
+        </div>
+      )}
       <div className="overflow-x-auto border border-slate-200 rounded-lg">
         <table className="w-full text-sm">
           <thead className="bg-slate-100 text-slate-700"><tr><th className="p-3 text-left">Năng lực/chủ đề</th><th className="p-3 text-left">Mức độ</th><th className="p-3 text-left">Số câu</th><th className="p-3 text-left">Điểm</th></tr></thead>
           <tbody>{asList(exam.matrix).map((row: any, index: number) => <tr key={index} className="border-t border-slate-100"><td className="p-3 font-semibold">{row.competency}</td><td className="p-3">{row.level}</td><td className="p-3">{row.questionCount}</td><td className="p-3">{row.score}</td></tr>)}</tbody>
         </table>
       </div>
-      <QuizResult result={{ quiz: { questions: asList(exam.multipleChoice).map((q: any) => ({ ...q, level: "Trắc nghiệm", sourceHint: "" })) } }} />
+      <QuizResult result={{ quiz: { questions: asList(exam.multipleChoice).map((q: any) => ({ ...q, level: `Phần I · ${q.score ?? score.multipleChoice ?? "—"} điểm`, sourceHint: "" })) } }} />
+      {asList(exam.trueFalse).length > 0 && (
+        <section className="space-y-3">
+          <h5 className="text-xs font-black text-slate-600 uppercase tracking-widest">Phần II · Đúng/Sai</h5>
+          {asList(exam.trueFalse).map((q: any, index: number) => (
+            <div key={index} className="rounded-lg border border-slate-200 p-4">
+              <p className="font-bold text-slate-900">{index + 1}. {q.stem || q.question} <span className="text-xs text-indigo-600">({q.score ?? score.trueFalse} điểm)</span></p>
+              <div className="mt-3 space-y-2">
+                {asList(q.statements).map((statement: string, statementIndex: number) => (
+                  <p key={statementIndex} className="rounded-md bg-slate-50 p-2 text-sm text-slate-700"><span className="font-bold">{String.fromCharCode(65 + statementIndex)}.</span> {statement} <span className="font-bold text-emerald-700">— {q.answers?.[statementIndex]}</span></p>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+      {asList(exam.shortAnswer).length > 0 && (
+        <section className="space-y-3">
+          <h5 className="text-xs font-black text-slate-600 uppercase tracking-widest">Phần III · Trả lời ngắn/Tính toán</h5>
+          {asList(exam.shortAnswer).map((q: any, index: number) => (
+            <div key={index} className="rounded-lg border border-emerald-100 bg-emerald-50/40 p-4 space-y-2">
+              <div className="flex flex-wrap items-center gap-2"><span className="rounded bg-emerald-600 px-2 py-1 text-[9px] font-black uppercase text-white">{q.cognitiveLevel}</span><span className="text-xs font-bold text-emerald-700">{q.score ?? score.shortAnswer} điểm</span></div>
+              <p className="font-bold text-slate-900">{index + 1}. {q.question}</p>
+              <dl className="grid gap-2 text-xs text-slate-700">
+                <div><dt className="font-black text-slate-500 uppercase">YCCĐ gốc</dt><dd className="mt-0.5">{q.originalRequirement}</dd></div>
+                <div><dt className="font-black text-slate-500 uppercase">Biểu hiện cần đánh giá</dt><dd className="mt-0.5">{q.assessedIndicator}</dd></div>
+                <div><dt className="font-black text-slate-500 uppercase">Dạng câu hỏi và thao tác</dt><dd className="mt-0.5">{q.questionTypeAndCalculation}</dd></div>
+                <div><dt className="font-black text-slate-500 uppercase">Yêu cầu kỹ thuật</dt><dd className="mt-0.5">{q.technicalRequirements}</dd></div>
+              </dl>
+              <p className="rounded-md bg-white p-2 text-sm font-bold text-emerald-800">Đáp án: {q.answer}</p>
+            </div>
+          ))}
+        </section>
+      )}
+      <section className="space-y-3">
+        <h5 className="text-xs font-black text-slate-600 uppercase tracking-widest">Tự luận · Câu do giáo viên ghi</h5>
+        {asList(exam.essay).length === 0 ? <p className="rounded-lg border border-dashed border-slate-200 p-3 text-xs italic text-slate-500">Giáo viên chưa nhập câu tự luận; AI không tự sinh câu thay thế.</p> : asList(exam.essay).map((q: any, index: number) => (
+          <div key={index} className="rounded-lg border border-violet-100 bg-violet-50/40 p-4">
+            <p className="text-[10px] font-black uppercase text-violet-700">{q.level} · {q.levelLabel} · {q.score} điểm</p>
+            <p className="mt-2 font-bold text-slate-900">{index + 1}. {q.question}</p>
+            {asList(q.rubric).length > 0 && <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">{asList(q.rubric).map((item: string, rubricIndex: number) => <li key={rubricIndex}>{item}</li>)}</ul>}
+          </div>
+        ))}
+      </section>
       <ResultList title="Đáp án tổng hợp" items={exam.answerKey} />
     </div>
   );

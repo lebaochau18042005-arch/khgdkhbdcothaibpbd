@@ -3906,6 +3906,11 @@ export default function App() {
               ]),
               ...(evaluationResult.formativeAssessment?.part3_shortAnswer || []).flatMap((q: any, qi: number) => [
                 new Paragraph({ children: [new TextRun({ text: `Phần III. Câu ${qi + 1}: ${stripQuestionPrefix(q.question)}`, bold: true })], spacing: { before: 100 } }),
+                ...(q.originalRequirement ? [new Paragraph({ children: [new TextRun({ text: `YCCĐ gốc: ${q.originalRequirement}`, bold: true })], indent: { left: 360 }, spacing: { before: 60 } })] : []),
+                ...(q.assessedIndicator ? [new Paragraph({ children: [new TextRun({ text: `Biểu hiện cần đánh giá: ${q.assessedIndicator}` })], indent: { left: 360 } })] : []),
+                ...(q.questionTypeAndCalculation ? [new Paragraph({ children: [new TextRun({ text: `Dạng câu hỏi và thao tác tính toán: ${q.questionTypeAndCalculation}` })], indent: { left: 360 } })] : []),
+                ...(q.cognitiveLevel ? [new Paragraph({ children: [new TextRun({ text: `Mức độ: ${q.cognitiveLevel}` })], indent: { left: 360 } })] : []),
+                ...(q.technicalRequirements ? [new Paragraph({ children: [new TextRun({ text: `Yêu cầu kỹ thuật: ${q.technicalRequirements}` })], indent: { left: 360 } })] : []),
                 ...(q.imagePlaceholder ? [new Paragraph({ children: [new TextRun({ text: `[Khung chèn ảnh: ${q.imagePlaceholder}]`, color: "8B5CF6", italics: true })], indent: { left: 360 }, spacing: { before: 60, after: 60 } })] : []),
                 ...(q.tableData?.headers ? [
                   new Table({
@@ -4276,6 +4281,34 @@ export default function App() {
           });
           content += `Đáp án: ${q.answer}\n\n`;
         });
+        if ((evaluationResult.formativeAssessment?.part1_multipleChoice || []).length > 0) {
+          content += `PHẦN I. TRẮC NGHIỆM NHIỀU LỰA CHỌN\n`;
+          evaluationResult.formativeAssessment.part1_multipleChoice.forEach((q: any, qi: number) => {
+            content += `Câu ${qi + 1}: ${stripQuestionPrefix(q.question)}\n`;
+            uniqueByCleanedText(q.options || [], stripChoicePrefix).forEach((opt: string, oi: number) => content += `${formatChoiceLine(opt, oi)}\n`);
+            content += `Đáp án: ${q.answer}\n\n`;
+          });
+        }
+        if ((evaluationResult.formativeAssessment?.part2_trueFalse || []).length > 0) {
+          content += `PHẦN II. TRẮC NGHIỆM ĐÚNG/SAI\n`;
+          evaluationResult.formativeAssessment.part2_trueFalse.forEach((q: any, qi: number) => {
+            content += `Câu ${qi + 1}: ${stripQuestionPrefix(q.question)}\n`;
+            uniqueByCleanedText(q.statements || [], stripChoicePrefix).forEach((statement: string, index: number) => content += `${formatChoiceLine(statement, index)} - [${q.answers?.[index] || ""}]\n`);
+            content += `\n`;
+          });
+        }
+        if ((evaluationResult.formativeAssessment?.part3_shortAnswer || []).length > 0) {
+          content += `PHẦN III. TRẢ LỜI NGẮN/TÍNH TOÁN\n`;
+          evaluationResult.formativeAssessment.part3_shortAnswer.forEach((q: any, qi: number) => {
+            content += `Câu ${qi + 1}: ${stripQuestionPrefix(q.question)}\n`;
+            if (q.originalRequirement) content += `YCCĐ gốc: ${q.originalRequirement}\n`;
+            if (q.assessedIndicator) content += `Biểu hiện cần đánh giá: ${q.assessedIndicator}\n`;
+            if (q.questionTypeAndCalculation) content += `Dạng câu hỏi và thao tác tính toán: ${q.questionTypeAndCalculation}\n`;
+            if (q.cognitiveLevel) content += `Mức độ: ${q.cognitiveLevel}\n`;
+            if (q.technicalRequirements) content += `Yêu cầu kỹ thuật: ${q.technicalRequirements}\n`;
+            content += `Đáp án: ${q.answer}\n\n`;
+          });
+        }
         
         content += `Bảng kiểm (Checklist) tiến trình:\n`;
         (evaluationResult.formativeAssessment?.checklists || []).forEach((c: string) => content += `- ${c}\n`);
@@ -5854,6 +5887,15 @@ export default function App() {
                                         {evaluationResult.formativeAssessment.part3_shortAnswer.map((q: any, qi: number) => (
                                           <div key={qi} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
                                             <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {stripQuestionPrefix(q.question)}</p>
+                                            {(q.originalRequirement || q.assessedIndicator || q.questionTypeAndCalculation || q.cognitiveLevel || q.technicalRequirements) && (
+                                              <dl className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 text-[10px] text-brand-muted">
+                                                {q.originalRequirement && <div><dt className="font-black uppercase text-brand-sidebar">YCCĐ gốc</dt><dd className="mt-0.5">{q.originalRequirement}</dd></div>}
+                                                {q.assessedIndicator && <div><dt className="font-black uppercase text-brand-sidebar">Biểu hiện cần đánh giá</dt><dd className="mt-0.5">{q.assessedIndicator}</dd></div>}
+                                                {q.questionTypeAndCalculation && <div><dt className="font-black uppercase text-brand-sidebar">Dạng câu hỏi và thao tác tính toán</dt><dd className="mt-0.5">{q.questionTypeAndCalculation}</dd></div>}
+                                                {q.cognitiveLevel && <div><dt className="font-black uppercase text-brand-sidebar">Mức độ</dt><dd className="mt-0.5">{q.cognitiveLevel}</dd></div>}
+                                                {q.technicalRequirements && <div><dt className="font-black uppercase text-brand-sidebar">Yêu cầu kỹ thuật</dt><dd className="mt-0.5">{q.technicalRequirements}</dd></div>}
+                                              </dl>
+                                            )}
                                             <p className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-2 rounded-lg border border-emerald-100">Đáp án: {q.answer}</p>
                                           </div>
                                         ))}

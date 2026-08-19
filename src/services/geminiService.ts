@@ -2451,6 +2451,15 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
     Ghi chú bắt buộc: Thiết kế đánh giá dựa trên nội dung giáo án DOCX gốc đã được chèn trực tiếp. Không viết lại giáo án, không thay thế giáo án, không rút gọn hoặc bỏ sót nội dung gốc. Nếu giáo án có bảng số liệu, biểu đồ, bản đồ, hình vẽ, công thức hoặc dữ liệu môn học, hãy khai thác chúng trong câu hỏi/rubrics khi phù hợp.
     `
     : "";
+  const isGeographyEvaluation = isGeographyLikeSubject(lessonPlan?.subject);
+  const evaluationRequirementSource = [
+    ...(Array.isArray(objectives.knowledge) ? objectives.knowledge : []),
+    ...(Array.isArray(objectives.subjectSpecific) ? objectives.subjectSpecific : [])
+  ].map(item => String(item || "").trim()).filter(Boolean).join("\n");
+  const evaluationPartThreeGuardrails = isGeographyEvaluation
+    ? `NGUỒN YCCĐ CHÍNH THỨC DUY NHẤT CHO PHẦN III:\n"""\n${evaluationRequirementSource || "KHÔNG CÓ NGUỒN YCCĐ - PHẢI TRẢ part3_shortAnswer = []"}\n"""\n${GEOGRAPHY_SHORT_ANSWER_GUARDRAILS}`
+    : "";
+
   const prompt = `
     Dựa trên Kế hoạch bài dạy (KHBD) sau đây, hãy thiết kế một “Hệ thống đánh giá năng lực” theo Quyết định 3439/QĐ-BGDĐT và Chương trình GDPT 2018.
 
@@ -2469,6 +2478,7 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
        - Phần I: Trắc nghiệm khách quan nhiều lựa chọn (BẮT BUỘC TẠO ĐÚNG 12 CÂU). Mỗi câu 4 đáp án A,B,C,D, chỉ 1 đáp án đúng.
        - Phần II: Trắc nghiệm đúng/sai. Sinh 2-4 câu. Mỗi câu gồm 1 lời dẫn và 4 ý phát biểu A, B, C, D. Học sinh phải chọn Đúng hoặc Sai cho mỗi ý.
        - Phần III: Trả lời ngắn / Tính toán. Sinh 2-4 câu. (LƯU Ý: Với các môn Ngữ văn, Lịch sử, GD Kinh tế & Pháp luật, bỏ qua Phần III và tăng số lượng câu Phần II lên 4-6 câu).
+       ${evaluationPartThreeGuardrails}
        - Bảng kiểm (Checklists): Dùng trong quá trình dạy học để đánh giá tiến trình của học sinh.
     3. CÔNG CỤ ĐÁNH GIÁ ĐỊNH KỲ: Thiết kế một bài tập/dự án nhỏ hoặc câu hỏi tổng hợp nhằm đánh giá mức độ đạt được mục tiêu sau khi kết thúc bài học.
     4. HƯỚNG DẪN NHẬN XÉT: Các mẫu nhận xét tự luận phù hợp với từng mức độ năng lực.
@@ -2484,7 +2494,7 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
   `;
 
   try {
-    return await callGeminiWithFallback(prompt, {
+    const generated = await callGeminiWithFallback(prompt, {
       type: Type.OBJECT,
       properties: {
         rubrics: {
@@ -2567,6 +2577,11 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
               items: {
                 type: Type.OBJECT,
                 properties: {
+                  originalRequirement: { type: Type.STRING, description: "YCCĐ gốc chép nguyên văn từ nguồn chính thức" },
+                  assessedIndicator: { type: Type.STRING, description: "Biểu hiện cụ thể cần đánh giá" },
+                  questionTypeAndCalculation: { type: Type.STRING, description: "Dạng câu hỏi và thao tác tính toán" },
+                  cognitiveLevel: { type: Type.STRING, description: "Biết, Hiểu hoặc Vận dụng" },
+                  technicalRequirements: { type: Type.STRING, description: "Số liệu, đơn vị, công thức/dữ kiện, cách làm tròn và hình thức đáp án" },
                   question: { type: Type.STRING },
                   answer: { type: Type.STRING },
                   tableData: {
@@ -2582,7 +2597,7 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
                   },
                   imagePlaceholder: { type: Type.STRING, description: "Ghi chú để giáo viên chèn ảnh (trống nếu không có)" }
                 },
-                required: ["question", "answer"],
+                required: ["originalRequirement", "assessedIndicator", "questionTypeAndCalculation", "cognitiveLevel", "technicalRequirements", "question", "answer"],
               }
             },
             checklists: { type: Type.ARRAY, items: { type: Type.STRING } },
@@ -2611,6 +2626,15 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
       },
       required: ["rubrics", "formativeAssessment", "summativeAssessment", "feedbackSamples"],
     });
+    if (isGeographyEvaluation) {
+      generated.formativeAssessment = generated.formativeAssessment || {};
+      generated.formativeAssessment.part3_shortAnswer = enforceGeographyShortAnswerRequirements(
+        generated.formativeAssessment.part3_shortAnswer,
+        evaluationRequirementSource,
+        0.25
+      );
+    }
+    return generated;
   } catch (error) {
     console.error("Error generating competency evaluation:", error);
     throw error;
@@ -2933,6 +2957,116 @@ export type SuDiaSkillKind =
   | "geo-slides"
   | "geo-exam";
 
+export type ExamCognitiveLevel = "B" | "H" | "VD";
+
+export interface ExamScoreConfig {
+  multipleChoice: number;
+  trueFalse: number;
+  shortAnswer: number;
+  essay: Record<ExamCognitiveLevel, number>;
+}
+
+const DEFAULT_EXAM_SCORE_CONFIG: ExamScoreConfig = {
+  multipleChoice: 0.25,
+  trueFalse: 1,
+  shortAnswer: 0.25,
+  essay: { B: 1, H: 1, VD: 1 }
+};
+
+const EXAM_LEVEL_LABELS: Record<ExamCognitiveLevel, string> = {
+  B: "Biết",
+  H: "Hiểu",
+  VD: "Vận dụng"
+};
+
+const normalizeExamScore = (value: unknown, fallback: number) => {
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return Math.round(parsed * 100) / 100;
+};
+
+const normalizeExamScoreConfig = (value?: Partial<ExamScoreConfig>): ExamScoreConfig => ({
+  multipleChoice: normalizeExamScore(value?.multipleChoice, DEFAULT_EXAM_SCORE_CONFIG.multipleChoice),
+  trueFalse: normalizeExamScore(value?.trueFalse, DEFAULT_EXAM_SCORE_CONFIG.trueFalse),
+  shortAnswer: normalizeExamScore(value?.shortAnswer, DEFAULT_EXAM_SCORE_CONFIG.shortAnswer),
+  essay: {
+    B: normalizeExamScore(value?.essay?.B, DEFAULT_EXAM_SCORE_CONFIG.essay.B),
+    H: normalizeExamScore(value?.essay?.H, DEFAULT_EXAM_SCORE_CONFIG.essay.H),
+    VD: normalizeExamScore(value?.essay?.VD, DEFAULT_EXAM_SCORE_CONFIG.essay.VD)
+  }
+});
+
+const GEOGRAPHY_SHORT_ANSWER_GUARDRAILS = `
+LỆNH KHÓA CỨNG CHO PHẦN III - CÂU HỎI TRẢ LỜI NGẮN DẠNG TÍNH TOÁN MÔN ĐỊA LÍ:
+1. Chỉ dùng YCCĐ gốc có trong NGUỒN YCCĐ CHÍNH THỨC được cung cấp. Phải chép nguyên văn YCCĐ gốc vào originalRequirement; tuyệt đối không tự viết thêm YCCĐ kiểu “tính được...” nếu nguồn không nêu.
+2. Phép tính chỉ là phương thức đánh giá YCCĐ hoặc năng lực địa lí tương ứng, ví dụ: xác định đặc điểm địa lí trên bản đồ; khai thác, xử lí số liệu thống kê; so sánh, nhận xét số liệu; chứng minh hoặc phân tích sự phân hóa, biến đổi địa lí.
+3. Mỗi câu phải tách rõ sáu trường: originalRequirement (YCCĐ gốc); assessedIndicator (biểu hiện cụ thể cần đánh giá); questionTypeAndCalculation (dạng câu hỏi và thao tác tính toán); cognitiveLevel (Biết/Hiểu/Vận dụng); technicalRequirements (số liệu, đơn vị, công thức/dữ kiện, cách làm tròn, hình thức ghi đáp án); question và answer.
+4. Không ghi “thực hiện phép tính” thay cho YCCĐ gốc. Cụm “thực hiện phép tính địa lí đơn giản...” chỉ được nằm trong assessedIndicator hoặc technicalRequirements, không được nằm trong originalRequirement trừ khi nguồn YCCĐ gốc có đúng cụm đó.
+5. Câu hỏi tính toán phải nêu đủ số liệu, đơn vị, công thức hoặc dữ kiện cần thiết, cách làm tròn và hình thức ghi đáp án.
+6. Phân loại bắt buộc: Biết = tính trực tiếp một bước, số liệu và đơn vị rõ; Hiểu = tính kết hợp so sánh, nhận xét hoặc xác định mối quan hệ; Vận dụng = xử lí nhiều bước, dữ liệu mới hoặc tình huống thực tiễn.
+7. Chỉ dùng phép tính liên hệ trực tiếp nội dung bài học và năng lực địa lí; cấm phép tính hình thức hoặc không có căn cứ trong SGK/Chương trình.
+8. Nếu không tìm được YCCĐ gốc phù hợp trong nguồn đã cung cấp thì KHÔNG tạo câu đó; không được suy diễn, thay thế hoặc sáng tác YCCĐ.
+`;
+
+const normalizeRequirementText = (value: string) =>
+  normalizeViText(value).replace(/[^a-z0-9]+/g, " ").trim();
+
+const getRequirementSourceLines = (source: string) =>
+  source
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line.length >= 8)
+    .filter(line => !/^\d+[.)]?\s*(kien thuc|nang luc|pham chat)\s*:?$/i.test(normalizeRequirementText(line)));
+
+const resolveOriginalRequirement = (candidate: unknown, officialSource: string) => {
+  const lines = getRequirementSourceLines(officialSource);
+  if (!lines.length) return "";
+  const normalizedCandidate = normalizeRequirementText(String(candidate || ""));
+  if (!normalizedCandidate) return lines[0];
+  const exactLine = lines.find(line => {
+    const normalizedLine = normalizeRequirementText(line);
+    return normalizedLine === normalizedCandidate || normalizedLine.includes(normalizedCandidate) || normalizedCandidate.includes(normalizedLine);
+  });
+  if (exactLine) return exactLine;
+  const candidateWords = new Set(normalizedCandidate.split(" ").filter(word => word.length >= 3));
+  const ranked = lines.map(line => {
+    const words = normalizeRequirementText(line).split(" ").filter(word => word.length >= 3);
+    const overlap = words.filter(word => candidateWords.has(word)).length;
+    return { line, score: overlap / Math.max(1, new Set(words).size) };
+  }).sort((a, b) => b.score - a.score);
+  return ranked[0]?.score >= 0.35 ? ranked[0].line : "";
+};
+
+const findOfficialGeographyRequirementSource = (grade: string, topic: string, teacherRequirement?: string) => {
+  if (teacherRequirement?.trim()) return teacherRequirement.trim();
+  const normalizedTopic = normalizeRequirementText(topic).replace(/^bai\s+\d+\s+/, "");
+  if (!normalizedTopic) return "";
+  const topicWords = new Set(normalizedTopic.split(" ").filter(word => word.length >= 3));
+  const ranked = getGeographyCurriculumByGrade(grade).map(row => {
+    const title = String(row.lesson || row.topic || row.lessonContent || "");
+    const normalizedTitle = normalizeRequirementText(title).replace(/^bai\s+\d+\s+/, "");
+    const titleWords = normalizedTitle.split(" ").filter(word => word.length >= 3);
+    const overlap = titleWords.filter((word: string) => topicWords.has(word)).length;
+    const contains = normalizedTitle.includes(normalizedTopic) || normalizedTopic.includes(normalizedTitle);
+    return { row, score: contains ? 1 : overlap / Math.max(1, new Set([...titleWords, ...topicWords]).size) };
+  }).sort((a, b) => b.score - a.score);
+  const match = ranked[0];
+  return match?.score >= 0.35 ? String(match.row.yccd || match.row.lessonGoal || "").trim() : "";
+};
+
+const enforceGeographyShortAnswerRequirements = (items: any, officialSource: string, score: number) => {
+  if (!officialSource.trim()) return [];
+  return (Array.isArray(items) ? items : []).map(item => ({
+    ...item,
+    originalRequirement: resolveOriginalRequirement(item?.originalRequirement, officialSource),
+    assessedIndicator: String(item?.assessedIndicator || "").trim(),
+    questionTypeAndCalculation: String(item?.questionTypeAndCalculation || "").trim(),
+    cognitiveLevel: ["Biết", "Hiểu", "Vận dụng"].includes(item?.cognitiveLevel) ? item.cognitiveLevel : "Biết",
+    technicalRequirements: String(item?.technicalRequirements || "").trim(),
+    score
+  })).filter(item => item.originalRequirement && item.assessedIndicator && item.questionTypeAndCalculation && item.technicalRequirements && item.question && item.answer);
+};
+
 export interface SuDiaSkillInput {
   kind: SuDiaSkillKind;
   domain: SuDiaSkillDomain;
@@ -2943,6 +3077,8 @@ export interface SuDiaSkillInput {
   lessonGoal?: string;
   sourceText?: string;
   questionCount?: number;
+  examScoreConfig?: Partial<ExamScoreConfig>;
+  essayQuestions?: Partial<Record<ExamCognitiveLevel, string>>;
 }
 
 export const generateSuDiaSkill = async (input: SuDiaSkillInput) => {
@@ -2960,6 +3096,33 @@ export const generateSuDiaSkill = async (input: SuDiaSkillInput) => {
   };
   const domainLabel = input.domain === "history" ? "Lịch sử" : "Địa lí";
   const competencyGuardrails = getCompetencyGuardrails(domainLabel, input.grade, input.lessonGoal);
+  const examScoreConfig = normalizeExamScoreConfig(input.examScoreConfig);
+  const isExam = input.kind.endsWith("exam");
+  const isGeographyExam = input.kind === "geo-exam";
+  const officialGeographyRequirementSource = isGeographyExam
+    ? findOfficialGeographyRequirementSource(input.grade, input.topic, input.lessonGoal)
+    : "";
+  const teacherEssayQuestions = (Object.keys(EXAM_LEVEL_LABELS) as ExamCognitiveLevel[])
+    .map(level => ({
+      level,
+      levelLabel: EXAM_LEVEL_LABELS[level],
+      question: String(input.essayQuestions?.[level] || "").trim(),
+      score: examScoreConfig.essay[level]
+    }))
+    .filter(item => item.question);
+  const examConfigurationPrompt = isExam ? `
+THANG ĐIỂM DO GIÁO VIÊN KHÓA (điểm/câu, phải dùng đúng):
+- Phần I - nhiều lựa chọn: ${examScoreConfig.multipleChoice} điểm/câu.
+- Phần II - đúng/sai: ${examScoreConfig.trueFalse} điểm/câu.
+- Phần III - trả lời ngắn: ${examScoreConfig.shortAnswer} điểm/câu.
+- Tự luận mức Biết (B): ${examScoreConfig.essay.B} điểm/câu; Hiểu (H): ${examScoreConfig.essay.H} điểm/câu; Vận dụng (VD): ${examScoreConfig.essay.VD} điểm/câu.
+
+CÂU TỰ LUẬN DO GIÁO VIÊN TỰ GHI (khóa nguyên văn):
+${teacherEssayQuestions.length ? JSON.stringify(teacherEssayQuestions, null, 2) : "Giáo viên chưa nhập câu tự luận; trả essay là mảng rỗng, tuyệt đối không tự sinh câu tự luận."}
+- Không được sửa, diễn đạt lại hoặc tự thêm câu tự luận. Chỉ tạo rubric/hướng dẫn chấm cho đúng câu giáo viên đã nhập và đúng mức B/H/VD tương ứng.
+` : "";
+  const geographyPartThreePrompt = isGeographyExam ? `\nNGUỒN YCCĐ CHÍNH THỨC DUY NHẤT ĐƯỢC PHÉP DÙNG CHO PHẦN III:\n"""\n${officialGeographyRequirementSource || "KHÔNG CÓ NGUỒN YCCĐ PHÙ HỢP - PHẢI TRẢ shortAnswer = []"}\n"""\n${GEOGRAPHY_SHORT_ANSWER_GUARDRAILS}` : "";
+
 
   const prompt = `
 Bạn là chuyên gia thiết kế học liệu ${domainLabel} theo CT GDPT 2018, đồng thời am hiểu Khung năng lực số TT02/2025 và năng lực AI theo QĐ 3439.
@@ -2980,6 +3143,8 @@ ${(input.sourceText || "").slice(0, 12000)}
 """
 
 ${competencyGuardrails}
+${examConfigurationPrompt}
+${geographyPartThreePrompt}
 
 YÊU CẦU CHUNG:
 - Nội dung viết bằng tiếng Việt, đúng thuật ngữ Sử - Địa, dùng được ngay cho giáo viên.
@@ -3196,25 +3361,35 @@ Trả về JSON object đúng schema, không markdown, không giải thích ngo�
           },
           shortAnswer: {
             type: Type.ARRAY,
+            description: "Phần III: mỗi câu phải tách YCCĐ gốc, biểu hiện đánh giá, thao tác tính, mức độ và yêu cầu kỹ thuật",
             items: {
               type: Type.OBJECT,
               properties: {
+                originalRequirement: { type: Type.STRING, description: "YCCĐ gốc chép nguyên văn từ nguồn chính thức" },
+                assessedIndicator: { type: Type.STRING, description: "Biểu hiện cụ thể cần đánh giá" },
+                questionTypeAndCalculation: { type: Type.STRING, description: "Dạng câu hỏi và thao tác tính toán" },
+                cognitiveLevel: { type: Type.STRING, description: "Chỉ một trong ba mức: Biết, Hiểu, Vận dụng" },
+                technicalRequirements: { type: Type.STRING, description: "Số liệu, đơn vị, công thức/dữ kiện, cách làm tròn và hình thức đáp án" },
                 question: { type: Type.STRING },
                 answer: { type: Type.STRING },
-                rubric: { type: Type.STRING }
+                rubric: { type: Type.STRING },
+                score: { type: Type.NUMBER }
               },
-              required: ["question", "answer", "rubric"]
+              required: ["originalRequirement", "assessedIndicator", "questionTypeAndCalculation", "cognitiveLevel", "technicalRequirements", "question", "answer", "rubric", "score"]
             }
           },
           essay: {
             type: Type.ARRAY,
+            description: "Chỉ chứa câu do giáo viên nhập; không tự sinh câu mới",
             items: {
               type: Type.OBJECT,
               properties: {
+                level: { type: Type.STRING, description: "B, H hoặc VD" },
                 question: { type: Type.STRING },
+                score: { type: Type.NUMBER },
                 rubric: { type: Type.ARRAY, items: { type: Type.STRING } }
               },
-              required: ["question", "rubric"]
+              required: ["level", "question", "score", "rubric"]
             }
           },
           answerKey: { type: Type.ARRAY, items: { type: Type.STRING } }
@@ -3226,9 +3401,39 @@ Trả về JSON object đúng schema, không markdown, không giải thích ngo�
   };
 
   const output = await callGeminiWithFallback(prompt, schema);
-  return {
-    ...output,
-    kind: input.kind,
-    requestedQuestionCount: input.questionCount || 8
+  if (!isExam) {
+    return { ...output, kind: input.kind, requestedQuestionCount: input.questionCount || 8 };
+  }
+
+  const generatedExam = output?.exam || {};
+  const generatedEssay = Array.isArray(generatedExam.essay) ? generatedExam.essay : [];
+  const lockedTeacherEssay = teacherEssayQuestions.map(teacherItem => {
+    const generated = generatedEssay.find((item: any) => {
+      const level = normalizeRequirementText(String(item?.level || ""));
+      return level === normalizeRequirementText(teacherItem.level) || level === normalizeRequirementText(teacherItem.levelLabel);
+    }) || {};
+    const rubric = Array.isArray(generated.rubric)
+      ? generated.rubric
+      : generated.rubric ? [String(generated.rubric)] : [];
+    return {
+      ...generated,
+      level: teacherItem.level,
+      levelLabel: teacherItem.levelLabel,
+      question: teacherItem.question,
+      score: teacherItem.score,
+      rubric
+    };
+  });
+  const lockedExam = {
+    ...generatedExam,
+    multipleChoice: (Array.isArray(generatedExam.multipleChoice) ? generatedExam.multipleChoice : []).map((item: any) => ({ ...item, score: examScoreConfig.multipleChoice })),
+    trueFalse: (Array.isArray(generatedExam.trueFalse) ? generatedExam.trueFalse : []).map((item: any) => ({ ...item, score: examScoreConfig.trueFalse })),
+    shortAnswer: isGeographyExam
+      ? enforceGeographyShortAnswerRequirements(generatedExam.shortAnswer, officialGeographyRequirementSource, examScoreConfig.shortAnswer)
+      : (Array.isArray(generatedExam.shortAnswer) ? generatedExam.shortAnswer : []).map((item: any) => ({ ...item, score: examScoreConfig.shortAnswer })),
+    essay: lockedTeacherEssay,
+    scoreConfig: examScoreConfig,
+    officialRequirementAvailable: !isGeographyExam || Boolean(officialGeographyRequirementSource)
   };
+  return { ...output, exam: lockedExam, kind: input.kind, requestedQuestionCount: input.questionCount || 8 };
 };

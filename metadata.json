@@ -1,6 +1,6 @@
 {
-  "name": "khgdkhbdcothaibpbd",
-  "description": "Ứng dụng hỗ trợ giáo viên THPT xây dựng khung kế hoạch bài dạy (KHBD) và kế hoạch giáo dục (KHGD) theo Công văn 3439/BGDĐT với sự hỗ trợ của trí tuệ nhân tạo (AI).",
+  "name": "EduPlan AI",
+  "description": "Ứng dụng hỗ trợ giáo viên lớp 1–12 xây dựng, rà soát và nâng cấp kế hoạch giáo dục theo CT GDPT 2018, TT 02/2025 và QĐ 3439/QĐ-BGDĐT.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

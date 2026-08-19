@@ -2,6 +2,8 @@ import JSZip from "jszip";
 
 export interface Snippet {
     activityName: string;
+    targetSection?: string;
+    targetText?: string;
     text: string;
 }
 
@@ -45,15 +47,23 @@ function normalizeVietnamese(text: string): string {
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "") // remove diacritics
+
         .replace(/đ/g, "d")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function normalizeForMatch(text: string): string {
+    return normalizeVietnamese(text)
+        .replace(/[^a-z0-9\s]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
 }
 
 // Score how well a paragraph text matches an activity name
 function matchScore(paragraphText: string, activityName: string): number {
-    const normPara = normalizeVietnamese(paragraphText);
-    const normActivity = normalizeVietnamese(activityName);
+    const normPara = normalizeForMatch(paragraphText);
+    const normActivity = normalizeForMatch(activityName);
     
     // Exact contains
     if (normPara.includes(normActivity)) return 100;
@@ -113,6 +123,90 @@ function findBestActivityParagraph(paragraphs: HTMLCollectionOf<Element>, activi
     }
 
     return { paragraph: bestP, score: bestScore };
+}
+
+function findPreciseTargetParagraph(
+    paragraphs: HTMLCollectionOf<Element>,
+    activityParagraph: Element,
+    activityName: string,
+    targetText?: string,
+    targetSection?: string
+): { paragraph: Element | null; score: number } {
+    const normalizedTarget = normalizeForMatch(targetText || "");
+    if (!normalizedTarget) return { paragraph: null, score: 0 };
+
+    const items = Array.from(paragraphs);
+    const activityIndex = items.indexOf(activityParagraph);
+    if (activityIndex < 0) return { paragraph: null, score: 0 };
+
+    const activityNumber = extractActivityNumber(activityName) || extractActivityNumber(activityParagraph.textContent || "");
+    let rangeEnd = items.length;
+    for (let i = activityIndex + 1; i < items.length; i++) {
+        const candidateText = items[i].textContent || "";
+        const candidateNumber = extractActivityNumber(candidateText);
+        if (activityNumber && candidateNumber && candidateNumber !== activityNumber) {
+            rangeEnd = i;
+            break;
+        }
+        if (!activityNumber && looksLikeActivityHeading(candidateText) && matchScore(candidateText, activityName) < 60) {
+            rangeEnd = i;
+            break;
+        }
+    }
+
+    const sectionKeywords = normalizeForMatch(targetSection || "")
+        .split(/\s+/)
+        .filter(keyword => keyword.length > 2);
+    let bestParagraph: Element | null = null;
+    let bestScore = 0;
+    let sectionFallback: Element | null = null;
+    let sectionFallbackScore = 0;
+
+    for (let i = activityIndex; i < rangeEnd; i++) {
+        const paragraphText = items[i].textContent || "";
+        if (paragraphText.trim().length < 3) continue;
+        const normalizedParagraph = normalizeForMatch(paragraphText);
+
+        if (sectionKeywords.length > 0) {
+            const matchedSectionKeywords = sectionKeywords.filter(keyword => normalizedParagraph.includes(keyword));
+            const sectionRatio = matchedSectionKeywords.length / sectionKeywords.length;
+            const sectionScore = normalizedParagraph.includes(normalizeForMatch(targetSection || ""))
+                ? 100
+                : Math.round(sectionRatio * 60);
+            if (sectionScore > sectionFallbackScore) {
+                sectionFallbackScore = sectionScore;
+                sectionFallback = items[i];
+            }
+        }
+
+        // Word thường tách một câu qua nhiều w:p hoặc nhiều ô bảng; ghép tối đa 4 đoạn liền nhau để đối chiếu.
+        for (let windowSize = 1; windowSize <= 4 && i + windowSize <= rangeEnd; windowSize++) {
+            const windowEnd = i + windowSize - 1;
+            const combinedText = items
+                .slice(i, windowEnd + 1)
+                .map(item => item.textContent || "")
+                .join(" ");
+            const normalizedCombined = normalizeForMatch(combinedText);
+            let score = matchScore(combinedText, targetText || "");
+            if (normalizedCombined.includes(normalizedTarget)) score += 80;
+            if (sectionKeywords.length > 0) {
+                const matchedSectionKeywords = sectionKeywords.filter(keyword => normalizedCombined.includes(keyword));
+                score += Math.round((matchedSectionKeywords.length / sectionKeywords.length) * 35);
+            }
+            if (looksLikeActivityHeading(combinedText) && items[windowEnd] !== activityParagraph) score -= 15;
+            score -= (windowSize - 1) * 2;
+            if (score > bestScore) {
+                bestScore = score;
+                bestParagraph = items[windowEnd];
+            }
+        }
+    }
+
+    if (bestScore >= 70) return { paragraph: bestParagraph, score: bestScore };
+    if (sectionFallback && sectionFallbackScore >= 60) {
+        return { paragraph: sectionFallback, score: sectionFallbackScore };
+    }
+    return { paragraph: null, score: Math.max(bestScore, sectionFallbackScore) };
 }
 
 function getPackageParts(zip: JSZip): string[] {
@@ -214,6 +308,21 @@ function getTopLevelBodyChild(node: Element, body: Element): Element | null {
     return current instanceof Element && current.parentNode === body ? current : null;
 }
 
+function insertElementsAfterReference(reference: Element, elements: Element[]): boolean {
+    const parent = reference.parentNode;
+    if (!parent || elements.length === 0) return false;
+    const beforeNode = reference.nextSibling;
+    for (const element of elements) parent.insertBefore(element, beforeNode);
+    return true;
+}
+
+function insertElementsBeforeReference(reference: Element, elements: Element[]): boolean {
+    const parent = reference.parentNode;
+    if (!parent || elements.length === 0) return false;
+    for (const element of elements) parent.insertBefore(element, reference);
+    return true;
+}
+
 function insertBodyElementsAfter(xmlDoc: Document, reference: Element | null, elements: Element[]): boolean {
     const body = xmlDoc.getElementsByTagName("w:body")[0];
     if (!body || elements.length === 0) return false;
@@ -250,33 +359,51 @@ function createStyledParagraph(xmlDoc: Document, text: string, colorValue: strin
     const ind = xmlDoc.createElementNS(ns, "w:ind");
     ind.setAttribute("w:left", leftIndent);
     pPr.appendChild(ind);
+    const spacing = xmlDoc.createElementNS(ns, "w:spacing");
+    spacing.setAttribute("w:after", "60");
+    pPr.appendChild(spacing);
     paragraph.appendChild(pPr);
 
-    const run = xmlDoc.createElementNS(ns, "w:r");
-    const rPr = xmlDoc.createElementNS(ns, "w:rPr");
-    const fonts = xmlDoc.createElementNS(ns, "w:rFonts");
-    fonts.setAttribute("w:ascii", "Times New Roman");
-    fonts.setAttribute("w:hAnsi", "Times New Roman");
-    fonts.setAttribute("w:cs", "Times New Roman");
-    rPr.appendChild(fonts);
-    const color = xmlDoc.createElementNS(ns, "w:color");
-    color.setAttribute("w:val", colorValue);
-    rPr.appendChild(color);
-    if (boldText) {
-        const bold = xmlDoc.createElementNS(ns, "w:b");
-        rPr.appendChild(bold);
+    const appendRun = (runText: string, isBold: boolean) => {
+        const run = xmlDoc.createElementNS(ns, "w:r");
+        const rPr = xmlDoc.createElementNS(ns, "w:rPr");
+        const fonts = xmlDoc.createElementNS(ns, "w:rFonts");
+        fonts.setAttribute("w:ascii", "Times New Roman");
+        fonts.setAttribute("w:hAnsi", "Times New Roman");
+        fonts.setAttribute("w:cs", "Times New Roman");
+        rPr.appendChild(fonts);
+
+        const color = xmlDoc.createElementNS(ns, "w:color");
+        color.setAttribute("w:val", colorValue);
+        rPr.appendChild(color);
+        if (isBold) {
+            rPr.appendChild(xmlDoc.createElementNS(ns, "w:b"));
+        }
+
+        const sz = xmlDoc.createElementNS(ns, "w:sz");
+        sz.setAttribute("w:val", "22");
+        rPr.appendChild(sz);
+        run.appendChild(rPr);
+
+        const wT = xmlDoc.createElementNS(ns, "w:t");
+        wT.textContent = runText;
+        wT.setAttribute("xml:space", "preserve");
+        run.appendChild(wT);
+        paragraph.appendChild(run);
+    };
+
+    const cleanedText = cleanInjectedText(text);
+    const structuredLine = !boldText
+        ? cleanedText.match(/^((?:[a-d]\)|-)\s*[^:]{1,90}:)(.*)$/iu)
+        : null;
+
+    if (structuredLine) {
+        appendRun(structuredLine[1], true);
+        if (structuredLine[2]) appendRun(structuredLine[2], false);
+    } else {
+        appendRun(cleanedText, boldText);
     }
-    const sz = xmlDoc.createElementNS(ns, "w:sz");
-    sz.setAttribute("w:val", "22");
-    rPr.appendChild(sz);
-    run.appendChild(rPr);
 
-    const wT = xmlDoc.createElementNS(ns, "w:t");
-    wT.textContent = cleanInjectedText(text);
-    wT.setAttribute("xml:space", "preserve");
-    run.appendChild(wT);
-
-    paragraph.appendChild(run);
     return paragraph;
 }
 
@@ -420,9 +547,40 @@ function createWordTable(xmlDoc: Document, rows: string[][], colorValue: string)
     return table;
 }
 
+function isRedundantIntegrationBoilerplate(value: string): boolean {
+    const normalized = normalizeVietnamese(value || "").replace(/\s+/g, " ").trim();
+    return normalized.includes("[nang luc so va nang luc ai]") ||
+        normalized.startsWith("bo sung trong muc i. muc tieu - thanh phan nang luc");
+}
+function enforceBlockRunColor(xmlDoc: Document, elements: Element[], colorValue: string): void {
+    for (const element of elements) {
+        const runs = Array.from(element.getElementsByTagName("w:r"));
+        for (const run of runs) {
+            let runProperties = Array.from(run.children).find(child => child.tagName === "w:rPr") as Element | undefined;
+            if (!runProperties) {
+                runProperties = createWordElement(xmlDoc, "w:rPr");
+                run.insertBefore(runProperties, run.firstChild);
+            }
+
+            let color = Array.from(runProperties.children).find(child => child.tagName === "w:color") as Element | undefined;
+            if (!color) {
+                color = createWordElement(xmlDoc, "w:color");
+                runProperties.appendChild(color);
+            }
+            color.setAttribute("w:val", colorValue);
+        }
+    }
+}
+
+
 function createStyledBlock(xmlDoc: Document, label: string, text: string, colorValue: string): Element[] {
-    const lines = text.split("\n").map(line => cleanInjectedText(line)).filter(Boolean);
-    const elements: Element[] = [createStyledParagraph(xmlDoc, label, colorValue, true, "0")];
+    const lines = text.split("\n")
+        .map(line => cleanInjectedText(line))
+        .filter(line => Boolean(line) && !isRedundantIntegrationBoilerplate(line));
+    const cleanLabel = cleanInjectedText(label);
+    const elements: Element[] = cleanLabel && !isRedundantIntegrationBoilerplate(cleanLabel)
+        ? [createStyledParagraph(xmlDoc, cleanLabel, colorValue, true, "0")]
+        : [];
 
     for (let i = 0; i < lines.length; i++) {
         if (isPipeTableLine(lines[i])) {
@@ -446,6 +604,7 @@ function createStyledBlock(xmlDoc: Document, label: string, text: string, colorV
         elements.push(createStyledParagraph(xmlDoc, lines[i], colorValue, false, "360"));
     }
 
+    enforceBlockRunColor(xmlDoc, elements, colorValue);
     return elements;
 }
 
@@ -457,9 +616,11 @@ function insertBlockNearHeading(
     text: string,
     colorValue: string
 ): boolean {
-    void paragraphs;
-    void headingKeywords;
-    return appendBlockToDocumentEnd(xmlDoc, label, text, colorValue);
+    const body = xmlDoc.getElementsByTagName("w:body")[0];
+    if (!body || !text.trim()) return false;
+    const heading = findParagraphByKeywords(paragraphs, headingKeywords);
+    if (!heading) return appendBlockToDocumentEnd(xmlDoc, label, text, colorValue);
+    return insertElementsAfterReference(heading, createStyledBlock(xmlDoc, label, text, colorValue));
 }
 
 function appendBlockToDocumentEnd(
@@ -648,14 +809,12 @@ function insertObjectivesInCompetencySection(
         const beforeTargetIndex = qualityIndex >= 0 ? qualityIndex : (sectionEndIndex < paragraphs.length ? sectionEndIndex : -1);
 
         if (target && beforeTargetIndex >= 0) {
-            const beforeReference = getTopLevelBodyChild(paragraphs[beforeTargetIndex], body);
-            return insertBodyElementsBefore(xmlDoc, beforeReference, createStyledBlock(xmlDoc, label, text, colorValue));
+            return insertElementsBeforeReference(paragraphs[beforeTargetIndex], createStyledBlock(xmlDoc, label, text, colorValue));
         }
 
         if (target) {
             const afterTarget = findLastParagraphByKeywords(paragraphs, competencyKeywords, objectivesIndex + 1, sectionEndIndex) || target;
-            const reference = getTopLevelBodyChild(afterTarget, body);
-            return insertBodyElementsAfter(xmlDoc, reference, createStyledBlock(xmlDoc, label, text, colorValue));
+            return insertElementsAfterReference(afterTarget, createStyledBlock(xmlDoc, label, text, colorValue));
         }
     }
 
@@ -663,8 +822,8 @@ function insertObjectivesInCompetencySection(
         findParagraphByKeywords(paragraphs, competencyKeywords) ||
         findParagraphByKeywords(paragraphs, objectiveKeywords);
 
-    const reference = fallbackTarget ? getTopLevelBodyChild(fallbackTarget, body) : null;
-    return insertBodyElementsAfter(xmlDoc, reference, createStyledBlock(xmlDoc, label, text, colorValue));
+    if (!fallbackTarget) return false;
+    return insertElementsAfterReference(fallbackTarget, createStyledBlock(xmlDoc, label, text, colorValue));
 }
 
 export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], options: InjectionOptions = {}): Promise<InjectionResult> {
@@ -690,7 +849,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
             xmlDoc,
             paragraphs,
             ["mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu"],
-            "[BỔ SUNG SAU NĂNG LỰC CHUNG VÀ NĂNG LỰC ĐẶC THÙ: NLS/NL AI]",
+            "",
             options.objectivesText,
             "FF0000"
         );
@@ -699,20 +858,31 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
             injectedText: options.objectivesText,
             found
         });
-        injectedCount++;
+        if (found) injectedCount++;
     }
 
     for (const snippet of snippets) {
-        const { paragraph: bestP, score: bestScore } = findBestActivityParagraph(paragraphs, snippet.activityName);
+        const { paragraph: activityParagraph, score: activityScore } = findBestActivityParagraph(paragraphs, snippet.activityName);
+        const preciseTarget = activityParagraph && activityScore >= 80
+            ? findPreciseTargetParagraph(
+                paragraphs,
+                activityParagraph,
+                snippet.activityName,
+                snippet.targetText,
+                snippet.targetSection
+            )
+            : { paragraph: null, score: 0 };
 
-        if (bestP && bestScore >= 40) {
-            const body = xmlDoc.getElementsByTagName("w:body")[0];
-            const reference = body ? getTopLevelBodyChild(bestP, body) : null;
-            insertBodyElementsAfter(
-                xmlDoc,
-                reference,
-                createStyledBlock(xmlDoc, `[TÍCH HỢP AI - QĐ 3439] ${snippet.activityName}`, snippet.text, "FF0000")
+        if (activityParagraph && activityScore >= 80 && preciseTarget.paragraph) {
+            const inserted = insertElementsAfterReference(
+                preciseTarget.paragraph,
+                createStyledBlock(xmlDoc, "[TÍCH HỢP NLS/NL AI]", snippet.text, "FF0000")
             );
+            if (!inserted) {
+                skippedActivities.push(snippet.activityName);
+                previewItems.push({ activityName: snippet.activityName, injectedText: snippet.text, found: false });
+                continue;
+            }
             
             injectedCount++;
             previewItems.push({
@@ -721,41 +891,32 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
                 found: true
             });
         } else {
-            // Activity not found - append at end of document as fallback
+            // Nội dung tích hợp chỉ được chèn khi tìm đúng hoạt động trong giáo án.
             skippedActivities.push(snippet.activityName);
             previewItems.push({
                 activityName: snippet.activityName,
                 injectedText: snippet.text,
                 found: false
             });
-            
-            // Fallback: append at end of body
-            const body = xmlDoc.getElementsByTagName("w:body")[0];
-            if (body) {
-                insertBodyElementsAfter(
-                    xmlDoc,
-                    null,
-                    createStyledBlock(xmlDoc, `[TÍCH HỢP AI - ${snippet.activityName}]`, snippet.text, "FF0000")
-                );
-                injectedCount++;
-            }
         }
     }
 
     if (options.assessmentText?.trim()) {
         removeTrailingGeneratedAssessmentBlocks(xmlDoc);
-        const found = appendBlockToDocumentEnd(
+        const found = insertBlockNearHeading(
             xmlDoc,
-            "[GỢI Ý ĐÁNH GIÁ NLS/NL AI - ĐẶT CUỐI GIÁO ÁN]",
+            paragraphs,
+            ["iv. kế hoạch đánh giá", "kế hoạch đánh giá", "kiểm tra đánh giá", "đánh giá kết quả học tập"],
+            "[GỢI Ý ĐÁNH GIÁ NLS/NL AI]",
             options.assessmentText,
             "FF0000"
         );
         previewItems.push({
-            activityName: "CUỐI GIÁO ÁN - GỢI Ý ĐÁNH GIÁ NLS/NL AI",
+            activityName: "IV. KẾ HOẠCH ĐÁNH GIÁ / vị trí cuối nếu giáo án không có mục đánh giá",
             injectedText: options.assessmentText,
             found
         });
-        injectedCount++;
+        if (found) injectedCount++;
     }
 
     const serializer = new XMLSerializer();

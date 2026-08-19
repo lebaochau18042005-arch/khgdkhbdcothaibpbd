@@ -5,11 +5,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-// @ts-ignore
-import html2pdf from "html2pdf.js";
-// @ts-ignore
-import * as mammoth from "mammoth";
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle, VerticalAlign, ImageRun, Math as DocxMath, MathRun, MathFraction, MathRadical, MathSubScript, MathSuperScript } from "docx";
 import { saveAs } from "file-saver";
 import {
   BookOpen,
@@ -46,9 +41,32 @@ import {
   WifiOff
 } from "lucide-react";
 import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateEducationalActivitiesPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, suggestNlsIndicators, LessonPlanInput } from "./services/geminiService";
-import UpgradePlan from "./components/UpgradePlan";
 import NlsLookup, { INDICATORS } from "./components/NlsLookup";
-import SuDiaSkills from "./components/SuDiaSkills";
+import { SOCIAL_INTEGRATION_OPTIONS } from "./data/socialIntegrations";
+
+const UpgradePlan = React.lazy(() => import("./components/UpgradePlan"));
+const SuDiaSkills = React.lazy(() => import("./components/SuDiaSkills"));
+
+type CurriculumDatabase = Record<string, Record<string, any[]>>;
+
+let curriculumDbCache: CurriculumDatabase = {};
+let curriculumDbPromise: Promise<CurriculumDatabase> | null = null;
+
+const loadCurriculumDb = () => {
+  if (Object.keys(curriculumDbCache).length) return Promise.resolve(curriculumDbCache);
+  if (!curriculumDbPromise) {
+    curriculumDbPromise = import("./data/curriculumDb")
+      .then(({ CURRICULUM_DB }) => {
+        curriculumDbCache = CURRICULUM_DB;
+        return curriculumDbCache;
+      })
+      .catch((error) => {
+        curriculumDbPromise = null;
+        throw error;
+      });
+  }
+  return curriculumDbPromise;
+};
 
 // Add competency mapper utility function
 const mapAiCompetencyText = (code: string) => {
@@ -65,6 +83,67 @@ const mapAiCompetencyText = (code: string) => {
 };
 
 type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "kh-hdgd-gen" | "upgrade-plan" | "ai-framework-gen" | "su-dia-skills" | "nls-lookup" | "history";
+
+const collectSelectedSocialIntegrations = (input: { socialIntegrations?: string[]; customSocialIntegration?: string }) => {
+  const selected = Array.isArray(input.socialIntegrations) ? input.socialIntegrations.filter(Boolean) : [];
+  const custom = String(input.customSocialIntegration || "").trim();
+  return Array.from(new Set([
+    ...selected,
+    ...(custom ? [`Custom:${custom}`] : [])
+  ]));
+};
+
+const SocialIntegrationSelector = ({
+  selected,
+  customValue,
+  onSelectedChange,
+  onCustomChange
+}: {
+  selected?: string[];
+  customValue?: string;
+  onSelectedChange: (value: string[]) => void;
+  onCustomChange: (value: string) => void;
+}) => {
+  const current = Array.isArray(selected) ? selected : [];
+  return (
+    <div className="space-y-3 pt-2 rounded-xl border border-red-100 bg-red-50/30 p-3">
+      <div>
+        <label className="text-[10px] font-bold text-red-700 uppercase tracking-[0.12em]">
+          Nội dung giáo dục tích hợp/lồng ghép (tùy chọn)
+        </label>
+        <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
+          Chỉ chèn tại bài/hoạt động phù hợp YCCĐ; kết quả tích hợp được hiển thị chữ đỏ trong cột riêng, không trộn với NLS/NL AI.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {SOCIAL_INTEGRATION_OPTIONS.map((item) => (
+          <label key={item.id} className="flex items-start gap-2 p-2 rounded-lg border border-red-100 bg-white hover:bg-red-50 cursor-pointer transition-all">
+            <input
+              type="checkbox"
+              checked={current.includes(item.id)}
+              onChange={(event) => onSelectedChange(
+                event.target.checked
+                  ? Array.from(new Set([...current, item.id]))
+                  : current.filter((id) => id !== item.id)
+              )}
+              className="mt-0.5 w-3 h-3 rounded text-red-600 focus:ring-red-500"
+            />
+            <span className="text-[10px] font-semibold leading-relaxed text-slate-700">{item.label}</span>
+          </label>
+        ))}
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-slate-600">Nội dung khác</label>
+        <input
+          value={customValue || ""}
+          onChange={(event) => onCustomChange(event.target.value)}
+          placeholder="Ví dụ: an toàn giao thông, bảo vệ môi trường..."
+          className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs outline-none focus:ring-2 focus:ring-red-300"
+        />
+      </div>
+    </div>
+  );
+};
 
 const normalizeKey = (value?: string) =>
   (value || "")
@@ -369,6 +448,43 @@ const normalizeKhbdToCv5512 = (data: any) => {
   return { ...data, activities: normalizedActivities };
 };
 
+const normalizeKhbdToCv2345 = (data: any) => {
+  if (!data || !Array.isArray(data.activities)) return data;
+  const activities = data.activities.map((activity: any, index: number) => {
+    const procedures = Array.isArray(activity?.procedure) && activity.procedure.length
+      ? activity.procedure.map((step: any, stepIndex: number) => ({
+          ...step,
+          stepName: step?.stepName || `Nhiệm vụ ${stepIndex + 1}`,
+          teacherStudentActivities: step?.teacherStudentActivities || step?.content || "GV tổ chức; HS thực hiện nhiệm vụ theo YCCĐ.",
+          expectedProduct: step?.expectedProduct || step?.product || activity?.product || "Minh chứng học tập của học sinh.",
+        }))
+      : [{
+          stepName: "Tổ chức hoạt động",
+          teacherStudentActivities: `GV giao nhiệm vụ; HS thực hiện, chia sẻ và tự đánh giá theo nội dung: ${activity?.content || "nội dung bài học"}.`,
+          expectedProduct: activity?.product || "Sản phẩm học tập đáp ứng yêu cầu cần đạt.",
+        }];
+    return {
+      ...activity,
+      name: activity?.name || `Hoạt động dạy học ${index + 1}`,
+      periodLabel: activity?.periodLabel || activity?.period || activity?.lessonPeriod || "",
+      objective: activity?.objective || "Đáp ứng yêu cầu cần đạt của hoạt động.",
+      content: activity?.content || "Nhiệm vụ học tập phù hợp nội dung bài học.",
+      studentNotes: extractStudentNotes(activity),
+      product: activity?.product || "Sản phẩm học tập thể hiện kết quả của học sinh.",
+      procedure: procedures,
+    };
+  });
+  return { ...data, framework: "CV2345", activities };
+};
+
+const normalizeKhbdForGrade = (data: any, grade?: string) => {
+  const gradeNumber = String(grade || data?.grade || "").match(/\b(10|11|12|[1-9])\b/)?.[1];
+  if (["1", "2", "3", "4", "5"].includes(gradeNumber || "") || data?.framework === "CV2345") {
+    return normalizeKhbdToCv2345(data);
+  }
+  return normalizeKhbdToCv5512(data);
+};
+
 const extractFormulaText = (text: string) =>
   text
     .replace(/^\[Công thức:\s*/i, "")
@@ -392,7 +508,10 @@ const normalizeFormulaText = (formula: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-const formulaToMathComponents = (formula: string): any[] => {
+type DocxMathApi = Pick<typeof import("docx"), "MathRun" | "MathFraction" | "MathRadical" | "MathSubScript" | "MathSuperScript">;
+
+const formulaToMathComponents = (formula: string, docxMathApi: DocxMathApi): any[] => {
+  const { MathRun, MathFraction, MathRadical, MathSubScript, MathSuperScript } = docxMathApi;
   const source = extractFormulaText(formula);
   const components: any[] = [];
   const tokenPattern = /(\\frac\{([^{}]+)\}\{([^{}]+)\}|\\sqrt\{([^{}]+)\}|([A-Za-zÀ-ỹ0-9]+)\^\{?([A-Za-zÀ-ỹ0-9+\-]+)\}?|([A-Za-zÀ-ỹ]+)_\{?([A-Za-zÀ-ỹ0-9+\-]+)\}?)/g;
@@ -434,12 +553,12 @@ const formulaToMathComponents = (formula: string): any[] => {
 const getKhtcmExpectedLessons = (subject: string, grade: string, customData?: any[] | null) => {
   if (Array.isArray(customData) && customData.length > 0) return customData;
   if (isStandaloneGeographySubject(subject)) {
-    return CURRICULUM_DB[subject]?.[grade]
-      || CURRICULUM_DB["Địa lí"]?.[grade]
-      || CURRICULUM_DB["Địa lý"]?.[grade]
+    return curriculumDbCache[subject]?.[grade]
+      || curriculumDbCache["Địa lí"]?.[grade]
+      || curriculumDbCache["Địa lý"]?.[grade]
       || [];
   }
-  return CURRICULUM_DB[subject]?.[grade] || [];
+  return curriculumDbCache[subject]?.[grade] || [];
 };
 
 type CurriculumCoverageStatus = "custom" | "strong" | "sample" | "missing" | "empty";
@@ -633,6 +752,10 @@ const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[], options: 
       topic: sourceItem ? readLessonTitle(sourceItem) : (row?.topic || lessonContent),
       periods,
       lessonGoal,
+      socialIntegration: hasMeaningfulText(row?.socialIntegration || row?.integratedEducation || row?.social)
+        ? String(row.socialIntegration || row.integratedEducation || row.social)
+        : hasMeaningfulText(sourceItem?.socialIntegration || sourceItem?.integratedEducation || sourceItem?.social)
+          ? String(sourceItem.socialIntegration || sourceItem.integratedEducation || sourceItem.social) : "",
       digitalCompetencyTT02: hasMeaningfulText(row?.digitalCompetencyTT02)
         ? String(row.digitalCompetencyTT02)
         : "Không tích hợp - cần tổ chuyên môn rà soát thêm căn cứ YCCĐ trước khi gán mã NLS.",
@@ -672,6 +795,9 @@ const readNlsFromPlanRow = (item: any) =>
 
 const readAiFromPlanRow = (item: any) =>
   String(item?.aiCompetency3439Integrated || item?.aiCompetency3439 || item?.ai || item?.nlai || item?.yccd3439 || "");
+
+const readSocialIntegrationFromPlanRow = (item: any) =>
+  String(item?.socialIntegration || item?.integratedEducation || item?.social || item?.noi_dung_giao_duc_tich_hop || "");
 
 const mergeTextBlocks = (blocks: any[]) => {
   const seen = new Set<string>();
@@ -799,6 +925,14 @@ type PlanQualityAudit = {
 
 const getGradeNumber = (grade?: string) => String(grade || "").match(/\d{1,2}/)?.[0] || "";
 
+const NLS_LEVEL_BY_GRADE_AUDIT: Record<string, string> = {
+  "1": "CB1", "2": "CB1", "3": "CB1",
+  "4": "CB2", "5": "CB2",
+  "6": "TC1", "7": "TC1",
+  "8": "TC2", "9": "TC2",
+  "10": "NC1", "11": "NC1", "12": "NC1",
+};
+
 const readAllText = (value: any): string => {
   if (value === undefined || value === null) return "";
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
@@ -808,10 +942,10 @@ const readAllText = (value: any): string => {
 };
 
 const extractAiCodes = (text: any) =>
-  Array.from(new Set((String(text || "").match(/\b(?:10|11|12)\.[ABCD]\d+\.\d{2}\b/g) || [])));
+  Array.from(new Set((String(text || "").match(/\b(?:10|11|12|[1-9])\.[ABCD]\d+\.\d{1,2}\b/g) || [])));
 
 const extractNlsCodes = (text: any) =>
-  Array.from(new Set((String(text || "").match(/\b\d+\.\d+\.(?:NC1|CB1|CB2)[a-z]\b/gi) || [])));
+  Array.from(new Set((String(text || "").match(/\b\d+\.\d+\.?(?:CB1|CB2|TC1|TC2|NC1|NC2)[a-z]\b/gi) || [])));
 
 const hasCompetencySignal = (text: any) => {
   const raw = String(text || "");
@@ -842,33 +976,113 @@ const validateCompetencyCodes = (
 ) => {
   const gradeNumber = getGradeNumber(grade);
   if (!gradeNumber) return;
-  extractAiCodes(text).forEach((code) => {
+  const rawText = String(text || "");
+  const aiCodes = extractAiCodes(rawText);
+  aiCodes.forEach((code) => {
     if (!code.startsWith(`${gradeNumber}.`)) {
       addIssue({
         severity: "error",
         location,
         title: "Mã NL AI sai lớp",
-        detail: `Mã ${code} không khớp lớp ${gradeNumber}. Cần rà soát lại theo YCCĐ trước khi xuất file.`
+        detail: `Mã ${code} không khớp lớp ${gradeNumber}. Hệ thống không tự sửa mã; cần đối chiếu lại đúng YCCĐ QĐ 3439.`
       });
     }
   });
-  extractNlsCodes(text).forEach((code) => {
-    if (/\.CB[12]/i.test(code) && ["10", "11", "12"].includes(gradeNumber)) {
+  if (aiCodes.length && !/(yccd|yêu cầu cần đạt|yeu cau can dat)/i.test(normalizeKey(rawText))) {
+    addIssue({
+      severity: "warning",
+      location,
+      title: "Mã AI thiếu căn cứ YCCĐ",
+      detail: "Mã/tham chiếu AI phải kèm đúng YCCĐ của lớp và chủ đề trong QĐ 3439; định dạng đúng chưa đủ để xác nhận mã đúng."
+    });
+  }
+  if (aiCodes.length && (!/(sản phẩm|minh chứng|san pham|minh chung)/i.test(normalizeKey(rawText)) || !/(tiêu chí|tieu chi|đánh giá|danh gia)/i.test(normalizeKey(rawText)))) {
+    addIssue({
+      severity: "warning",
+      location,
+      title: "Tích hợp AI thiếu sản phẩm hoặc tiêu chí",
+      detail: "Cần nêu sản phẩm/minh chứng và tiêu chí đo được cho hành vi học sinh; không chỉ ghi nội dung hoặc mã tích hợp."
+    });
+  }
+
+  const expectedLevel = NLS_LEVEL_BY_GRADE_AUDIT[gradeNumber];
+  extractNlsCodes(rawText).forEach((code) => {
+    const actualLevel = code.match(/(CB1|CB2|TC1|TC2|NC1|NC2)/i)?.[1]?.toUpperCase();
+    if (expectedLevel && actualLevel && actualLevel !== expectedLevel) {
       addIssue({
         severity: "warning",
         location,
-        title: "Mã NLS chưa đúng mức THPT",
-        detail: `Mã ${code} thuộc mức cơ bản; cấp THPT nên dùng mức NC1 khi có căn cứ YCCĐ.`
+        title: "Mã NLS chưa đúng mức tham chiếu của lớp",
+        detail: `Mã ${code} dùng mức ${actualLevel}, trong khi lớp ${gradeNumber} tham chiếu mức ${expectedLevel}. Không tự đổi mã; cần đối chiếu bảng mã và hành vi thực tế.`
       });
+    }
+    if (actualLevel) {
+      const normalizedCode = code.replace(/^(\d+\.\d+)\.?(CB1|CB2|TC1|TC2|NC1|NC2)([a-z])$/i, "$1.$2$3");
+      if (!INDICATORS.some((indicator) => indicator.code.toUpperCase() === normalizedCode.toUpperCase())) {
+        addIssue({
+          severity: "warning",
+          location,
+          title: "Mã NLS không có trong Bảng mã NLS",
+          detail: `Mã ${code} chưa được danh mục CB1–NC1 đang cài trong ứng dụng xác nhận; không tự sửa hoặc sử dụng như mã chính thức.`
+        });
+      }
     }
   });
 };
-
-const buildPlanQualityAudit = (type: string, data: any, subject: string, grade: string): PlanQualityAudit | null => {
+const buildPlanQualityAudit = (type: string, data: any, subject: string, grade: string, selectedSocialIntegrations: string[] = []): PlanQualityAudit | null => {
   if (!data) return null;
   const issues: PlanQualityIssue[] = [];
   let checks = 0;
   const addIssue = (issue: PlanQualityIssue) => issues.push(issue);
+  const validateSocialIntegration = (item: any, location: string, otherText = "") => {
+    const socialText = readSocialIntegrationFromPlanRow(item).trim();
+    checks += 1;
+    if (!socialText) return;
+    const structureSignals = [
+      /căn cứ|yêu cầu cần đạt|YCCĐ/i,
+      /hành vi|học sinh|HS\b/i,
+      /sản phẩm/i,
+      /tiêu chí|minh chứng/i
+    ].filter((pattern) => pattern.test(socialText)).length;
+    if (structureSignals < 3) {
+      addIssue({
+        severity: "warning",
+        location,
+        title: "Nội dung giáo dục tích hợp còn ghi chung chung",
+        detail: "Cần ghi rõ ít nhất căn cứ YCCĐ, hành vi học sinh, sản phẩm và tiêu chí/minh chứng; không chỉ nêu tên chủ đề."
+      });
+    }
+    if (hasOverlappingMeaningfulText(socialText, otherText)) {
+      addIssue({
+        severity: "warning",
+        location,
+        title: "Nội dung giáo dục tích hợp đang trùng cột khác",
+        detail: "Giữ nội dung lồng ghép tại cột riêng; không sao chép nguyên đoạn sang thiết bị, NLS hoặc NL AI."
+      });
+    }
+  };
+  const validateSelectedSocialCoverage = (rows: any[], location: string) => {
+    const allSocialText = normalizeKey(rows.map((item) => readSocialIntegrationFromPlanRow(item)).join(" "));
+    selectedSocialIntegrations.forEach((selection) => {
+      const custom = String(selection || "").startsWith("Custom:") ? String(selection).slice(7).trim() : "";
+      const option = SOCIAL_INTEGRATION_OPTIONS.find((item) => item.id === selection);
+      const candidates = custom
+        ? [custom]
+        : [option?.shortLabel, option?.label].filter(Boolean) as string[];
+      const matched = candidates.some((candidate) => {
+        const key = normalizeKey(candidate);
+        const words = key.split(" ").filter((word) => word.length >= 4);
+        return key && (allSocialText.includes(key) || words.some((word) => allSocialText.includes(word)));
+      });
+      checks += 1;
+      if (!matched) addIssue({
+        severity: "info",
+        location,
+        title: "Nội dung đã chọn chưa xuất hiện trong kế hoạch",
+        detail: `${custom || option?.label || selection} chưa có dòng phù hợp. Đây có thể là kết quả đúng nếu toàn bộ YCCĐ không có điểm chạm; giáo viên cần xác nhận trước khi dùng.`
+      });
+    });
+  };
 
   if (type === "khgd" && Array.isArray(data)) {
     data.forEach((item: any, index: number) => {
@@ -901,7 +1115,9 @@ const buildPlanQualityAudit = (type: string, data: any, subject: string, grade: 
         });
       }
       validateCompetencyCodes(competencyText, grade, location, addIssue);
+      validateSocialIntegration(item, location, `${aidText}\n${competencyText}`);
     });
+    validateSelectedSocialCoverage(data, "Toàn bộ PL3");
     return { label: `Kiểm định PL3 - ${subject} ${grade}`, rowCount: data.length, checks, issues };
   }
 
@@ -928,9 +1144,24 @@ const buildPlanQualityAudit = (type: string, data: any, subject: string, grade: 
         });
       }
       validateCompetencyCodes(`${nlsText}\n${aiText}`, grade, location, addIssue);
+      validateSocialIntegration(item, location, `${nlsText}\n${aiText}`);
     });
+    validateSelectedSocialCoverage(data, "Toàn bộ PL1");
     return { label: `Kiểm định PL1 - ${subject} ${grade}`, rowCount: data.length, checks, issues };
   }
+
+  if (type === "kh-hdgd" && Array.isArray(data)) {
+    data.forEach((item: any, index: number) => {
+      const location = `PL2 dòng ${index + 1}${item?.theme ? ` - ${item.theme}` : ""}`;
+      const competencyText = String(item?.aiIntegration || "");
+      checks += 1;
+      validateCompetencyCodes(competencyText, grade, location, addIssue);
+      validateSocialIntegration(item, location, competencyText);
+    });
+    validateSelectedSocialCoverage(data, "Toàn bộ PL2");
+    return { label: `Kiểm định PL2 - ${subject} ${grade}`, rowCount: data.length, checks, issues };
+  }
+
 
   if (type === "khbd") {
     const allText = readAllText(data);
@@ -1093,6 +1324,10 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
     const sourceGoal = sourceItem ? readLessonGoal(sourceItem) : "";
     const sourceNls = sourceItem ? readNlsFromPlanRow(sourceItem) : "";
     const sourceAi = sourceItem ? readAiFromPlanRow(sourceItem) : "";
+    const sourceSocialIntegration = sourceItem ? readSocialIntegrationFromPlanRow(sourceItem) : "";
+    const generatedSocialIntegration = readSocialIntegrationFromPlanRow(row);
+    const socialIntegration = hasMeaningfulText(sourceSocialIntegration)
+      ? sourceSocialIntegration : generatedSocialIntegration;
     const generatedCompetency = hasMeaningfulText(row?.digitalCompetency) ? String(row.digitalCompetency) : "";
     const digitalCompetency = sourceItem
       ? summarizePl3Competency(sourceNls, sourceAi, sourceGoal, generatedCompetency)
@@ -1101,7 +1336,7 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
     const method = compactPl3TeachingAidText(
       stripCompetencyDetailsFromTeachingAidText(
         row?.digitalToolsAndAI?.method,
-        [sourceNls, sourceAi, sourceGoal, digitalCompetency]
+        [sourceNls, sourceAi, sourceGoal, digitalCompetency, socialIntegration]
       ),
       "Tổ chức hoạt động số/AI ngắn gọn theo YCCĐ bài học."
     );
@@ -1112,7 +1347,7 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
           row?.digitalToolsAndAI?.tools,
           isGeographySubject(subject) ? "Atlat/bản đồ số, bảng tính, biểu đồ, nguồn số liệu chính thống." : "SGK, tư liệu chính thống, công cụ trình chiếu/bảng cộng tác."
         ]),
-        [sourceNls, sourceAi, sourceGoal, digitalCompetency]
+        [sourceNls, sourceAi, sourceGoal, digitalCompetency, socialIntegration]
       ),
       isGeographySubject(subject)
         ? "Atlat/bản đồ số, bảng tính, biểu đồ, nguồn số liệu chính thống."
@@ -1135,6 +1370,7 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
       location: hasMeaningfulText(row?.location) ? String(row.location) : "Lớp học/phòng học bộ môn; phòng máy tính khi hoạt động cần thiết bị số",
       digitalCompetency,
       sourceStatus: sourceItem ? "Đã đồng bộ và bù dữ liệu từ PL1" : "AI tạo, app đã rà soát đủ ô",
+      socialIntegration,
       subject,
       grade
     };
@@ -1340,7 +1576,39 @@ const SUBJECTS_THCS = [
 ];
 
 
-const GRADES = ["6", "7", "8", "9", "10", "11", "12"];
+const SUBJECTS_PRIMARY_1_2 = [
+  "Tiếng Việt",
+  "Toán học",
+  "Đạo đức",
+  "Tự nhiên và Xã hội",
+  "Tiếng Anh",
+  "Giáo dục thể chất",
+  "Âm nhạc",
+  "Mĩ thuật",
+  "Hoạt động trải nghiệm",
+  "Giáo dục địa phương"
+];
+
+const SUBJECTS_PRIMARY_3 = [
+  ...SUBJECTS_PRIMARY_1_2,
+  "Tin học và Công nghệ"
+];
+
+const SUBJECTS_PRIMARY_4_5 = [
+  "Tiếng Việt", "Toán học", "Đạo đức", "Tiếng Anh", "Khoa học",
+  "Lịch sử và Địa lí", "Tin học và Công nghệ", "Giáo dục thể chất",
+  "Âm nhạc", "Mĩ thuật", "Hoạt động trải nghiệm", "Giáo dục địa phương"
+];
+
+const getSubjectsForGrade = (grade: string) => {
+  if (["1", "2"].includes(grade)) return SUBJECTS_PRIMARY_1_2;
+  if (grade === "3") return SUBJECTS_PRIMARY_3;
+  if (["4", "5"].includes(grade)) return SUBJECTS_PRIMARY_4_5;
+  if (["6", "7", "8", "9"].includes(grade)) return SUBJECTS_THCS;
+  return SUBJECTS_THPT;
+};
+
+const GRADES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
 
 const PROVINCES = [
   "Hà Nội (Thành phố)", "TP. Hồ Chí Minh (Thành phố)", "Hải Phòng (Thành phố)", "Đà Nẵng (Thành phố)", "Cần Thơ (Thành phố)", "Thừa Thiên Huế (Thành phố)",
@@ -1350,7 +1618,6 @@ const PROVINCES = [
   "Thái Bình", "Thanh Hóa"
 ];
 
-import { CURRICULUM_DB } from "./data/curriculumDb";
 import { saveHistoryToDB, loadHistoryFromDB } from "./utils/idb";
 
 // --- Canvas Graphics Drawers for DOCX Export (VN Standard) ---
@@ -1724,6 +1991,7 @@ export interface HistoryItem {
   type: string;
   title: string;
   data: any;
+  grade?: string;
   evaluationResult?: any;
 }
 
@@ -1736,7 +2004,7 @@ type AutosaveDraft = {
   province?: string;
   lessonPlanInput?: Partial<LessonPlanInput>;
   eduPlanInput?: any;
-  suggestedNlsIndicators?: { code: string; rationale: string; name: string }[];
+  suggestedNlsIndicators?: { code: string; rationale: string; name: string; verified?: boolean }[];
   customCurriculumData?: any[] | null;
 };
 
@@ -1805,6 +2073,7 @@ export default function App() {
             type: result.type,
             title,
             data: result.data,
+            grade: result.type === "khbd" ? lessonPlanInput.grade : eduPlanInput.grade,
             evaluationResult
           });
         }
@@ -1842,6 +2111,7 @@ export default function App() {
   const backupInputRef = useRef<HTMLInputElement>(null);
 
   const [availableLessons, setAvailableLessons] = useState<any[]>([]);
+  const [curriculumDbReady, setCurriculumDbReady] = useState(() => Object.keys(curriculumDbCache).length > 0);
 
   useEffect(() => {
     const updateOnlineState = () => setIsOnline(navigator.onLine);
@@ -1884,7 +2154,7 @@ export default function App() {
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
     const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
-    saveAs(blob, `SAO_LUU_khgdkhbdcothaibpbd_${stamp}.json`);
+    saveAs(blob, `SAO_LUU_EduPlan_AI_${stamp}.json`);
   };
 
   const restoreDeviceBackup = async (file: File) => {
@@ -1892,7 +2162,7 @@ export default function App() {
       const text = await file.text();
       const parsed = JSON.parse(text);
       if (!parsed || parsed.app !== "khgdkhbdcothaibpbd") {
-        alert("File sao lưu không đúng định dạng của app khgdkhbdcothaibpbd.");
+        alert("File sao lưu không đúng định dạng của EduPlan AI.");
         return;
       }
 
@@ -1946,6 +2216,13 @@ export default function App() {
     return false;
   };
 
+  const handleEduPlanGradeChange = (grade: string) => {
+    const subject = getSubjectsForGrade(grade).includes(eduPlanInput.subject)
+      ? eduPlanInput.subject
+      : "";
+    setEduPlanInput({ ...eduPlanInput, grade, subject });
+  };
+
   const mobileNavItems: { mode: AppMode; label: string; icon: React.ReactNode }[] = [
     { mode: "dashboard", label: "Tổng quan", icon: <BookOpen className="w-4 h-4" /> },
     { mode: "khbd-gen", label: "KHBD", icon: <FileText className="w-4 h-4" /> },
@@ -1956,16 +2233,18 @@ export default function App() {
   ];
 
   const handleSubjectOrGradeChange = (subject: string, grade: string) => {
+    const allowedSubjects = getSubjectsForGrade(grade);
+    const normalizedSubject = allowedSubjects.includes(subject) ? subject : "";
     // Chỉ nạp dữ liệu từ DB nếu môn học không phải Giáo dục địa phương 
     // HOẶC nếu địa phương là TP.HCM (vì DB hiện tại chỉ có dữ liệu TP.HCM)
-    const lessons = (subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" && !customCurriculumData?.length)
+    const lessons = (normalizedSubject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" && !customCurriculumData?.length)
       ? []
-      : getKhtcmExpectedLessons(subject, grade, customCurriculumData);
+      : getKhtcmExpectedLessons(normalizedSubject, grade, customCurriculumData);
 
     setAvailableLessons(lessons);
     setLessonPlanInput(prev => ({
       ...prev,
-      subject,
+      subject: normalizedSubject,
       grade,
       topic: "",
       duration: "2 tiết",
@@ -2014,13 +2293,14 @@ export default function App() {
     useLaTeX: false,
     detailDrawings: false,
     socialIntegrations: [],
+    customSocialIntegration: "",
     selectedNlsIndicators: []
   };
   const [lessonPlanInput, setLessonPlanInput] = useState<LessonPlanInput>(() =>
     mergeDraftObject(defaultLessonPlanInput, initialDraft?.lessonPlanInput)
   );
 
-  const [suggestedNlsIndicators, setSuggestedNlsIndicators] = useState<{ code: string; rationale: string; name: string }[]>(
+  const [suggestedNlsIndicators, setSuggestedNlsIndicators] = useState<{ code: string; rationale: string; name: string; verified?: boolean }[]>(
     () => Array.isArray(initialDraft?.suggestedNlsIndicators) ? initialDraft.suggestedNlsIndicators : []
   );
   const [isSuggestingNls, setIsSuggestingNls] = useState(false);
@@ -2046,13 +2326,18 @@ export default function App() {
       
       const mapped = (Array.isArray(suggestions) ? suggestions : []).map(s => {
         const found = INDICATORS.find(i => i.code === s.code);
+        const isAiComponentReference = /^NL[abcd]$/i.test(s.code || "");
         return {
           code: s.code,
           rationale: s.rationale,
-          name: found ? found.description : "Chỉ báo Năng lực số / Năng lực AI"
+          name: found
+            ? found.description
+            : isAiComponentReference
+              ? mapAiCompetencyText(s.code)
+              : "Chưa có trong bảng mã cài đặt - cần tải/đối chiếu phụ lục chính thức",
+          verified: Boolean(found || isAiComponentReference)
         };
-      });
-      setSuggestedNlsIndicators(mapped);
+      });      setSuggestedNlsIndicators(mapped);
     } catch (e: any) {
       console.error(e);
       alert("Có lỗi khi gọi AI đề xuất: " + e.message);
@@ -2067,7 +2352,8 @@ export default function App() {
     grade: "10",
     useLaTeX: false,
     detailDrawings: false,
-    socialIntegrations: []
+    socialIntegrations: [],
+    customSocialIntegration: ""
   };
   const [eduPlanInput, setEduPlanInput] = useState(() =>
     mergeDraftObject(defaultEduPlanInput, initialDraft?.eduPlanInput)
@@ -2234,12 +2520,39 @@ export default function App() {
   };
 
   useEffect(() => {
+    const modesUsingCurriculum: AppMode[] = ["khbd-gen", "khgd-gen", "kh-tcm-gen", "kh-hdgd-gen", "ai-framework-gen"];
+    if (!modesUsingCurriculum.includes(mode) || curriculumDbReady) return;
+    let active = true;
+    loadCurriculumDb()
+      .then(() => {
+        if (active) setCurriculumDbReady(true);
+      })
+      .catch((error) => console.error("[Curriculum DB]", error));
+    return () => {
+      active = false;
+    };
+  }, [mode, curriculumDbReady]);
+
+  useEffect(() => {
     if (!lessonPlanInput.subject || !lessonPlanInput.grade) return;
     const lessons = (lessonPlanInput.subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" && !customCurriculumData?.length)
       ? []
       : getKhtcmExpectedLessons(lessonPlanInput.subject, lessonPlanInput.grade, customCurriculumData);
     setAvailableLessons(lessons);
-  }, [lessonPlanInput.subject, lessonPlanInput.grade, province, customCurriculumData]);
+  }, [lessonPlanInput.subject, lessonPlanInput.grade, province, customCurriculumData, curriculumDbReady]);
+
+  const ensureCurriculumDbReady = async () => {
+    if (curriculumDbReady || Object.keys(curriculumDbCache).length) return true;
+    try {
+      await loadCurriculumDb();
+      setCurriculumDbReady(true);
+      return true;
+    } catch (error) {
+      console.error("[Curriculum DB]", error);
+      alert("Không nạp được dữ liệu chương trình nền. Vui lòng tải lại trang hoặc dùng phụ lục chương trình do bạn cung cấp.");
+      return false;
+    }
+  };
 
   const confirmCurriculumCoverageBeforeGenerate = (subject: string, grade: string, featureName: string, customData?: any[] | null) => {
     const coverage = getCurriculumCoverage(subject, grade, customData);
@@ -2257,13 +2570,17 @@ export default function App() {
       setShowSettings(true);
       return;
     }
+    if (!customCurriculumData?.length && !(await ensureCurriculumDbReady())) return;
     if (!confirmCurriculumCoverageBeforeGenerate(lessonPlanInput.subject, lessonPlanInput.grade, "Tạo KHBD", customCurriculumData)) return;
     setLoading(true);
     setResult(null);
     setEvaluationResult(null);
     try {
-      const data = await generateLessonPlan(lessonPlanInput);
-      setResult({ type: "khbd", data: normalizeKhbdToCv5512(data) });
+      const data = await generateLessonPlan({
+        ...lessonPlanInput,
+        socialIntegrations: collectSelectedSocialIntegrations(lessonPlanInput)
+      });
+      setResult({ type: "khbd", data: normalizeKhbdForGrade(data, lessonPlanInput.grade) });
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
@@ -2296,8 +2613,11 @@ export default function App() {
     setEvaluationResult(null);
     setCouncilEvaluation(null);
     try {
-      const data = await generateLessonPlan(input);
-      const normalized = normalizeKhbdToCv5512(data);
+      const data = await generateLessonPlan({
+        ...input,
+        socialIntegrations: collectSelectedSocialIntegrations(input)
+      });
+      const normalized = normalizeKhbdForGrade(data, input.grade);
       setResult({ type: "khbd", data: normalized });
       return normalized;
     } catch (err: any) {
@@ -2464,6 +2784,7 @@ export default function App() {
       && (!departmentPlanRef[0]?.subject || departmentPlanRef[0].subject === eduPlanInput.subject)
       && (!departmentPlanRef[0]?.grade || departmentPlanRef[0].grade === eduPlanInput.grade);
     const activeRef = customRef || (storedRefMatches ? departmentPlanRef : null);
+    if (!activeRef?.length && !customCurriculumData?.length && !(await ensureCurriculumDbReady())) return;
     if (!confirmCurriculumCoverageBeforeGenerate(eduPlanInput.subject, eduPlanInput.grade, "Tạo PL3/KHGD giáo viên", activeRef || customCurriculumData)) return;
     setLoading(true);
     setResult(null);
@@ -2473,9 +2794,9 @@ export default function App() {
         detailDrawings: eduPlanInput.detailDrawings,
         customCurriculumData: customCurriculumData || undefined,
         curriculumDbData: (!customCurriculumData && (isStandaloneGeographySubject(eduPlanInput.subject) || province === "TP. Hồ Chí Minh (Thành phố)"))
-          ? (CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade] || CURRICULUM_DB["Địa lí"]?.[eduPlanInput.grade] || CURRICULUM_DB["Địa lý"]?.[eduPlanInput.grade])
+          ? (curriculumDbCache[eduPlanInput.subject]?.[eduPlanInput.grade] || curriculumDbCache["Địa lí"]?.[eduPlanInput.grade] || curriculumDbCache["Địa lý"]?.[eduPlanInput.grade])
           : undefined,
-        socialIntegrations: eduPlanInput.socialIntegrations
+        socialIntegrations: collectSelectedSocialIntegrations(eduPlanInput)
       });
       const sourceForCompletion = activeRef?.length ? activeRef : getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData);
       const completedData = completeEducationalPlanRows(data, sourceForCompletion, eduPlanInput.subject, eduPlanInput.grade);
@@ -2505,6 +2826,7 @@ export default function App() {
       setShowSettings(true);
       return;
     }
+    if (!customCurriculumData?.length && !(await ensureCurriculumDbReady())) return;
     if (!confirmCurriculumCoverageBeforeGenerate(eduPlanInput.subject, eduPlanInput.grade, "Tạo PL1/KHTCM", customCurriculumData)) return;
     setLoading(true);
     setResult(null);
@@ -2513,7 +2835,8 @@ export default function App() {
         useLaTeX: eduPlanInput.useLaTeX,
         detailDrawings: eduPlanInput.detailDrawings,
         customCurriculumData: customCurriculumData || undefined,
-        curriculumDbData: customCurriculumData ? undefined : (eduPlanInput.subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" ? undefined : CURRICULUM_DB[eduPlanInput.subject]?.[eduPlanInput.grade])
+        curriculumDbData: customCurriculumData ? undefined : (eduPlanInput.subject === "Giáo dục địa phương" && province !== "TP. Hồ Chí Minh (Thành phố)" ? undefined : curriculumDbCache[eduPlanInput.subject]?.[eduPlanInput.grade]),
+        socialIntegrations: collectSelectedSocialIntegrations(eduPlanInput)
       });
       const expectedLessons = getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData);
       const completedData = completeDepartmentPlanRows(data, expectedLessons, { subject: eduPlanInput.subject, grade: eduPlanInput.grade })
@@ -2545,12 +2868,14 @@ export default function App() {
       setShowSettings(true);
       return;
     }
+    if (!(await ensureCurriculumDbReady())) return;
     if (!confirmCurriculumCoverageBeforeGenerate(eduPlanInput.subject, eduPlanInput.grade, "Tạo PL2/HĐGD")) return;
     setLoading(true);
     setResult(null);
     try {
       const data = await generateEducationalActivitiesPlan(eduPlanInput.subject, eduPlanInput.grade, {
         useLaTeX: eduPlanInput.useLaTeX,
+        socialIntegrations: collectSelectedSocialIntegrations(eduPlanInput)
       });
       setResult({ type: "kh-hdgd", data });
     } catch (err: any) {
@@ -2608,6 +2933,7 @@ export default function App() {
         data = await parseCurriculumAppendix("", base64);
       } else if (isDocx) {
         const buffer = await uploadedFile.arrayBuffer();
+        const mammoth = await import("mammoth");
         const resultObj = await mammoth.extractRawText({ arrayBuffer: buffer });
         const text = resultObj.value;
         if (!text || text.trim().length < 50) throw new Error("File Word không có nội dung hoặc đọc bị trống. Hãy kiểm tra lại file.");
@@ -2681,13 +3007,14 @@ export default function App() {
 
   const getCurrentExportAudit = () => {
     if (!result || !result.data) return null;
-    if (!["khbd", "khgd", "kh-tcm"].includes(result.type)) return null;
+    if (!["khbd", "khgd", "kh-tcm", "kh-hdgd"].includes(result.type)) return null;
     const auditData = result.type === "khgd"
       ? getCurrentKhgdRows()
       : result.type === "kh-tcm"
         ? getCurrentKhtcmRows()
         : result.data;
-    return buildPlanQualityAudit(result.type, auditData, getExportSubject(), getExportGrade());
+    const selectedSocial = result.type === "khbd" ? collectSelectedSocialIntegrations(lessonPlanInput) : collectSelectedSocialIntegrations(eduPlanInput);
+    return buildPlanQualityAudit(result.type, auditData, getExportSubject(), getExportGrade(), selectedSocial);
   };
 
   const confirmOfficialDocxExport = () => {
@@ -2723,7 +3050,7 @@ export default function App() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>khgdkhbdcothaibpbd - ${currentSubject}</title>
+<title>EduPlan AI - ${currentSubject}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2747,6 +3074,8 @@ export default function App() {
   .export-note { border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; padding: 12px 14px; border-radius: 10px; margin-bottom: 18px; font-size: 12px; line-height: 1.55; }
   .export-note strong { font-weight: 800; }
   .export-note span { font-weight: 700; color: #b45309; }
+  .text-red-600, .text-red-700 { color: #dc2626 !important; }
+  .bg-red-50\/20, .bg-red-50 { background: #fef2f2 !important; }
   .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 11px; }
   @media print { body { padding: 0; background: white; } .container { box-shadow: none; padding: 20px; } }
 </style>
@@ -2754,12 +3083,12 @@ export default function App() {
 <body>
 <div class="container">
   <div class="header-bar">
-    <h1>khgdkhbdcothaibpbd — Kế hoạch Giáo dục</h1>
-    <p>Môn: ${currentSubject} | Khối: ${currentGrade} | Chuẩn CV 5512 + QĐ 3439/BGDĐT</p>
+    <h1>EduPlan AI — Kế hoạch Giáo dục</h1>
+    <p>Môn: ${currentSubject} | Khối: ${currentGrade} | ${["1", "2", "3", "4", "5"].includes(String(currentGrade)) ? "CV 2345/BGDĐT-GDTH" : "CV 5512/BGDĐT-GDTrH"} + TT 02 + QĐ 3439</p>
   </div>
   ${buildHtmlExportNotice(audit)}
   ${element.innerHTML}
-  <div class="footer">Tạo bởi khgdkhbdcothaibpbd • Hệ thống Kế hoạch Giáo dục Thông minh • ${new Date().toLocaleDateString('vi-VN')}</div>
+  <div class="footer">Tạo bởi EduPlan AI • Hệ thống Kế hoạch Giáo dục Thông minh • ${new Date().toLocaleDateString('vi-VN')}</div>
 </div>
 </body>
 </html>`;
@@ -2783,8 +3112,8 @@ export default function App() {
     const slides: Array<{ title: string; bullets: string[] }> = [];
 
     if (result.type === "khbd") {
-      const d = normalizeKhbdToCv5512(result.data);
-      slides.push({ title: d.title || "Kế hoạch Bài dạy", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, "Chuẩn CV 5512/BGDĐT + QĐ 3439"] });
+      const d = normalizeKhbdForGrade(result.data, lessonPlanInput.grade);
+      slides.push({ title: d.title || "Kế hoạch Bài dạy", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `${["1", "2", "3", "4", "5"].includes(String(grade)) ? "CV 2345/BGDĐT-GDTH" : "CV 5512/BGDĐT-GDTrH"} + TT 02 + QĐ 3439`] });
       slides.push({ title: "I. MỤC TIÊU", bullets: [...(d.objectives?.knowledge || []).slice(0, 5).map((k: string) => `• KT: ${k}`), ...(d.objectives?.aiSpecific || []).slice(0, 3).map((a: string) => `• AI: ${a}`)] });
       (d.activities || []).forEach((act: any) => {
         slides.push({ title: act.name || "Hoạt động", bullets: [`Mục tiêu: ${act.objective || ""}`, `Nội dung: ${act.content || ""}`, `Sản phẩm: ${act.product || ""}`] });
@@ -2797,14 +3126,14 @@ export default function App() {
         { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
       );
       const supplement = buildKhtcmSupplement(eduPlanInput.subject, eduPlanInput.grade, data);
-      slides.push({ title: "KẾ HOẠCH TỔ CHUYÊN MÔN TÍCH HỢP AI", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `Tổng số dòng PPCT: ${data.length}`] });
+      slides.push({ title: "KẾ HOẠCH TỔ CHUYÊN MÔN TÍCH HỢP NLS/NL AI", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `Tổng số dòng PPCT: ${data.length}`] });
       slides.push({ title: "I. Đặc điểm tình hình", bullets: supplement.situation.map(item => `• ${item}`) });
       slides.push({ title: "Thiết bị và phòng học", bullets: [...supplement.equipmentRows, ...supplement.rooms.map(r => ({ name: r.room, note: r.note }))].map((item: any) => `• ${item.name}: ${item.note}`) });
       slides.push({ title: "III. Kiểm tra, đánh giá định kỳ", bullets: supplement.assessmentRows.slice(0, 6).map(row => `• ${row.time}: ${row.content} (${row.duration} tiết)`) });
       // Chunk lessons into groups of 8 per slide
       for (let i = 0; i < data.length; i += 8) {
         const chunk = data.slice(i, i + 8);
-        slides.push({ title: `Phân phối chương trình (${i + 1}–${Math.min(i + 8, data.length)})`, bullets: chunk.map((item: any) => `${item.time || ""}: ${item.lessonContent || item.lessonName || ""} (${item.periods || ""} tiết)`) });
+        slides.push({ title: `Phân phối chương trình (${i + 1}–${Math.min(i + 8, data.length)})`, bullets: chunk.map((item: any) => `${item.time || ""}: ${item.lessonContent || item.lessonName || ""} (${item.periods || ""} tiết)${item.socialIntegration ? `\nTích hợp: ${item.socialIntegration}` : ""}`) });
       }
     } else if (result.type === "khgd") {
       const data = getCurrentKhgdRows();
@@ -2813,14 +3142,14 @@ export default function App() {
         const chunk = data.slice(i, i + 6);
         slides.push({
           title: `PL3 (${i + 1}–${Math.min(i + 6, data.length)})`,
-          bullets: chunk.map((item: any) => `• ${item.order || ""} | ${item.timing || ""}: ${item.lesson || ""} (${item.periods || ""} tiết)`)
+          bullets: chunk.map((item: any) => `• ${item.order || ""} | ${item.timing || ""}: ${item.lesson || ""} (${item.periods || ""} tiết)${item.socialIntegration ? `\nTích hợp: ${item.socialIntegration}` : ""}`)
         });
       }
     } else {
       const data = Array.isArray(result.data) ? result.data : [];
       slides.push({ title: `KẾ HOẠCH GIÁO DỤC - ${currentSubject}`, bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `Tổng số mục: ${data.length}`] });
       data.slice(0, 20).forEach((item: any, i: number) => {
-        if (i % 6 === 0) slides.push({ title: `Nội dung (${i + 1}–${Math.min(i + 6, data.length)})`, bullets: data.slice(i, i + 6).map((it: any) => `• ${it.lesson || it.lessonContent || it.theme || ""} - ${it.periods || ""} tiết`) });
+        if (i % 6 === 0) slides.push({ title: `Nội dung (${i + 1}–${Math.min(i + 6, data.length)})`, bullets: data.slice(i, i + 6).map((it: any) => `• ${it.lesson || it.lessonContent || it.theme || ""} - ${it.periods || ""} tiết${it.socialIntegration ? `\nTích hợp: ${it.socialIntegration}` : ""}`) });
       });
     }
 
@@ -2940,7 +3269,7 @@ export default function App() {
         <p:spPr><a:xfrm><a:off x="457200" y="4800000"/><a:ext cx="8229600" cy="300000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${bgColor}"/></a:solidFill></p:spPr>
         <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r>
           <a:rPr lang="vi-VN" sz="1000" b="0"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr>
-          <a:t>khgdkhbdcothaibpbd — ${currentSubject} Lớp ${grade} • Slide ${idx + 1}/${slides.length}</a:t>
+          <a:t>EduPlan AI — ${currentSubject} Lớp ${grade} • Slide ${idx + 1}/${slides.length}</a:t>
         </a:r></a:p></p:txBody>
       </p:sp>
     </p:spTree>
@@ -2956,7 +3285,7 @@ export default function App() {
     // docProps/app.xml
     zip.folder("docProps")!.file("app.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
-  <Application>khgdkhbdcothaibpbd</Application>
+  <Application>EduPlan AI</Application>
   <Slides>${slides.length}</Slides>
 </Properties>`);
 
@@ -2969,8 +3298,10 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
 
+    // @ts-ignore — html2pdf.js does not ship complete TypeScript declarations.
+    const { default: html2pdf } = await import("html2pdf.js");
     const element = result.type === "khbd" ? contentRef.current : tableRef.current;
     if (!element) return;
     const currentSubject = getExportSubject();
@@ -3002,6 +3333,16 @@ export default function App() {
   const downloadWord = async () => {
     if (!result || !result.data) return;
     if (!confirmOfficialDocxExport()) return;
+
+    const {
+      Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+      AlignmentType, WidthType, BorderStyle, VerticalAlign, ImageRun,
+      Math: DocxMath, MathRun, MathFraction, MathRadical,
+      MathSubScript, MathSuperScript
+    } = await import("docx");
+    const docxMathApi: DocxMathApi = {
+      MathRun, MathFraction, MathRadical, MathSubScript, MathSuperScript
+    };
 
     const currentSubject = getExportSubject();
     const currentGrade = getExportGrade();
@@ -3054,7 +3395,7 @@ export default function App() {
         "Năng lực AI": "AI Competency",
         "Mục tiêu GD AI": "AI Edu Goal",
         "Hình thức triển khai": "Implementation Form",
-        "KẾ HOẠCH GIÁO DỤC TỔ CHUYÊN MÔN TÍCH HỢP AI": "DEPARTMENTAL EDUCATIONAL PLAN WITH AI",
+        "KẾ HOẠCH GIÁO DỤC TỔ CHUYÊN MÔN TÍCH HỢP AI": "DEPARTMENTAL EDUCATIONAL PLAN WITH DIGITAL AND AI COMPETENCIES",
         "Căn cứ QĐ 3439/QĐ-BGDĐT": "Based on Decision 3439/QĐ-BGDĐT"
       };
       return dict[text] || text;
@@ -3065,7 +3406,7 @@ export default function App() {
       const parts = text.split(/(\[Công thức:\s*.*?\]|\\\(.*?\\\)|\$[^$\n]+\$|<bold>.*?<\/bold>|<ai>.*?<\/ai>|\*\*.*?\*\*)/g);
       return parts.filter(p => p).map(part => {
         if (/^\[Công thức:\s*.*?\]$/i.test(part) || /^\\\(.*\\\)$/.test(part) || /^\$[^$\n]+\$$/.test(part)) {
-          return new DocxMath({ children: formulaToMathComponents(part) });
+          return new DocxMath({ children: formulaToMathComponents(part, docxMathApi) });
         } else if (part.startsWith('<bold>') && part.endsWith('</bold>')) {
           return new TextRun({ text: part.slice(6, -7), bold: true });
         } else if (part.startsWith('<ai>') && part.endsWith('</ai>')) {
@@ -3140,7 +3481,7 @@ export default function App() {
             new Paragraph({
               children: [
                 new TextRun({ text: "Công thức: ", bold: true, color: "0369A1" }),
-                new DocxMath({ children: formulaToMathComponents(formulaMatch[1]) })
+                new DocxMath({ children: formulaToMathComponents(formulaMatch[1], docxMathApi) })
               ],
               spacing: { before: 80, after: 80 },
               indent: { left: 360 }
@@ -3265,7 +3606,7 @@ export default function App() {
     let doc;
 
     if (result.type === "khbd") {
-      const d = normalizeKhbdToCv5512(result.data);
+      const d = normalizeKhbdForGrade(result.data, lessonPlanInput.grade);
 
       // School & Department details (Standard format for VN school documents)
       const headerTable = new Table({
@@ -3428,7 +3769,7 @@ export default function App() {
             // VI. PHIẾU SỬ DỤNG AI (Mục 7 — dành cho Học sinh)
             ...(d.aiUsageLog && d.aiUsageLog.length > 0 ? [
               new Paragraph({ children: [new TextRun({ text: "VI. PHIẾU SỬ DỤNG AI", bold: true, size: 26, color: "5B21B6" })], spacing: { before: 400, after: 60 } }),
-              new Paragraph({ children: [new TextRun({ text: "(Dành cho Học sinh — Chuẩn Mục 7/CV 3439/QĐ-BGDĐT)", italics: true, color: "5B21B6" })], spacing: { after: 80 } }),
+              new Paragraph({ children: [new TextRun({ text: "(Dành cho Học sinh — theo bộ quy tắc tích hợp và QĐ 3439/QĐ-BGDĐT)", italics: true, color: "5B21B6" })], spacing: { after: 80 } }),
               new Paragraph({ children: [new TextRun({ text: "Hướng dẫn: ① ② do Giáo viên cung cấp sẵn. Học sinh tự hoàn thiện ③ ④ sau khi sử dụng AI. Giáo viên điền ⑤ và lưu làm minh chứng năng lực số. KHÔNG dùng cụm từ \"bản nháp AI\" trong sản phẩm học tập.", italics: true, size: 18, color: "6B7280" })], spacing: { after: 200 } }),
               ...(d.aiUsageLog || []).flatMap((log: any) => [
                 new Paragraph({ children: [new TextRun({ text: `Họ và tên học sinh: ____________________________________________    Lớp: _______`, italics: true })], spacing: { before: 200, after: 60 } }),
@@ -3485,7 +3826,7 @@ export default function App() {
 
 
             ...(evaluationResult ? [
-              new Paragraph({ children: [new TextRun({ text: "VII. HỆ THỐNG ĐÁNH GIÁ NĂNG LỰC (CHUẨN CV 3439/BGDĐT & CT GDPT 2018)", bold: true, size: 24 })], spacing: { before: 400, after: 100 } }),
+              new Paragraph({ children: [new TextRun({ text: "VII. HỆ THỐNG ĐÁNH GIÁ NĂNG LỰC (CHUẨN QĐ 3439/QĐ-BGDĐT & CT GDPT 2018)", bold: true, size: 24 })], spacing: { before: 400, after: 100 } }),
 
               
               new Paragraph({ children: [new TextRun({ text: "1. TIÊU CHÍ ĐÁNH GIÁ (RUBRICS)", bold: true })], spacing: { before: 100, after: 60 } }),
@@ -3605,8 +3946,8 @@ export default function App() {
       const rows = [
         new TableRow({
           children: [
-            t("Thứ tự tiết"), t("Bài học"), t("Số tiết"), t("Thời điểm"), t("Thiết bị"), t("Địa điểm"), t("Định hướng năng lực số")
-          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx === 6 }))
+            t("Thứ tự tiết"), t("Bài học"), t("Số tiết"), t("Thời điểm"), t("Thiết bị"), t("Địa điểm"), t("Nội dung giáo dục tích hợp/lồng ghép"), t("Định hướng năng lực số/AI")
+          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx >= 6 }))
         }),
         ...khgdRows.map((item: any) => new TableRow({
           children: [
@@ -3625,6 +3966,7 @@ export default function App() {
               ]
             }),
             wordCell(item.location),
+            wordCell(item.socialIntegration || "", { red: Boolean(item.socialIntegration), bold: Boolean(item.socialIntegration), fill: item.socialIntegration ? "FEF2F2" : undefined }),
             wordCell(item.digitalCompetency, { red: true, bold: true, fill: "FEF2F2" }),
           ]
         }))
@@ -3676,8 +4018,8 @@ export default function App() {
       const rows = [
         new TableRow({
           children: [
-            t("STT"), t("Thời gian"), t("Nội dung"), t("Số tiết"), t("Yêu cầu cần đạt"), t("Năng lực số"), t("Mục tiêu & YCCĐ 3439 Tích hợp GD AI")
-          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx === 6 }))
+            t("STT"), t("Thời gian"), t("Nội dung"), t("Số tiết"), t("Yêu cầu cần đạt"), t("Nội dung giáo dục tích hợp/lồng ghép"), t("Năng lực số"), t("Mục tiêu & YCCĐ 3439 Tích hợp GD AI")
+          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx >= 5 }))
         }),
         ...planRows.map((item: any, i: number) => {
           const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
@@ -3689,7 +4031,12 @@ export default function App() {
               wordCell(item.lessonContent || item.lessonName),
               wordCell(item.periods, { center: true }),
               wordCell(item.lessonGoal),
-              wordCell(item.digitalCompetencyTT02 || "Không"),
+              wordCell(item.socialIntegration || "", { red: Boolean(item.socialIntegration), bold: Boolean(item.socialIntegration), fill: item.socialIntegration ? "FEF2F2" : undefined }),
+              wordCell(item.digitalCompetencyTT02 || "Không", {
+                red: hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không"),
+                bold: hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không"),
+                fill: hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không") ? "FEF2F2" : undefined
+              }),
               wordCell(isNotIntegrated ? aiText : item.aiCompetency3439Integrated, {
                 red: !isNotIntegrated,
                 bold: !isNotIntegrated,
@@ -3756,8 +4103,8 @@ export default function App() {
       const rows = [
         new TableRow({
           children: [
-            t("STT"), t("Chủ đề/Hoạt động"), t("Yêu cầu cần đạt"), t("Số tiết"), t("Thời điểm"), t("Địa điểm"), t("Người chủ trì"), t("Phối hợp"), t("Điều kiện thực hiện"), t("Tích hợp NLS/AI")
-          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx === 9 }))
+            t("STT"), t("Chủ đề/Hoạt động"), t("Yêu cầu cần đạt"), t("Số tiết"), t("Thời điểm"), t("Địa điểm"), t("Người chủ trì"), t("Phối hợp"), t("Điều kiện thực hiện"), t("Nội dung giáo dục tích hợp/lồng ghép"), t("Tích hợp NLS/AI")
+          ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx >= 9 }))
         }),
         ...(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => {
           const hasAiIntegration = hasMeaningfulText(item.aiIntegration) && !String(item.aiIntegration).toLowerCase().includes("không");
@@ -3772,6 +4119,7 @@ export default function App() {
               wordCell(item.host),
               wordCell(item.collaborator),
               wordCell(item.conditions),
+              wordCell(item.socialIntegration || "", { red: Boolean(item.socialIntegration), bold: Boolean(item.socialIntegration), fill: item.socialIntegration ? "FEF2F2" : undefined }),
               wordCell(item.aiIntegration, { red: hasAiIntegration, bold: hasAiIntegration, fill: hasAiIntegration ? "FEF2F2" : undefined })
             ]
           });
@@ -3874,7 +4222,7 @@ export default function App() {
         "Năng lực AI": "AI Competency",
         "Mục tiêu GD AI": "AI Edu Goal",
         "Hình thức triển khai": "Implementation Form",
-        "KẾ HOẠCH GIÁO DỤC TỔ CHUYÊN MÔN TÍCH HỢP AI": "DEPARTMENTAL EDUCATIONAL PLAN WITH AI",
+        "KẾ HOẠCH GIÁO DỤC TỔ CHUYÊN MÔN TÍCH HỢP AI": "DEPARTMENTAL EDUCATIONAL PLAN WITH DIGITAL AND AI COMPETENCIES",
         "Căn cứ QĐ 3439/QĐ-BGDĐT": "Based on Decision 3439/QĐ-BGDĐT"
       };
       return dict[text] || text;
@@ -3900,7 +4248,7 @@ export default function App() {
     };
 
     if (result.type === "khbd") {
-      const d = normalizeKhbdToCv5512(result.data);
+      const d = normalizeKhbdForGrade(result.data, lessonPlanInput.grade);
       content = `${t("KẾ HOẠCH BÀI DẠY (KHBD)")}\n\n${t("Tên bài dạy:")} ${d.title}\n\n${t("I. MỤC TIÊU")}\n${t("1. Kiến thức:")}\n${(d.objectives.knowledge || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("2. Năng lực môn học:")}\n${(d.objectives.subjectSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("3. Năng lực chung:")}\n${(d.objectives.general || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("4. Năng lực số:")}\n${(d.objectives.digitalSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("5. Năng lực AI:")}\n${(d.objectives.aiSpecific || []).map((c: string) => `- ${c}`).join("\n")}\n\n${t("6. Phẩm chất:")}\n${(d.objectives.qualities || []).map((q: string) => `- ${q}`).join("\n")}\n\n${t("II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU")}\n${t("1. Thiết bị truyền thống:")} ${(d.materials?.traditional || []).join(", ")}\n${t("2. Công cụ số và AI:")}\n- ${t("Phương án triển khai:")} ${d.materials?.digitalAndAI?.implementationMethod || ""}\n- ${t("Học liệu/công cụ cụ thể:")} ${(d.materials?.digitalAndAI?.specificTools || []).join(", ")}\n\n${t("III. TIẾN TRÌNH DẠY HỌC")}\n${(d.activities || []).map((a: any) => `${a.name}\n${t("a) Mục tiêu:")} ${a.objective}\n${t("b) Nội dung:")} ${a.content}\n${t("c) Sản phẩm:")} ${a.product}\n${t("d) Tổ chức thực hiện:")}\n${(a.procedure || []).map((p: any) => `${p.stepName}\n  - ${t("Hoạt động của GV và HS:")} ${strip(p.teacherStudentActivities)}\n  - ${t("Dự kiến sản phẩm:")} ${strip(p.expectedProduct)}`).join("\n")}`).join("\n\n")}\n\n${t("IV. KẾ HOẠCH ĐÁNH GIÁ")}\n${(d.assessment || []).map((a: string) => `- ${strip(a)}`).join("\n")}\n\n${t("V. PHỤ LỤC")}\n- ${t("Mẫu Prompt:")} ${(d.appendix?.prompts || []).join(", ")}\n- ${t("Bảng kiểm:")}\n${(d.appendix?.checklist || []).map((c: string) => `- ${strip(c)}`).join("\n")}`;
 
       const legacyActivityText = (d.activities || []).map((a: any) => `${a.name}\n${t("a) Mục tiêu:")} ${a.objective}\n${t("b) Nội dung:")} ${a.content}\n${t("c) Sản phẩm:")} ${a.product}\n${t("d) Tổ chức thực hiện:")}\n${(a.procedure || []).map((p: any) => `${p.stepName}\n  - ${t("Hoạt động của GV và HS:")} ${strip(p.teacherStudentActivities)}\n  - ${t("Dự kiến sản phẩm:")} ${strip(p.expectedProduct)}`).join("\n")}`).join("\n\n");
@@ -3908,7 +4256,7 @@ export default function App() {
       if (legacyActivityText) content = content.replace(legacyActivityText, upgradedActivityText);
 
       if (evaluationResult) {
-        content += `\n\nVI. HỆ THỐNG ĐÁNH GIÁ NĂNG LỤC (CHUẨN CV 3439/BGDĐT & CT GDPT 2018)\n\n`;
+        content += `\n\nVI. HỆ THỐNG ĐÁNH GIÁ NĂNG LỤC (CHUẨN QĐ 3439/QĐ-BGDĐT & CT GDPT 2018)\n\n`;
         content += `1. TIÊU CHÍ ĐÁNH GIÁ (RUBRICS)\n`;
         (evaluationResult.rubrics || []).forEach((rubric: any) => {
           content += `Năng lực: ${rubric.competencyName}\n`;
@@ -3944,7 +4292,7 @@ export default function App() {
       }
     } else if (result.type === "khgd") {
       const khgdRows = getCurrentKhgdRows();
-      content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Định hướng năng lực số")}\n${khgdRows.map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.digitalCompetency}`).join("\n")}`;
+      content = `${t("KẾ HOẠCH GIÁO DỤC CỦA GIÁO VIÊN")}\n${t("Môn:")} ${eduPlanInput.subject} - ${t("Lớp:")} ${eduPlanInput.grade}\n\n${t("Thứ tự tiết")} | ${t("Bài học")} | ${t("Số tiết")} | ${t("Thời điểm")} | ${t("Thiết bị")} | ${t("Địa điểm")} | ${t("Nội dung giáo dục tích hợp/lồng ghép")} | ${t("Định hướng năng lực số/AI")}\n${khgdRows.map((item: any) => `${item.order} | ${item.lesson} | ${item.periods} | ${item.timing} | ${item.equipment} | ${item.location} | ${item.socialIntegration || ""} | ${item.digitalCompetency}`).join("\n")}`;
     } else if (result.type === "kh-tcm") {
       const planRows = completeDepartmentPlanRows(
         Array.isArray(result.data) ? result.data : [],
@@ -3952,13 +4300,13 @@ export default function App() {
         { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
       );
       const supplement = buildKhtcmSupplement(eduPlanInput.subject, eduPlanInput.grade, planRows);
-      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n${supplement.situation.map((line, i) => `${i + 1}. ${line}`).join("\n")}\n\n3. Thiết bị dạy học\nThiết bị | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.equipmentRows.map(row => `${row.name} | ${row.lessons} | ${row.note}`).join("\n")}\n\n4. Phòng học bộ môn/phòng chức năng\nPhòng học | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.rooms.map(row => `${row.room} | ${row.lessons} | ${row.note}`).join("\n")}\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Năng lực số | Mục tiêu & YCCĐ 3439 Tích hợp GD AI\n${planRows.map((item: any, i: number) => {
+      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n${supplement.situation.map((line, i) => `${i + 1}. ${line}`).join("\n")}\n\n3. Thiết bị dạy học\nThiết bị | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.equipmentRows.map(row => `${row.name} | ${row.lessons} | ${row.note}`).join("\n")}\n\n4. Phòng học bộ môn/phòng chức năng\nPhòng học | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.rooms.map(row => `${row.room} | ${row.lessons} | ${row.note}`).join("\n")}\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Nội dung giáo dục tích hợp/lồng ghép | Năng lực số | Mục tiêu & YCCĐ 3439 Tích hợp GD AI\n${planRows.map((item: any, i: number) => {
         const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
         const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
-        return `${i + 1} | ${item.time || item.topic || item.lessonName} | ${item.lessonContent || item.lessonName} | ${item.periods} | ${item.lessonGoal} | ${item.digitalCompetencyTT02 || "Không"} | ${isNotIntegrated ? aiText : item.aiCompetency3439Integrated}`;
+        return `${i + 1} | ${item.time || item.topic || item.lessonName} | ${item.lessonContent || item.lessonName} | ${item.periods} | ${item.lessonGoal} | ${item.socialIntegration || ""} | ${item.digitalCompetencyTT02 || "Không"} | ${isNotIntegrated ? aiText : item.aiCompetency3439Integrated}`;
       }).join("\n")}\n\n2. Chuyên đề lựa chọn (đối với cấp trung học phổ thông)\n${supplement.selectedTopics.length > 0 ? supplement.selectedTopics.map(row => `${row.topic} | ${row.periods} | ${row.time} | ${row.requirement}`).join("\n") : "Không áp dụng hoặc tổ chuyên môn bổ sung theo kế hoạch nhà trường."}\n\nIII. Kiểm tra, đánh giá định kỳ\nThời gian | Bài kiểm tra/đánh giá | Hình thức | Số tiết\n${supplement.assessmentRows.map(row => `${row.time} | ${row.content} | ${row.form} | ${row.duration}`).join("\n")}\n\nIV. Các nội dung khác (nếu có)\n${supplement.professionalActivities.map(line => `- ${line}`).join("\n")}`;
     } else if (result.type === "kh-hdgd") {
-      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH TỔ CHỨC CÁC HOẠT ĐỘNG GIÁO DỤC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nSTT | Chủ đề/Hoạt động | Yêu cầu cần đạt | Số tiết | Thời điểm | Địa điểm | Người chủ trì | Phối hợp | Điều kiện thực hiện | Tích hợp NLS/AI\n${(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => `${i + 1} | ${item.theme} | ${item.requirements} | ${item.periods} | ${item.timing} | ${item.location} | ${item.host} | ${item.collaborator} | ${item.conditions} | ${item.aiIntegration}`).join("\n")}`;
+      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH TỔ CHỨC CÁC HOẠT ĐỘNG GIÁO DỤC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nSTT | Chủ đề/Hoạt động | Yêu cầu cần đạt | Số tiết | Thời điểm | Địa điểm | Người chủ trì | Phối hợp | Điều kiện thực hiện | Nội dung giáo dục tích hợp/lồng ghép | Tích hợp NLS/AI\n${(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => `${i + 1} | ${item.theme} | ${item.requirements} | ${item.periods} | ${item.timing} | ${item.location} | ${item.host} | ${item.collaborator} | ${item.conditions} | ${item.socialIntegration || ""} | ${item.aiIntegration}`).join("\n")}`;
     }
 
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
@@ -3980,7 +4328,7 @@ export default function App() {
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                   <BrainCircuit className="w-6 h-6 text-white" />
                 </div>
-                <h1 className="font-black text-xl tracking-normal break-words leading-tight">khgdkhbdcothaibpbd</h1>
+                <h1 className="font-black text-xl tracking-normal break-words leading-tight">EduPlan AI</h1>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-blue-300/80 font-black uppercase tracking-[0.3em]">Hệ thống thông minh</span>
@@ -4101,7 +4449,7 @@ export default function App() {
                   <span className="text-xs font-bold text-white">Sẵn sàng trợ lý</span>
                 </div>
                 <p className="text-[10px] text-white/60 leading-relaxed relative z-10">
-                  Dựa trên Công văn 3439/BGDĐT và chương trình 2018.
+                  Dựa trên Quyết định 3439/QĐ-BGDĐT và chương trình 2018.
                 </p>
               </div>
             </div>
@@ -4112,7 +4460,7 @@ export default function App() {
             {/* Mobile Header */}
             <header className="lg:hidden flex items-center justify-between p-4 border-b border-white/10 sticky top-0 bg-indigo-900/80 backdrop-blur-md z-40 text-white">
               <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setMode("dashboard"); setResult(null); }}>
-                <span className="font-black text-base sm:text-xl tracking-normal truncate max-w-[180px]">khgdkhbdcothaibpbd</span>
+                <span className="font-black text-base sm:text-xl tracking-normal truncate max-w-[180px]">EduPlan AI</span>
               </div>
               <div className="flex items-center gap-4">
                 <div className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase ${isOnline ? "border-emerald-300/40 bg-emerald-400/10 text-emerald-100" : "border-amber-300/40 bg-amber-400/10 text-amber-100"}`}>
@@ -4226,6 +4574,12 @@ export default function App() {
                         Quay lại tổng quan <ChevronRight className="w-4 h-4" />
                       </button>
                     </div>
+                    <React.Suspense fallback={
+                      <div className="flex items-center justify-center gap-3 py-16 text-sm font-bold text-slate-500">
+                        <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
+                        Đang tải công cụ xử lý DOCX...
+                      </div>
+                    }>
                     <UpgradePlan
                       apiKey={apiKey}
                       isOnline={isOnline}
@@ -4334,6 +4688,7 @@ export default function App() {
                         await handleGenerateKHBDWithInput(newInput);
                       }}
                     />
+                    </React.Suspense>
                   </motion.div>
                 )}
 
@@ -4344,6 +4699,12 @@ export default function App() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                   >
+                    <React.Suspense fallback={
+                      <div className="flex items-center justify-center gap-3 py-16 text-sm font-bold text-slate-500">
+                        <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
+                        Đang tải bộ công cụ Sử - Địa...
+                      </div>
+                    }>
                     <SuDiaSkills
                       apiKey={apiKey}
                       aiModel={aiModel}
@@ -4354,6 +4715,7 @@ export default function App() {
                         setMode("upgrade-plan");
                       }}
                     />
+                    </React.Suspense>
                   </motion.div>
                 )}
 
@@ -4453,7 +4815,7 @@ export default function App() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredHistory.map((item, idx) => (
                           <div key={item.id} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group" onClick={() => {
-                            setResult({ type: item.type, data: item.type === "khbd" ? normalizeKhbdToCv5512(item.data) : item.data, loadedFromHistory: true });
+                            setResult({ type: item.type, data: item.type === "khbd" ? normalizeKhbdForGrade(item.data, item.grade || lessonPlanInput.grade) : item.data, loadedFromHistory: true });
                             if (item.evaluationResult) {
                               setEvaluationResult(item.evaluationResult);
                             }
@@ -4486,7 +4848,7 @@ export default function App() {
                         </div>
                         <div>
                           <h2 className="text-4xl md:text-6xl font-black text-white tracking-normal leading-[1.05] mb-4 break-all">
-                            khgdkhbdcothaibpbd
+                            EduPlan AI
                           </h2>
                           <p className="text-indigo-100/70 font-medium max-w-xl text-lg">
                             Nền tảng số hóa giáo án chuyên nghiệp, bám sát các tiêu chuẩn giáo dục Việt Nam.
@@ -4538,7 +4900,7 @@ export default function App() {
                           icon={<LayoutGrid className="w-8 h-8 text-white" />}
                           iconBg="bg-blue-600"
                           title="Kế hoạch Tổ (KHTCM)"
-                          desc="Xây dựng khung kế hoạch dạy học cấp Tổ chuyên môn tích hợp AI chuẩn CV 3439."
+                          desc="Xây dựng kế hoạch dạy học cấp Tổ chuyên môn tích hợp NLS theo TT 02 và NL AI theo QĐ 3439."
                           onClick={() => setMode("kh-tcm-gen")}
                         />
                       </div>
@@ -4576,7 +4938,7 @@ export default function App() {
                             <p className="text-indigo-900/60 font-semibold text-lg">Tạo giáo án chi tiết với kịch bản tương tác AI chuyên sâu.</p>
                           </div>
                           <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-                            {["Chuẩn 5512", "Tích hợp AI 3439", "Công thức Word", "Đa định dạng"].map(tag => (
+                            {[["1", "2", "3", "4", "5"].includes(String(lessonPlanInput.grade)) ? "CV 2345" : "CV 5512", "NLS TT02 + AI 3439", "Công thức Word", "Đa định dạng"].map(tag => (
                               <span key={tag} className="px-4 py-1.5 bg-white/50 backdrop-blur-sm text-indigo-700 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-100 shadow-sm">
                                 {tag}
                               </span>
@@ -4597,8 +4959,8 @@ export default function App() {
                           <Sparkles className="w-8 h-8 text-indigo-500" />
                         </div>
                         <div>
-                          <h4 className="font-black text-indigo-950">Phát triển Năng lực AI</h4>
-                          <p className="text-xs font-medium text-indigo-900/50 leading-relaxed italic">Nạp khung năng lực 3439 vào từng hoạt động dạy học.</p>
+                          <h4 className="font-black text-indigo-950">Phát triển NLS và NL AI</h4>
+                          <p className="text-xs font-medium text-indigo-900/50 leading-relaxed italic">Gắn NLS theo TT 02 và NL AI theo QĐ 3439 vào đúng hoạt động có điểm chạm.</p>
                         </div>
                       </div>
 
@@ -4626,7 +4988,7 @@ export default function App() {
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                       <div>
                         <h2 className="text-3xl font-bold text-slate-900">Khung Kế hoạch bài dạy</h2>
-                        <p className="text-slate-500 mt-1">Chuẩn Công văn 3439/BGDĐT</p>
+                        <p className="text-slate-500 mt-1">Chuẩn Quyết định 3439/QĐ-BGDĐT</p>
                       </div>
                       <button
                         onClick={() => { setMode("dashboard"); setResult(null); }}
@@ -4666,7 +5028,7 @@ export default function App() {
                                 onChange={(e) => handleSubjectOrGradeChange(e.target.value, lessonPlanInput.grade)}
                               >
                                 <option value="">-- Chọn môn học --</option>
-                                {(["6", "7", "8", "9"].includes(lessonPlanInput.grade) ? SUBJECTS_THCS : SUBJECTS_THPT).map(s => <option key={s} value={s}>{s}</option>)}
+                                {getSubjectsForGrade(lessonPlanInput.grade).map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
                               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-brand-accent transition-colors">
                                 <ChevronRight className="w-4 h-4 rotate-90" />
@@ -4838,15 +5200,10 @@ export default function App() {
 
                           <div className="space-y-3 pt-2">
                             <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em] flex items-center gap-2">
-                              Tích hợp nội dung xã hội (TT 02/2025)
+                              Tích hợp nội dung giáo dục xã hội (tùy chọn)
                             </label>
                             <div className="grid grid-cols-2 gap-2">
-                              {[
-                                { id: "Heritage", label: "Di sản" },
-                                { id: "DrugPrevention", label: "Ma túy" },
-                                { id: "Population", label: "Dân số" },
-                                { id: "Inclusive", label: "Hòa nhập" }
-                              ].map((item) => (
+                              {SOCIAL_INTEGRATION_OPTIONS.map((item) => (
                                 <label key={item.id} className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-all">
                                   <input
                                     type="checkbox"
@@ -4865,6 +5222,12 @@ export default function App() {
                                 </label>
                               ))}
                             </div>
+                            <input
+                              value={lessonPlanInput.customSocialIntegration || ""}
+                              onChange={(e) => setLessonPlanInput({ ...lessonPlanInput, customSocialIntegration: e.target.value })}
+                              placeholder="Nội dung khác: an toàn giao thông, bảo vệ môi trường..."
+                              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-red-300"
+                            />
                           </div>
 
                           {/* Giao diện Đề xuất Chỉ báo NLS */}
@@ -4887,7 +5250,7 @@ export default function App() {
                                 ) : (
                                   <>
                                     <Sparkles className="w-3.5 h-3.5" />
-                                    AI Đề xuất
+                                    Đề xuất mã
                                   </>
                                 )}
                               </button>
@@ -4895,56 +5258,61 @@ export default function App() {
                             
                             {suggestedNlsIndicators.length > 0 && (
                               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                                {suggestedNlsIndicators.map((item, idx) => (
-                                  <label
-                                    key={idx}
-                                    className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                                      lessonPlanInput.selectedNlsIndicators?.find(i => i.code === item.code)
-                                        ? "border-brand-accent bg-brand-accent/5"
-                                        : "border-slate-200 hover:border-slate-300 bg-white"
-                                    }`}
-                                  >
-                                    <div className="pt-0.5">
-                                      <input
-                                        type="checkbox"
-                                        checked={!!lessonPlanInput.selectedNlsIndicators?.find(i => i.code === item.code)}
-                                        onChange={(e) => {
-                                          const current = lessonPlanInput.selectedNlsIndicators || [];
-                                          if (e.target.checked) {
-                                            setLessonPlanInput({
-                                              ...lessonPlanInput,
-                                              selectedNlsIndicators: [...current, { code: item.code, description: item.name }]
-                                            });
-                                          } else {
-                                            setLessonPlanInput({
-                                              ...lessonPlanInput,
-                                              selectedNlsIndicators: current.filter(i => i.code !== item.code)
-                                            });
-                                          }
-                                        }}
-                                        className="w-4 h-4 rounded text-brand-accent focus:ring-brand-accent"
-                                      />
-                                    </div>
-                                    <div className="flex-1 space-y-1">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
-                                          {item.code}
-                                        </span>
+                                {suggestedNlsIndicators.map((item, idx) => {
+                                  const selectable = item.verified !== false;
+                                  const selected = !!lessonPlanInput.selectedNlsIndicators?.find(i => i.code === item.code);
+                                  return (
+                                    <label
+                                      key={idx}
+                                      className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${selectable ? "cursor-pointer" : "cursor-not-allowed opacity-70"} ${
+                                        selected
+                                          ? "border-brand-accent bg-brand-accent/5"
+                                          : selectable
+                                            ? "border-slate-200 hover:border-slate-300 bg-white"
+                                            : "border-amber-300 bg-amber-50"
+                                      }`}
+                                    >
+                                      <div className="pt-0.5">
+                                        <input
+                                          type="checkbox"
+                                          checked={selected}
+                                          disabled={!selectable}
+                                          onChange={(e) => {
+                                            if (!selectable) return;
+                                            const current = lessonPlanInput.selectedNlsIndicators || [];
+                                            if (e.target.checked) {
+                                              setLessonPlanInput({
+                                                ...lessonPlanInput,
+                                                selectedNlsIndicators: [...current, { code: item.code, description: item.name }]
+                                              });
+                                            } else {
+                                              setLessonPlanInput({
+                                                ...lessonPlanInput,
+                                                selectedNlsIndicators: current.filter(i => i.code !== item.code)
+                                              });
+                                            }
+                                          }}
+                                          className="w-4 h-4 rounded text-brand-accent focus:ring-brand-accent disabled:cursor-not-allowed"
+                                        />
                                       </div>
-                                      <p className="text-sm font-medium text-slate-700 line-clamp-2" title={item.name}>
-                                        {item.name}
-                                      </p>
-                                      <div className="text-xs text-brand-accent/80 bg-brand-accent/10 px-2 py-1.5 rounded-lg flex items-start gap-1.5">
-                                        <BrainCircuit className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                                        <span className="italic leading-snug">{item.rationale}</span>
+                                      <div className="flex-1 space-y-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">{item.code}</span>
+                                          {!selectable && <span className="text-[10px] font-bold text-amber-700">CẦN BẢNG MÃ GỐC</span>}
+                                        </div>
+                                        <p className="text-sm font-medium text-slate-700 line-clamp-2" title={item.name}>{item.name}</p>
+                                        {!selectable && <p className="text-[11px] font-semibold text-amber-700">Không thể chọn cho đến khi có phụ lục chính thức xác nhận.</p>}
+                                        <div className="text-xs text-brand-accent/80 bg-brand-accent/10 px-2 py-1.5 rounded-lg flex items-start gap-1.5">
+                                          <BrainCircuit className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                          <span className="italic leading-snug">{item.rationale}</span>
+                                        </div>
                                       </div>
-                                    </div>
-                                  </label>
-                                ))}
+                                    </label>
+                                  );
+                                })}
                               </div>
                             )}
-                          </div>
-                          {/* CONTENT INTEGRITY WARNING - Nguyên tắc 3.1 */}
+                          </div>                          {/* CONTENT INTEGRITY WARNING - Nguyên tắc 3.1 */}
                           {!lessonPlanInput.existingRawText && !lessonPlanInput.existingPdfBase64 && (
                             <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
                               <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
@@ -4972,7 +5340,7 @@ export default function App() {
                       <div className="flex flex-col items-center justify-center py-20 space-y-4">
                         <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
                         <p className="text-slate-500 font-medium animate-pulse">AI đang soạn thảo kế hoạch bài dạy cho bạn...</p>
-                        <p className="text-xs text-slate-400">Việc này có thể mất vài giây bám sát CV 3439.</p>
+                        <p className="text-xs text-slate-400">Việc này có thể mất vài giây để bám TT 02, QĐ 3439 và YCCĐ môn học.</p>
                       </div>
                     )}
 
@@ -4982,7 +5350,7 @@ export default function App() {
                           <div className="flex flex-col">
                             <h3 className="text-xl font-extrabold text-brand-sidebar line-clamp-1">{result.data.title}</h3>
                             <div className="text-[10px] text-brand-muted font-bold uppercase flex items-center gap-2 mt-1">
-                              Chuẩn CV 5512/BGDĐT + AI <span className="w-1 h-1 bg-brand-muted rounded-full"></span> Môn: {lessonPlanInput.subject} <span className="w-1 h-1 bg-brand-muted rounded-full"></span> {province}
+                              {["1", "2", "3", "4", "5"].includes(String(lessonPlanInput.grade)) ? "CV 2345/BGDĐT-GDTH" : "CV 5512/BGDĐT-GDTrH"} + TT 02 + QĐ 3439 <span className="w-1 h-1 bg-brand-muted rounded-full"></span> Môn: {lessonPlanInput.subject} <span className="w-1 h-1 bg-brand-muted rounded-full"></span> {province}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -5209,7 +5577,7 @@ export default function App() {
                                       <div className="text-brand-dark font-medium">{renderRichTextBlock(act.studentNotes)}</div>
                                     </div>
                                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                                      <p className="font-bold text-brand-sidebar mb-3 uppercase text-[10px] tracking-wider text-opacity-70">d) Tổ chức thực hiện - 4 bước CV 5512</p>
+                                      <p className="font-bold text-brand-sidebar mb-3 uppercase text-[10px] tracking-wider text-opacity-70">{["1", "2", "3", "4", "5"].includes(String(lessonPlanInput.grade)) ? "d) Các hoạt động dạy học chủ yếu - CV 2345" : "d) Tổ chức thực hiện - 4 bước CV 5512"}</p>
                                       <div className="space-y-6">
                                         {(act.procedure || []).map((step: any, idx: number) => (
                                           <div key={idx} className="space-y-2 pl-3 border-l-2 border-brand-accent/20">
@@ -5288,7 +5656,7 @@ export default function App() {
                             <section className="space-y-4 mt-6 pt-6 border-t border-slate-100">
                               <h4 className="text-base font-extrabold text-brand-sidebar uppercase tracking-tight flex items-center gap-3">
                                 <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
-                                VI. PHIẾU SỬ DỤNG AI (Dành cho Học sinh — Chuẩn Mục 7/CV 3439)
+                                VI. PHIẾU SỬ DỤNG AI (Dành cho Học sinh — theo bộ quy tắc tích hợp và QĐ 3439/QĐ-BGDĐT)
                               </h4>
                               <div className="pl-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
                                 <p className="text-xs font-bold text-purple-700 mb-1">📋 Hướng dẫn sử dụng phiếu:</p>
@@ -5371,7 +5739,7 @@ export default function App() {
                                 </div>
                                 <div>
                                   <h4 className="text-xl font-black text-brand-sidebar uppercase tracking-tight">Hệ thống đánh giá năng lực</h4>
-                                  <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">Chuẩn CV 3439/BGDĐT & Chương trình GDPT 2018</p>
+                                  <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">Chuẩn QĐ 3439/QĐ-BGDĐT & Chương trình GDPT 2018</p>
                                 </div>
                               </header>
 
@@ -5580,7 +5948,7 @@ export default function App() {
                                 onChange={(e) => setEduPlanInput({ ...eduPlanInput, subject: e.target.value })}
                               >
                                 <option value="">-- Chọn môn học --</option>
-                                {(["6", "7", "8", "9"].includes(eduPlanInput.grade) ? SUBJECTS_THCS : SUBJECTS_THPT).map(s => <option key={s} value={s}>{s}</option>)}
+                                {getSubjectsForGrade(eduPlanInput.grade).map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
                               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-brand-accent transition-colors">
                                 <ChevronRight className="w-4 h-4 rotate-90" />
@@ -5608,7 +5976,7 @@ export default function App() {
                             <select
                               className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-accent outline-none text-sm appearance-none bg-white font-medium"
                               value={eduPlanInput.grade}
-                              onChange={(e) => setEduPlanInput({ ...eduPlanInput, grade: e.target.value })}
+                              onChange={(e) => handleEduPlanGradeChange(e.target.value)}
                             >
                               {GRADES.map(g => <option key={g} value={g}>Lớp {g}</option>)}
                             </select>
@@ -5637,15 +6005,10 @@ export default function App() {
 
                           <div className="space-y-3 pt-2">
                             <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em] flex items-center gap-2">
-                              Tích hợp nội dung xã hội (TT 02/2025)
+                              Tích hợp nội dung giáo dục xã hội (tùy chọn)
                             </label>
                             <div className="grid grid-cols-2 gap-2">
-                              {[
-                                { id: "Heritage", label: "Di sản" },
-                                { id: "DrugPrevention", label: "Ma túy" },
-                                { id: "Population", label: "Dân số" },
-                                { id: "Inclusive", label: "Hòa nhập" }
-                              ].map((item) => (
+                              {SOCIAL_INTEGRATION_OPTIONS.map((item) => (
                                 <label key={item.id} className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-all">
                                   <input
                                     type="checkbox"
@@ -5664,6 +6027,12 @@ export default function App() {
                                 </label>
                               ))}
                             </div>
+                            <input
+                              value={eduPlanInput.customSocialIntegration || ""}
+                              onChange={(e) => setEduPlanInput({ ...eduPlanInput, customSocialIntegration: e.target.value })}
+                              placeholder="Nội dung khác: an toàn giao thông, bảo vệ môi trường..."
+                              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-red-300"
+                            />
                           </div>
 
                           <button
@@ -5725,8 +6094,8 @@ export default function App() {
                           </div>
                         </div>
 
-                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade)} />
-                        <ExportModePanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade)} />
+                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
+                        <ExportModePanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
 
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
                           <table className="w-full text-left text-[10px] border-collapse min-w-[1200px]">
@@ -5738,6 +6107,7 @@ export default function App() {
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Thời điểm</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-64">Thiết bị dạy học & Học liệu AI</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Địa điểm dạy học</th>
+                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest min-w-[240px]">Nội dung giáo dục tích hợp/lồng ghép</th>
                                 <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest">Định hướng năng lực số (AI)</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 print:hidden text-center">Thao tác</th>
                               </tr>
@@ -5765,6 +6135,9 @@ export default function App() {
                                     </div>
                                   </td>
                                   <td className="p-3 text-brand-muted">{item.location}</td>
+                                  <td className={`p-3 font-bold leading-relaxed whitespace-pre-line ${item.socialIntegration ? "text-red-700 bg-red-50/20" : "text-slate-300"}`}>
+                                    {item.socialIntegration || "—"}
+                                  </td>
                                   <td className="p-3 text-red-700 font-bold leading-relaxed whitespace-pre-line bg-red-50/20 border-l border-red-100">
                                     {item.digitalCompetency}
                                   </td>
@@ -5833,7 +6206,7 @@ export default function App() {
                                 onChange={(e) => setEduPlanInput({ ...eduPlanInput, subject: e.target.value })}
                               >
                                 <option value="">-- Chọn môn học --</option>
-                                {(["6", "7", "8", "9"].includes(eduPlanInput.grade) ? SUBJECTS_THCS : SUBJECTS_THPT).map(s => <option key={s} value={s}>{s}</option>)}
+                                {getSubjectsForGrade(eduPlanInput.grade).map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
                               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-emerald-500 transition-colors">
                                 <ChevronRight className="w-4 h-4 rotate-90" />
@@ -5862,7 +6235,7 @@ export default function App() {
                               <select
                                 className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-sm appearance-none bg-white font-medium"
                                 value={eduPlanInput.grade}
-                                onChange={(e) => setEduPlanInput({ ...eduPlanInput, grade: e.target.value })}
+                                onChange={(e) => handleEduPlanGradeChange(e.target.value)}
                               >
                                 {GRADES.map(g => <option key={g} value={g}>Lớp {g}</option>)}
                               </select>
@@ -5873,6 +6246,12 @@ export default function App() {
                           </div>
 
                           <SubjectCoveragePanel subject={eduPlanInput.subject} grade={eduPlanInput.grade} customData={customCurriculumData} />
+                          <SocialIntegrationSelector
+                            selected={eduPlanInput.socialIntegrations}
+                            customValue={eduPlanInput.customSocialIntegration}
+                            onSelectedChange={(socialIntegrations) => setEduPlanInput({ ...eduPlanInput, socialIntegrations })}
+                            onCustomChange={(customSocialIntegration) => setEduPlanInput({ ...eduPlanInput, customSocialIntegration })}
+                          />
 
                           <div className="grid grid-cols-2 gap-4 pt-2">
                             <label className="flex items-center gap-2 cursor-pointer group">
@@ -5979,12 +6358,12 @@ export default function App() {
                           Array.isArray(result.data) ? result.data : [],
                           getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
                           { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
-                        ), eduPlanInput.subject, eduPlanInput.grade)} />
+                        ), eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
                         <ExportModePanel audit={buildPlanQualityAudit("kh-tcm", completeDepartmentPlanRows(
                           Array.isArray(result.data) ? result.data : [],
                           getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
                           { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
-                        ), eduPlanInput.subject, eduPlanInput.grade)} />
+                        ), eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
 
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
                           <KhtcmSupplementSections subject={eduPlanInput.subject} grade={eduPlanInput.grade} rows={completeDepartmentPlanRows(
@@ -6007,10 +6386,11 @@ export default function App() {
                               <tr className="border-b-2 border-slate-100">
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-12 text-center">STT</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Thời gian</th>
+                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest min-w-[240px]">Nội dung giáo dục tích hợp/lồng ghép</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-48">Nội dung</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 text-center">Số tiết</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest">Yêu cầu cần đạt</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Năng lực số</th>
+                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest w-40">Năng lực số</th>
                                 <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Mục tiêu & YCCĐ 3439 Tích hợp GD AI</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-24 print:hidden text-center">Thao tác</th>
                               </tr>
@@ -6023,14 +6403,18 @@ export default function App() {
                               ).map((item: any, i: number) => {
                                 const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
                                 const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
+                                const hasNlsIntegration = hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không");
                                 return (
-                                  <tr key={i} className={`border-b border-slate-50 hover:bg-slate-50 transition-colors align-top ${isNotIntegrated ? "opacity-60" : ""}`}>
+                                  <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors align-top">
                                     <td className="p-4 text-center font-bold text-slate-400">{i + 1}</td>
                                     <td className="p-4 font-bold text-brand-sidebar">{item.time || item.topic || item.lessonName}</td>
+                                    <td className={`p-4 font-bold leading-relaxed whitespace-pre-line text-[10px] ${item.socialIntegration ? "text-red-700 bg-red-50/20" : "text-slate-300"}`}>
+                                      {item.socialIntegration || "—"}
+                                    </td>
                                     <td className="p-4 text-brand-sidebar leading-relaxed whitespace-pre-line text-[11px]">{item.lessonContent || item.lessonName}</td>
                                     <td className="p-4 text-center font-bold text-slate-600">{item.periods}</td>
                                     <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.lessonGoal}</td>
-                                    <td className="p-4 text-brand-sidebar leading-relaxed whitespace-pre-line text-[10px]">{item.digitalCompetencyTT02 || "Không"}</td>
+                                    <td className={`p-4 font-bold leading-relaxed whitespace-pre-line text-[10px] ${hasNlsIntegration ? "text-red-700 bg-red-50/20" : "text-slate-400"}`}>{item.digitalCompetencyTT02 || "Không"}</td>
                                     <td className={`p-4 font-bold ${isNotIntegrated ? "text-slate-400" : "text-red-700 bg-red-50/20"} whitespace-pre-line text-[11px]`}>
                                       {aiText}
                                     </td>
@@ -6099,19 +6483,25 @@ export default function App() {
                                 onChange={(e) => setEduPlanInput({ ...eduPlanInput, subject: e.target.value })}
                               >
                                 <option value="">-- Chọn môn học --</option>
-                                {(["6", "7", "8", "9"].includes(eduPlanInput.grade) ? SUBJECTS_THCS : SUBJECTS_THPT).map(s => <option key={s} value={s}>{s}</option>)}
+                                {getSubjectsForGrade(eduPlanInput.grade).map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
                               <select
                                 className="w-32 px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-sm appearance-none bg-white font-medium"
                                 value={eduPlanInput.grade}
-                                onChange={(e) => setEduPlanInput({ ...eduPlanInput, grade: e.target.value })}
+                                onChange={(e) => handleEduPlanGradeChange(e.target.value)}
                               >
-                                {["6", "7", "8", "9", "10", "11", "12"].map(g => <option key={g} value={g}>Lớp {g}</option>)}
+                                {GRADES.map(g => <option key={g} value={g}>Lớp {g}</option>)}
                               </select>
                             </div>
                           </div>
                           <SubjectCoveragePanel subject={eduPlanInput.subject} grade={eduPlanInput.grade} />
                         </div>
+                          <SocialIntegrationSelector
+                            selected={eduPlanInput.socialIntegrations}
+                            customValue={eduPlanInput.customSocialIntegration}
+                            onSelectedChange={(socialIntegrations) => setEduPlanInput({ ...eduPlanInput, socialIntegrations })}
+                            onCustomChange={(customSocialIntegration) => setEduPlanInput({ ...eduPlanInput, customSocialIntegration })}
+                          />
 
                         <div className="mt-8 flex justify-end">
                           <button
@@ -6173,6 +6563,8 @@ export default function App() {
                           </div>
                         </div>
 
+                        <PlanQualityAuditPanel audit={buildPlanQualityAudit("kh-hdgd", result.data, eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
+                        <ExportModePanel audit={buildPlanQualityAudit("kh-hdgd", result.data, eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
                         <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
                           <div className="mb-6">
                             <h4 className="text-lg font-extrabold text-brand-sidebar">Kế hoạch tổ chức các hoạt động giáo dục</h4>
@@ -6184,6 +6576,7 @@ export default function App() {
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Chủ đề/Hoạt động</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest">Yêu cầu cần đạt</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-16 text-center">Số tiết</th>
+                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest min-w-[240px]">Nội dung giáo dục tích hợp/lồng ghép</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-24">Thời điểm</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Địa điểm</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Người chủ trì</th>
@@ -6199,6 +6592,9 @@ export default function App() {
                                   <td className="p-4 font-bold text-brand-sidebar">{item.theme}</td>
                                   <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.requirements}</td>
                                   <td className="p-4 text-center font-bold text-slate-600">{item.periods}</td>
+                                  <td className={`p-4 font-bold whitespace-pre-line text-[10px] ${item.socialIntegration ? "text-red-700 bg-red-50/20" : "text-slate-300"}`}>
+                                    {item.socialIntegration || "—"}
+                                  </td>
                                   <td className="p-4 text-brand-sidebar">{item.timing}</td>
                                   <td className="p-4 text-brand-sidebar">{item.location}</td>
                                   <td className="p-4 text-brand-sidebar font-medium">{item.host}</td>
@@ -6415,7 +6811,7 @@ export default function App() {
                       <Settings className="w-6 h-6 text-indigo-500" /> Cài đặt Hệ thống
                     </h3>
                     <p className="text-sm text-slate-500 mt-2">
-                      Cấu hình AI cho khgdkhbdcothaibpbd. Chìa khóa API (API Key) được lưu trữ an toàn trên trình duyệt của bạn.
+                      API key chỉ được lưu trên trình duyệt hiện tại và không nằm trong file sao lưu. Không sử dụng khóa đã công khai hoặc chia sẻ cho nhiều người.
                     </p>
                   </div>
 

@@ -855,11 +855,6 @@ export default function UpgradePlan({
         });
         list(formative?.part3_shortAnswer).forEach((question: any, idx: number) => {
             lines.push(`Phần III - Câu ${idx + 1}: ${stripQuestionPrefix(question?.question)}`);
-            if (question?.originalRequirement) lines.push(`YCCĐ gốc: ${question.originalRequirement}`);
-            if (question?.assessedIndicator) lines.push(`Biểu hiện cần đánh giá: ${question.assessedIndicator}`);
-            if (question?.questionTypeAndCalculation) lines.push(`Dạng câu hỏi và thao tác tính toán: ${question.questionTypeAndCalculation}`);
-            if (question?.cognitiveLevel) lines.push(`Mức độ: ${question.cognitiveLevel}`);
-            if (question?.technicalRequirements) lines.push(`Yêu cầu kỹ thuật: ${question.technicalRequirements}`);
             appendAssessmentQuestionSupportText(lines, question);
             lines.push(`Đáp án: ${question?.answer || ""}`);
         });
@@ -1798,15 +1793,6 @@ export default function UpgradePlan({
                                                                 {list(preservedAssessmentResult.formativeAssessment?.part3_shortAnswer).map((q: any, qi: number) => (
                                                                     <div key={`short-${qi}`} className="p-4 bg-white rounded-xl border border-slate-100 space-y-3">
                                                                         <p className="text-[12px] font-bold text-brand-sidebar">Câu {qi + 1}: {stripQuestionPrefix(q?.question)}</p>
-                                                                        {(q?.originalRequirement || q?.assessedIndicator || q?.questionTypeAndCalculation || q?.cognitiveLevel || q?.technicalRequirements) && (
-                                                                            <dl className="grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-[10px] text-brand-muted">
-                                                                                {q?.originalRequirement && <div><dt className="font-black uppercase text-brand-sidebar">YCCĐ gốc</dt><dd className="mt-0.5">{q.originalRequirement}</dd></div>}
-                                                                                {q?.assessedIndicator && <div><dt className="font-black uppercase text-brand-sidebar">Biểu hiện cần đánh giá</dt><dd className="mt-0.5">{q.assessedIndicator}</dd></div>}
-                                                                                {q?.questionTypeAndCalculation && <div><dt className="font-black uppercase text-brand-sidebar">Dạng câu hỏi và thao tác tính toán</dt><dd className="mt-0.5">{q.questionTypeAndCalculation}</dd></div>}
-                                                                                {q?.cognitiveLevel && <div><dt className="font-black uppercase text-brand-sidebar">Mức độ</dt><dd className="mt-0.5">{q.cognitiveLevel}</dd></div>}
-                                                                                {q?.technicalRequirements && <div><dt className="font-black uppercase text-brand-sidebar">Yêu cầu kỹ thuật</dt><dd className="mt-0.5">{q.technicalRequirements}</dd></div>}
-                                                                            </dl>
-                                                                        )}
                                                                         {renderAssessmentQuestionSupport(q)}
                                                                         <p className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-2 rounded-lg border border-emerald-100">Đáp án: {q?.answer}</p>
                                                                     </div>

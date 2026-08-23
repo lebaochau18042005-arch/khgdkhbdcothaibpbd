@@ -10,6 +10,7 @@ import { IntermediateAlignmentTable, AlignmentRow } from "./IntermediateAlignmen
 import { VisualAlignmentMatrix } from "./VisualAlignmentMatrix";
 import { ExportGatekeeperModal } from "./ExportGatekeeperModal";
 import { validateGatekeeper } from "../utils/gatekeeperValidator";
+import { parseExcelFile } from "../utils/excelParser";
 import { saveAs } from "file-saver";
 
 interface TextbookImage {
@@ -1246,8 +1247,8 @@ export default function UpgradePlan({
                                 ) : (
                                     <label className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm cursor-pointer transition-colors text-sm font-medium">
                                         <UploadCloud className="w-4 h-4" />
-                                        <span>Chọn file PL1 (DOCX)</span>
-                                        <input type="file" className="hidden" accept=".docx" onChange={handlePl1Upload} />
+                                        <span>Chọn file PL1 (DOCX / XLSX)</span>
+                                        <input type="file" className="hidden" accept=".docx,.xlsx,.xls" onChange={handlePl1Upload} />
                                     </label>
                                 )}
                             </div>
@@ -1272,13 +1273,13 @@ export default function UpgradePlan({
                                             <p className="text-sm text-slate-500 mt-1">
                                                 {textbookImages.length > 0
                                                     ? `✅ Đã chọn ${textbookImages.length} ảnh SGK. AI sẽ phân tích so sánh.`
-                                                    : "Ưu tiên DOCX để chèn NLS/NL AI và giữ nguyên hình ảnh, bảng, biểu đồ, hình vẽ, công thức. PDF chỉ dùng để AI đọc/rà soát."}
+                                                    : "Hỗ trợ DOCX, XLSX (Excel), PDF. File Word và Excel giúp AI đọc và phân tích cấu trúc bài học tốt nhất."}
                                             </p>
                                         </div>
                                         <label className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm cursor-pointer transition-colors font-medium">
                                             <FileText className="w-4 h-4" />
-                                            <span>Chọn Giáo án từ máy tính</span>
-                                            <input type="file" className="hidden" accept=".docx, .pdf" onChange={handleFileUpload} />
+                                            <span>Chọn Giáo án / PPCT (DOCX, PDF, XLSX)</span>
+                                            <input type="file" className="hidden" accept=".docx,.pdf,.xlsx,.xls" onChange={handleFileUpload} />
                                         </label>
                                     </div>
                                 )}

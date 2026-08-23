@@ -46,6 +46,7 @@ import { IntermediateAlignmentTable, AlignmentRow } from "./components/Intermedi
 import { VisualAlignmentMatrix } from "./components/VisualAlignmentMatrix";
 import { ExportGatekeeperModal } from "./components/ExportGatekeeperModal";
 import { validateGatekeeper } from "./utils/gatekeeperValidator";
+import { parseExcelFile, exportAlignmentRowsToExcel } from "./utils/excelParser";
 import { SOCIAL_INTEGRATION_OPTIONS } from "./data/socialIntegrations";
 
 const UpgradePlan = React.lazy(() => import("./components/UpgradePlan"));
@@ -5221,7 +5222,7 @@ export default function App() {
                               <div className="flex items-center justify-between">
                                 <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Tên bài học cụ thể (hoặc Tải ảnh/PDF SGK)</label>
                                 <div>
-                                  <input type="file" id="upload-source-1" className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
+                                  <input type="file" id="upload-source-1" className="hidden" accept="image/*,.pdf,.docx,.xlsx,.xls" onChange={handleFileUpload} />
                                   <label htmlFor="upload-source-1" className="cursor-pointer flex items-center gap-1 text-[10px] font-bold text-brand-accent hover:text-blue-700 bg-brand-accent/10 px-2 py-1 rounded transition-colors uppercase tracking-[0.1em]">
                                     {uploadingSource ? <Sparkles className="w-3 h-3 animate-spin" /> : <UploadCloud className="w-3 h-3" />}
                                     {uploadingSource ? "Đang đọc..." : "AI Đọc Ảnh / PDF"}
@@ -6418,7 +6419,7 @@ export default function App() {
                               <label className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed ${customCurriculumData ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-600"} cursor-pointer transition-all`}>
                                 {isParsingCurriculum ? <Loader2 className="w-4 h-4 animate-spin" /> : (customCurriculumData ? <CheckCircle2 className="w-4 h-4" /> : <FileText className="w-4 h-4" />)}
                                 <span className="text-xs font-bold">{isParsingCurriculum ? "Đang rà soát và bóc tách..." : (customCurriculumData ? `Đã nạp ${customCurriculumData.length} bài học. Chọn file khác?` : "Chọn file DOCX / PDF từ máy tính")}</span>
-                                <input type="file" className="hidden" accept=".docx, .pdf" onChange={handleCurriculumUpload} disabled={isParsingCurriculum} />
+                                <input type="file" className="hidden" accept=".docx, .pdf, .xlsx, .xls" onChange={handleCurriculumUpload} disabled={isParsingCurriculum} />
                               </label>
                               {customCurriculumData && (
                                 <button onClick={() => setCustomCurriculumData(null)} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors border border-red-200" title="Xóa phụ lục lập tức lấy lại mặc định">
@@ -6794,7 +6795,7 @@ export default function App() {
                             <div className="flex items-center justify-between">
                               <label className="text-[10px] font-bold text-brand-muted uppercase tracking-[0.14em]">Chủ đề / Bài dạy (hoặc Tải ảnh/PDF SGK)</label>
                               <div>
-                                <input type="file" id="upload-source-2" className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
+                                <input type="file" id="upload-source-2" className="hidden" accept="image/*,.pdf,.docx,.xlsx,.xls" onChange={handleFileUpload} />
                                 <label htmlFor="upload-source-2" className="cursor-pointer flex items-center gap-1 text-[10px] font-bold text-brand-accent hover:text-blue-700 bg-brand-accent/10 px-2 py-1 rounded transition-colors uppercase tracking-[0.1em]">
                                   {uploadingSource ? <Sparkles className="w-3 h-3 animate-spin" /> : <UploadCloud className="w-3 h-3" />}
                                   {uploadingSource ? "Đang đọc..." : "AI Đọc Ảnh / PDF"}

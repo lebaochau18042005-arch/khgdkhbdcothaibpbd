@@ -10,6 +10,8 @@ import React, { useState } from "react";
 import { CheckCircle2, AlertTriangle, XCircle, Search, Edit3, Save, RotateCcw, Filter, Sparkles, Download } from "lucide-react";
 import { isNlsCodeValid, NLS_INDICATORS_DB } from "../data/nlsIndicatorsDb";
 import { isAiCodeValid2422, AI_REQUIREMENTS_2422_DB } from "../data/aiRequirements2422Db";
+import { exportAlignmentRowsToExcel, importAlignmentRowsFromExcel } from "../utils/excelParser";
+import { UploadCloud, FileSpreadsheet } from "lucide-react";
 
 export interface AlignmentRow {
   id: string;
@@ -54,6 +56,22 @@ export const IntermediateAlignmentTable: React.FC<IntermediateAlignmentTableProp
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [gradeFilter, setGradeFilter] = useState<string>("ALL");
+
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const imported = await importAlignmentRowsFromExcel(file);
+      if (imported && imported.length > 0) {
+        onUpdateRows(imported);
+        alert(`✅ Đã nhập thành công ${imported.length} dòng từ file Excel.`);
+      }
+    } catch (err: any) {
+      alert(`❌ Lỗi nhập file Excel: ${err.message || "File không đúng cấu trúc 22 cột."}`);
+    }
+    e.target.value = "";
+  };
+
 
   const startEdit = (row: AlignmentRow) => {
     setEditingId(row.id);
@@ -161,7 +179,20 @@ export const IntermediateAlignmentTable: React.FC<IntermediateAlignmentTableProp
       {/* Header Panel */}
       <div className="p-5 border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-indigo-50/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+          <label className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm cursor-pointer transition-all">
+            <UploadCloud className="w-3.5 h-3.5" />
+            <span>Nhập Excel (.xlsx)</span>
+            <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleExcelImport} />
+          </label>
+          <button
+            onClick={() => exportAlignmentRowsToExcel(rows)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm transition-all"
+            title="Xuất Bảng đối chiếu 22 cột ra file Excel"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Xuất Excel (.xlsx)</span>
+          </button>
             <span className="px-2.5 py-0.5 rounded-md bg-red-600 text-white text-xs font-bold uppercase tracking-wider">
               Bắt buộc
             </span>

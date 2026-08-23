@@ -535,8 +535,92 @@ const sanitizeCompetencyCodesDeep = (value: any, grade?: string, authorizedAiCod
   return value;
 };
 
+
+/**
+ * Tự động chuẩn hóa và gán điểm chạm NLS & NL AI chuẩn cho các bài học nếu AI sinh thiếu hoặc ghi từ chối không có căn cứ
+ */
+function autoAlignCompetencyForInstructionalLesson(row: any, grade: string = "10", subject: string = ""): any {
+  if (!row || typeof row !== "object") return row;
+
+  const content = String(row.lessonContent || row.lesson || row.topic || "").trim();
+  const yccd = String(row.lessonGoal || row.yccd || "").trim();
+  const isAssessment = /(kiểm tra|kiem tra|đánh giá định kì|danh gia dinh ki|giữa kì|giua ki|cuối kì|cuoi ki|dự trữ|du tru|ôn tập học kì|on tap hoc ki|mid-term|end-of-term|reviews*d|tests*d)/i.test(content);
+
+  if (isAssessment) {
+    if (!row.digitalCompetencyTT02 || !row.digitalCompetencyTT02.includes("Không tích hợp")) {
+      row.digitalCompetencyTT02 = "Không tích hợp - Tiết kiểm tra / đánh giá định kì.";
+    }
+    if (!row.aiCompetency2422Integrated || !row.aiCompetency2422Integrated.includes("Không tích hợp")) {
+      row.aiCompetency2422Integrated = "Không tích hợp - Tiết kiểm tra / đánh giá định kì.";
+    }
+    return row;
+  }
+
+  const g = ["10", "11", "12"].includes(String(grade)) ? String(grade) : "10";
+  const normContent = content.toLowerCase();
+  const normSubject = subject.toLowerCase();
+  const isEnglish = normSubject.includes("tiếng anh") || normSubject.includes("english") || /units*d|getting started|language|reading|speaking|listening|writing/i.test(content);
+
+  // Check if NLS is missing or rejected lazily
+  const nlsMissing = !row.digitalCompetencyTT02 || /not integrated|không tích hợp|không gán mã/i.test(row.digitalCompetencyTT02);
+  if (nlsMissing) {
+    if (isEnglish) {
+      if (/getting started/i.test(normContent)) {
+        row.digitalCompetencyTT02 = "1.1.NCa: Tìm kiếm và khai thác hình ảnh, tư liệu âm thanh/video số về chủ đề bài học qua môi trường số.";
+      } else if (/language|pronunciation|grammar|vocabulary/i.test(normContent)) {
+        row.digitalCompetencyTT02 = "6.2.NCa: Sử dụng phần mềm số và từ điển trực tuyến để rèn luyện phát âm và tra cứu cấu trúc ngôn ngữ.";
+      } else if (/reading/i.test(normContent)) {
+        row.digitalCompetencyTT02 = "1.2.NCa: Đánh giá độ tin cậy của thông tin số và khai thác tư liệu đọc mở rộng bằng tiếng Anh.";
+      } else if (/speaking/i.test(normContent)) {
+        row.digitalCompetencyTT02 = "2.2.NCa: Chia sẻ bản ghi âm, clip thuyết trình tiếng Anh qua nền tảng số của lớp.";
+      } else if (/listening/i.test(normContent)) {
+        row.digitalCompetencyTT02 = "1.1.NCa: Tiếp nhận, xử lý và điều hướng giữa các nguồn học liệu âm thanh số trong học tập.";
+      } else if (/writing/i.test(normContent)) {
+        row.digitalCompetencyTT02 = "3.1.NCa: Tạo lập và định dạng bài viết đoạn văn, bài luận tiếng Anh bằng công cụ soạn thảo số.";
+      } else if (/project|looking back/i.test(normContent)) {
+        row.digitalCompetencyTT02 = "2.4.NCa: Hợp tác nhóm trực tuyến trên nền tảng số để thiết kế sản phẩm dự án học tập.";
+      } else {
+        row.digitalCompetencyTT02 = "1.1.NCa: Khai thác dữ liệu, thông tin số phục vụ nhiệm vụ học tập.";
+      }
+    } else {
+      row.digitalCompetencyTT02 = "1.1.NCa: Khai thác và xử lý nguồn dữ liệu số chính thống phục vụ yêu cầu cần đạt của bài học.";
+    }
+  }
+
+  // Check if NL AI is missing or rejected lazily
+  const aiMissing = !row.aiCompetency2422Integrated || /not integrated|không tích hợp|không gán mã/i.test(row.aiCompetency2422Integrated);
+  if (aiMissing) {
+    if (isEnglish) {
+      if (/getting started/i.test(normContent)) {
+        row.aiCompetency2422Integrated = `NLc - ${g}.C3.1: Kỹ thuật Prompt Engineering cơ bản (Sử dụng prompt để AI gợi ý từ vựng, ngữ cảnh giao tiếp theo chủ đề bài học và đối chiếu với SGK).`;
+      } else if (/language|pronunciation|grammar|vocabulary/i.test(normContent)) {
+        row.aiCompetency2422Integrated = `NLc - ${g}.C2.1: Ứng dụng AI trong học tập (Sử dụng AI hỗ trợ giải thích sắc thái từ vựng, ngữ pháp; học sinh đóng vai trò kiểm soát).`;
+      } else if (/reading/i.test(normContent)) {
+        row.aiCompetency2422Integrated = `NLa - ${g}.A3.1: Kiểm soát và giám sát AI (Đọc hiểu văn bản SGK và kiểm chứng tính chính xác của các nội dung tóm tắt/câu hỏi do AI tạo ra).`;
+      } else if (/speaking/i.test(normContent)) {
+        row.aiCompetency2422Integrated = `NLc - ${g}.C2.1: Ứng dụng AI trong học tập (Tương tác với AI chatbot luyện tập phản xạ giao tiếp tiếng Anh theo chủ đề).`;
+      } else if (/listening/i.test(normContent)) {
+        row.aiCompetency2422Integrated = `NLa - ${g}.A1.1: Con người trong hệ thống AI (Học sinh nghe hiểu audio gốc và đánh giá độ chính xác của phụ đề do AI nhận diện).`;
+      } else if (/writing/i.test(normContent)) {
+        row.aiCompetency2422Integrated = `NLb - ${g}.B3.1: Trách nhiệm xã hội khi sử dụng AI (Sử dụng AI gợi ý dàn ý, cam kết không sao chép nguyên văn và ghi rõ nguồn khi dùng AI).`;
+      } else if (/project|looking back/i.test(normContent)) {
+        row.aiCompetency2422Integrated = `NLd - ${g}.D1.1: Nhận diện bài toán và đề xuất giải pháp ứng dụng AI (Thiết kế bài thuyết trình dự án có sự hỗ trợ công cụ AI).`;
+      } else {
+        row.aiCompetency2422Integrated = `NLc - ${g}.C3.1: Kỹ thuật Prompt Engineering cơ bản (Đặt câu lệnh có cấu trúc để khai thác tư liệu học tập có chọn lọc).`;
+      }
+    } else {
+      row.aiCompetency2422Integrated = `NLc - ${g}.C3.1: Kỹ thuật Prompt Engineering cơ bản (Sử dụng prompt rõ ràng để AI hỗ trợ thu thập thông tin và kiểm chứng lại với SGK).`;
+    }
+  }
+
+  return row;
+}
+
 const sanitizeGeneratedCompetencyRows = (rows: any[], grade?: string, authorizedAiCodes = new Set<string>(), authorizedNlsCodes = new Set<string>()) =>
-  rows.map((row) => sanitizeCompetencyCodesDeep(row, grade, authorizedAiCodes, authorizedNlsCodes));
+  rows.map((row) => {
+    const aligned = autoAlignCompetencyForInstructionalLesson(row, grade);
+    return sanitizeCompetencyCodesDeep(aligned, grade, authorizedAiCodes, authorizedNlsCodes);
+  });
 const normalizeViText = (value?: string) =>
   (value || "")
     .toLowerCase()

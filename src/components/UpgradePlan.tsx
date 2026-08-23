@@ -6,6 +6,10 @@ import html2pdf from "html2pdf.js";
 import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye, FileDown, FileCode, Printer, ClipboardCheck, Calendar, BrainCircuit, Search, LayoutGrid, AlertCircle } from "lucide-react";
 import { analyzeExistingPlan, generateDirectSnippets } from "../services/geminiService";
 import { appendAssessmentDesignToDocx, injectSnippetsIntoDocx, InjectionResult, Snippet } from "../utils/docxInjector";
+import { IntermediateAlignmentTable, AlignmentRow } from "./IntermediateAlignmentTable";
+import { VisualAlignmentMatrix } from "./VisualAlignmentMatrix";
+import { ExportGatekeeperModal } from "./ExportGatekeeperModal";
+import { validateGatekeeper } from "../utils/gatekeeperValidator";
 import { saveAs } from "file-saver";
 
 interface TextbookImage {
@@ -127,6 +131,10 @@ export default function UpgradePlan({
     const [isUpdatingDocxWithAssessment, setIsUpdatingDocxWithAssessment] = useState(false);
     const [preservedCouncilEvaluation, setPreservedCouncilEvaluation] = useState<any>(null);
     const [isEvaluatingPreservedCouncil, setIsEvaluatingPreservedCouncil] = useState(false);
+    const [activeStep2View, setActiveStep2View] = useState<"cards" | "alignmentTable" | "matrix">("cards");
+    const [alignmentRows, setAlignmentRows] = useState<AlignmentRow[]>([]);
+    const [isGatekeeperOpen, setIsGatekeeperOpen] = useState(false);
+    const [exportTargetFormat, setExportTargetFormat] = useState<"docx" | "xlsx" | "pdf">("docx");
 
     const handleTextbookImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -180,6 +188,49 @@ export default function UpgradePlan({
             alert("❌ Đã có lỗi xảy ra khi đọc file KHTCM.");
         }
         e.target.value = "";
+    };
+
+    
+    const buildAlignmentRowsFromAnalysis = (analysis: any): AlignmentRow[] => {
+        if (!analysis?.aiSuggestions) return [];
+        return (analysis.aiSuggestions || []).map((sug: any, idx: number) => {
+            const rawNls = sug.suggestedNLS || "";
+            const rawAi = sug.suggestedAI || "";
+            const grade = (analysis.grade === "11" ? "11" : analysis.grade === "12" ? "12" : "10") as "10" | "11" | "12";
+            
+            let aiComp: "NLa" | "NLb" | "NLc" | "NLd" | "Không" = "Không";
+            if (/NLa/i.test(sug.aiComponentName || sug.aiCompetencyName || rawAi)) aiComp = "NLa";
+            else if (/NLb/i.test(sug.aiComponentName || sug.aiCompetencyName || rawAi)) aiComp = "NLb";
+            else if (/NLc/i.test(sug.aiComponentName || sug.aiCompetencyName || rawAi)) aiComp = "NLc";
+            else if (/NLd/i.test(sug.aiComponentName || sug.aiCompetencyName || rawAi)) aiComp = "NLd";
+
+            return {
+                id: "align-" + (idx + 1),
+                stt: idx + 1,
+                subject: analysis.subject || "Khác",
+                grade,
+                topicOrLesson: analysis.topic || sug.activityName || "Bài học",
+                yccdSubjectRaw: analysis.objective || "Yêu cầu cần đạt môn học theo CT 2018",
+                actionVerb: sug.actionVerb || "Thực hiện",
+                knowledgeContent: sug.knowledgeContent || analysis.topic || "",
+                activityName: sug.activityName || ("Hoạt động " + (idx + 1)),
+                learningTask: sug.learningTask || sug.targetContent || "Thực hiện nhiệm vụ học tập",
+                studentBehavior: sug.aiStudentBehavior || sug.nlsStudentBehavior || "Học sinh thao tác trực tiếp trên dữ liệu/công cụ",
+                product: sug.aiProduct || sug.nlsProduct || "Sản phẩm học tập hoàn chỉnh",
+                evidence: sug.aiEvidence || sug.nlsEvidence || "Minh chứng đối chiếu hoặc bài làm học sinh",
+                nlsCode: rawNls || "Không",
+                nlsIndicatorText: sug.nlsIndicatorText || "",
+                aiComponent: aiComp,
+                aiRequirementText: sug.aiRequirement || "",
+                aiCode: rawAi || "Không",
+                tool: sug.tool || "Công cụ số / AI hỗ trợ",
+                verificationMethod: sug.verificationMethod || "Đối chiếu nguồn chính thống (SGK Kết nối tri thức)",
+                assessmentCriteria: sug.aiCriteria || sug.nlsCriteria || "Đúng kiến thức môn học; bảo đảm an toàn dữ liệu và bản quyền",
+                sourceRef: "SGK Kết nối tri thức - NXBGD",
+                status: "Đã xác minh" as any,
+                offlineAlternative: sug.offlineFallback || "Phương án dự phòng ngoại tuyến: phiếu học tập in sẵn và bản đồ giấy"
+            };
+        });
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -256,6 +307,7 @@ export default function UpgradePlan({
             }
 
             setAnalysisResult(analysis);
+            setAlignmentRows(buildAlignmentRowsFromAnalysis(analysis));
             setSelectedIntegrations((analysis.aiSuggestions || []).filter((sug: any) => hasUsableIntegration(sug, analysis.grade)));
             setStep(2);
         } catch (err: any) {
@@ -336,7 +388,7 @@ export default function UpgradePlan({
         }
     };
 
-    const handleConfirmDownload = async () => {
+    const handleDirectDocxDownload = async () => {
         if (!readyBlob || !file) return;
         try {
             const blobToSave = await ensureAssessmentResultInDocx();
@@ -344,8 +396,13 @@ export default function UpgradePlan({
             saveAs(blobToSave, buildUpgradeFileName("AI_NangCap", ".docx"));
         } catch (err) {
             console.error("Không chèn được thiết kế đánh giá vào DOCX trước khi tải", err);
-            alert("❌ Chưa thể chèn nội dung thiết kế đánh giá vào file DOCX. Vui lòng thử bấm lại nút Thiết kế đánh giá hoặc tải lại giáo án.");
+            alert("❌ Chưa thể chèn nội dung thiết kế đánh giá vào file DOCX.");
         }
+    };
+
+    const handleConfirmDownload = async () => {
+        setExportTargetFormat("docx");
+        setIsGatekeeperOpen(true);
     };
 
     const safeFileSegment = (value?: string) =>
@@ -442,7 +499,7 @@ export default function UpgradePlan({
         if (/\bNLB\b/.test(normalized)) return "NLb - Đạo đức và trách nhiệm xã hội";
         if (/\bNLC\b/.test(normalized)) return "NLc - Kỹ thuật và ứng dụng";
         if (/\bNLD\b/.test(normalized)) return "NLd - Giải quyết vấn đề và thiết kế hệ thống";
-        return "Thành phần năng lực AI cần đối chiếu theo CV/QĐ 3439";
+        return "Thành phần năng lực AI cần đối chiếu theo QĐ 2422/QĐ-BGDĐT";
     };
 
     const getAiCompetencyDisplayName = (value?: string, code?: string) => {
@@ -812,7 +869,7 @@ export default function UpgradePlan({
     const formatPreservedAssessmentText = (evaluation: any) => {
         const lines: string[] = [
             "HỆ THỐNG ĐÁNH GIÁ NĂNG LỰC",
-            "Chuẩn QĐ 3439/QĐ-BGDĐT & Chương trình GDPT 2018",
+            "Chuẩn QĐ 2422/QĐ-BGDĐT & Chương trình GDPT 2018",
             "Ghi chú: Bộ đánh giá này được thiết kế từ giáo án DOCX gốc đã bảo toàn; không thay thế hoặc rút gọn nội dung giáo án gốc.",
             ""
         ];
@@ -1585,7 +1642,7 @@ export default function UpgradePlan({
                                                 </ul>
                                             </div>
                                             <div>
-                                                <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">4. Năng lực AI đặc thù (3439)</span>
+                                                <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">4. Năng lực AI đặc thù (2422)</span>
                                                 <ul className="list-disc list-inside space-y-2 text-red-600 text-xs leading-relaxed italic font-medium">
                                                     {buildAiObjectiveLines().map((line, idx) => <li key={idx}>{line.replace(/^\d+\.\s*/, "")}</li>)}
                                                 </ul>
@@ -1681,7 +1738,7 @@ export default function UpgradePlan({
                                                 </div>
                                                 <div>
                                                     <h4 className="text-xl font-black text-brand-sidebar uppercase tracking-tight">Hệ thống đánh giá năng lực</h4>
-                                                    <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">Chuẩn QĐ 3439/QĐ-BGDĐT & Chương trình GDPT 2018</p>
+                                                    <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">Chuẩn QĐ 2422/QĐ-BGDĐT & Chương trình GDPT 2018</p>
                                                 </div>
                                             </header>
 

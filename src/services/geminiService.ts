@@ -156,113 +156,81 @@ const CONTENT_INTEGRITY_RULES = `
 
 3.3. NGHIÊM CẤM SAO CHÉP TOÀN BỘ SGK:
 - Chỉ được tạo bản tóm tắt học tập và trích dẫn ngắn có ghi nguồn.
-- KHÔNG sao chép nguyên văn toàn bộ đoạn văn từ SGK/SGV.
-- Mọi nội dung trích dẫn phải có ghi nguồn.
-
-MỤC 7 - TIÊU CHUẨN SẢN PHẨM Sử DỤNG AI:
-- AI hỗ trợ học sinh tìm kiếm thông tin, so sánh, đặt câu hỏi, kiểm chứng, sửa và hoàn thiện sản phẩm. AI KHÔNG thay thế suy luận của học sinh.
-- Mọi hoạt động có sử dụng AI trong KHBD phải thiết kế để học sinh tạo ra: (1) Câu lệnh Prompt đã sử dụng, (2) Nguồn kiểm chứng, (3) Nhận xét đúng/chưa đủ/cần sửa, (4) Bản chỉnh sửa của học sinh, (5) Nhận xét của giáo viên.
-- NGHIÊM CẤM dùng cụm từ "bản nháp AI" trong sản phẩm học tập.
+- KHÔNG sao chép nguyên văn toàn bộ đoạn văn trong SGK.
 `;
 
 const AI_SUBJECT_GUIDELINES = `
-Dưới đây là Khung mạch nội dung tích hợp AI cho từng môn học theo QĐ 3439:
-- Ngữ văn: Trọng tâm NLa, NLb, NLc. Nội dung: Lên dàn ý, tóm tắt tư liệu, phân tích thi pháp, dịch thuật. Thảo luận: Sáng tác Người vs AI, bản quyền, phong cách cá nhân, tác động đến ngôn ngữ.
-- Tích hợp Khoa học tự nhiên (Lý, Hóa, Sinh): Trọng tâm NLa, NLb, NLc. Nội dung: Phân tích dữ liệu thí nghiệm, mô phỏng phản ứng và sinh thái thực tế. Thảo luận: Giới hạn AI trong khoa học.
-- Tích hợp Lịch sử & Địa lí: Trọng tâm NLa, NLb, NLc. Nội dung: Phân tích Big Data dân cư, tạo timeline sự kiện động. Thảo luận: Tính công bằng tài nguyên và thiên kiến thuật toán.
-- Công nghệ: Trọng tâm NLa, NLb (hỗ trợ bởi NLc, NLd). Nội dung: Hệ thống AI trong nông nghiệp, sản xuất, thiết kế. Thảo luận: Đạo đức trong thiết kế công nghệ, tác động xã hội của tự động hóa, tính bền vững.
-- Hoạt động TN, Hướng nghiệp: Trọng tâm NLa, NLb. Nội dung: Thay đổi thị trường lao động, kỹ năng cốt lõi của con người, trách nhiệm xã hội.
-- Ngoại ngữ: Trọng tâm NLb, NLc. Nội dung: Luyện phát âm, giao tiếp chatbot, dịch thuật, cá nhân hóa học tập. Thảo luận: Đánh giá dịch máy, vai trò văn hóa và ngữ cảnh.
-- Nhóm Nghệ thuật (Âm nhạc, Mỹ thuật): Trọng tâm NLa, NLb, NLc. Nội dung: Khám phá công cụ sáng tác, phân tích tác phẩm. Thảo luận: Vấn đề bản quyền, tính độc đáo và vai trò cảm xúc con người.
-- Giáo dục địa phương: Trọng tâm NLa, NLb, NLc. Nội dung: Phân tích dữ liệu kinh tế - xã hội địa phương, bảo tồn văn hóa qua số hóa kỹ thuật, đề xuất giải pháp phát triển đô thị. Thảo luận: Tác động của AI đến bản sắc văn hóa vùng miền, bảo tồn di sản trong kỷ nguyên số.
+Dưới đây là Khung mạch nội dung tích hợp AI cho từng môn học theo QĐ 2422/QĐ-BGDĐT (áp dụng từ năm học 2026-2027):
+- Ngữ văn: Trọng tâm NLa, NLb, NLc. Nội dung: Lên dàn ý, tóm tắt tư liệu, phân tích thi pháp, dịch thuật, đặt prompt so sánh văn bản. Thảo luận: Sáng tác Người vs AI, bản quyền tác giả, phong cách cá nhân, trách nhiệm sử dụng.
+- Toán học & KHTN (Vật lí, Hóa học, Sinh học): Trọng tâm NLa, NLb, NLc, NLd. Nội dung: Phân tích dữ liệu thực nghiệm, mô phỏng đồ thị/phản ứng, kiểm thử giả thuyết. Thảo luận: Hiện tượng ảo giác (hallucination) của AI, giới hạn công cụ.
+- Lịch sử & Địa lí: Trọng tâm NLa, NLb, NLc. Nội dung: Phân tích số liệu dân cư/kinh tế, xử lý bản đồ số, tra cứu tư liệu lịch sử. Thảo luận: Kiểm chứng chéo nguồn tin, phát hiện thiên kiến thuật toán (bias), bảo tồn văn hóa di sản.
+- Công nghệ & Tin học: Trọng tâm NLa, NLb, NLc, NLd. Nội dung: Thiết kế hệ thống tự động hóa, prompt engineering chuyên sâu, kiểm thử giải pháp. Thảo luận: Đạo đức công nghệ, an toàn thông tin, tác động thị trường lao động.
+- Ngoại ngữ (Tiếng Anh): Trọng tâm NLb, NLc. Nội dung: Luyện phát âm, giao tiếp chatbot theo ngữ cảnh, dịch thuật và phân tích sắc thái ngữ nghĩa. Thảo luận: Đánh giá dịch máy, bản quyền ngôn ngữ.
+- Hoạt động TN, Hướng nghiệp & GDĐP: Trọng tâm NLa, NLb. Nội dung: Định hướng nghề nghiệp trong kỷ nguyên số, kỹ năng làm chủ AI, phân tích dữ liệu kinh tế - xã hội địa phương.
 `;
 
 const GEOGRAPHY_AI_RULES = `
-LỆNH ĐẶC BIỆT TỪ CHUYÊN GIA ĐỊA LÍ VÀ AI:
-Nhiệm vụ của bạn là rà soát PPCT và bổ sung nội dung tích hợp NLAI bảo đảm YCCĐ AI phải phục vụ và hỗ trợ trực tiếp YCCĐ môn Địa lí.
+LỆNH ĐẶC BIỆT TỪ CHUYÊN GIA ĐỊA LÍ VÀ AI THEO QĐ 2422:
+Nhiệm vụ của bạn là rà soát PPCT và bổ sung nội dung tích hợp NL AI bảo đảm YCCĐ AI phải phục vụ và hỗ trợ trực tiếp YCCĐ môn Địa lí.
 
 I. NGUYÊN TẮC BẮT BUỘC
-1. Giữ nguyên toàn bộ nội dung gốc của PPCT.
+1. Giữ nguyên 100% nội dung gốc của PPCT.
 2. Không bổ sung AI theo kiểu hình thức.
-3. Không để AI thay thế hoạt động tư duy Địa lí (đọc bản đồ, phân tích số liệu...).
-4. Trình tự xử lí: YCCĐ Địa lí -> cơ hội tích hợp -> thành phần AI -> hành vi HS -> YCCĐ AI -> sản phẩm/tiêu chí/minh chứng -> mã hóa đúng lớp, chủ đề và số chỉ báo theo bộ quy tắc của ứng dụng.
-5. Không sử dụng chatbot làm nguồn dữ liệu gốc (phải dùng SGK, Atlat, cổng thông tin).
+3. Không để AI thay thế hoạt động tư duy Địa lí (đọc bản đồ, Atlat, phân tích số liệu...).
+4. Trình tự xử lí: YCCĐ Địa lí -> cơ hội tích hợp -> thành phần AI -> hành vi HS -> YCCĐ AI -> sản phẩm/tiêu chí/minh chứng -> mã hóa đúng lớp, chủ đề và số thứ tự theo QĐ 2422 (ví dụ: 10.A1.1, 10.C3.2, 11.C3.MR1, 12.C4.MR1).
+5. Không sử dụng chatbot làm nguồn dữ liệu gốc (phải dùng SGK Kết nối tri thức, Atlat, cổng thông tin chính thống).
 6. Không đưa thông tin cá nhân của học sinh vào AI.
 
-II. CẤU TRÚC MÃ VÀ CHỦ ĐỀ ĐƯỢC PHÉP
-Khi YCCĐ và hành vi học sinh có điểm chạm NL AI rõ ràng, bắt buộc gán mã đầy đủ dạng [NLa/NLb/NLc/NLd]- [Lớp].[Chủ đề].[Số thứ tự], ví dụ NLa- 12.A1.01; không được thay bằng mô tả chung chung.
-- Lớp 10: Chỉ dùng A1, A2, A3; B2, B3; C2, C3, C4; D1, D2.
-- Lớp 11: Chỉ dùng A1, A2, A3; B2, B3; C2, C3, C5; D1, D2.
-- Lớp 12: Chỉ dùng A1, A2, A3; B1, B2, B3; C2, C3, C4; D1, D2.
-TUYỆT ĐỐI không gán mã chủ đề không thuộc lớp tương ứng! Mỗi đơn vị bài học chỉ chọn 1-2 mã NLAI thật sự phù hợp.
+II. CẤU TRÚC MÃ VÀ CHỦ ĐỀ ĐƯỢC PHÉP THEO QĐ 2422
+Khi YCCĐ và hành vi học sinh có điểm chạm NL AI rõ ràng, bắt buộc gán mã chuẩn theo mẫu: [Lớp].[Chủ đề].[Số thứ tự], ví dụ: 10.A1.1, 10.C3.1, 11.C3.1, 12.C3.1; không dùng mã cũ có số 01 (như 10.A2.01).
+- Lớp 10: A1, A2, A3; B2, B3; C2, C3, C4; D1, D2.
+- Lớp 11: A1, A2; B2, B3; C3, C5; D1, D2.
+- Lớp 12: A1, A2; B1, B2, B3; C3, C4; D1, D2.
+Mỗi đơn vị bài học chỉ chọn 1-2 mã NL AI thật sự phù hợp.
 
 III. YÊU CẦU TÁCH YCCĐ AI VÀ ĐẶC THÙ ĐỊA LÍ
 - Công thức: Học sinh + động từ quan sát được + nội dung AI + bối cảnh Địa lí + sản phẩm/minh chứng + tiêu chí đánh giá.
 - Động từ ưu tiên: Xác định, Mô tả, Giải thích, Phân tích, Đối chiếu, Kiểm chứng, Đánh giá, Thiết kế, Thu thập...
-- Gắn với: Đọc Atlat/bản đồ số, Xử lí số liệu, Tìm hiểu thiên tai/BĐKH, Điều tra địa phương...
-- Lớp 10 tập trung nhận diện, mô tả; Lớp 11 tập trung thực hành, phân tích, đánh giá, prompt nâng cao; Lớp 12 tập trung thiết kế, kiểm thử, cải tiến, trách nhiệm.
 
-IV. ĐỊNH DẠNG CỘT AI (aiCompetency3439Integrated)
-- Viết cô đọng trong một đoạn tối đa 90 từ theo thứ tự: thành phần -> hành vi HS -> YCCĐ AI -> mã NL AI cụ thể -> sản phẩm -> tiêu chí/minh chứng.
-- Không lặp cùng mô tả ở cột NLS, thiết bị hoặc nhiều dòng; nếu không có điểm chạm ghi “Không tích hợp - lý do: ...”.
+IV. ĐỊNH DẠNG CỘT AI (aiCompetencyIntegrated)
+- Viết cô đọng trong một đoạn tối đa 90 từ theo thứ tự: thành phần (NLa/NLb/NLc/NLd) -> hành vi HS -> YCCĐ AI -> mã NL AI cụ thể -> sản phẩm -> kiểm chứng/tiêu chí.
+- Nếu không có điểm chạm ghi “Không tích hợp NLS/NL AI trong hoạt động này.”
 `;
 
 const AI_COMPETENCY_ORDER_RULE = `
-LỆNH MÃ HÓA NL AI BẮT BUỘC:
-- Trước khi ghi mã/tham chiếu AI, bắt buộc ghi đầy đủ tên thành phần năng lực AI (NLa/NLb/NLc/NLd).
-- Mã NL AI là MỘT chuỗi duy nhất theo mẫu “[Thành phần]- [Khối lớp].[Chủ đề].[Số chỉ báo]”, ví dụ: “NLa- 12.A1.01”. Không được chỉ ghi “12.A1.01” và không lặp hai phiên bản mã.
-- MẪU TRÌNH BÀY BẮT BUỘC: “Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: 12; Chủ đề: A1; Mã chỉ báo NL AI: NLa- 12.A1.01”.
-- Khi đã kết luận hoạt động có tích hợp NL AI, bắt buộc chọn thành phần, chủ đề và mã chỉ báo CỤ THỂ theo đúng khối lớp, YCCĐ AI và hành vi học sinh; không được dùng “Cần đối chiếu mã AI” thay cho việc mã hóa. Nếu không xác định được khối lớp hoặc không đủ YCCĐ/hành vi thì không kết luận tích hợp NL AI và không tạo gợi ý AI.
-- TUYỆT ĐỐI không tạo câu ghi chú kiểu “Có thể tích hợp”, “mã chưa có trong bảng nguồn” hoặc bất kỳ đoạn NL AI nửa chừng nào không có mã đầy đủ. Nếu điểm chạm đủ rõ thì phải tích hợp và gắn mã cụ thể; nếu chưa đủ căn cứ thì loại NL AI khỏi gợi ý, không để lại ghi chú thay thế.
-- Mã NLS phải giữ nguyên đúng mã trong bảng TT 02/CV 3456, ví dụ “1.1.NC1b”; trình bày “Mã chỉ báo NLS: 1.1.NC1b; Thành phần NLS: ...”. Không tự đổi mức CB1/CB2/TC1/TC2/NC1/NC2 hoặc chữ chỉ báo cuối.
-- Mẫu nhãn trên phải xuất hiện tại phần Năng lực trong I. MỤC TIÊU và tại TỪNG hoạt động có tích hợp NL AI, không chỉ xuất hiện ở bảng tổng hợp cuối giáo án.
-- Mỗi gợi ý tích hợp bắt buộc ghi targetSection (mục con như Nội dung, Thực hiện nhiệm vụ, Sản phẩm hoặc Đánh giá) và targetContent là một đoạn NGUYÊN VĂN từ giáo án gốc. Mã chỉ được đặt ngay cạnh targetContent trong đúng activityName; không gom mã xuống cuối hoạt động và không chèn sang hoạt động khác.
-- Mọi mã NLS và mã NL AI trong phần bổ sung phải được chèn vào DOCX bằng chữ màu đỏ; nội dung giáo án gốc giữ nguyên định dạng và màu sắc.
-- Khi mô tả NL AI, giữ đúng chuỗi dưới đây nhưng trình bày cô đọng theo vị trí: mục tiêu chỉ nêu kết quả; hoạt động nêu hành vi; đánh giá nêu tiêu chí/minh chứng; cột phụ lục dùng một đoạn ngắn:
-  1. Tên thành phần năng lực AI.
-  2. Khối lớp.
-  3. Chủ đề AI.
-  4. Mã chỉ báo NL AI đầy đủ.
-  5. Hành vi học sinh.
-  6. Yêu cầu cần đạt AI.
-  7. Sản phẩm.
-  8. Tiêu chí.
-  9. Minh chứng.
+LỆNH MÃ HÓA NL AI & NLS BẮT BUỘC:
+- Trước khi ghi mã AI, bắt buộc ghi đầy đủ tên thành phần năng lực AI (NLa/NLb/NLc/NLd).
+- Mã NL AI là MỘT chuỗi duy nhất theo mẫu “[Lớp].[Chủ đề].[Số thứ tự]” (chuẩn QĐ 2422), ví dụ: “10.A1.1”, “11.C3.1”, “12.C4.MR1”. TUYỆT ĐỐI KHÔNG dùng mã cũ dạng “10.A2.01”, “10.C2.01”.
+- MẪU TRÌNH BÀY BẮT BUỘC: “Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: 10; Chủ đề: A1; Mã chỉ báo NL AI: 10.A1.1”.
+- Mã NLS phải giữ nguyên đúng mã mức NC trong bảng TT 02/CV 3456, ví dụ “1.1.NCa”, “1.2.NCa”, “6.2.NCa”. Không dùng mã CB, TC hoặc NC1a.
+- Trình bày: “Mã chỉ báo NLS: 1.1.NCa; Thành phần NLS: Duyệt, tìm kiếm và lọc dữ liệu số”.
+- Mọi mã NLS và mã NL AI trong phần bổ sung phải được chèn vào văn bản bằng chữ màu đỏ (#FF0000); nội dung giáo án gốc giữ nguyên 100% định dạng và màu sắc.
 `;
 
 const LOCKED_NLS_AI_INTEGRATION_RULES = `
-==== BỘ QUY TẮC KHÓA TÍCH HỢP NLS / NL AI (ÁP DỤNG CHO KHBD, PL1, PL2, PL3) ====
+==== BỘ QUY TẮC KHÓA TÍCH HỢP NLS / NL AI (ÁP DỤNG CHO KHBD, PL1, PL2, PL3, PL4) ====
 1. PHẠM VI RÀ SOÁT:
-- Phải rà soát từng bài, từng dòng phụ lục và từng hoạt động; “đã rà soát” không đồng nghĩa với “phải tích hợp”.
-- Với mỗi hoạt động chỉ chọn một kết luận: Không tích hợp; chỉ NLS; chỉ NL AI; hoặc đồng thời NLS và NL AI.
-- Nếu không có điểm chạm thật từ YCCĐ và hoạt động của học sinh, ghi ngắn: “Không tích hợp - lý do: ...”; tuyệt đối không gán mã để đủ số lượng.
+- Phải rà soát từng bài, từng dòng phụ lục và từng hoạt động theo Chuỗi đối chiếu 13 bước.
+- Với mỗi hoạt động chỉ chọn 1 trong 4 kết luận: (1) Không tích hợp NLS/NL AI; (2) Chỉ NLS; (3) Chỉ NL AI; (4) Tích hợp cả NLS và NL AI.
+- Nếu không có điểm chạm thật từ YCCĐ và hoạt động của học sinh, ghi chính xác: "Không tích hợp NLS/NL AI trong hoạt động này."; tuyệt đối không gán mã hình thức.
 
 2. CHUỖI MINH CHỨNG BẮT BUỘC:
-- Mọi mã phải chứng minh được theo chuỗi: YCCĐ môn học -> hành vi quan sát được của học sinh -> công cụ/dữ liệu -> sản phẩm hoặc bằng chứng -> tiêu chí đánh giá -> mã/tham chiếu.
-- Giáo viên dùng máy tính, trình chiếu, video hoặc AI không tự động tạo NLS/NL AI cho học sinh.
+- Mọi mã phải chứng minh được theo chuỗi: YCCĐ môn học nguyên văn -> Nhiệm vụ -> Hành vi học sinh -> Sản phẩm -> Minh chứng -> Mã NLS -> YCCĐ AI QĐ 2422 -> Mã AI -> Công cụ -> Kiểm chứng -> Tiêu chí đánh giá.
+- Việc giáo viên dùng máy tính, máy chiếu hoặc AI soạn bài KHÔNG tính là năng lực của học sinh.
 
-3. NĂNG LỰC SỐ THEO TT 02/2025/TT-BGDĐT VÀ HƯỚNG DẪN TRIỂN KHAI:
-- Chỉ gán NLS khi học sinh trực tiếp thực hiện hành vi số. Mỗi hoạt động thường tối đa 1-2 mã phù hợp nhất.
-- Mã chuẩn có dấu chấm theo mẫu 1.1.CB2b. Mức tham chiếu mặc định: lớp 1-3 CB1; lớp 4-5 CB2; lớp 6-7 TC1; lớp 8-9 TC2; lớp 10-12 NC1.
-- Nếu mức mã không khớp lớp hoặc không có bảng mã/đủ căn cứ, không tự đổi mã; ghi “Cần đối chiếu mã NLS”. Với mầm non chỉ mô tả biểu hiện phù hợp độ tuổi, không tự gán CB1.
-- Khi gán phải có: mã; tên năng lực thành phần; hành vi học sinh; sản phẩm/bằng chứng; tiêu chí.
+3. NĂNG LỰC SỐ THEO TT 02/2025/TT-BGDĐT (MỨC NC CHO THPT):
+- Chỉ gán NLS khi học sinh trực tiếp thực hiện hành vi số. Mỗi bài/chủ đề mặc định tối đa 1 mã chính.
+- Mã chuẩn mức NC có dạng [miền].[NLTP].NC[chỉ báo], ví dụ 1.1.NCa, 1.2.NCa, 6.2.NCa.
 
-4. GIÁO DỤC AI THEO QĐ 3439/QĐ-BGDĐT:
-- Chỉ chọn NLa/NLb/NLc/NLd khi học sinh nhận biết, sử dụng, kiểm chứng, đánh giá rủi ro hoặc thiết kế/thử nghiệm giải pháp AI; việc giáo viên dùng AI phía sau không phải NL AI của học sinh.
-- Mỗi hoạt động thường chọn 1 trọng tâm AI; chỉ chọn mã thứ hai khi có hai hành vi độc lập và hai bằng chứng riêng.
-- Số mã NL AI không phụ thuộc máy móc vào số tiết: một mã có thể dùng cho nhiều tiết khi cùng một hành vi/YCCĐ AI và cùng loại minh chứng; nếu các tiết/hoạt động có hành vi AI độc lập hoặc sản phẩm/tiêu chí khác nhau thì phải tạo gợi ý và mã riêng cho từng điểm chạm. Không dùng một mã chung cho các hành vi khác nhau, cũng không nhân mã chỉ vì bài có nhiều tiết.
-- Mã hóa theo đúng lớp + đúng chủ đề + YCCĐ AI và hành vi học sinh. Khi có tích hợp, ghi mã đầy đủ dạng “NLa- 12.A1.01”; số chỉ báo gồm hai chữ số và phải phù hợp YCCĐ, không lặp một mã cho các hành vi khác nhau.
-- Không tự sửa tiền tố lớp của một mã sai thành lớp hiện tại. Mã sai lớp/sai chủ đề phải bị loại.
+4. GIÁO DỤC AI THEO QĐ 2422/QĐ-BGDĐT & CV 5588/BGDĐT-GDPT:
+- Chỉ chọn NLa/NLb/NLc/NLd khi học sinh trực tiếp dùng AI, đặt prompt, kiểm chứng kết quả hoặc đánh giá rủi ro/thiết kế sản phẩm AI.
+- Mã AI chuẩn: [Lớp].[Chủ đề].[Số TT] (ví dụ: 10.A1.1, 10.C3.2, 11.C3.MR1, 12.C4.MR1).
 
 5. AN TOÀN, ĐẠO ĐỨC VÀ ĐÁNH GIÁ:
-- Không nhập dữ liệu cá nhân/nhạy cảm; tôn trọng bản quyền; nêu nguồn; phân biệt phần học sinh làm và phần AI hỗ trợ; không coi AI là nguồn/đáp án chính thức; không dùng AI làm hộ bài kiểm tra.
-- Hoạt động AI phải có nguồn kiểm chứng, bản học sinh chỉnh sửa và tiêu chí đo được. AI chỉ hỗ trợ, giáo viên và học sinh chịu trách nhiệm kết luận.
-
-6. VỊ TRÍ VÀ ĐỘ DÀI:
-- KHBD: mục tiêu chỉ ghi kết quả năng lực ngắn; mô tả triển khai đặt đúng hoạt động phát sinh hành vi; tiêu chí đặt ở sản phẩm/đánh giá. Không chép nguyên cả khối tích hợp ở nhiều mục và không gom cuối giáo án.
-- PL1/PL2/PL3: mỗi dòng chỉ ghi nội dung cô đọng phù hợp cột; không đưa mã/YCCĐ vào cột thiết bị; không lặp mô tả NLS và AI.
-- Mọi hoạt động có phương án thiết bị A/B/C/D hoặc phương án ngoại tuyến phù hợp; thiếu thiết bị không được làm mất mục tiêu môn học.
+- Không nhập dữ liệu cá nhân học sinh vào AI; tôn trọng bản quyền; ghi rõ nguồn; phân biệt phần học sinh làm và phần AI gợi ý.
+- Mọi hoạt động có phương án dự phòng ngoại tuyến (không Internet / không thiết bị số).
 `;
+
 const AI_THEMES_BY_THPT_GRADE: Record<string, string[]> = {
   "10": ["A1", "A2", "A3", "B2", "B3", "C2", "C3", "C4", "D1", "D2"],
   "11": ["A1", "A2", "A3", "B2", "B3", "C2", "C3", "C5", "D1", "D2"],
@@ -416,19 +384,11 @@ const getSafeAiIndicatorCode = (code?: string, grade?: string) => {
 
 const getAiCompetencyComponentName = (code?: string) => {
   const component = extractExplicitAiComponent(code);
-  if (component === "NLa") {
-    return "NLa - Tư duy lấy con người làm trung tâm";
-  }
-  if (component === "NLb") {
-    return "NLb - Đạo đức và trách nhiệm xã hội";
-  }
-  if (component === "NLc") {
-    return "NLc - Kỹ thuật và ứng dụng";
-  }
-  if (component === "NLd") {
-    return "NLd - Giải quyết vấn đề và thiết kế hệ thống";
-  }
-  return "Thành phần năng lực AI cần đối chiếu theo QĐ 3439";
+  if (component === "NLa") return "NLa - Tư duy lấy con người làm trung tâm";
+  if (component === "NLb") return "NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm";
+  if (component === "NLc") return "NLc - Các kĩ thuật và ứng dụng AI";
+  if (component === "NLd") return "NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI";
+  return "Thành phần năng lực AI theo QĐ 2422/QĐ-BGDĐT";
 };
 
 const normalizeAiCompetencyComponentName = (value?: string, code?: string) => {
@@ -436,9 +396,9 @@ const normalizeAiCompetencyComponentName = (value?: string, code?: string) => {
   const explicitComponent = extractExplicitAiComponent(rawValue, code);
   const component = explicitComponent?.slice(-1).toUpperCase();
   if (component === "A") return "NLa - Tư duy lấy con người làm trung tâm";
-  if (component === "B") return "NLb - Đạo đức và trách nhiệm xã hội";
-  if (component === "C") return "NLc - Kỹ thuật và ứng dụng";
-  if (component === "D") return "NLd - Thiết kế hệ thống AI";
+  if (component === "B") return "NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm";
+  if (component === "C") return "NLc - Các kĩ thuật và ứng dụng AI";
+  if (component === "D") return "NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI";
   return rawValue || getAiCompetencyComponentName(code);
 };
 
@@ -483,7 +443,7 @@ const sanitizeAiCodeForGrade = (code: string | undefined, grade?: string, compet
   if (NLS_LEVEL_BY_GRADE[currentGrade] && codeGrade !== currentGrade) {
     return {
       code: "Không gán mã",
-      note: `Mã ${rawCode} sai lớp; hệ thống không tự đổi sang lớp ${currentGrade}. Cần đối chiếu đúng YCCĐ trong QĐ 3439.`,
+      note: `Mã ${rawCode} sai lớp; hệ thống không tự đổi sang lớp ${currentGrade}. Cần đối chiếu đúng YCCĐ trong QĐ 2422.`,
     };
   }
 
@@ -1016,7 +976,7 @@ YÊU CẦU ĐỊNH DẠNG VÀ TRÌNH BÀY (THỰC THI NGHIÊM NGẶT):
 `;
 
 const LESSON_PLAN_STRICT_GUIDELINES = `
-# QUY TẮC THỰC THI "KỊCH BẢN CHI TIẾT"(CV 5512 + QĐ 3439)
+# QUY TẮC THỰC THI "KỊCH BẢN CHI TIẾT"(CV 5512 + QĐ 2422)
 
 1. BÁM SÁT HỌC LIỆU: Trích xuất 100% kiến thức từ tài liệu/đề bài cung cấp. Chỉ bổ sung NLS/NL AI tại điểm chạm đã chọn và mô phỏng trực quan thật sự cần thiết.
 2. PHẦN III. TIẾN TRÌNH DẠY HỌC PHẢI ĐÚNG KHUNG CV 5512:
@@ -1068,7 +1028,7 @@ const UPGRADE_IN_PLACE_GUIDELINES = `
 1. Nhận diện và giữ nguyên khung đang có: CV 2345 đối với tiểu học, CV 5512 đối với THCS/THPT hoặc mẫu riêng hợp lệ của đơn vị. Không ép giáo án gốc thành đúng 4 hoạt động, không đổi tên/số thứ tự và không gộp các hoạt động.
 2. Chỉ bổ sung tại hoạt động có trong danh sách điểm chạm đã duyệt. Hoạt động nào tích hợp thì nội dung NLS/NL AI nằm ngay trong mục tiêu, nội dung, sản phẩm và bước tổ chức tương ứng của hoạt động đó; không tạo phần hướng dẫn tích hợp chung.
 3. Tuân thủ integrationDecision của từng hoạt động: Chỉ NLS thì không thêm chatbot, prompt hoặc mã NL AI; Chỉ NL AI thì không gán mã NLS; NLS và NL AI phải có hai hành vi/bằng chứng phân biệt.
-4. Viết cô đọng: mục tiêu tối đa 1 câu; nhiệm vụ tối đa 1 câu; sản phẩm tối đa 1 câu; mỗi bước tổ chức chỉ thêm 1 câu hành động quan sát được. Không chép lại lý thuyết TT 02, QĐ 3439 hoặc bảng mã vào tiến trình.
+4. Viết cô đọng: mục tiêu tối đa 1 câu; nhiệm vụ tối đa 1 câu; sản phẩm tối đa 1 câu; mỗi bước tổ chức chỉ thêm 1 câu hành động quan sát được. Không chép lại lý thuyết TT 02, QĐ 2422 hoặc bảng mã vào tiến trình.
 5. Chỉ giữ tích hợp khi có mã hợp lệ: NLS phải có trong bảng mã đã cài và đúng mức lớp; NL AI phải là mã đầy đủ đúng thành phần, lớp, chủ đề và chỉ báo. Nếu một năng lực thiếu mã hoặc mã không hợp lệ, hạ quyết định xuống năng lực còn lại có mã; nếu không còn năng lực hợp lệ thì loại gợi ý. Không chèn ghi chú “Cần đối chiếu mã” vào giáo án và không tự sửa một mã đầu vào sai.
 6. Chỉ bọc <ai>...</ai> quanh phần chữ mới bổ sung. Nội dung gốc và hoạt động không tích hợp giữ nguyên.
 `;
@@ -1242,7 +1202,7 @@ LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với P
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Rà soát cơ hội NLS theo TT 02 và NL AI theo QĐ 3439. Chỉ đưa vào aiSuggestions tối đa 6 điểm chạm có giá trị sư phạm rõ; nếu không có trả []. Với bài nhiều tiết, số mã theo số hành vi/YCCĐ AI độc lập chứ không theo số tiết: cùng hành vi và minh chứng có thể dùng một mã; hành vi hoặc sản phẩm/tiêu chí khác nhau phải có gợi ý và mã riêng, kèm Tiết trong activityName/targetSection để chèn đúng vị trí. Với từng hoạt động, bắt buộc chọn đúng một integrationDecision: Chỉ NLS, Chỉ NL AI hoặc NLS và NL AI. Không ép tích hợp cả hai. Mỗi năng lực được chọn phải có chuỗi YCCĐ -> hành vi HS -> sản phẩm -> tiêu chí; trường của năng lực không được chọn ghi rõ Không tích hợp. NLS đúng mức lớp. Với hoạt động có NL AI, bắt buộc xác định thành phần, chủ đề và mã cụ thể dạng NLa- 12.A1.01 theo đúng lớp/YCCĐ; không ghi chung chung “Cần đối chiếu mã AI”. Mỗi activityName chỉ xuất hiện một lần; nếu cùng hoạt động có cả hai năng lực, dùng “NLS và NL AI” trong một gợi ý. Vẫn trả đủ trường theo JSON để hệ thống hậu kiểm.${detectedGradeInstruction}${AI_COMPETENCY_ORDER_RULE}${textbookSection}${pl1Section}
+3. Trọng tâm: Rà soát cơ hội NLS theo TT 02 và NL AI theo QĐ 2422. Chỉ đưa vào aiSuggestions tối đa 6 điểm chạm có giá trị sư phạm rõ; nếu không có trả []. Với bài nhiều tiết, số mã theo số hành vi/YCCĐ AI độc lập chứ không theo số tiết: cùng hành vi và minh chứng có thể dùng một mã; hành vi hoặc sản phẩm/tiêu chí khác nhau phải có gợi ý và mã riêng, kèm Tiết trong activityName/targetSection để chèn đúng vị trí. Với từng hoạt động, bắt buộc chọn đúng một integrationDecision: Chỉ NLS, Chỉ NL AI hoặc NLS và NL AI. Không ép tích hợp cả hai. Mỗi năng lực được chọn phải có chuỗi YCCĐ -> hành vi HS -> sản phẩm -> tiêu chí; trường của năng lực không được chọn ghi rõ Không tích hợp. NLS đúng mức lớp. Với hoạt động có NL AI, bắt buộc xác định thành phần, chủ đề và mã cụ thể dạng NLa- 12.A1.01 theo đúng lớp/YCCĐ; không ghi chung chung “Cần đối chiếu mã AI”. Mỗi activityName chỉ xuất hiện một lần; nếu cùng hoạt động có cả hai năng lực, dùng “NLS và NL AI” trong một gợi ý. Vẫn trả đủ trường theo JSON để hệ thống hậu kiểm.${detectedGradeInstruction}${AI_COMPETENCY_ORDER_RULE}${textbookSection}${pl1Section}
 4. RIÊNG MÔN ĐỊA LÍ: Nếu bài/hoạt động có bảng số liệu, biểu đồ, AQI, tài nguyên, dân số, kinh tế, khí hậu, diện tích, sản lượng, GRDP hoặc yêu cầu nhận xét - giải thích số liệu, trường geoDataRequirement BẮT BUỘC có bảng số liệu và biểu đồ. Không được chỉ ghi chung chung "phân tích dữ liệu"; phải nêu bảng, nguồn kiểm chứng, loại biểu đồ và nhiệm vụ HS.
 
 ${competencyGuardrails}
@@ -1266,7 +1226,7 @@ Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo vi
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Rà soát cơ hội NLS theo TT 02 và NL AI theo QĐ 3439. Chỉ đưa vào aiSuggestions tối đa 6 điểm chạm có giá trị sư phạm rõ; nếu không có trả []. Với bài nhiều tiết, số mã theo số hành vi/YCCĐ AI độc lập chứ không theo số tiết: cùng hành vi và minh chứng có thể dùng một mã; hành vi hoặc sản phẩm/tiêu chí khác nhau phải có gợi ý và mã riêng, kèm Tiết trong activityName/targetSection để chèn đúng vị trí. Với từng hoạt động, bắt buộc chọn đúng một integrationDecision: Chỉ NLS, Chỉ NL AI hoặc NLS và NL AI. Không ép tích hợp cả hai. Mỗi năng lực được chọn phải có chuỗi YCCĐ -> hành vi HS -> sản phẩm -> tiêu chí; trường của năng lực không được chọn ghi rõ Không tích hợp. NLS đúng mức lớp. Với hoạt động có NL AI, bắt buộc xác định thành phần, chủ đề và mã cụ thể dạng NLa- 12.A1.01 theo đúng lớp/YCCĐ; không ghi chung chung “Cần đối chiếu mã AI”. Mỗi activityName chỉ xuất hiện một lần; nếu cùng hoạt động có cả hai năng lực, dùng “NLS và NL AI” trong một gợi ý. Vẫn trả đủ trường theo JSON để hệ thống hậu kiểm.${detectedGradeInstruction}${AI_COMPETENCY_ORDER_RULE}${textbookSection}${pl1Section}
+3. Trọng tâm: Rà soát cơ hội NLS theo TT 02 và NL AI theo QĐ 2422. Chỉ đưa vào aiSuggestions tối đa 6 điểm chạm có giá trị sư phạm rõ; nếu không có trả []. Với bài nhiều tiết, số mã theo số hành vi/YCCĐ AI độc lập chứ không theo số tiết: cùng hành vi và minh chứng có thể dùng một mã; hành vi hoặc sản phẩm/tiêu chí khác nhau phải có gợi ý và mã riêng, kèm Tiết trong activityName/targetSection để chèn đúng vị trí. Với từng hoạt động, bắt buộc chọn đúng một integrationDecision: Chỉ NLS, Chỉ NL AI hoặc NLS và NL AI. Không ép tích hợp cả hai. Mỗi năng lực được chọn phải có chuỗi YCCĐ -> hành vi HS -> sản phẩm -> tiêu chí; trường của năng lực không được chọn ghi rõ Không tích hợp. NLS đúng mức lớp. Với hoạt động có NL AI, bắt buộc xác định thành phần, chủ đề và mã cụ thể dạng NLa- 12.A1.01 theo đúng lớp/YCCĐ; không ghi chung chung “Cần đối chiếu mã AI”. Mỗi activityName chỉ xuất hiện một lần; nếu cùng hoạt động có cả hai năng lực, dùng “NLS và NL AI” trong một gợi ý. Vẫn trả đủ trường theo JSON để hệ thống hậu kiểm.${detectedGradeInstruction}${AI_COMPETENCY_ORDER_RULE}${textbookSection}${pl1Section}
 4. RIÊNG MÔN ĐỊA LÍ: Nếu bài/hoạt động có bảng số liệu, biểu đồ, AQI, tài nguyên, dân số, kinh tế, khí hậu, diện tích, sản lượng, GRDP hoặc yêu cầu nhận xét - giải thích số liệu, trường geoDataRequirement BẮT BUỘC có bảng số liệu và biểu đồ. Không được chỉ ghi chung chung "phân tích dữ liệu"; phải nêu bảng, nguồn kiểm chứng, loại biểu đồ và nhiệm vụ HS.
 
 ${competencyGuardrails}
@@ -1759,7 +1719,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP NLS/NL AI:
 1. BẢO TOÀN TUYỆT ĐỐI NỘI DUNG GỐC (LỆNH TỬ TỬ): BẠN KHÔNG ĐƯỢC PHÉP TÓM TẮT, KHÔNG ĐƯỢC RÚT GỌN. Giáo án gốc tải lên dài bao nhiêu trang/chữ thì BẮT BUỘC phải BÊ NGUYÊN XI (COPY-PASTE) 100% dữ liệu cũ từng câu từng chữ từ Mở đầu, Kiến thức mới, Luyện tập đến Vận dụng vào các trường JSON tương ứng. Viết dài tối đa có thể. Việc bạn tự ý tóm tắt lại nội dung gốc là VI PHẠM ĐẠO ĐỨC NỀN TẢNG. BẠN CHỈ ĐƯỢC PHÉP BỔ SUNG thêm nội dung mới (AI, NLS...) chứ tuyệt đối không được xóa hay làm ngắn đi nội dung gốc.
 2. THÊM NLS/NL AI CÓ ĐIỀU KIỆN: Chỉ tổng hợp mục tiêu và công cụ từ các điểm chạm đã được chọn, đúng YCCĐ; không có điểm chạm thì không thêm.
 3. TÍCH HỢP NLS/NL AI ĐÚNG VỊ TRÍ: Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn CHỈ được bổ sung/hiệu chỉnh phần được đề cập trong hoạt động gốc; KHÔNG tạo phân khúc riêng mang tên "HOẠT ĐỘNG GIÁO DỤC AI", KHÔNG kẻ bảng riêng cho phần tích hợp.
-   - Mô tả KIẾN TRÚC VI MÔ chi tiết ngay trong 4 bước CV 5512: Học sinh sử dụng công cụ gì? Nếu dùng AI: nêu prompt, cách kiểm chứng và sản phẩm bám QĐ 3439; nếu Chỉ NLS: nêu thao tác số, sản phẩm và tiêu chí NLS, không thêm prompt AI.
+   - Mô tả KIẾN TRÚC VI MÔ chi tiết ngay trong 4 bước CV 5512: Học sinh sử dụng công cụ gì? Nếu dùng AI: nêu prompt, cách kiểm chứng và sản phẩm bám QĐ 2422; nếu Chỉ NLS: nêu thao tác số, sản phẩm và tiêu chí NLS, không thêm prompt AI.
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: CHỈ phần nội dung tích hợp NLS/NL AI mới được bọc bởi thẻ <ai>...</ai> để hiện màu đỏ. Không thêm nhãn "[BÁO ĐỘNG ĐỎ]" và không bọc đỏ toàn bộ hoạt động nếu chỉ có một đoạn nhỏ được tích hợp.
 5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, mỗi dòng mục tiêu AI phải ghi đúng tên thành phần, hành vi học sinh và YCCĐ trước mã. ${safeIndicatorCode ? `Ưu tiên mã NL AI hợp lệ từ hệ thống: (${safeIndicatorCode}) khi khớp YCCĐ.` : `Nếu hoạt động có điểm chạm NL AI rõ, bắt buộc chọn thành phần/chủ đề và sinh một mã đầy đủ theo đúng lớp, YCCĐ và hành vi, ví dụ NLa- 12.A1.01; không ghi mã thành phần đơn lẻ hoặc “Cần đối chiếu mã AI”. Nếu không có điểm chạm thì ghi “Không tích hợp NL AI”.`}.
 ${AI_COMPETENCY_ORDER_RULE}
@@ -1802,7 +1762,7 @@ KIÊN QUYẾT BẢO TỒN VÀ TIÊU CHUẨN TÍCH HỢP NLS/NL AI:
 1. BẢO TOÀN TUYỆT ĐỐI NỘI DUNG GỐC (LỆNH TỬ TỬ): BẠN KHÔNG ĐƯỢC PHÉP TÓM TẮT, KHÔNG ĐƯỢC RÚT GỌN. Giáo án gốc tải lên dài bao nhiêu trang/chữ thì BẮT BUỘC phải BÊ NGUYÊN XI (COPY-PASTE) 100% dữ liệu cũ từng câu từng chữ từ Mở đầu, Kiến thức mới, Luyện tập đến Vận dụng vào các trường JSON tương ứng. Viết dài tối đa có thể. Việc bạn tự ý tóm tắt lại nội dung gốc là VI PHẠM ĐẠO ĐỨC NỀN TẢNG. BẠN CHỈ ĐƯỢC PHÉP BỔ SUNG thêm nội dung mới (AI, NLS...) chứ tuyệt đối không được xóa hay làm ngắn đi nội dung gốc.
 2. THÊM NLS/NL AI CÓ ĐIỀU KIỆN: Chỉ tổng hợp mục tiêu và công cụ từ các điểm chạm đã được chọn, đúng YCCĐ; không có điểm chạm thì không thêm.
 3. TÍCH HỢP NLS/NL AI ĐÚNG VỊ TRÍ: Tại các vị trí đã quy định ở "ĐIỂM CHẠM", bạn CHỈ được bổ sung/hiệu chỉnh phần được đề cập trong hoạt động gốc; KHÔNG tạo phân khúc riêng mang tên "HOẠT ĐỘNG GIÁO DỤC AI", KHÔNG kẻ bảng riêng cho phần tích hợp.
-   - Mô tả KIẾN TRÚC VI MÔ chi tiết ngay trong 4 bước CV 5512: Học sinh sử dụng công cụ gì? Nếu dùng AI: nêu prompt, cách kiểm chứng và sản phẩm bám QĐ 3439; nếu Chỉ NLS: nêu thao tác số, sản phẩm và tiêu chí NLS, không thêm prompt AI.
+   - Mô tả KIẾN TRÚC VI MÔ chi tiết ngay trong 4 bước CV 5512: Học sinh sử dụng công cụ gì? Nếu dùng AI: nêu prompt, cách kiểm chứng và sản phẩm bám QĐ 2422; nếu Chỉ NLS: nêu thao tác số, sản phẩm và tiêu chí NLS, không thêm prompt AI.
 4. TÔ ĐỎ ĐỂ NHẬN DIỆN KHÁC BIỆT: CHỈ phần nội dung tích hợp NLS/NL AI mới được bọc bởi thẻ <ai>...</ai> để hiện màu đỏ. Không thêm nhãn "[BÁO ĐỘNG ĐỎ]" và không bọc đỏ toàn bộ hoạt động nếu chỉ có một đoạn nhỏ được tích hợp.
 5. LỆNH MÃ CHỈ BÁO: Trong mục \`aiSpecific\` của JSON đầu ra, mỗi dòng mục tiêu AI phải ghi đúng tên thành phần, hành vi học sinh và YCCĐ trước mã. ${safeIndicatorCode ? `Ưu tiên mã NL AI hợp lệ từ hệ thống: (${safeIndicatorCode}) khi khớp YCCĐ.` : `Nếu hoạt động có điểm chạm NL AI rõ, bắt buộc chọn thành phần/chủ đề và sinh một mã đầy đủ theo đúng lớp, YCCĐ và hành vi, ví dụ NLa- 12.A1.01; không ghi mã thành phần đơn lẻ hoặc “Cần đối chiếu mã AI”. Nếu không có điểm chạm thì ghi “Không tích hợp NL AI”.`}.
 ${AI_COMPETENCY_ORDER_RULE}
@@ -1818,7 +1778,7 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
   }
 
   const basePrompt = `
-    Vai trò: Bạn là chuyên gia thiết kế kế hoạch bài dạy theo CT GDPT 2018, ${lessonFrameworkLabel}, TT 02/2025/TT-BGDĐT và QĐ 3439/QĐ-BGDĐT.
+    Vai trò: Bạn là chuyên gia thiết kế kế hoạch bài dạy theo CT GDPT 2018, ${lessonFrameworkLabel}, TT 02/2025/TT-BGDĐT và QĐ 2422/QĐ-BGDĐT.
     Hãy soạn Kế hoạch bài dạy khoa học, đủ dùng, mô tả rõ hành động GV-HS nhưng không diễn giải dài dòng cho:
     Môn học: ${input.subject}
     Tên bài dạy: ${input.topic}
@@ -1835,7 +1795,7 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
     ${SOCIAL_INTEGRATION_GUIDELINES}
     ${socialIntegrationPrompt}
     ${competencyGuardrails}
-    THAM CHIẾU QĐ 3439: ưu tiên lớp + chủ đề + nguyên văn YCCĐ. Chỉ dùng mã chi tiết khi bảng đối chiếu đầu vào đã cung cấp và khớp YCCĐ; không tự tạo số thứ tự từ ví dụ.
+    THAM CHIẾU QĐ 2422: ưu tiên lớp + chủ đề + nguyên văn YCCĐ. Chỉ dùng mã chi tiết khi bảng đối chiếu đầu vào đã cung cấp và khớp YCCĐ; không tự tạo số thứ tự từ ví dụ.
       ${safeIndicatorCode ? `\nMÃ NL AI HỢP LỆ TỪ HỆ THỐNG: ${safeIndicatorCode}. Chỉ khai báo trong mục "Năng lực AI đặc thù" nếu chứng minh được mã này bám sát YCCĐ môn học.` : ""}
       ${selectedIndicatorPrompt}
     ${AI_COMPETENCY_ORDER_RULE}
@@ -1843,7 +1803,7 @@ ${SOCIAL_INTEGRATION_GUIDELINES}
     ${formattingNeed ? FORMATTING_INSTRUCTIONS : ""}
     ${englishConstraint}
 
-    YÊU CẦU NỘI DUNG NGHIÊM NGẶT (KHUNG ${lessonFrameworkLabel}, TT 02 VÀ QĐ 3439):
+    YÊU CẦU NỘI DUNG NGHIÊM NGẶT (KHUNG ${lessonFrameworkLabel}, TT 02 VÀ QĐ 2422):
 
     QUY TẮC THỰC THI NGHIÊM NGẶT(CRITICAL RULES):
     1. KIỂM TRA ĐIỀU KIỆN TÍCH HỢP:
@@ -1995,7 +1955,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
         so_tiet: i.periods || "",
         yccd_CT2018: i.lessonGoal || i.yccd || [i.objectivesKnowledge, i.objectivesCompetency, i.objectivesQuality].filter(Boolean).join("; "),
         nls_TT02_CV3456: i.digitalCompetencyTT02 || i.digitalCompetency || i.nls || "",
-        nl_ai_3439: i.aiCompetency3439Integrated || i.aiCompetency3439 || i.ai || i.nlai || "",
+        nl_ai_3439: i.aiCompetency2422Integrated || i.aiCompetency2422 || i.ai || i.nlai || "",
         noi_dung_giao_duc_tich_hop: i.socialIntegration || i.integratedEducation || i.social || "",
         ghi_chu_dong_bo: i.sourceStatus || ""
       }))
@@ -2052,7 +2012,7 @@ LỆNH TỐI CẤP: Bạn BẮT BUỘC dùng chính xác danh sách bài học. 
        - Công cụ số và AI (trường dữ liệu bắt buộc, nội dung có điều kiện): chỉ nêu công cụ khi hoạt động thật sự cần; nếu không dùng ghi “Không sử dụng - không cần cho YCCĐ này”:
     + Phương án triển khai: Sử dụng tình huống giả định, nghiên cứu tình huống(case study) hay có công cụ AI trực tiếp.
          + Học liệu / công cụ cụ thể: Các bài báo, video phân tích, các bộ dữ liệu giả định, hoặc tên phần mềm / nền tảng AI sẽ sử dụng.
-         + KHÔNG ghi lại mã NLS, mã NL AI, YCCĐ, TT 02/CV 3456 hoặc QĐ 3439 trong phần Công cụ số và AI. Những nội dung này chỉ nằm ở cột "Định hướng năng lực số/AI".
+         + KHÔNG ghi lại mã NLS, mã NL AI, YCCĐ, TT 02/CV 3456 hoặc QĐ 2422 trong phần Công cụ số và AI. Những nội dung này chỉ nằm ở cột "Định hướng năng lực số/AI".
        - Địa điểm dạy học: Lớp học, phòng máy tính, thư viện...
     - Định hướng năng lực số/AI: Ghi cô đọng theo chuỗi YCCĐ -> hành vi HS -> sản phẩm -> tiêu chí -> mã/tham chiếu. Mã NLS theo đúng mức lớp. Với NL AI, khi có điểm chạm rõ phải ghi đúng tên thành phần và một mã đầy đủ theo lớp/chủ đề/chỉ báo, ví dụ NLa- 12.A1.01; mã phải bám YCCĐ và hành vi của bài, không ghi chung chung “Cần đối chiếu mã AI”.
        - ĐỊNH DẠNG VĂN BẢN(RẤT QUAN TRỌNG): TUYỆT ĐỐI KHÔNG SỬ DỤNG MÃ LATEX($...$, \sin, \cos) trong bảng này.Các công thức toán / lý / hóa phải chuyển thành text thường dễ đọc nhất(vd: y = sin x).
@@ -2159,7 +2119,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
         "2. lessonGoal: SAO CHEP Y NGUYEN 100% noi dung yccd tu du lieu tren. TUYET DOI KHONG tom tat hay cat xen.",
         "3. TICH HOP NLS va NL AI chi khi YCCD cua bai co diem cham ro rang. Neu khong du can cu, ghi 'Khong tich hop - ly do: ...' hoac 'Khong gan ma - ly do: ...'. KHONG duoc ghi cut 'Khong'.",
         "4. digitalCompetencyTT02: voi THPT dung ma NLS muc NC1 (VD: 1.1.NC1a: Khai thac nguon du lieu...; 2.4.NC1b: Hop tac tren cong cu so...). Moi ma phai bam vao YCCD va san pham hoc tap.",
-        "5. aiCompetency3439Integrated: truoc khi ghi ma NL AI phai ghi ten thanh phan nang luc AI; chi dung ma NL AI hop le theo lop va chu de QD 3439, kem YCCD cu the.",
+        "5. aiCompetency2422Integrated: truoc khi ghi ma NL AI phai ghi ten thanh phan nang luc AI; chi dung ma NL AI hop le theo lop va chu de QD 2422, kem YCCD cu the.",
         AI_COMPETENCY_ORDER_RULE,
         "   Chỉ dùng mã chi tiết khi dữ liệu đầu vào đã cung cấp và khớp nguyên văn YCCĐ; nếu chưa có, ghi thành phần + YCCĐ + 'Can doi chieu ma AI'",
         "   - Mach A: Tu duy lay con nguoi lam trung tam | Mach B: Dao duc & trach nhiem | Mach C: Ky thuat & ung dung | Mach D: Giai quyet van de",
@@ -2167,7 +2127,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
         "6. Phan bo thoi gian bat dau tu Tuan " + weekCounter + ".",
         "7. socialIntegration: chi ghi dung bai co diem cham; theo thu tu Chu de -> Can cu YCCD -> Hanh vi HS -> San pham -> Tieu chi/minh chung. Bai khong phu hop thi de chuoi rong.",
         "",
-        "Dau ra: JSON Array gom dung " + batch.length + " object voi cac truong: time, lessonContent, periods, lessonGoal, socialIntegration, digitalCompetencyTT02, aiCompetency3439Integrated."
+        "Dau ra: JSON Array gom dung " + batch.length + " object voi cac truong: time, lessonContent, periods, lessonGoal, socialIntegration, digitalCompetencyTT02, aiCompetency2422Integrated."
       ];
       const batchPrompt = bLines.join("\n");
 
@@ -2187,10 +2147,10 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
                 periods: { type: 'STRING' as any },
                 lessonGoal: { type: 'STRING' as any },
                 digitalCompetencyTT02: { type: 'STRING' as any },
-                aiCompetency3439Integrated: { type: 'STRING' as any },
+                aiCompetency2422Integrated: { type: 'STRING' as any },
                 socialIntegration: { type: 'STRING' as any }
               },
-              required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'socialIntegration', 'digitalCompetencyTT02', 'aiCompetency3439Integrated'],
+              required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'socialIntegration', 'digitalCompetencyTT02', 'aiCompetency2422Integrated'],
             },
           },
         },
@@ -2247,7 +2207,7 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
     const normalizedOverrideCurriculumDbData = overrideCurriculumDbData ? normalizeCurriculumCompetencyData(overrideCurriculumDbData, grade) : undefined;
     const systemCurriculum = normalizedOverrideCurriculumDbData ? `DỮ LIỆU BÀI HỌC TỪ HỆ THỐNG:
 ${JSON.stringify(normalizedOverrideCurriculumDbData.map(l => ({ topic: l.topic, indicatorCode: l.indicatorCode, indicatorNote: l.indicatorNote, yccd: [l.objectivesKnowledge, l.objectivesCompetency, l.objectivesQuality].filter(Boolean).join("; ") })), null, 2)}
-LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM chứa toàn bộ danh sách bài học trên. Tại cột "Yêu cầu cần đạt CT 2018" (lessonGoal), BẮT BUỘC lấy nội dung "yccd" tương ứng. Tại cột "Yêu cầu cần đạt 3439" (aiCompetency3439), trước mã AI phải ghi đúng tên thành phần, hành vi học sinh và YCCĐ. Nếu indicatorCode hợp lệ và khớp YCCĐ thì dùng chính xác mã đó; nếu thiếu mã nhưng có điểm chạm NL AI rõ thì phải chọn thành phần/chủ đề và sinh mã đầy đủ đúng lớp/YCCĐ, ví dụ NLa- 12.A1.01. Không ghi “Cần đối chiếu mã AI”; không có điểm chạm thì ghi “Không tích hợp NL AI”.
+LỆNH TỐI CẤP: Bạn BẮT BUỘC phải tạo KHTCM chứa toàn bộ danh sách bài học trên. Tại cột "Yêu cầu cần đạt CT 2018" (lessonGoal), BẮT BUỘC lấy nội dung "yccd" tương ứng. Tại cột "Yêu cầu cần đạt 3439" (aiCompetency2422), trước mã AI phải ghi đúng tên thành phần, hành vi học sinh và YCCĐ. Nếu indicatorCode hợp lệ và khớp YCCĐ thì dùng chính xác mã đó; nếu thiếu mã nhưng có điểm chạm NL AI rõ thì phải chọn thành phần/chủ đề và sinh mã đầy đủ đúng lớp/YCCĐ, ví dụ NLa- 12.A1.01. Không ghi “Cần đối chiếu mã AI”; không có điểm chạm thì ghi “Không tích hợp NL AI”.
 LƯU Ý VỀ DỮ LIỆU CÒN THIẾU: Không tự bổ sung tên bài, YCCĐ hoặc mã để đủ 35 tuần khi nguồn chưa cung cấp. Chỉ tạo các dòng có trong dữ liệu; nếu thiếu nguồn chính thức phải báo “Chưa đủ nguồn chính thức” thay vì suy đoán.` : "";
 
     let defaultCurriculum = "";
@@ -2287,7 +2247,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 
     Nhiệm vụ cụ thể:
     1. Rà soát toàn bộ dữ liệu nguồn: không bỏ sót, gộp hoặc tự thêm bài/chuyên đề/kiểm tra. Chỉ lập đủ 35 tuần khi nguồn chính thức đã cung cấp đủ; không tự bịa dòng để lấp lịch.
-    1b. KHÔNG ĐƯỢC ĐỂ THIẾU TRƯỜNG: Mỗi dòng bắt buộc có đủ 7 trường time, lessonContent, periods, lessonGoal, socialIntegration, digitalCompetencyTT02, aiCompetency3439Integrated. Riêng socialIntegration được để chuỗi rỗng khi không có điểm chạm; NLS/NL AI không phù hợp phải ghi rõ lý do.
+    1b. KHÔNG ĐƯỢC ĐỂ THIẾU TRƯỜNG: Mỗi dòng bắt buộc có đủ 7 trường time, lessonContent, periods, lessonGoal, socialIntegration, digitalCompetencyTT02, aiCompetency2422Integrated. Riêng socialIntegration được để chuỗi rỗng khi không có điểm chạm; NLS/NL AI không phù hợp phải ghi rõ lý do.
     2. TÍCH HỢP NLS VÀ NL AI THEO YCCĐ, KHÔNG GƯỢNG ÉP:
     - Chỉ tích hợp Năng lực số (NLS) và Năng lực AI (NL AI) khi YCCĐ của bài có thao tác phù hợp: khai thác dữ liệu, kiểm chứng nguồn, tạo sản phẩm số, phân tích biểu đồ/bản đồ/bảng số liệu, mô phỏng, thiết kế, đánh giá rủi ro...
     - Không đặt chỉ tiêu 95%/100% số bài. Nếu bài không có điểm chạm rõ, ghi "Không tích hợp - lý do: ..." hoặc "Không gán mã - lý do: ..." và nêu lý do ngắn.
@@ -2298,7 +2258,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
        - Số tiết (periods): Số lượng tiết học của bài học.
        - Yêu cầu cần đạt CT 2018 (lessonGoal): BẮT BUỘC SAO CHÉP Y NGUYÊN 100% nội dung "yccd" (hoặc "YCCĐ") được cung cấp trong danh sách gốc cho từng bài học/chuyên đề/kiểm tra tương ứng. BẠN KHÔNG ĐƯỢC PHÉP TÓM TẮT HAY CẮT XÉN YCCĐ GỐC!
        - Năng lực số (digitalCompetencyTT02): dùng mức tham chiếu đúng lớp theo bộ quy tắc khóa; mỗi dòng chỉ 1-2 mã có hành vi và minh chứng. Không phù hợp thì ghi “Không tích hợp - lý do: ...”.
-       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency3439Integrated): Trước khi ghi mã/tham chiếu AI phải ghi tên thành phần; bám đúng lớp, chủ đề và nguyên văn YCCĐ QĐ 3439. Nội dung bắt buộc theo thứ tự: Tên thành phần năng lực AI -> hành vi học sinh -> yêu cầu cần đạt AI -> mã NL AI -> sản phẩm -> tiêu chí -> minh chứng. Với bài có indicatorCode hợp lệ từ hệ thống, vẫn phải kiểm tra YCCĐ trước khi dùng. Với bài tự đề xuất, không bịa mã; nếu thiếu căn cứ ghi "Không tích hợp/Không gán mã - lý do: ..." kèm lý do cụ thể, không ghi cụt "Không".
+       - Mục tiêu & YCCĐ 3439 Tích hợp GD AI (aiCompetency2422Integrated): Trước khi ghi mã/tham chiếu AI phải ghi tên thành phần; bám đúng lớp, chủ đề và nguyên văn YCCĐ QĐ 2422. Nội dung bắt buộc theo thứ tự: Tên thành phần năng lực AI -> hành vi học sinh -> yêu cầu cần đạt AI -> mã NL AI -> sản phẩm -> tiêu chí -> minh chứng. Với bài có indicatorCode hợp lệ từ hệ thống, vẫn phải kiểm tra YCCĐ trước khi dùng. Với bài tự đề xuất, không bịa mã; nếu thiếu căn cứ ghi "Không tích hợp/Không gán mã - lý do: ..." kèm lý do cụ thể, không ghi cụt "Không".
 
        - Nội dung giáo dục tích hợp/lồng ghép (socialIntegration): Chỉ chọn trong danh mục giáo viên đã chọn và chỉ đặt ở bài có điểm chạm tự nhiên; ghi Chủ đề -> Căn cứ YCCĐ -> Hành vi học sinh -> Sản phẩm -> Tiêu chí/minh chứng. Không phù hợp thì để chuỗi rỗng.
        - Mạch nội dung AI:
@@ -2316,7 +2276,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
     - periods: Số tiết (Ví dụ: "2", "1").
     - lessonGoal: Yêu cầu cần đạt CT 2018.
     - digitalCompetencyTT02: Năng lực số TT 02 (Mã và YCCĐ). Ghi "Không tích hợp - lý do: ..." nếu bài không phù hợp.
-    - aiCompetency3439Integrated: Mục tiêu & YCCĐ 3439 Tích hợp GD AI. Kết hợp tên thành phần năng lực AI, hành vi học sinh, YCCĐ AI, mã/tham chiếu QĐ 3439, sản phẩm, tiêu chí và minh chứng theo đúng thứ tự. Ghi "Không tích hợp - lý do: ..." nếu bài không phù hợp.
+    - aiCompetency2422Integrated: Mục tiêu & YCCĐ 3439 Tích hợp GD AI. Kết hợp tên thành phần năng lực AI, hành vi học sinh, YCCĐ AI, mã/tham chiếu QĐ 2422, sản phẩm, tiêu chí và minh chứng theo đúng thứ tự. Ghi "Không tích hợp - lý do: ..." nếu bài không phù hợp.
     - socialIntegration: Nội dung giáo dục tích hợp/lồng ghép đúng vị trí; để chuỗi rỗng nếu không phù hợp.
   `;
 
@@ -2342,10 +2302,10 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
             periods: { type: 'STRING' as any },
             lessonGoal: { type: 'STRING' as any },
             digitalCompetencyTT02: { type: 'STRING' as any },
-            aiCompetency3439Integrated: { type: 'STRING' as any },
+            aiCompetency2422Integrated: { type: 'STRING' as any },
             socialIntegration: { type: 'STRING' as any }
           },
-          required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'socialIntegration', 'digitalCompetencyTT02', 'aiCompetency3439Integrated'],
+          required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'socialIntegration', 'digitalCompetencyTT02', 'aiCompetency2422Integrated'],
         },
       },
     },
@@ -2452,7 +2412,7 @@ export const generateCompetencyEvaluation = async (lessonPlan: any) => {
     `
     : "";
   const prompt = `
-    Dựa trên Kế hoạch bài dạy (KHBD) sau đây, hãy thiết kế một “Hệ thống đánh giá năng lực” theo Quyết định 3439/QĐ-BGDĐT và Chương trình GDPT 2018.
+    Dựa trên Kế hoạch bài dạy (KHBD) sau đây, hãy thiết kế một “Hệ thống đánh giá năng lực” theo Quyết định 2422/QĐ-BGDĐT (CV 5588/BGDĐT-GDPT) và Chương trình GDPT 2018.
 
     Tên bài: ${lessonPlan?.title || "Giáo án đã nâng cấp"}
     Môn học: ${lessonPlan?.subject || ""}
@@ -2625,7 +2585,7 @@ export const generateAiCompetencyFramework = async (input: {
 }, options: { apiKey?: string; aiModel?: string }) => {
   const model = getModel(options.apiKey, options.aiModel);
   const competencyGuardrails = getCompetencyGuardrails(input.subject, input.grade, input.requirementsText);
-  const prompt = `Bạn là chuyên gia đối chiếu nội dung giáo dục AI theo Quyết định 3439/QĐ-BGDĐT.
+  const prompt = `Bạn là chuyên gia đối chiếu nội dung giáo dục AI theo Quyết định 2422/QĐ-BGDĐT (CV 5588/BGDĐT-GDPT).
 
 ${competencyGuardrails}
 
@@ -2768,7 +2728,7 @@ Nhiệm vụ của bạn là đánh giá bản Kế hoạch bài dạy (KHBD) d�
 BA VAI TRÒ CHUYÊN GIA:
 1. Chuyên gia Giáo dục: Đánh giá việc đáp ứng Yêu cầu cần đạt cốt lõi, việc lựa chọn phương pháp/kỹ thuật dạy học tích cực có phù hợp không.
 2. Chuyên gia Công nghệ số: Đánh giá việc lồng ghép Năng lực số (NLS) có tự nhiên và hiệu quả không.
-3. Chuyên gia Phản biện AI: Kiểm định việc áp dụng Khung năng lực AI (QĐ 3439), kiểm tra xem các Prompt/công cụ đề xuất cho học sinh có thực tế không, có nguy cơ "ảo giác" (hallucination) hay lạm dụng AI thay vì tư duy không.
+3. Chuyên gia Phản biện AI: Kiểm định việc áp dụng Khung năng lực AI (QĐ 2422), kiểm tra xem các Prompt/công cụ đề xuất cho học sinh có thực tế không, có nguy cơ "ảo giác" (hallucination) hay lạm dụng AI thay vì tư duy không.
 
 BẢN KHBD CẦN ĐÁNH GIÁ:
 """
@@ -2962,7 +2922,7 @@ export const generateSuDiaSkill = async (input: SuDiaSkillInput) => {
   const competencyGuardrails = getCompetencyGuardrails(domainLabel, input.grade, input.lessonGoal);
 
   const prompt = `
-Bạn là chuyên gia thiết kế học liệu ${domainLabel} theo CT GDPT 2018, đồng thời am hiểu Khung năng lực số TT02/2025 và năng lực AI theo QĐ 3439.
+Bạn là chuyên gia thiết kế học liệu ${domainLabel} theo CT GDPT 2018, đồng thời am hiểu Khung năng lực số TT02/2025 và năng lực AI theo QĐ 2422.
 
 Nhiệm vụ đang chọn: ${kindLabels[input.kind]}
 Nhánh môn học: ${domainLabel}

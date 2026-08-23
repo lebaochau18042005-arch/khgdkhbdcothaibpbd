@@ -42,6 +42,10 @@ import {
 } from "lucide-react";
 import { generateLessonPlan, generateEducationalPlan, generateDepartmentPlan, generateEducationalActivitiesPlan, generateCompetencyEvaluation, parseCurriculumAppendix, generateAiCompetencyFramework, analyzeLessonSource, evaluateLessonPlan, suggestNlsIndicators, LessonPlanInput } from "./services/geminiService";
 import NlsLookup, { INDICATORS } from "./components/NlsLookup";
+import { IntermediateAlignmentTable, AlignmentRow } from "./components/IntermediateAlignmentTable";
+import { VisualAlignmentMatrix } from "./components/VisualAlignmentMatrix";
+import { ExportGatekeeperModal } from "./components/ExportGatekeeperModal";
+import { validateGatekeeper } from "./utils/gatekeeperValidator";
 import { SOCIAL_INTEGRATION_OPTIONS } from "./data/socialIntegrations";
 
 const UpgradePlan = React.lazy(() => import("./components/UpgradePlan"));
@@ -82,7 +86,7 @@ const mapAiCompetencyText = (code: string) => {
   return `${groupName} - Mã NL AI: ${code}`;
 };
 
-type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "kh-hdgd-gen" | "upgrade-plan" | "ai-framework-gen" | "su-dia-skills" | "nls-lookup" | "history";
+type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "kh-hdgd-gen" | "upgrade-plan" | "intermediate-alignment" | "ai-framework-gen" | "su-dia-skills" | "nls-lookup" | "history";
 
 const collectSelectedSocialIntegrations = (input: { socialIntegrations?: string[]; customSocialIntegration?: string }) => {
   const selected = Array.isArray(input.socialIntegrations) ? input.socialIntegrations.filter(Boolean) : [];
@@ -759,8 +763,8 @@ const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[], options: 
       digitalCompetencyTT02: hasMeaningfulText(row?.digitalCompetencyTT02)
         ? String(row.digitalCompetencyTT02)
         : "Không tích hợp - cần tổ chuyên môn rà soát thêm căn cứ YCCĐ trước khi gán mã NLS.",
-      aiCompetency3439Integrated: hasMeaningfulText(row?.aiCompetency3439Integrated)
-        ? String(row.aiCompetency3439Integrated)
+      aiCompetency2422Integrated: hasMeaningfulText(row?.aiCompetency2422Integrated)
+        ? String(row.aiCompetency2422Integrated)
         : "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.",
       sourceStatus: row ? "AI tạo, app đã rà soát đủ ô" : "App bổ sung từ danh mục chương trình để tránh thiếu dòng"
     };
@@ -794,7 +798,7 @@ const readNlsFromPlanRow = (item: any) =>
   String(item?.digitalCompetencyTT02 || item?.digitalCompetency || item?.nls || item?.năng_lực_số_TT02 || "");
 
 const readAiFromPlanRow = (item: any) =>
-  String(item?.aiCompetency3439Integrated || item?.aiCompetency3439 || item?.ai || item?.nlai || item?.yccd3439 || "");
+  String(item?.aiCompetency2422Integrated || item?.aiCompetency2422 || item?.ai || item?.nlai || item?.yccd2422 || "");
 
 const readSocialIntegrationFromPlanRow = (item: any) =>
   String(item?.socialIntegration || item?.integratedEducation || item?.social || item?.noi_dung_giao_duc_tich_hop || "");
@@ -824,7 +828,7 @@ const stripCompetencyDetailsFromTeachingAidText = (value: any, competencyReferen
   const references = competencyReferences
     .map((item) => normalizeKey(String(item || "")))
     .filter((item) => item.length >= 12);
-  const competencyPattern = /\b(nls|nl ai|nang luc so|nang luc ai|ma nl ai|yccd|tt\s*02|cv\s*3456|qd\s*3439|3439)\b/i;
+  const competencyPattern = /\b(nls|nl ai|nang luc so|nang luc ai|ma nl ai|yccd|tt\s*02|cv\s*3456|qd\s*2422|2422)\b/i;
 
   return String(value || "")
     .split(/\n+/)
@@ -851,7 +855,7 @@ const stripPl3SyncNoise = (value: any) =>
       return true;
     })
     .join("\n")
-    .replace(/\b(?:Năng lực số từ PL1|NL AI 3439 từ PL1|Khai triển PL3)\s*:\s*/gi, "")
+    .replace(/\b(?:Năng lực số từ PL1|NL AI 2422 từ PL1|Khai triển PL3)\s*:\s*/gi, "")
     .replace(/\s+\./g, ".")
     .trim();
 
@@ -950,7 +954,7 @@ const extractNlsCodes = (text: any) =>
 const hasCompetencySignal = (text: any) => {
   const raw = String(text || "");
   const key = normalizeKey(raw);
-  return /(nls|nl ai|nang luc so|nang luc ai|ma nl ai|tt 02|cv 3456|qd 3439|3439|yccd|nc1|cb1|cb2)/i.test(key)
+  return /(nls|nl ai|nang luc so|nang luc ai|ma nl ai|tt 02|cv 3456|qd 2422|2422|yccd|nc1|cb1|cb2)/i.test(key)
     || extractAiCodes(raw).length > 0
     || extractNlsCodes(raw).length > 0;
 };
@@ -984,7 +988,7 @@ const validateCompetencyCodes = (
         severity: "error",
         location,
         title: "Mã NL AI sai lớp",
-        detail: `Mã ${code} không khớp lớp ${gradeNumber}. Hệ thống không tự sửa mã; cần đối chiếu lại đúng YCCĐ QĐ 3439.`
+        detail: `Mã ${code} không khớp lớp ${gradeNumber}. Hệ thống không tự sửa mã; cần đối chiếu lại đúng YCCĐ QĐ 2422.`
       });
     }
   });
@@ -993,7 +997,7 @@ const validateCompetencyCodes = (
       severity: "warning",
       location,
       title: "Mã AI thiếu căn cứ YCCĐ",
-      detail: "Mã/tham chiếu AI phải kèm đúng YCCĐ của lớp và chủ đề trong QĐ 3439; định dạng đúng chưa đủ để xác nhận mã đúng."
+      detail: "Mã/tham chiếu AI phải kèm đúng YCCĐ của lớp và chủ đề trong QĐ 2422; định dạng đúng chưa đủ để xác nhận mã đúng."
     });
   }
   if (aiCodes.length && (!/(sản phẩm|minh chứng|san pham|minh chung)/i.test(normalizeKey(rawText)) || !/(tiêu chí|tieu chi|đánh giá|danh gia)/i.test(normalizeKey(rawText)))) {
@@ -1125,14 +1129,14 @@ const buildPlanQualityAudit = (type: string, data: any, subject: string, grade: 
     data.forEach((item: any, index: number) => {
       const location = `PL1 dòng ${index + 1}${readLessonTitle(item) ? ` - ${readLessonTitle(item)}` : ""}`;
       const nlsText = String(item?.digitalCompetencyTT02 || "");
-      const aiText = String(item?.aiCompetency3439Integrated || "");
+      const aiText = String(item?.aiCompetency2422Integrated || "");
       checks += 3;
       if (hasOverlappingMeaningfulText(nlsText, aiText)) {
         addIssue({
           severity: "warning",
           location,
           title: "NLS và NL AI có nội dung chồng lặp",
-          detail: "NLS nên mô tả năng lực số theo TT 02/CV 3456; NL AI nên mô tả thành phần, hành vi, mã, sản phẩm, tiêu chí và minh chứng theo QĐ 3439."
+          detail: "NLS nên mô tả năng lực số theo TT 02/CV 3456; NL AI nên mô tả thành phần, hành vi, mã, sản phẩm, tiêu chí và minh chứng theo QĐ 2422."
         });
       }
       if (hasDuplicateMeaningfulLines(`${nlsText}\n${aiText}`)) {
@@ -1417,7 +1421,7 @@ const buildKhtcmSupplement = (subject: string, grade: string, rows: any[]) => {
       `Môn học/Hoạt động giáo dục: ${subject}`,
       `Khối lớp: ${grade}`,
       `Số dòng phân phối chương trình: ${lessonRows.length}`,
-      "Kế hoạch đã giữ đủ các ô bắt buộc: thời gian, nội dung, số tiết, YCCĐ CT 2018, NLS theo TT 02/CV 3456 và NL AI theo QĐ 3439."
+      "Kế hoạch đã giữ đủ các ô bắt buộc: thời gian, nội dung, số tiết, YCCĐ CT 2018, NLS theo TT 02/CV 3456 và NL AI theo QĐ 2422."
     ],
     situation: [
       "Số lớp: .............; Số học sinh: .............; Số học sinh học chuyên đề lựa chọn (nếu có): .............",
@@ -2026,6 +2030,90 @@ const mergeDraftObject = <T extends Record<string, any>>(fallback: T, saved?: Pa
 
 const formatSavedTime = (timestamp?: number | null) =>
   timestamp ? new Date(timestamp).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "";
+
+
+const generateDefaultAlignmentRows = (): AlignmentRow[] => {
+  return [
+    {
+      id: "align-geo-1",
+      stt: 1,
+      subject: "Địa lí",
+      grade: "10",
+      topicOrLesson: "Bài 1. Môn Địa lí với định hướng nghề nghiệp cho học sinh",
+      yccdSubjectRaw: "Khẳng định được vai trò của môn Địa lí đối với đời sống, khoa học kĩ thuật và định hướng nghề nghiệp.",
+      actionVerb: "Khẳng định, Phân tích",
+      knowledgeContent: "Vai trò môn Địa lí trong kỷ nguyên số",
+      activityName: "Hoạt động 2: Tìm hiểu ứng dụng công nghệ số và AI trong ngành Địa lí",
+      learningTask: "Khai thác dữ liệu bản đồ số và sử dụng AI tra cứu xu hướng nghề nghiệp không gian địa lí",
+      studentBehavior: "Học sinh sử dụng công cụ AI (Gemini/ChatGPT) đặt prompt tra cứu danh mục ngành nghề liên quan đến GIS/Viễn thám, kiểm chứng chéo với cổng thông tin tuyển sinh.",
+      product: "Bảng so sánh 5 ngành nghề địa lí ứng dụng AI và phân tích yêu cầu năng lực số.",
+      evidence: "Lịch sử prompt, bản kiểm chứng nguồn và bảng tổng hợp của nhóm học sinh.",
+      nlsCode: "1.1.NCa",
+      nlsIndicatorText: "Sử dụng các chiến lược tìm kiếm nâng cao, kết hợp nhiều từ khóa và toán tử logic để truy xuất dữ liệu chuyên sâu.",
+      aiComponent: "NLa",
+      aiRequirementText: "Nhận biết và giải thích được con người là chủ thể thiết kế, kiểm soát hoạt động và chịu trách nhiệm về quyết định của AI.",
+      aiCode: "10.A1.1",
+      tool: "Gemini / AI Chatbot, Cổng thông tin Bộ GD&ĐT",
+      verificationMethod: "Đối chiếu tài liệu hướng nghiệp chính thức và SGK Kết nối tri thức.",
+      assessmentCriteria: "Đúng kiến thức định hướng nghề nghiệp; phân biệt được phần AI gợi ý và kết luận của học sinh; ghi rõ nguồn tham khảo.",
+      sourceRef: "SGK Địa lí 10 Kết nối tri thức - Trang 6-9",
+      status: "Đã xác minh",
+      offlineAlternative: "Phương án dự phòng ngoại tuyến: Sử dụng sơ đồ nghề nghiệp in sẵn và thảo luận nhóm truyền thống."
+    },
+    {
+      id: "align-geo-2",
+      stt: 2,
+      subject: "Địa lí",
+      grade: "10",
+      topicOrLesson: "Bài 2. Một số phương pháp biểu hiện các đối tượng địa lí trên bản đồ",
+      yccdSubjectRaw: "Phân biệt và sử dụng được một số phương pháp biểu hiện các đối tượng địa lí trên bản đồ.",
+      actionVerb: "Phân biệt, Khai thác",
+      knowledgeContent: "Phương pháp kí hiệu, đường chuyển động, chấm điểm",
+      activityName: "Hoạt động 3: Luyện tập đọc bản đồ số chuyên đề",
+      learningTask: "Sử dụng bản đồ số tương tác để xác định phương pháp biểu hiện mạng lưới giao thông và mật độ dân số",
+      studentBehavior: "Học sinh thao tác trực tiếp trên lớp bản đồ số trực tuyến, phóng to/thu nhỏ, lọc thuộc tính để nhận diện phương pháp kí hiệu và đường chuyển động.",
+      product: "Báo cáo phân tích đặc điểm phân bố đối tượng qua các phương pháp biểu hiện trên bản đồ số.",
+      evidence: "Ảnh chụp màn hình phân tích lớp dữ liệu và câu trả lời phiếu học tập.",
+      nlsCode: "1.2.NCa",
+      nlsIndicatorText: "Đánh giá phê phán độ tin cậy, tính xác thực và thiên lệch của các nguồn dữ liệu số.",
+      aiComponent: "NLc",
+      aiRequirementText: "Ứng dụng AI phân tích và xử lý thông tin địa lí trực quan.",
+      aiCode: "10.C3.1",
+      tool: "Google Earth / Bản đồ số GIS",
+      verificationMethod: "Đối chiếu quy chuẩn bản đồ học trong Atlat Địa lí Việt Nam.",
+      assessmentCriteria: "Nhận diện chính xác 100% phương pháp biểu hiện; đọc đúng chú giải bản đồ số.",
+      sourceRef: "SGK Địa lí 10 Kết nối tri thức - Trang 10-15",
+      status: "Đã xác minh",
+      offlineAlternative: "Phương án dự phòng ngoại tuyến: Sử dụng Atlat Địa lí giấy và bản đồ treo tường lớp học."
+    },
+    {
+      id: "align-lit-1",
+      stt: 3,
+      subject: "Ngữ văn",
+      grade: "10",
+      topicOrLesson: "Bài 1. Sức hấp dẫn của truyện kể (Thần thoại và Sử thi)",
+      yccdSubjectRaw: "Phân tích được các yếu tố không gian, thời gian, nhân vật và nghệ thuật kể chuyện trong thần thoại.",
+      actionVerb: "Phân tích, So sánh, Đánh giá",
+      knowledgeContent: "Thi pháp thần thoại và tính biểu tượng",
+      activityName: "Hoạt động 4: So sánh hình tượng nhân vật qua góc nhìn AI",
+      learningTask: "Đặt câu lệnh Prompt để AI tóm tắt các dị bản thần thoại và chỉ ra điểm tương đồng/dị biệt",
+      studentBehavior: "Học sinh thiết lập prompt so sánh nhân vật thần thoại, chỉ ra lỗi ảo giác (hallucination) của AI nếu AI nhầm lẫn chi tiết giữa các dị bản.",
+      product: "Bảng đối chiếu văn bản thần thoại nguyên gốc và phản hồi của AI kèm ghi chú sửa lỗi của học sinh.",
+      evidence: "Bản prompt, văn bản so sánh và phiếu đánh giá độ tin cậy của AI.",
+      nlsCode: "6.2.NCa",
+      nlsIndicatorText: "Xây dựng các câu lệnh có cấu trúc (Prompt Engineering) để tương tác với mô hình AI tạo sinh.",
+      aiComponent: "NLb",
+      aiRequirementText: "Nhận biết và phân tích nguy cơ thông tin sai lệch, ảo giác và đạo văn khi sử dụng AI.",
+      aiCode: "10.A3.1",
+      tool: "Gemini / AI Language Model",
+      verificationMethod: "Đối chiếu nguyên văn tác phẩm trong SGK Ngữ văn 10 Kết nối tri thức.",
+      assessmentCriteria: "Phát hiện được ít nhất 1 điểm chưa chính xác trong văn bản AI; giải thích được cơ sở văn học dựa trên SGK.",
+      sourceRef: "SGK Ngữ văn 10 Kết nối tri thức - Tập 1",
+      status: "Đã xác minh",
+      offlineAlternative: "Phương án dự phòng ngoại tuyến: Phát phiếu in sẵn văn bản 2 dị bản để học sinh so sánh thủ công."
+    }
+  ];
+};
 
 export default function App() {
   const initialDraftRef = useRef<AutosaveDraft | null | undefined>(undefined);
@@ -3084,7 +3172,7 @@ export default function App() {
 <div class="container">
   <div class="header-bar">
     <h1>EduPlan AI — Kế hoạch Giáo dục</h1>
-    <p>Môn: ${currentSubject} | Khối: ${currentGrade} | ${["1", "2", "3", "4", "5"].includes(String(currentGrade)) ? "CV 2345/BGDĐT-GDTH" : "CV 5512/BGDĐT-GDTrH"} + TT 02 + QĐ 3439</p>
+    <p>Môn: ${currentSubject} | Khối: ${currentGrade} | ${["1", "2", "3", "4", "5"].includes(String(currentGrade)) ? "CV 2345/BGDĐT-GDTH" : "CV 5512/BGDĐT-GDTrH"} + TT 02 + QĐ 2422</p>
   </div>
   ${buildHtmlExportNotice(audit)}
   ${element.innerHTML}
@@ -3113,7 +3201,7 @@ export default function App() {
 
     if (result.type === "khbd") {
       const d = normalizeKhbdForGrade(result.data, lessonPlanInput.grade);
-      slides.push({ title: d.title || "Kế hoạch Bài dạy", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `${["1", "2", "3", "4", "5"].includes(String(grade)) ? "CV 2345/BGDĐT-GDTH" : "CV 5512/BGDĐT-GDTrH"} + TT 02 + QĐ 3439`] });
+      slides.push({ title: d.title || "Kế hoạch Bài dạy", bullets: [`Môn: ${currentSubject}`, `Khối: ${grade}`, `${["1", "2", "3", "4", "5"].includes(String(grade)) ? "CV 2345/BGDĐT-GDTH" : "CV 5512/BGDĐT-GDTrH"} + TT 02 + QĐ 2422`] });
       slides.push({ title: "I. MỤC TIÊU", bullets: [...(d.objectives?.knowledge || []).slice(0, 5).map((k: string) => `• KT: ${k}`), ...(d.objectives?.aiSpecific || []).slice(0, 3).map((a: string) => `• AI: ${a}`)] });
       (d.activities || []).forEach((act: any) => {
         slides.push({ title: act.name || "Hoạt động", bullets: [`Mục tiêu: ${act.objective || ""}`, `Nội dung: ${act.content || ""}`, `Sản phẩm: ${act.product || ""}`] });
@@ -3330,7 +3418,7 @@ export default function App() {
     }, 100);
   };
 
-  const downloadWord = async () => {
+  const downloadWordDirect = async () => {
     if (!result || !result.data) return;
     if (!confirmOfficialDocxExport()) return;
 
@@ -3396,7 +3484,7 @@ export default function App() {
         "Mục tiêu GD AI": "AI Edu Goal",
         "Hình thức triển khai": "Implementation Form",
         "KẾ HOẠCH GIÁO DỤC TỔ CHUYÊN MÔN TÍCH HỢP AI": "DEPARTMENTAL EDUCATIONAL PLAN WITH DIGITAL AND AI COMPETENCIES",
-        "Căn cứ QĐ 3439/QĐ-BGDĐT": "Based on Decision 3439/QĐ-BGDĐT"
+        "Căn cứ QĐ 2422/QĐ-BGDĐT": "Based on Decision 2422/QĐ-BGDĐT"
       };
       return dict[text] || text;
     };
@@ -3769,7 +3857,7 @@ export default function App() {
             // VI. PHIẾU SỬ DỤNG AI (Mục 7 — dành cho Học sinh)
             ...(d.aiUsageLog && d.aiUsageLog.length > 0 ? [
               new Paragraph({ children: [new TextRun({ text: "VI. PHIẾU SỬ DỤNG AI", bold: true, size: 26, color: "5B21B6" })], spacing: { before: 400, after: 60 } }),
-              new Paragraph({ children: [new TextRun({ text: "(Dành cho Học sinh — theo bộ quy tắc tích hợp và QĐ 3439/QĐ-BGDĐT)", italics: true, color: "5B21B6" })], spacing: { after: 80 } }),
+              new Paragraph({ children: [new TextRun({ text: "(Dành cho Học sinh — theo bộ quy tắc tích hợp và QĐ 2422/QĐ-BGDĐT)", italics: true, color: "5B21B6" })], spacing: { after: 80 } }),
               new Paragraph({ children: [new TextRun({ text: "Hướng dẫn: ① ② do Giáo viên cung cấp sẵn. Học sinh tự hoàn thiện ③ ④ sau khi sử dụng AI. Giáo viên điền ⑤ và lưu làm minh chứng năng lực số. KHÔNG dùng cụm từ \"bản nháp AI\" trong sản phẩm học tập.", italics: true, size: 18, color: "6B7280" })], spacing: { after: 200 } }),
               ...(d.aiUsageLog || []).flatMap((log: any) => [
                 new Paragraph({ children: [new TextRun({ text: `Họ và tên học sinh: ____________________________________________    Lớp: _______`, italics: true })], spacing: { before: 200, after: 60 } }),
@@ -3826,7 +3914,7 @@ export default function App() {
 
 
             ...(evaluationResult ? [
-              new Paragraph({ children: [new TextRun({ text: "VII. HỆ THỐNG ĐÁNH GIÁ NĂNG LỰC (CHUẨN QĐ 3439/QĐ-BGDĐT & CT GDPT 2018)", bold: true, size: 24 })], spacing: { before: 400, after: 100 } }),
+              new Paragraph({ children: [new TextRun({ text: "VII. HỆ THỐNG ĐÁNH GIÁ NĂNG LỰC (CHUẨN QĐ 2422/QĐ-BGDĐT & CT GDPT 2018)", bold: true, size: 24 })], spacing: { before: 400, after: 100 } }),
 
               
               new Paragraph({ children: [new TextRun({ text: "1. TIÊU CHÍ ĐÁNH GIÁ (RUBRICS)", bold: true })], spacing: { before: 100, after: 60 } }),
@@ -4018,12 +4106,12 @@ export default function App() {
       const rows = [
         new TableRow({
           children: [
-            t("STT"), t("Thời gian"), t("Nội dung"), t("Số tiết"), t("Yêu cầu cần đạt"), t("Nội dung giáo dục tích hợp/lồng ghép"), t("Năng lực số"), t("Mục tiêu & YCCĐ 3439 Tích hợp GD AI")
+            t("STT"), t("Thời gian"), t("Nội dung"), t("Số tiết"), t("Yêu cầu cần đạt"), t("Nội dung giáo dục tích hợp/lồng ghép"), t("Năng lực số"), t("Mục tiêu & YCCĐ 2422 Tích hợp GD AI")
           ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx >= 5 }))
         }),
         ...planRows.map((item: any, i: number) => {
-          const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
-          const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
+          const isNotIntegrated = !item.aiCompetency2422Integrated || item.aiCompetency2422Integrated.toLowerCase().includes("không");
+          const aiText = item.aiCompetency2422Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
           return new TableRow({
             children: [
               wordCell(i + 1, { center: true }),
@@ -4037,7 +4125,7 @@ export default function App() {
                 bold: hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không"),
                 fill: hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không") ? "FEF2F2" : undefined
               }),
-              wordCell(isNotIntegrated ? aiText : item.aiCompetency3439Integrated, {
+              wordCell(isNotIntegrated ? aiText : item.aiCompetency2422Integrated, {
                 red: !isNotIntegrated,
                 bold: !isNotIntegrated,
                 fill: !isNotIntegrated ? "FEF2F2" : undefined
@@ -4170,6 +4258,12 @@ export default function App() {
     }
   };
 
+  
+  const downloadWord = () => {
+    setPendingExportFormat("docx");
+    setIsAppGatekeeperOpen(true);
+  };
+
   const downloadText = () => {
     let content = "";
 
@@ -4223,7 +4317,7 @@ export default function App() {
         "Mục tiêu GD AI": "AI Edu Goal",
         "Hình thức triển khai": "Implementation Form",
         "KẾ HOẠCH GIÁO DỤC TỔ CHUYÊN MÔN TÍCH HỢP AI": "DEPARTMENTAL EDUCATIONAL PLAN WITH DIGITAL AND AI COMPETENCIES",
-        "Căn cứ QĐ 3439/QĐ-BGDĐT": "Based on Decision 3439/QĐ-BGDĐT"
+        "Căn cứ QĐ 2422/QĐ-BGDĐT": "Based on Decision 2422/QĐ-BGDĐT"
       };
       return dict[text] || text;
     };
@@ -4256,7 +4350,7 @@ export default function App() {
       if (legacyActivityText) content = content.replace(legacyActivityText, upgradedActivityText);
 
       if (evaluationResult) {
-        content += `\n\nVI. HỆ THỐNG ĐÁNH GIÁ NĂNG LỤC (CHUẨN QĐ 3439/QĐ-BGDĐT & CT GDPT 2018)\n\n`;
+        content += `\n\nVI. HỆ THỐNG ĐÁNH GIÁ NĂNG LỤC (CHUẨN QĐ 2422/QĐ-BGDĐT & CT GDPT 2018)\n\n`;
         content += `1. TIÊU CHÍ ĐÁNH GIÁ (RUBRICS)\n`;
         (evaluationResult.rubrics || []).forEach((rubric: any) => {
           content += `Năng lực: ${rubric.competencyName}\n`;
@@ -4300,10 +4394,10 @@ export default function App() {
         { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
       );
       const supplement = buildKhtcmSupplement(eduPlanInput.subject, eduPlanInput.grade, planRows);
-      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n${supplement.situation.map((line, i) => `${i + 1}. ${line}`).join("\n")}\n\n3. Thiết bị dạy học\nThiết bị | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.equipmentRows.map(row => `${row.name} | ${row.lessons} | ${row.note}`).join("\n")}\n\n4. Phòng học bộ môn/phòng chức năng\nPhòng học | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.rooms.map(row => `${row.room} | ${row.lessons} | ${row.note}`).join("\n")}\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Nội dung giáo dục tích hợp/lồng ghép | Năng lực số | Mục tiêu & YCCĐ 3439 Tích hợp GD AI\n${planRows.map((item: any, i: number) => {
-        const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
-        const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
-        return `${i + 1} | ${item.time || item.topic || item.lessonName} | ${item.lessonContent || item.lessonName} | ${item.periods} | ${item.lessonGoal} | ${item.socialIntegration || ""} | ${item.digitalCompetencyTT02 || "Không"} | ${isNotIntegrated ? aiText : item.aiCompetency3439Integrated}`;
+      content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n${supplement.situation.map((line, i) => `${i + 1}. ${line}`).join("\n")}\n\n3. Thiết bị dạy học\nThiết bị | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.equipmentRows.map(row => `${row.name} | ${row.lessons} | ${row.note}`).join("\n")}\n\n4. Phòng học bộ môn/phòng chức năng\nPhòng học | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.rooms.map(row => `${row.room} | ${row.lessons} | ${row.note}`).join("\n")}\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Nội dung giáo dục tích hợp/lồng ghép | Năng lực số | Mục tiêu & YCCĐ 2422 Tích hợp GD AI\n${planRows.map((item: any, i: number) => {
+        const isNotIntegrated = !item.aiCompetency2422Integrated || item.aiCompetency2422Integrated.toLowerCase().includes("không");
+        const aiText = item.aiCompetency2422Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
+        return `${i + 1} | ${item.time || item.topic || item.lessonName} | ${item.lessonContent || item.lessonName} | ${item.periods} | ${item.lessonGoal} | ${item.socialIntegration || ""} | ${item.digitalCompetencyTT02 || "Không"} | ${isNotIntegrated ? aiText : item.aiCompetency2422Integrated}`;
       }).join("\n")}\n\n2. Chuyên đề lựa chọn (đối với cấp trung học phổ thông)\n${supplement.selectedTopics.length > 0 ? supplement.selectedTopics.map(row => `${row.topic} | ${row.periods} | ${row.time} | ${row.requirement}`).join("\n") : "Không áp dụng hoặc tổ chuyên môn bổ sung theo kế hoạch nhà trường."}\n\nIII. Kiểm tra, đánh giá định kỳ\nThời gian | Bài kiểm tra/đánh giá | Hình thức | Số tiết\n${supplement.assessmentRows.map(row => `${row.time} | ${row.content} | ${row.form} | ${row.duration}`).join("\n")}\n\nIV. Các nội dung khác (nếu có)\n${supplement.professionalActivities.map(line => `- ${line}`).join("\n")}`;
     } else if (result.type === "kh-hdgd") {
       content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH TỔ CHỨC CÁC HOẠT ĐỘNG GIÁO DỤC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nSTT | Chủ đề/Hoạt động | Yêu cầu cần đạt | Số tiết | Thời điểm | Địa điểm | Người chủ trì | Phối hợp | Điều kiện thực hiện | Nội dung giáo dục tích hợp/lồng ghép | Tích hợp NLS/AI\n${(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => `${i + 1} | ${item.theme} | ${item.requirements} | ${item.periods} | ${item.timing} | ${item.location} | ${item.host} | ${item.collaborator} | ${item.conditions} | ${item.socialIntegration || ""} | ${item.aiIntegration}`).join("\n")}`;
@@ -4449,7 +4543,7 @@ export default function App() {
                   <span className="text-xs font-bold text-white">Sẵn sàng trợ lý</span>
                 </div>
                 <p className="text-[10px] text-white/60 leading-relaxed relative z-10">
-                  Dựa trên Quyết định 3439/QĐ-BGDĐT và chương trình 2018.
+                  Dựa trên Quyết định 2422/QĐ-BGDĐT (CV 5588/BGDĐT-GDPT) và chương trình 2018.
                 </p>
               </div>
             </div>
@@ -4559,6 +4653,45 @@ export default function App() {
                 </div>
               )}
               <AnimatePresence mode="wait">
+                {mode === "intermediate-alignment" && (
+                  <motion.div
+                    key="intermediate-alignment"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-6"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 text-xs font-bold uppercase tracking-wider">
+                            Quy Chuẩn 2026 - 2027
+                          </span>
+                          <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider">
+                            QĐ 2422 & TT 02 (Mức NC)
+                          </span>
+                        </div>
+                        <h2 className="text-3xl font-bold text-slate-900 mt-2">
+                          Bảng Đối Chiếu Trung Gian 22 Cột & Ma Trận Năng Lực
+                        </h2>
+                        <p className="text-sm text-slate-500 mt-1">
+                          Thực thi chuỗi đối chiếu 13 bước bắt buộc, kiểm định 8 trạng thái và trực quan hóa điểm chạm YCCĐ ⟷ NLS ⟷ NL AI
+                        </p>
+                      </div>
+                      <button onClick={() => { setMode("dashboard"); setResult(null); }} className="text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center gap-1">
+                        Quay lại tổng quan <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <VisualAlignmentMatrix rows={appAlignmentRows} />
+
+                    <IntermediateAlignmentTable
+                      rows={appAlignmentRows}
+                      onUpdateRows={(newRows) => setAppAlignmentRows(newRows)}
+                    />
+                  </motion.div>
+                )}
+
                 {mode === "upgrade-plan" && (
                   <motion.div
                     key="upgrade-plan"
@@ -4900,7 +5033,7 @@ export default function App() {
                           icon={<LayoutGrid className="w-8 h-8 text-white" />}
                           iconBg="bg-blue-600"
                           title="Kế hoạch Tổ (KHTCM)"
-                          desc="Xây dựng kế hoạch dạy học cấp Tổ chuyên môn tích hợp NLS theo TT 02 và NL AI theo QĐ 3439."
+                          desc="Xây dựng kế hoạch dạy học cấp Tổ chuyên môn tích hợp NLS theo TT 02 và NL AI theo QĐ 2422."
                           onClick={() => setMode("kh-tcm-gen")}
                         />
                       </div>
@@ -4938,7 +5071,7 @@ export default function App() {
                             <p className="text-indigo-900/60 font-semibold text-lg">Tạo giáo án chi tiết với kịch bản tương tác AI chuyên sâu.</p>
                           </div>
                           <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-                            {[["1", "2", "3", "4", "5"].includes(String(lessonPlanInput.grade)) ? "CV 2345" : "CV 5512", "NLS TT02 + AI 3439", "Công thức Word", "Đa định dạng"].map(tag => (
+                            {[["1", "2", "3", "4", "5"].includes(String(lessonPlanInput.grade)) ? "CV 2345" : "CV 5512", "NLS TT02 + AI 2422", "Công thức Word", "Đa định dạng"].map(tag => (
                               <span key={tag} className="px-4 py-1.5 bg-white/50 backdrop-blur-sm text-indigo-700 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-100 shadow-sm">
                                 {tag}
                               </span>
@@ -4960,7 +5093,7 @@ export default function App() {
                         </div>
                         <div>
                           <h4 className="font-black text-indigo-950">Phát triển NLS và NL AI</h4>
-                          <p className="text-xs font-medium text-indigo-900/50 leading-relaxed italic">Gắn NLS theo TT 02 và NL AI theo QĐ 3439 vào đúng hoạt động có điểm chạm.</p>
+                          <p className="text-xs font-medium text-indigo-900/50 leading-relaxed italic">Gắn NLS theo TT 02 và NL AI theo QĐ 2422 vào đúng hoạt động có điểm chạm.</p>
                         </div>
                       </div>
 
@@ -4988,7 +5121,7 @@ export default function App() {
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                       <div>
                         <h2 className="text-3xl font-bold text-slate-900">Khung Kế hoạch bài dạy</h2>
-                        <p className="text-slate-500 mt-1">Chuẩn Quyết định 3439/QĐ-BGDĐT</p>
+                        <p className="text-slate-500 mt-1">Chuẩn Quyết định 2422/QĐ-BGDĐT (CV 5588/BGDĐT-GDPT)</p>
                       </div>
                       <button
                         onClick={() => { setMode("dashboard"); setResult(null); }}
@@ -5340,7 +5473,7 @@ export default function App() {
                       <div className="flex flex-col items-center justify-center py-20 space-y-4">
                         <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
                         <p className="text-slate-500 font-medium animate-pulse">AI đang soạn thảo kế hoạch bài dạy cho bạn...</p>
-                        <p className="text-xs text-slate-400">Việc này có thể mất vài giây để bám TT 02, QĐ 3439 và YCCĐ môn học.</p>
+                        <p className="text-xs text-slate-400">Việc này có thể mất vài giây để bám TT 02, QĐ 2422 và YCCĐ môn học.</p>
                       </div>
                     )}
 
@@ -5350,7 +5483,7 @@ export default function App() {
                           <div className="flex flex-col">
                             <h3 className="text-xl font-extrabold text-brand-sidebar line-clamp-1">{result.data.title}</h3>
                             <div className="text-[10px] text-brand-muted font-bold uppercase flex items-center gap-2 mt-1">
-                              {["1", "2", "3", "4", "5"].includes(String(lessonPlanInput.grade)) ? "CV 2345/BGDĐT-GDTH" : "CV 5512/BGDĐT-GDTrH"} + TT 02 + QĐ 3439 <span className="w-1 h-1 bg-brand-muted rounded-full"></span> Môn: {lessonPlanInput.subject} <span className="w-1 h-1 bg-brand-muted rounded-full"></span> {province}
+                              {["1", "2", "3", "4", "5"].includes(String(lessonPlanInput.grade)) ? "CV 2345/BGDĐT-GDTH" : "CV 5512/BGDĐT-GDTrH"} + TT 02 + QĐ 2422 <span className="w-1 h-1 bg-brand-muted rounded-full"></span> Môn: {lessonPlanInput.subject} <span className="w-1 h-1 bg-brand-muted rounded-full"></span> {province}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -5491,7 +5624,7 @@ export default function App() {
                                   </ul>
                                 </div>
                                 <div>
-                                  <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">5. Năng lực AI đặc thù (3439)</span>
+                                  <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">5. Năng lực AI đặc thù (2422)</span>
                                   <ul className="list-disc list-inside space-y-2 text-red-600 text-[12px] leading-relaxed italic font-medium">
                                     {(result.data.objectives.aiSpecific || []).map((c: string, i: number) => (
                                       <li key={i}>{c}</li>
@@ -5656,7 +5789,7 @@ export default function App() {
                             <section className="space-y-4 mt-6 pt-6 border-t border-slate-100">
                               <h4 className="text-base font-extrabold text-brand-sidebar uppercase tracking-tight flex items-center gap-3">
                                 <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
-                                VI. PHIẾU SỬ DỤNG AI (Dành cho Học sinh — theo bộ quy tắc tích hợp và QĐ 3439/QĐ-BGDĐT)
+                                VI. PHIẾU SỬ DỤNG AI (Dành cho Học sinh — theo bộ quy tắc tích hợp và QĐ 2422/QĐ-BGDĐT)
                               </h4>
                               <div className="pl-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
                                 <p className="text-xs font-bold text-purple-700 mb-1">📋 Hướng dẫn sử dụng phiếu:</p>
@@ -5739,7 +5872,7 @@ export default function App() {
                                 </div>
                                 <div>
                                   <h4 className="text-xl font-black text-brand-sidebar uppercase tracking-tight">Hệ thống đánh giá năng lực</h4>
-                                  <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">Chuẩn QĐ 3439/QĐ-BGDĐT & Chương trình GDPT 2018</p>
+                                  <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">Chuẩn QĐ 2422/QĐ-BGDĐT & Chương trình GDPT 2018</p>
                                 </div>
                               </header>
 
@@ -6391,7 +6524,7 @@ export default function App() {
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 text-center">Số tiết</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest">Yêu cầu cần đạt</th>
                                 <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest w-40">Năng lực số</th>
-                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Mục tiêu & YCCĐ 3439 Tích hợp GD AI</th>
+                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Mục tiêu & YCCĐ 2422 Tích hợp GD AI</th>
                                 <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-24 print:hidden text-center">Thao tác</th>
                               </tr>
                             </thead>
@@ -6401,8 +6534,8 @@ export default function App() {
                                 getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
                                 { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
                               ).map((item: any, i: number) => {
-                                const isNotIntegrated = !item.aiCompetency3439Integrated || item.aiCompetency3439Integrated.toLowerCase().includes("không");
-                                const aiText = item.aiCompetency3439Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
+                                const isNotIntegrated = !item.aiCompetency2422Integrated || item.aiCompetency2422Integrated.toLowerCase().includes("không");
+                                const aiText = item.aiCompetency2422Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
                                 const hasNlsIntegration = hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không");
                                 return (
                                   <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors align-top">
@@ -6621,7 +6754,7 @@ export default function App() {
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                       <div>
                         <h2 className="text-3xl font-bold text-slate-900">Tạo Khung Năng lực AI</h2>
-                        <p className="text-slate-500 mt-1">Trích xuất chỉ báo năng lực AI từ YCCĐ theo chuẩn QĐ 3439/QĐ-BGDĐT</p>
+                        <p className="text-slate-500 mt-1">Trích xuất chỉ báo năng lực AI từ YCCĐ theo chuẩn QĐ 2422/QĐ-BGDĐT</p>
                       </div>
                       <button
                         onClick={() => { setMode("dashboard"); setResult(null); }}
@@ -6714,7 +6847,7 @@ export default function App() {
                         </div>
                         <h3 className="mt-6 text-xl font-bold text-slate-800">Đang phân tích YCCĐ và xây dựng Khung...</h3>
                         <p className="text-slate-500 mt-2 text-sm text-center max-w-md">
-                          Hệ thống đang trích xuất các hành vi và đánh mã chỉ báo tương ứng theo chuẩn 3439/QĐ-BGDĐT. Quá trình này có thể mất 15-30 giây.
+                          Hệ thống đang trích xuất các hành vi và đánh mã chỉ báo tương ứng theo chuẩn 2422/QĐ-BGDĐT. Quá trình này có thể mất 15-30 giây.
                         </p>
                       </div>
                     )}

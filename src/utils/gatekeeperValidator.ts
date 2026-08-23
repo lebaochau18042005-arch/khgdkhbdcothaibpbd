@@ -32,7 +32,7 @@ export function validateGatekeeper(data: GatekeeperInputData): {
   const fullTextToCheck = `${data.rawText || ""} ${JSON.stringify(data.planRows || [])} ${JSON.stringify(rows)}`;
 
   // Check for legacy QĐ 3439 codes or keywords
-  const legacyMatches = fullTextToCheck.match(/\b(QD\s*3439|QĐ\s*3439|3439\/QĐ|10\.[A-D]\d\.01|11\.[A-D]\d\.01|12\.[A-D]\d\.01)\b/i);
+  const legacyMatches = fullTextToCheck.match(/\b(QD\s*3439|QĐ\s*3439|3439\/QĐ|(?:10|11|12)\.[A-D]\d+\.0\d+)\b/i);
   const hasLegacy3439 = Boolean(legacyMatches);
 
   const checks: GatekeeperCheckItem[] = [
@@ -105,7 +105,7 @@ export function validateGatekeeper(data: GatekeeperInputData): {
     {
       id: 12,
       label: "Không có mã AI cũ dạng thí điểm (.01, .02)",
-      passed: !/\b\d{2}\.[A-D]\d\.\d{2}\b/.test(fullTextToCheck),
+      passed: !/\b(?:10|11|12)\.[A-D]\d+\.0\d+\b/.test(fullTextToCheck),
       note: "Loại bỏ hoàn toàn mã cấu trúc 2 số cũ"
     },
     {

@@ -11,7 +11,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 1,
-      "indicatorCode": "10.TOAN.001",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "1",
       "order": "Tiết 1",
@@ -30,7 +30,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 1, tiết 1.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -40,7 +40,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 2,
-      "indicatorCode": "10.TOAN.002",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "2",
       "order": "Tiết 2",
@@ -59,7 +59,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 1, tiết 2.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -69,7 +69,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 3,
-      "indicatorCode": "10.TOAN.003",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "3",
       "order": "Tiết 3",
@@ -88,7 +88,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 1, tiết 3.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -98,7 +98,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 4,
-      "indicatorCode": "10.TOAN.004",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "4",
       "order": "Tiết 4",
@@ -117,7 +117,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 2, tiết 4.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -127,7 +127,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 5,
-      "indicatorCode": "10.TOAN.005",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "5",
       "order": "Tiết 5",
@@ -146,7 +146,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 2, tiết 5.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -156,7 +156,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 6,
-      "indicatorCode": "10.TOAN.006",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "6",
       "order": "Tiết 6",
@@ -175,7 +175,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 2, tiết 6.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -185,7 +185,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 7,
-      "indicatorCode": "10.TOAN.007",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "7",
       "order": "Tiết 7",
@@ -204,7 +204,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 3, tiết 7.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -214,7 +214,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 8,
-      "indicatorCode": "10.TOAN.008",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "8",
       "order": "Tiết 8",
@@ -233,7 +233,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 3, tiết 8.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -243,7 +243,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 9,
-      "indicatorCode": "10.TOAN.009",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "9",
       "order": "Tiết 9",
@@ -262,7 +262,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 3, tiết 9.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -272,7 +272,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 10,
-      "indicatorCode": "10.TOAN.010",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "10",
       "order": "Tiết 10",
@@ -291,7 +291,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 4, tiết 10.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -301,7 +301,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 11,
-      "indicatorCode": "10.TOAN.011",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "11",
       "order": "Tiết 11",
@@ -320,7 +320,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 4, tiết 11.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -330,7 +330,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 12,
-      "indicatorCode": "10.TOAN.012",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "12",
       "order": "Tiết 12",
@@ -349,7 +349,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 4, tiết 12.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -359,7 +359,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 13,
-      "indicatorCode": "10.TOAN.013",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "13",
       "order": "Tiết 13",
@@ -378,7 +378,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 5, tiết 13.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -388,7 +388,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 14,
-      "indicatorCode": "10.TOAN.014",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "14",
       "order": "Tiết 14",
@@ -407,7 +407,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 5, tiết 14.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -417,7 +417,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 15,
-      "indicatorCode": "10.TOAN.015",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "15",
       "order": "Tiết 15",
@@ -436,7 +436,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 5, tiết 15.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -446,7 +446,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 16,
-      "indicatorCode": "10.TOAN.016",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "16",
       "order": "Tiết 16",
@@ -465,7 +465,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 6, tiết 16.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -475,7 +475,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 17,
-      "indicatorCode": "10.TOAN.017",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "17",
       "order": "Tiết 17",
@@ -494,7 +494,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 6, tiết 17.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -504,7 +504,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 18,
-      "indicatorCode": "10.TOAN.018",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "18",
       "order": "Tiết 18",
@@ -523,7 +523,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 6, tiết 18.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -533,7 +533,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 19,
-      "indicatorCode": "10.TOAN.019",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "19",
       "order": "Tiết 19",
@@ -552,7 +552,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 7, tiết 19.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -562,7 +562,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 20,
-      "indicatorCode": "10.TOAN.020",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "20",
       "order": "Tiết 20",
@@ -581,7 +581,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 7, tiết 20.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -591,7 +591,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 21,
-      "indicatorCode": "10.TOAN.021",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "21",
       "order": "Tiết 21",
@@ -610,7 +610,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 7, tiết 21.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -620,7 +620,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 22,
-      "indicatorCode": "10.TOAN.022",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "22",
       "order": "Tiết 22",
@@ -639,7 +639,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 8, tiết 22.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -649,7 +649,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 23,
-      "indicatorCode": "10.TOAN.023",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "23",
       "order": "Tiết 23",
@@ -668,7 +668,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 8, tiết 23.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -678,7 +678,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 24,
-      "indicatorCode": "10.TOAN.024",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "24",
       "order": "Tiết 24",
@@ -697,7 +697,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 8, tiết 24.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -707,7 +707,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 25,
-      "indicatorCode": "10.TOAN.025",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "25",
       "order": "Tiết 25",
@@ -726,7 +726,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 9, tiết 25.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -736,7 +736,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 26,
-      "indicatorCode": "10.TOAN.026",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "26",
       "order": "Tiết 26",
@@ -755,7 +755,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 9, tiết 26.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -765,7 +765,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 27,
-      "indicatorCode": "10.TOAN.027",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "27",
       "order": "Tiết 27",
@@ -784,7 +784,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 9, tiết 27.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -794,7 +794,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 28,
-      "indicatorCode": "10.TOAN.028",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "28",
       "order": "Tiết 28",
@@ -813,7 +813,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 10, tiết 28.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -823,7 +823,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 29,
-      "indicatorCode": "10.TOAN.029",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "29",
       "order": "Tiết 29",
@@ -842,7 +842,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 10, tiết 29.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -852,7 +852,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 30,
-      "indicatorCode": "10.TOAN.030",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "30",
       "order": "Tiết 30",
@@ -871,7 +871,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 10, tiết 30.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -881,7 +881,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 31,
-      "indicatorCode": "10.TOAN.031",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "31",
       "order": "Tiết 31",
@@ -900,7 +900,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 11, tiết 31.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -910,7 +910,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 32,
-      "indicatorCode": "10.TOAN.032",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "32",
       "order": "Tiết 32",
@@ -929,7 +929,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 11, tiết 32.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -939,7 +939,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 33,
-      "indicatorCode": "10.TOAN.033",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "33",
       "order": "Tiết 33",
@@ -958,7 +958,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 11, tiết 33.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -968,7 +968,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 34,
-      "indicatorCode": "10.TOAN.034",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "34",
       "order": "Tiết 34",
@@ -987,7 +987,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 12, tiết 34.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -997,7 +997,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 35,
-      "indicatorCode": "10.TOAN.035",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "35",
       "order": "Tiết 35",
@@ -1016,7 +1016,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 12, tiết 35.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1026,7 +1026,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 36,
-      "indicatorCode": "10.TOAN.036",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "36",
       "order": "Tiết 36",
@@ -1045,7 +1045,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 12, tiết 36.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1055,7 +1055,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 37,
-      "indicatorCode": "10.TOAN.037",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "37",
       "order": "Tiết 37",
@@ -1074,7 +1074,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 13, tiết 37.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1084,7 +1084,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 38,
-      "indicatorCode": "10.TOAN.038",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "38",
       "order": "Tiết 38",
@@ -1103,7 +1103,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 13, tiết 38.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1113,7 +1113,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 39,
-      "indicatorCode": "10.TOAN.039",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "39",
       "order": "Tiết 39",
@@ -1132,7 +1132,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 13, tiết 39.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1142,7 +1142,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 40,
-      "indicatorCode": "10.TOAN.040",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "40",
       "order": "Tiết 40",
@@ -1161,7 +1161,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 14, tiết 40.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1171,7 +1171,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 41,
-      "indicatorCode": "10.TOAN.041",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "41",
       "order": "Tiết 41",
@@ -1190,7 +1190,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 14, tiết 41.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1200,7 +1200,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 42,
-      "indicatorCode": "10.TOAN.042",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "42",
       "order": "Tiết 42",
@@ -1219,7 +1219,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 14, tiết 42.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1229,7 +1229,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 43,
-      "indicatorCode": "10.TOAN.043",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "43",
       "order": "Tiết 43",
@@ -1248,7 +1248,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 15, tiết 43.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1258,7 +1258,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 44,
-      "indicatorCode": "10.TOAN.044",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "44",
       "order": "Tiết 44",
@@ -1277,7 +1277,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 15, tiết 44.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1287,7 +1287,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 45,
-      "indicatorCode": "10.TOAN.045",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "45",
       "order": "Tiết 45",
@@ -1306,7 +1306,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 15, tiết 45.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1316,7 +1316,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 46,
-      "indicatorCode": "10.TOAN.046",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "46",
       "order": "Tiết 46",
@@ -1335,7 +1335,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 16, tiết 46.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1345,7 +1345,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 47,
-      "indicatorCode": "10.TOAN.047",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "47",
       "order": "Tiết 47",
@@ -1364,7 +1364,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 16, tiết 47.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1374,7 +1374,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 48,
-      "indicatorCode": "10.TOAN.048",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "48",
       "order": "Tiết 48",
@@ -1393,7 +1393,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 16, tiết 48.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1403,7 +1403,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 49,
-      "indicatorCode": "10.TOAN.049",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "49",
       "order": "Tiết 49",
@@ -1422,7 +1422,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 17, tiết 49.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1432,7 +1432,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 50,
-      "indicatorCode": "10.TOAN.050",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "50",
       "order": "Tiết 50",
@@ -1451,7 +1451,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 17, tiết 50.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1461,7 +1461,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 51,
-      "indicatorCode": "10.TOAN.051",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "51",
       "order": "Tiết 51",
@@ -1480,7 +1480,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 17, tiết 51.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1490,7 +1490,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 52,
-      "indicatorCode": "10.TOAN.052",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "52",
       "order": "Tiết 52",
@@ -1509,7 +1509,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 18, tiết 52.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1519,7 +1519,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 53,
-      "indicatorCode": "10.TOAN.053",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "53",
       "order": "Tiết 53",
@@ -1538,7 +1538,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 18, tiết 53.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1548,7 +1548,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 54,
-      "indicatorCode": "10.TOAN.054",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "54",
       "order": "Tiết 54",
@@ -1567,7 +1567,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 18, tiết 54.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 5
     },
     {
@@ -1577,7 +1577,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 55,
-      "indicatorCode": "10.TOAN.055",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "55",
       "order": "Tiết 55",
@@ -1596,7 +1596,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 19, tiết 55.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1606,7 +1606,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 56,
-      "indicatorCode": "10.TOAN.056",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "56",
       "order": "Tiết 56",
@@ -1625,7 +1625,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 19, tiết 56.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1635,7 +1635,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 57,
-      "indicatorCode": "10.TOAN.057",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "57",
       "order": "Tiết 57",
@@ -1654,7 +1654,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 19, tiết 57.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1664,7 +1664,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 58,
-      "indicatorCode": "10.TOAN.058",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "58",
       "order": "Tiết 58",
@@ -1683,7 +1683,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 20, tiết 58.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1693,7 +1693,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 59,
-      "indicatorCode": "10.TOAN.059",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "59",
       "order": "Tiết 59",
@@ -1712,7 +1712,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 20, tiết 59.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1722,7 +1722,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 60,
-      "indicatorCode": "10.TOAN.060",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "60",
       "order": "Tiết 60",
@@ -1741,7 +1741,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 20, tiết 60.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1751,7 +1751,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 61,
-      "indicatorCode": "10.TOAN.061",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "61",
       "order": "Tiết 61",
@@ -1770,7 +1770,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 21, tiết 61.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1780,7 +1780,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 62,
-      "indicatorCode": "10.TOAN.062",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "62",
       "order": "Tiết 62",
@@ -1799,7 +1799,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 21, tiết 62.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1809,7 +1809,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 63,
-      "indicatorCode": "10.TOAN.063",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "63",
       "order": "Tiết 63",
@@ -1828,7 +1828,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 21, tiết 63.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1838,7 +1838,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 64,
-      "indicatorCode": "10.TOAN.064",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "64",
       "order": "Tiết 64",
@@ -1857,7 +1857,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 22, tiết 64.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1867,7 +1867,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 65,
-      "indicatorCode": "10.TOAN.065",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "65",
       "order": "Tiết 65",
@@ -1886,7 +1886,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 22, tiết 65.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1896,7 +1896,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 66,
-      "indicatorCode": "10.TOAN.066",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "66",
       "order": "Tiết 66",
@@ -1915,7 +1915,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 22, tiết 66.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1925,7 +1925,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 67,
-      "indicatorCode": "10.TOAN.067",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "67",
       "order": "Tiết 67",
@@ -1944,7 +1944,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 23, tiết 67.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1954,7 +1954,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 68,
-      "indicatorCode": "10.TOAN.068",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "68",
       "order": "Tiết 68",
@@ -1973,7 +1973,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 23, tiết 68.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -1983,7 +1983,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 69,
-      "indicatorCode": "10.TOAN.069",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "69",
       "order": "Tiết 69",
@@ -2002,7 +2002,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 23, tiết 69.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2012,7 +2012,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 70,
-      "indicatorCode": "10.TOAN.070",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "70",
       "order": "Tiết 70",
@@ -2031,7 +2031,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 24, tiết 70.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2041,7 +2041,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 71,
-      "indicatorCode": "10.TOAN.071",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "71",
       "order": "Tiết 71",
@@ -2060,7 +2060,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 24, tiết 71.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2070,7 +2070,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 72,
-      "indicatorCode": "10.TOAN.072",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "72",
       "order": "Tiết 72",
@@ -2089,7 +2089,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 24, tiết 72.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2099,7 +2099,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 73,
-      "indicatorCode": "10.TOAN.073",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "73",
       "order": "Tiết 73",
@@ -2118,7 +2118,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 25, tiết 73.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2128,7 +2128,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 74,
-      "indicatorCode": "10.TOAN.074",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "74",
       "order": "Tiết 74",
@@ -2147,7 +2147,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 25, tiết 74.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2157,7 +2157,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 75,
-      "indicatorCode": "10.TOAN.075",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "75",
       "order": "Tiết 75",
@@ -2176,7 +2176,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 25, tiết 75.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2186,7 +2186,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 76,
-      "indicatorCode": "10.TOAN.076",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "76",
       "order": "Tiết 76",
@@ -2205,7 +2205,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 26, tiết 76.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2215,7 +2215,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 77,
-      "indicatorCode": "10.TOAN.077",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "77",
       "order": "Tiết 77",
@@ -2234,7 +2234,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 26, tiết 77.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2244,7 +2244,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 78,
-      "indicatorCode": "10.TOAN.078",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "78",
       "order": "Tiết 78",
@@ -2263,7 +2263,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 26, tiết 78.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2273,7 +2273,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 79,
-      "indicatorCode": "10.TOAN.079",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "79",
       "order": "Tiết 79",
@@ -2292,7 +2292,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 27, tiết 79.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2302,7 +2302,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 80,
-      "indicatorCode": "10.TOAN.080",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "80",
       "order": "Tiết 80",
@@ -2321,7 +2321,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 27, tiết 80.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2331,7 +2331,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 81,
-      "indicatorCode": "10.TOAN.081",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "81",
       "order": "Tiết 81",
@@ -2350,7 +2350,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 27, tiết 81.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2360,7 +2360,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 82,
-      "indicatorCode": "10.TOAN.082",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "82",
       "order": "Tiết 82",
@@ -2379,7 +2379,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 28, tiết 82.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2389,7 +2389,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 83,
-      "indicatorCode": "10.TOAN.083",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "83",
       "order": "Tiết 83",
@@ -2408,7 +2408,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 28, tiết 83.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2418,7 +2418,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 84,
-      "indicatorCode": "10.TOAN.084",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "84",
       "order": "Tiết 84",
@@ -2437,7 +2437,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 28, tiết 84.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2447,7 +2447,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 85,
-      "indicatorCode": "10.TOAN.085",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "85",
       "order": "Tiết 85",
@@ -2466,7 +2466,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 29, tiết 85.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2476,7 +2476,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 86,
-      "indicatorCode": "10.TOAN.086",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "86",
       "order": "Tiết 86",
@@ -2495,7 +2495,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 29, tiết 86.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2505,7 +2505,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 87,
-      "indicatorCode": "10.TOAN.087",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "87",
       "order": "Tiết 87",
@@ -2524,7 +2524,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 29, tiết 87.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2534,7 +2534,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 88,
-      "indicatorCode": "10.TOAN.088",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "88",
       "order": "Tiết 88",
@@ -2553,7 +2553,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 30, tiết 88.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2563,7 +2563,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 89,
-      "indicatorCode": "10.TOAN.089",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "89",
       "order": "Tiết 89",
@@ -2582,7 +2582,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 30, tiết 89.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2592,7 +2592,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 90,
-      "indicatorCode": "10.TOAN.090",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "90",
       "order": "Tiết 90",
@@ -2611,7 +2611,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 30, tiết 90.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2621,7 +2621,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 91,
-      "indicatorCode": "10.TOAN.091",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "91",
       "order": "Tiết 91",
@@ -2640,7 +2640,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 31, tiết 91.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2650,7 +2650,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 92,
-      "indicatorCode": "10.TOAN.092",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "92",
       "order": "Tiết 92",
@@ -2669,7 +2669,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 31, tiết 92.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2679,7 +2679,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 93,
-      "indicatorCode": "10.TOAN.093",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "93",
       "order": "Tiết 93",
@@ -2698,7 +2698,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 31, tiết 93.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2708,7 +2708,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 94,
-      "indicatorCode": "10.TOAN.094",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "94",
       "order": "Tiết 94",
@@ -2727,7 +2727,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 32, tiết 94.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2737,7 +2737,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 95,
-      "indicatorCode": "10.TOAN.095",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "95",
       "order": "Tiết 95",
@@ -2756,7 +2756,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 32, tiết 95.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2766,7 +2766,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 96,
-      "indicatorCode": "10.TOAN.096",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "96",
       "order": "Tiết 96",
@@ -2785,7 +2785,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 32, tiết 96.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2795,7 +2795,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 97,
-      "indicatorCode": "10.TOAN.097",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "97",
       "order": "Tiết 97",
@@ -2814,7 +2814,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 33, tiết 97.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2824,7 +2824,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 98,
-      "indicatorCode": "10.TOAN.098",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "98",
       "order": "Tiết 98",
@@ -2843,7 +2843,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 33, tiết 98.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2853,7 +2853,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 99,
-      "indicatorCode": "10.TOAN.099",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "99",
       "order": "Tiết 99",
@@ -2872,7 +2872,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 33, tiết 99.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2882,7 +2882,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 100,
-      "indicatorCode": "10.TOAN.100",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "100",
       "order": "Tiết 100",
@@ -2901,7 +2901,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 34, tiết 100.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2911,7 +2911,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 101,
-      "indicatorCode": "10.TOAN.101",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "101",
       "order": "Tiết 101",
@@ -2930,7 +2930,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 34, tiết 101.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2940,7 +2940,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 102,
-      "indicatorCode": "10.TOAN.102",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "102",
       "order": "Tiết 102",
@@ -2959,7 +2959,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 34, tiết 102.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2969,7 +2969,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 103,
-      "indicatorCode": "10.TOAN.103",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "103",
       "order": "Tiết 103",
@@ -2988,7 +2988,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 35, tiết 103.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -2998,7 +2998,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 104,
-      "indicatorCode": "10.TOAN.104",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "104",
       "order": "Tiết 104",
@@ -3017,7 +3017,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 35, tiết 104.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -3027,7 +3027,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Kế hoạch dạy học",
       "sourceRow": 105,
-      "indicatorCode": "10.TOAN.105",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "105",
       "order": "Tiết 105",
@@ -3046,7 +3046,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ PPCT: Tuần 35, tiết 105.",
       "contextSchool": "SGK Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho tiết này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho tiết này.",
       "sourceTable": 6
     },
     {
@@ -3056,7 +3056,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 1,
-      "indicatorCode": "10.TOAN.CD.001",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "1",
       "order": "Chuyên đề tiết 1",
@@ -3075,7 +3075,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 1, chuyên đề tiết 1.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3085,7 +3085,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 2,
-      "indicatorCode": "10.TOAN.CD.002",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "2",
       "order": "Chuyên đề tiết 2",
@@ -3104,7 +3104,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 2, chuyên đề tiết 2.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3114,7 +3114,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 3,
-      "indicatorCode": "10.TOAN.CD.003",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "3",
       "order": "Chuyên đề tiết 3",
@@ -3133,7 +3133,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 3, chuyên đề tiết 3.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3143,7 +3143,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 4,
-      "indicatorCode": "10.TOAN.CD.004",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "4",
       "order": "Chuyên đề tiết 4",
@@ -3162,7 +3162,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 4, chuyên đề tiết 4.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3172,7 +3172,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 5,
-      "indicatorCode": "10.TOAN.CD.005",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "5",
       "order": "Chuyên đề tiết 5",
@@ -3191,7 +3191,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 5, chuyên đề tiết 5.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3201,7 +3201,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 6,
-      "indicatorCode": "10.TOAN.CD.006",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "6",
       "order": "Chuyên đề tiết 6",
@@ -3220,7 +3220,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 6, chuyên đề tiết 6.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3230,7 +3230,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 7,
-      "indicatorCode": "10.TOAN.CD.007",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "7",
       "order": "Chuyên đề tiết 7",
@@ -3249,7 +3249,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 7, chuyên đề tiết 7.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3259,7 +3259,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 8,
-      "indicatorCode": "10.TOAN.CD.008",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "8",
       "order": "Chuyên đề tiết 8",
@@ -3278,7 +3278,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 8, chuyên đề tiết 8.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3288,7 +3288,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 9,
-      "indicatorCode": "10.TOAN.CD.009",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "9",
       "order": "Chuyên đề tiết 9",
@@ -3307,7 +3307,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 9, chuyên đề tiết 9.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3317,7 +3317,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 10,
-      "indicatorCode": "10.TOAN.CD.010",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "10",
       "order": "Chuyên đề tiết 10",
@@ -3336,7 +3336,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 10, chuyên đề tiết 10.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3346,7 +3346,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 11,
-      "indicatorCode": "10.TOAN.CD.011",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "11",
       "order": "Chuyên đề tiết 11",
@@ -3365,7 +3365,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 11, chuyên đề tiết 11.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3375,7 +3375,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 12,
-      "indicatorCode": "10.TOAN.CD.012",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "12",
       "order": "Chuyên đề tiết 12",
@@ -3394,7 +3394,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 12, chuyên đề tiết 12.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3404,7 +3404,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 13,
-      "indicatorCode": "10.TOAN.CD.013",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "13",
       "order": "Chuyên đề tiết 13",
@@ -3423,7 +3423,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 13, chuyên đề tiết 13.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3433,7 +3433,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 14,
-      "indicatorCode": "10.TOAN.CD.014",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "14",
       "order": "Chuyên đề tiết 14",
@@ -3452,7 +3452,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 14, chuyên đề tiết 14.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3462,7 +3462,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 15,
-      "indicatorCode": "10.TOAN.CD.015",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "15",
       "order": "Chuyên đề tiết 15",
@@ -3481,7 +3481,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 15, chuyên đề tiết 15.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3491,7 +3491,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 16,
-      "indicatorCode": "10.TOAN.CD.016",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "16",
       "order": "Chuyên đề tiết 16",
@@ -3510,7 +3510,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 16, chuyên đề tiết 16.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3520,7 +3520,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 17,
-      "indicatorCode": "10.TOAN.CD.017",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "17",
       "order": "Chuyên đề tiết 17",
@@ -3539,7 +3539,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 17, chuyên đề tiết 17.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3549,7 +3549,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 18,
-      "indicatorCode": "10.TOAN.CD.018",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "18",
       "order": "Chuyên đề tiết 18",
@@ -3568,7 +3568,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 18, chuyên đề tiết 18.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 7
     },
     {
@@ -3578,7 +3578,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 19,
-      "indicatorCode": "10.TOAN.CD.019",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "19",
       "order": "Chuyên đề tiết 19",
@@ -3597,7 +3597,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 19, chuyên đề tiết 19.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3607,7 +3607,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 20,
-      "indicatorCode": "10.TOAN.CD.020",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "20",
       "order": "Chuyên đề tiết 20",
@@ -3626,7 +3626,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 20, chuyên đề tiết 20.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3636,7 +3636,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 21,
-      "indicatorCode": "10.TOAN.CD.021",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "21",
       "order": "Chuyên đề tiết 21",
@@ -3655,7 +3655,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 21, chuyên đề tiết 21.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3665,7 +3665,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 22,
-      "indicatorCode": "10.TOAN.CD.022",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "22",
       "order": "Chuyên đề tiết 22",
@@ -3684,7 +3684,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 22, chuyên đề tiết 22.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3694,7 +3694,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 23,
-      "indicatorCode": "10.TOAN.CD.023",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "23",
       "order": "Chuyên đề tiết 23",
@@ -3713,7 +3713,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 23, chuyên đề tiết 23.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3723,7 +3723,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 24,
-      "indicatorCode": "10.TOAN.CD.024",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "24",
       "order": "Chuyên đề tiết 24",
@@ -3742,7 +3742,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 24, chuyên đề tiết 24.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3752,7 +3752,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 25,
-      "indicatorCode": "10.TOAN.CD.025",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "25",
       "order": "Chuyên đề tiết 25",
@@ -3771,7 +3771,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 25, chuyên đề tiết 25.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3781,7 +3781,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 26,
-      "indicatorCode": "10.TOAN.CD.026",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "26",
       "order": "Chuyên đề tiết 26",
@@ -3800,7 +3800,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 26, chuyên đề tiết 26.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3810,7 +3810,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 27,
-      "indicatorCode": "10.TOAN.CD.027",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "27",
       "order": "Chuyên đề tiết 27",
@@ -3829,7 +3829,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 27, chuyên đề tiết 27.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3839,7 +3839,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 28,
-      "indicatorCode": "10.TOAN.CD.028",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "28",
       "order": "Chuyên đề tiết 28",
@@ -3858,7 +3858,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 28, chuyên đề tiết 28.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3868,7 +3868,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 29,
-      "indicatorCode": "10.TOAN.CD.029",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "29",
       "order": "Chuyên đề tiết 29",
@@ -3887,7 +3887,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 29, chuyên đề tiết 29.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3897,7 +3897,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 30,
-      "indicatorCode": "10.TOAN.CD.030",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "30",
       "order": "Chuyên đề tiết 30",
@@ -3916,7 +3916,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 30, chuyên đề tiết 30.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3926,7 +3926,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 31,
-      "indicatorCode": "10.TOAN.CD.031",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "31",
       "order": "Chuyên đề tiết 31",
@@ -3945,7 +3945,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 31, chuyên đề tiết 31.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3955,7 +3955,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 32,
-      "indicatorCode": "10.TOAN.CD.032",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "32",
       "order": "Chuyên đề tiết 32",
@@ -3974,7 +3974,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 32, chuyên đề tiết 32.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -3984,7 +3984,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 33,
-      "indicatorCode": "10.TOAN.CD.033",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "33",
       "order": "Chuyên đề tiết 33",
@@ -4003,7 +4003,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 33, chuyên đề tiết 33.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -4013,7 +4013,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 34,
-      "indicatorCode": "10.TOAN.CD.034",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "34",
       "order": "Chuyên đề tiết 34",
@@ -4032,7 +4032,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 34, chuyên đề tiết 34.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     },
     {
@@ -4042,7 +4042,7 @@ export const ToanHoc = {
       "sourceFile": "PPCT TOAN 10 - KNTT.docx",
       "section": "Chuyên đề lựa chọn",
       "sourceRow": 35,
-      "indicatorCode": "10.TOAN.CD.035",
+      "indicatorCode": "10.C2.1",
       "scheduleLocked": true,
       "periodRange": "35",
       "order": "Chuyên đề tiết 35",
@@ -4061,7 +4061,7 @@ export const ToanHoc = {
       "contextStudents": "Theo tiến độ chuyên đề Toán 10: Tuần 35, chuyên đề tiết 35.",
       "contextSchool": "SGK Chuyên đề học tập Toán 10 Kết nối tri thức, bảng, máy chiếu, máy tính cầm tay/GeoGebra khi phù hợp.",
       "digitalCompetencyTT02": "Không tích hợp - PPCT nguồn chưa gán mã NLS cho chuyên đề này.",
-      "aiCompetency3439Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
+      "aiCompetency2422Integrated": "Không tích hợp - PPCT nguồn chưa gán mã NL AI cho chuyên đề này.",
       "sourceTable": 8
     }
   ],

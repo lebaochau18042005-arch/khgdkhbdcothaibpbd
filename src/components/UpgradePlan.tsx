@@ -12,6 +12,7 @@ import { ExportGatekeeperModal } from "./ExportGatekeeperModal";
 import { validateGatekeeper } from "../utils/gatekeeperValidator";
 import { parseExcelFile } from "../utils/excelParser";
 import { saveAs } from "file-saver";
+import { formatAiCode2422, isAiCodeValid2422 } from "../data/aiRequirements2422Db";
 
 interface TextbookImage {
     mimeType: string;
@@ -449,11 +450,8 @@ export default function UpgradePlan({
     };
 
     const hasValidAiCode = (code?: string, grade = analysisResult?.grade) => {
-        const match = String(code || "").trim().match(/^NL([abcd])\s*[-–—:]\s*(\d{1,2})\.([ABCD]\d+)\.\d{1,2}$/i);
         const expectedGrade = getGradeNumber(grade);
-        return Boolean(match
-            && match[1].toUpperCase() === match[3][0].toUpperCase()
-            && (!expectedGrade || match[2] === expectedGrade));
+        return isAiCodeValid2422(String(code || "").trim(), expectedGrade || undefined);
     };
     const getIntegrationDecision = (suggestion: any) => {
         const explicit = String(suggestion?.integrationDecision || "").trim();
@@ -513,11 +511,12 @@ export default function UpgradePlan({
 
     const buildAiOrderedFields = (sug: any) => {
         const code = plain(sug?.suggestedAI || sug?.aiIndicatorCode || "");
-        const codeMatch = code.match(/^NL([abcd])\s*[-–—:]\s*(\d{1,2})\.([ABCD]\d+)\.(\d{1,2})$/i);
-        const isValidCode = hasValidAiCode(code);
+        const canonicalCode = formatAiCode2422(code);
+        const codeMatch = canonicalCode?.match(/^NL([abcd])-(\d{1,2})\.([ABCD]\d+)\.(MR\d+|\d+)$/i);
+        const isValidCode = hasValidAiCode(canonicalCode);
         const topicMatch = String(sug?.aiTopic || "").match(/\b([ABCD]\d+)\b/i);
         const indicatorCode = codeMatch && isValidCode
-            ? `NL${codeMatch[1].toLowerCase()}- ${codeMatch[2]}.${codeMatch[3].toUpperCase()}.${codeMatch[4].padStart(2, "0")}`
+            ? canonicalCode!
             : "Mã NL AI không hợp lệ — không thể chèn";
         const grade = plain(sug?.aiGrade || codeMatch?.[2] || analysisResult?.grade || "");
         const topic = plain(codeMatch?.[3]?.toUpperCase() || topicMatch?.[1]?.toUpperCase() || "");
@@ -1431,7 +1430,7 @@ export default function UpgradePlan({
                                                 </div>
                                                 {sug.targetContent && <p className="text-sm text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 mb-2"><span className="font-bold">Vị trí chèn — {sug.targetSection || "Nội dung"}:</span> “{compactSentence(sug.targetContent, 180)}”</p>}
                                                 {sug.yccdEvidence && <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Căn cứ YCCĐ:</span> {sug.yccdEvidence}</p>}
-                                                {aiNeedsReview && <p className="text-xs font-semibold text-amber-700 mb-2">Gợi ý này không có mã NL AI đầy đủ nên đã bị khóa, không thể chèn vào giáo án. Hãy rà soát lại để nhận mã đúng dạng NLa- 12.A1.01.</p>}
+                                                {aiNeedsReview && <p className="text-xs font-semibold text-amber-700 mb-2">Gợi ý này không có mã NL AI đầy đủ nên đã bị khóa, không thể chèn vào giáo án. Hãy rà soát lại để nhận mã đúng dạng NLa-12.A1.1.</p>}
                                                 {nlsNeedsReview && <p className="text-xs font-semibold text-amber-700 mb-2">Gợi ý này không có mã NLS hợp lệ trong bảng mã đã cài nên đã bị khóa và không thể chèn vào giáo án.</p>}
                                                 {usesNls && <p className="text-sm text-red-600 font-semibold mb-2">Mã chỉ báo NLS: {sug.suggestedNLS}; Thành phần NLS: {sug.nlsCompetencyName}</p>}
                                                 {usesAi && aiFields && <p className="text-sm text-red-600 font-semibold mb-2">{buildAiIdentityText(aiFields)}</p>}

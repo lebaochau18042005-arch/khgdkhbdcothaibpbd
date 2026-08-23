@@ -9,7 +9,7 @@
 import React, { useState } from "react";
 import { CheckCircle2, AlertTriangle, XCircle, Search, Edit3, Save, RotateCcw, Filter, Sparkles, Download } from "lucide-react";
 import { isNlsCodeValid, NLS_INDICATORS_DB } from "../data/nlsIndicatorsDb";
-import { isAiCodeValid2422, AI_REQUIREMENTS_2422_DB } from "../data/aiRequirements2422Db";
+import { isAiCodeValid2422, AI_REQUIREMENTS_2422_DB, normalizeAiCode2422, normalizeAiCodesInText2422 } from "../data/aiRequirements2422Db";
 import { exportAlignmentRowsToExcel, importAlignmentRowsFromExcel } from "../utils/excelParser";
 import { UploadCloud, FileSpreadsheet } from "lucide-react";
 
@@ -63,8 +63,16 @@ export const IntermediateAlignmentTable: React.FC<IntermediateAlignmentTableProp
     try {
       const imported = await importAlignmentRowsFromExcel(file);
       if (imported && imported.length > 0) {
-        onUpdateRows(imported);
-        alert(`✅ Đã nhập thành công ${imported.length} dòng từ file Excel.`);
+        const normalizedRows = imported.map((row) => {
+          const normalizedRow: AlignmentRow = {
+            ...row,
+            aiCode: normalizeAiCode2422(row.aiCode) || row.aiCode,
+            aiRequirementText: normalizeAiCodesInText2422(row.aiRequirementText),
+          };
+          return { ...normalizedRow, status: validateRowStatus(normalizedRow) };
+        });
+        onUpdateRows(normalizedRows);
+        alert(`✅ Đã nhập thành công ${normalizedRows.length} dòng từ file Excel và chuẩn hóa mã NL AI theo QĐ 2422.`);
       }
     } catch (err: any) {
       alert(`❌ Lỗi nhập file Excel: ${err.message || "File không đúng cấu trúc 22 cột."}`);
@@ -87,10 +95,15 @@ export const IntermediateAlignmentTable: React.FC<IntermediateAlignmentTableProp
     if (!editingId) return;
     const updated = rows.map((r) => {
       if (r.id === editingId) {
-        const validatedStatus = validateRowStatus({ ...r, ...editForm } as AlignmentRow);
+        const editedRow = { ...r, ...editForm } as AlignmentRow;
+        const normalizedRow: AlignmentRow = {
+          ...editedRow,
+          aiCode: normalizeAiCode2422(editedRow.aiCode) || editedRow.aiCode,
+          aiRequirementText: normalizeAiCodesInText2422(editedRow.aiRequirementText),
+        };
+        const validatedStatus = validateRowStatus(normalizedRow);
         return {
-          ...r,
-          ...editForm,
+          ...normalizedRow,
           status: validatedStatus,
         } as AlignmentRow;
       }
@@ -101,8 +114,8 @@ export const IntermediateAlignmentTable: React.FC<IntermediateAlignmentTableProp
     setEditForm({});
   };
 
-  const validateRowStatus = (row: AlignmentRow): AlignmentRow["status"] => {
-    if (row.aiCode && row.aiCode.includes(".01")) {
+  function validateRowStatus(row: AlignmentRow): AlignmentRow["status"] {
+    if (row.aiCode && /\.(?:0\d+)\b/.test(row.aiCode)) {
       return "Bị khóa";
     }
     if (row.nlsCode && !isNlsCodeValid(row.nlsCode)) {
@@ -118,7 +131,7 @@ export const IntermediateAlignmentTable: React.FC<IntermediateAlignmentTableProp
       return "Đã xác minh";
     }
     return "Bản nháp";
-  };
+  }
 
   const filteredRows = rows.filter((r) => {
     const matchSearch =

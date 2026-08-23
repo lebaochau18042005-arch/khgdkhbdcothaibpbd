@@ -48,6 +48,7 @@ import { ExportGatekeeperModal } from "./components/ExportGatekeeperModal";
 import { validateGatekeeper } from "./utils/gatekeeperValidator";
 import { parseExcelFile, exportAlignmentRowsToExcel } from "./utils/excelParser";
 import { SOCIAL_INTEGRATION_OPTIONS } from "./data/socialIntegrations";
+import { normalizeAiCodesInText2422 } from "./data/aiRequirements2422Db";
 
 const UpgradePlan = React.lazy(() => import("./components/UpgradePlan"));
 const SuDiaSkills = React.lazy(() => import("./components/SuDiaSkills"));
@@ -85,6 +86,25 @@ const mapAiCompetencyText = (code: string) => {
   else return code; // return raw code if no match
 
   return `${groupName} - Mã NL AI: ${code}`;
+};
+
+const cleanGeneratedPlanText = (value: unknown) => {
+  const decoded = String(value || "")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&");
+  const plainText = decoded
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(?:p|div|li)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\*\*/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return normalizeAiCodesInText2422(plainText);
 };
 
 type AppMode = "dashboard" | "khbd-gen" | "khgd-gen" | "kh-tcm-gen" | "kh-hdgd-gen" | "upgrade-plan" | "intermediate-alignment" | "ai-framework-gen" | "su-dia-skills" | "nls-lookup" | "history";
@@ -758,14 +778,14 @@ const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[], options: 
       periods,
       lessonGoal,
       socialIntegration: hasMeaningfulText(row?.socialIntegration || row?.integratedEducation || row?.social)
-        ? String(row.socialIntegration || row.integratedEducation || row.social)
+        ? cleanGeneratedPlanText(row.socialIntegration || row.integratedEducation || row.social)
         : hasMeaningfulText(sourceItem?.socialIntegration || sourceItem?.integratedEducation || sourceItem?.social)
-          ? String(sourceItem.socialIntegration || sourceItem.integratedEducation || sourceItem.social) : "",
+          ? cleanGeneratedPlanText(sourceItem.socialIntegration || sourceItem.integratedEducation || sourceItem.social) : "",
       digitalCompetencyTT02: hasMeaningfulText(row?.digitalCompetencyTT02)
-        ? String(row.digitalCompetencyTT02)
+        ? cleanGeneratedPlanText(row.digitalCompetencyTT02)
         : "Không tích hợp - cần tổ chuyên môn rà soát thêm căn cứ YCCĐ trước khi gán mã NLS.",
       aiCompetency2422Integrated: hasMeaningfulText(row?.aiCompetency2422Integrated)
-        ? String(row.aiCompetency2422Integrated)
+        ? cleanGeneratedPlanText(row.aiCompetency2422Integrated)
         : "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.",
       sourceStatus: row ? "AI tạo, app đã rà soát đủ ô" : "App bổ sung từ danh mục chương trình để tránh thiếu dòng"
     };
@@ -880,7 +900,7 @@ const uniqueRegexMatches = (texts: any[], regex: RegExp) => {
 const summarizePl3Competency = (sourceNls: any, sourceAi: any, sourceGoal: any, generatedCompetency: any) => {
   const blocks = [sourceNls, sourceAi, generatedCompetency, sourceGoal];
   const nlsCodes = uniqueRegexMatches(blocks, /\b\d+\.\d+\.NC\d+[a-z]?\b/gi);
-  const aiCodes = uniqueRegexMatches(blocks, /\b(?:10|11|12)\.[A-D]\d+\.\d{2}\b/gi);
+  const aiCodes = uniqueRegexMatches(blocks, /\b(?:10|11|12)\.[A-D]\d+\.(?:MR\d+|\d+)\b/gi);
   const aiComponents = uniqueRegexMatches(blocks, /\bNL[abcd]\b/gi)
     .map((code) => code.replace(/^NL([abcd])$/i, (_, c) => `NL${String(c).toLowerCase()}`));
   const hasNoIntegration = blocks.some((block) => /không\s+(tích hợp|gán mã)|khong\s+(tich hop|gan ma)/i.test(String(block || "")));
@@ -2201,6 +2221,8 @@ export default function App() {
 
   const [availableLessons, setAvailableLessons] = useState<any[]>([]);
   const [curriculumDbReady, setCurriculumDbReady] = useState(() => Object.keys(curriculumDbCache).length > 0);
+  const [appAlignmentRows, setAppAlignmentRows] = useState<AlignmentRow[]>(() => generateDefaultAlignmentRows());
+  const [isAppGatekeeperOpen, setIsAppGatekeeperOpen] = useState(false);
 
   useEffect(() => {
     const updateOnlineState = () => setIsOnline(navigator.onLine);
@@ -3003,11 +3025,20 @@ export default function App() {
     setCustomCurriculumData(null);
 
     try {
-      const isPdf = uploadedFile.type === "application/pdf" || uploadedFile.name.toLowerCase().endsWith(".pdf");
-      const isDocx = uploadedFile.name.toLowerCase().endsWith(".docx") || uploadedFile.name.toLowerCase().endsWith(".doc");
+      const fileNameLower = uploadedFile.name.toLowerCase();
+      const isPdf = uploadedFile.type === "application/pdf" || fileNameLower.endsWith(".pdf");
+      const isDocx = fileNameLower.endsWith(".docx") || fileNameLower.endsWith(".doc");
+      const isExcel = fileNameLower.endsWith(".xlsx") || fileNameLower.endsWith(".xls");
       let data: any;
 
-      if (isPdf) {
+      if (isExcel) {
+        const parseRes = await parseExcelFile(uploadedFile);
+        const text = parseRes.text;
+        if (!text || text.trim().length < 20) {
+          throw new Error("File Excel không có nội dung hoặc đọc bị trống. Hãy kiểm tra lại bảng tính.");
+        }
+        data = await parseCurriculumAppendix(text);
+      } else if (isPdf) {
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => {
@@ -3028,7 +3059,7 @@ export default function App() {
         if (!text || text.trim().length < 50) throw new Error("File Word không có nội dung hoặc đọc bị trống. Hãy kiểm tra lại file.");
         data = await parseCurriculumAppendix(text);
       } else {
-        throw new Error(`Định dạng file "${uploadedFile.name}" không được hỗ trợ. Chỉ chấp nhận .docx, .doc và .pdf.`);
+        throw new Error(`Định dạng file "${uploadedFile.name}" không được hỗ trợ. Vui lòng chọn file định dạng .xlsx, .xls, .docx hoặc .pdf.`);
       }
 
       if (!data || !Array.isArray(data) || data.length === 0) {
@@ -4261,7 +4292,6 @@ export default function App() {
 
   
   const downloadWord = () => {
-    setPendingExportFormat("docx");
     setIsAppGatekeeperOpen(true);
   };
 
@@ -4413,8 +4443,39 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  const gatekeeperPlanRows = result?.type === "khgd"
+    ? getCurrentKhgdRows()
+    : result?.type === "kh-tcm"
+      ? getCurrentKhtcmRows()
+      : Array.isArray(result?.data) ? result.data : result?.data ? [result.data] : [];
+  const appGatekeeperValidation = validateGatekeeper({
+    subject: getExportSubject(),
+    grade: getExportGrade(),
+    alignmentRows: appAlignmentRows,
+    planRows: gatekeeperPlanRows,
+    rawText: JSON.stringify(result?.data || ""),
+    hasOfflineFallback: true,
+  });
+
+  const handleGatekeeperExport = (format: "docx" | "xlsx" | "pdf") => {
+    if (format === "docx") {
+      void downloadWordDirect();
+    } else if (format === "xlsx") {
+      exportAlignmentRowsToExcel(appAlignmentRows);
+    } else {
+      downloadPDF();
+    }
+  };
+
   return (
     <>
+        <ExportGatekeeperModal
+          isOpen={isAppGatekeeperOpen}
+          onClose={() => setIsAppGatekeeperOpen(false)}
+          onConfirmExport={handleGatekeeperExport}
+          checks={appGatekeeperValidation.checks}
+          hasLegacy3439={appGatekeeperValidation.hasLegacy3439}
+        />
         <div className="min-h-screen text-slate-900 font-sans selection:bg-indigo-200">
           {/* Sidebar Navigation */}
           <aside className="fixed left-0 top-0 h-full w-[280px] glass-dark text-white hidden lg:flex flex-col z-30 border-r border-white/10 shadow-2xl">

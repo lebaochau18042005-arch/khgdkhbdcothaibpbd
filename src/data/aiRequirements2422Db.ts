@@ -540,21 +540,73 @@ export const AI_REQUIREMENTS_2422_DB: AiRequirementItem[] = [
   }
 ];
 
+const parseAiCode2422 = (rawCode: string) => {
+  const match = String(rawCode || "").trim().match(
+    /^(?:\[?(NL[abcd])\]?\s*[-:\u2013\u2014]?\s*)?((?:10|11|12)\.([A-D]\d+)\.(MR\d+|\d+))$/i
+  );
+  if (!match) return undefined;
+
+  const [, rawComponent, , rawTopic, rawIndicator] = match;
+  const topic = rawTopic.toUpperCase();
+  const indicator = /^MR\d+$/i.test(rawIndicator)
+    ? rawIndicator.toUpperCase()
+    : String(Number(rawIndicator));
+  if (indicator === "NaN" || indicator === "0") return undefined;
+
+  const grade = match[2].slice(0, 2);
+  return {
+    component: rawComponent ? `NL${rawComponent.slice(-1).toLowerCase()}` : undefined,
+    code: `${grade}.${topic}.${indicator}`,
+  };
+};
+
+/**
+ * Converts legacy leading-zero codes (for example 11.C2.01) to QD 2422
+ * only when the canonical target exists in the application's active database.
+ */
+export const normalizeAiCode2422 = (rawCode: string): string | undefined => {
+  const parsed = parseAiCode2422(rawCode);
+  if (!parsed) return undefined;
+  const item = AI_REQUIREMENTS_2422_DB.find(i => i.code.toLowerCase() === parsed.code.toLowerCase() && i.isActive);
+  if (!item || (parsed.component && parsed.component !== item.component)) return undefined;
+  return item.code;
+};
+
+export const formatAiCode2422 = (rawCode: string): string | undefined => {
+  const code = normalizeAiCode2422(rawCode);
+  if (!code) return undefined;
+  const item = AI_REQUIREMENTS_2422_DB.find(i => i.code === code && i.isActive);
+  return item ? `${item.component}-${item.code}` : undefined;
+};
+
+export const normalizeAiCodesInText2422 = (value: unknown): string =>
+  String(value || "").replace(
+    /\b(?:NL[abcd]\s*[-:\u2013\u2014]\s*)?(?:10|11|12)\.[A-D]\d+\.(?:MR\d+|\d+)\b/gi,
+    (rawCode) => {
+      const hadComponent = /^NL[abcd]/i.test(rawCode.trim());
+      const normalized = hadComponent ? formatAiCode2422(rawCode) : normalizeAiCode2422(rawCode);
+      return normalized || rawCode;
+    }
+  );
+
 export const isAiCodeValid2422 = (code: string, grade?: string): boolean => {
   if (!code) return false;
-  const cleanCode = code.trim();
-  const legacyCodes = ["10.A2.01", "10.B3.01", "10.C2.01", "10.C3.01", "12.C1.01"];
-  if (legacyCodes.includes(cleanCode)) return false;
-  if (/\b\d{2}\.[A-D]\d\.\d{2}\b/.test(cleanCode)) return false;
-
-  const item = AI_REQUIREMENTS_2422_DB.find(i => i.code.toLowerCase() === cleanCode.toLowerCase());
+  const cleanCode = code.trim().replace(/\s+/g, "");
+  const normalizedCode = normalizeAiCode2422(cleanCode);
+  if (!normalizedCode) return false;
+  const item = AI_REQUIREMENTS_2422_DB.find(i => i.code.toLowerCase() === normalizedCode.toLowerCase());
   if (!item || !item.isActive) return false;
+  const canonicalBare = item.code.toLowerCase();
+  const canonicalFull = `${item.component}-${item.code}`.toLowerCase();
+  if (![canonicalBare, canonicalFull].includes(cleanCode.toLowerCase())) return false;
   if (grade && item.grade !== grade) return false;
   return true;
 };
 
 export const getAiRequirementByCode = (code: string): AiRequirementItem | undefined => {
-  return AI_REQUIREMENTS_2422_DB.find(i => i.code.toLowerCase() === code.trim().toLowerCase());
+  const normalizedCode = normalizeAiCode2422(code);
+  if (!normalizedCode) return undefined;
+  return AI_REQUIREMENTS_2422_DB.find(i => i.code.toLowerCase() === normalizedCode.toLowerCase());
 };
 
 export const getAiRequirementsByGrade = (grade: "10" | "11" | "12"): AiRequirementItem[] => {

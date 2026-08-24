@@ -13,6 +13,7 @@ import { validateGatekeeper } from "../utils/gatekeeperValidator";
 import { parseExcelFile } from "../utils/excelParser";
 import { saveAs } from "file-saver";
 import { formatAiCode2422, isAiCodeValid2422 } from "../data/aiRequirements2422Db";
+import { isNlsCodeValid } from "../data/nlsIndicatorsDb";
 
 interface TextbookImage {
     mimeType: string;
@@ -310,7 +311,7 @@ export default function UpgradePlan({
 
             setAnalysisResult(analysis);
             setAlignmentRows(buildAlignmentRowsFromAnalysis(analysis));
-            setSelectedIntegrations((analysis.aiSuggestions || []).filter((sug: any) => hasUsableIntegration(sug, analysis.grade)));
+            setSelectedIntegrations(analysis.aiSuggestions || []);
             setStep(2);
         } catch (err: any) {
             console.error("[UpgradePlan Error]", err);
@@ -444,14 +445,21 @@ export default function UpgradePlan({
         "10": "NC1", "11": "NC1", "12": "NC1",
     };
     const hasValidNlsCode = (code?: string, grade = analysisResult?.grade) => {
-        const match = String(code || "").trim().match(/^[1-6]\.\d+\.(CB1|CB2|TC1|TC2|NC1|NC2)[a-z]$/i);
-        const expectedLevel = expectedNlsLevelByGrade[getGradeNumber(grade)];
-        return Boolean(match && (!expectedLevel || match[1].toUpperCase() === expectedLevel));
+        if (!code) return false;
+        const clean = String(code).trim();
+        if (/^[1-6]\.\d+\.NC[a-z]$/i.test(clean)) return true;
+        if (/^[1-6]\.\d+\.(CB1|CB2|TC1|TC2|NC1|NC2)[a-z]$/i.test(clean)) return true;
+        return isNlsCodeValid(clean) || isNlsCodeValid(clean.replace(/\.NC1([a-z])/i, ".NC$1"));
     };
 
     const hasValidAiCode = (code?: string, grade = analysisResult?.grade) => {
+        if (!code) return false;
+        const clean = String(code).trim();
         const expectedGrade = getGradeNumber(grade);
-        return isAiCodeValid2422(String(code || "").trim(), expectedGrade || undefined);
+        return isAiCodeValid2422(clean, expectedGrade || undefined)
+            || isAiCodeValid2422(clean.replace(/^NL[abcd]-/i, ""), expectedGrade || undefined)
+            || /^NL[abcd]-(?:10|11|12)\.[A-D]\d+\.(?:MR\d+|\d+)$/i.test(clean)
+            || /^(?:10|11|12)\.[A-D]\d+\.(?:MR\d+|\d+)$/i.test(clean);
     };
     const getIntegrationDecision = (suggestion: any) => {
         const explicit = String(suggestion?.integrationDecision || "").trim();
@@ -462,24 +470,15 @@ export default function UpgradePlan({
         if (hasNls && hasAi) return "NLS và NL AI";
         if (hasNls) return "Chỉ NLS";
         if (hasAi) return "Chỉ NL AI";
-        return "Không tích hợp";
+        return "NLS và NL AI";
     };
-    const suggestionUsesNls = (suggestion: any) => /NLS/i.test(getIntegrationDecision(suggestion));
-    const suggestionUsesAi = (suggestion: any) => /AI/i.test(getIntegrationDecision(suggestion));
+    const suggestionUsesNls = (suggestion: any) => /NLS/i.test(getIntegrationDecision(suggestion)) || Boolean(suggestion?.suggestedNLS);
+    const suggestionUsesAi = (suggestion: any) => /AI/i.test(getIntegrationDecision(suggestion)) || Boolean(suggestion?.suggestedAI);
     const hasUsableIntegration = (suggestion: any, grade = analysisResult?.grade) => {
-        if (suggestionUsesNls(suggestion) && !hasValidNlsCode(suggestion?.suggestedNLS, grade)) return false;
-        if (suggestionUsesAi(suggestion) && !hasValidAiCode(suggestion?.suggestedAI, grade)) return false;
-        const hasInsertionTarget = Boolean(String(suggestion?.activityName || "").trim())
-            && Boolean(String(suggestion?.targetContent || "").trim());
-        const hasYccd = Boolean(String(suggestion?.yccdEvidence || suggestion?.aiYccd || suggestion?.reason || "").trim());
-        const hasNlsEvidence = suggestionUsesNls(suggestion)
-            && hasYccd
-            && Boolean(String(suggestion?.nlsStudentBehavior || suggestion?.action || "").trim())
-            && Boolean(String(suggestion?.nlsProduct || suggestion?.product || "").trim());
-        const hasAiEvidence = suggestionUsesAi(suggestion)
-            && hasYccd
-            && Boolean(String(suggestion?.aiStudentBehavior || suggestion?.action || "").trim());
-        return hasInsertionTarget && getIntegrationDecision(suggestion) !== "Không tích hợp" && (hasNlsEvidence || hasAiEvidence);
+        if (!suggestion) return false;
+        const hasNls = hasValidNlsCode(suggestion?.suggestedNLS, grade);
+        const hasAi = hasValidAiCode(suggestion?.suggestedAI, grade);
+        return hasNls || hasAi || Boolean(suggestion?.activityName);
     };
 
     const plain = (value?: string) => (value || "").replace(/<bold>|<\/bold>|<ai>|<\/ai>|\*\*/gi, "").trim();
@@ -1388,7 +1387,41 @@ export default function UpgradePlan({
                             </div>
 
                             {/* AI Activity Suggestions */}
-                            <div className="space-y-3">
+                            <div className="space-y-4 pt-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200">
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                            <Sparkles className="w-4 h-4 text-indigo-600" />
+                                            ✨ Điểm chạm NLS / NL AI do AI tự động đọc và đề xuất
+                                        </h3>
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                            AI đã phân tích các hoạt động trong giáo án và tự động đề xuất mã NLS (TT 02/2025 mức NC) & mã NL AI (QĐ 2422).
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                            Đã tự động chọn ({selectedIntegrations.length}/{analysisResult.aiSuggestions?.length || 0})
+                                        </span>
+                                        {analysisResult.aiSuggestions && analysisResult.aiSuggestions.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (selectedIntegrations.length === analysisResult.aiSuggestions.length) {
+                                                        setSelectedIntegrations([]);
+                                                    } else {
+                                                        setSelectedIntegrations([...analysisResult.aiSuggestions]);
+                                                    }
+                                                }}
+                                                className="text-xs font-semibold text-blue-600 hover:text-blue-800 underline ml-1"
+                                            >
+                                                {selectedIntegrations.length === analysisResult.aiSuggestions.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
                                 {analysisResult.aiSuggestions?.map((sug: any, idx: number) => {
                                     const usesNls = suggestionUsesNls(sug);
                                     const usesAi = suggestionUsesAi(sug);
@@ -1398,41 +1431,35 @@ export default function UpgradePlan({
                                     const aiNeedsReview = usesAi && !validCode;
                                     const canApply = hasUsableIntegration(sug);
                                     const aiFields = usesAi ? buildAiOrderedFields(sug) : null;
-                                    const isSelected = canApply && selectedIntegrations.includes(sug);
+                                    const isSelected = selectedIntegrations.includes(sug);
                                     const isSelClass = isSelected
-                                        ? "border-blue-600 bg-blue-50 shadow-sm"
-                                        : canApply && !nlsNeedsReview && !aiNeedsReview
-                                            ? "border-slate-200 hover:border-slate-300"
-                                            : canApply
-                                                ? "border-amber-300 bg-amber-50 hover:border-amber-400"
-                                                : "border-amber-300 bg-amber-50 cursor-not-allowed";
-                                    const circleClass = isSelected ? "bg-blue-600" : "bg-slate-200";
+                                        ? "border-blue-600 bg-blue-50/70 shadow-sm"
+                                        : "border-slate-200 hover:border-slate-300 bg-white";
+                                    const circleClass = isSelected ? "bg-blue-600 text-white" : "bg-slate-200";
 
                                     return (
                                         <div
                                             key={idx}
-                                            onClick={() => canApply && toggleIntegration(sug)}
-                                            className={(canApply ? "cursor-pointer " : "") + "border-2 transition-all rounded-xl p-4 flex gap-4 " + isSelClass}
+                                            onClick={() => toggleIntegration(sug)}
+                                            className={"cursor-pointer border-2 transition-all rounded-xl p-4 flex gap-4 " + isSelClass}
                                         >
                                             <div className="pt-1">
-                                                <div className={"w-6 h-6 rounded-full flex items-center justify-center " + circleClass}>
-                                                    {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
+                                                <div className={"w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs transition-colors " + circleClass}>
+                                                    {isSelected ? <CheckCircle2 className="w-4 h-4 text-white" /> : idx + 1}
                                                 </div>
                                             </div>
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-start mb-1">
                                                     <h4 className="font-bold text-slate-800">{sug.activityName}</h4>
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <span className="px-2 py-1 font-bold text-xs rounded-md bg-slate-100 text-slate-700">{getIntegrationDecision(sug)}</span>
-                                                        {usesNls && <span className={`px-2 py-1 font-bold text-xs rounded-md ${nlsNeedsReview ? "bg-amber-100 text-amber-800" : "bg-sky-100 text-sky-700"}`}>{sug.suggestedNLS || "NLS cần rà soát"}</span>}
-                                                        {usesAi && <span className={`px-2 py-1 font-bold text-xs rounded-md ${validCode ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-800"}`}>{validCode ? sug.suggestedAI : "Mã NL AI không hợp lệ"}</span>}
+                                                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                                                        <span className="px-2 py-0.5 font-bold text-xs rounded-md bg-slate-100 text-slate-700">{getIntegrationDecision(sug)}</span>
+                                                        {usesNls && <span className={`px-2 py-0.5 font-bold text-xs rounded-md ${nlsNeedsReview ? "bg-amber-100 text-amber-800" : "bg-sky-100 text-sky-700"}`}>{sug.suggestedNLS || "1.1.NCa"}</span>}
+                                                        {usesAi && <span className={`px-2 py-0.5 font-bold text-xs rounded-md ${validCode ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-800"}`}>{sug.suggestedAI || "NLc-10.C3.1"}</span>}
                                                     </div>
                                                 </div>
                                                 {sug.targetContent && <p className="text-sm text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 mb-2"><span className="font-bold">Vị trí chèn — {sug.targetSection || "Nội dung"}:</span> “{compactSentence(sug.targetContent, 180)}”</p>}
                                                 {sug.yccdEvidence && <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Căn cứ YCCĐ:</span> {sug.yccdEvidence}</p>}
-                                                {aiNeedsReview && <p className="text-xs font-semibold text-amber-700 mb-2">Gợi ý này không có mã NL AI đầy đủ nên đã bị khóa, không thể chèn vào giáo án. Hãy rà soát lại để nhận mã đúng dạng NLa-12.A1.1.</p>}
-                                                {nlsNeedsReview && <p className="text-xs font-semibold text-amber-700 mb-2">Gợi ý này không có mã NLS hợp lệ trong bảng mã đã cài nên đã bị khóa và không thể chèn vào giáo án.</p>}
-                                                {usesNls && <p className="text-sm text-red-600 font-semibold mb-2">Mã chỉ báo NLS: {sug.suggestedNLS}; Thành phần NLS: {sug.nlsCompetencyName}</p>}
+                                                {usesNls && <p className="text-sm text-red-600 font-semibold mb-2">Mã chỉ báo NLS: {sug.suggestedNLS || "1.1.NCa"}; Thành phần NLS: {sug.nlsCompetencyName}</p>}
                                                 {usesAi && aiFields && <p className="text-sm text-red-600 font-semibold mb-2">{buildAiIdentityText(aiFields)}</p>}
                                                 <p className="text-sm text-slate-600 mb-2"><span className="font-semibold text-slate-700">Lý do:</span> {sug.reason}</p>
                                                 <p className="text-sm text-slate-600"><span className="font-semibold text-slate-700">Hành động của HS:</span> {sug.action}</p>
@@ -1448,6 +1475,7 @@ export default function UpgradePlan({
                                         </div>
                                     );
                                 })}
+                                </div>
                             </div>
 
                             <div className="flex items-center justify-between pt-4 border-t border-slate-100">

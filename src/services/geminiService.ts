@@ -1,8 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { DiaLy } from '../data/curriculum/diaLy';
 import { INDICATORS as KNOWN_NLS_INDICATORS } from '../components/NlsLookup';
+import { isNlsCodeValid, getNlsIndicatorByCode } from '../data/nlsIndicatorsDb';
 import { buildSocialIntegrationSelectionPrompt } from '../data/socialIntegrations';
-import { formatAiCode2422, getAiRequirementByCode } from '../data/aiRequirements2422Db';
+import { formatAiCode2422, getAiRequirementByCode, normalizeAiCode2422 } from '../data/aiRequirements2422Db';
 
 // --- Google AI Key Validation (per google-api skill) ---
 // Accepts both legacy AIzaSy... keys and new AQ... keys from Google AI Studio
@@ -326,13 +327,17 @@ const sanitizeNlsCodeForGrade = (code: string | undefined, grade?: string, autho
   const rawCode = (code || "").trim();
   if (!rawCode) return { code: "Không gán mã", note: "Thiếu mã NLS." };
 
-  const match = rawCode.match(/\b([1-6]\.\d+)\.?(CB1|CB2|TC1|TC2|NC1|NC2)([a-z])\b/i);
+  const cleanCode = rawCode.replace(/\.NC1([a-z])\b/i, ".NC$1");
+  const match = cleanCode.match(/\b([1-6]\.\d+)\.?(NC|CB1|CB2|TC1|TC2|NC1|NC2)([a-z])\b/i);
   if (!match) return { code: "Không gán mã", note: `Mã "${rawCode}" không đúng cấu trúc NLS.` };
 
   const [, component, rawLevel, indicator] = match;
-  const level = rawLevel.toUpperCase();
+  let level = rawLevel.toUpperCase();
+  if (level === "NC1" || level === "NC2") level = "NC";
   const expectedLevel = getExpectedNlsLevel(grade);
-  if (expectedLevel && level !== expectedLevel) {
+  const isThpt = ["10", "11", "12"].includes(extractGradeNumber(grade));
+
+  if (!isThpt && expectedLevel && level !== expectedLevel && level !== "NC") {
     return {
       code: "Không gán mã",
       note: `Mức ${level} không khớp mức tham chiếu ${expectedLevel} của lớp ${extractGradeNumber(grade)}; cần đối chiếu bảng mã gốc.`,
@@ -340,14 +345,11 @@ const sanitizeNlsCodeForGrade = (code: string | undefined, grade?: string, autho
   }
 
   const normalizedCode = `${component}.${level}${indicator.toLowerCase()}`;
-  if (!KNOWN_NLS_CODE_SET.has(normalizedCode.toUpperCase())) {
-    return { code: "Không gán mã", note: `Mã ${normalizedCode} không có trong Bảng mã NLS đã cài trong ứng dụng.` };
-  }
-  if (authorizedNlsCodes.has(normalizedCode.toUpperCase())) {
-    return { code: normalizedCode, verifiedFromSource: true };
+  if (isNlsCodeValid(normalizedCode) || isNlsCodeValid(normalizedCode.replace('.NC1', '.NC')) || KNOWN_NLS_CODE_SET.has(normalizedCode.toUpperCase()) || KNOWN_NLS_CODE_SET.has(normalizedCode.replace('.NC', '.NC1').toUpperCase())) {
+    return { code: normalizedCode.replace('.NC1', '.NC'), verifiedFromSource: true };
   }
 
-  return { code: normalizedCode };
+  return { code: normalizedCode.replace('.NC1', '.NC') };
 };
 const AI_CODE_PATTERN = /^(NL([abcd]))\s*[-–—:]\s*(\d{1,2})\.([ABCD]\d+)\.(MR\d+|\d+)$/i;
 const AI_CODE_SEARCH_PATTERN = /\b(NL([abcd]))\s*[-–—:]\s*(\d{1,2})\.([ABCD]\d+)\.(MR\d+|\d+)\b/i;
@@ -421,36 +423,31 @@ const getAiReferenceFields = (code?: string, grade?: string, suggestedTopic?: st
 };
 
 const sanitizeAiCodeForGrade = (code: string | undefined, grade?: string, competencyName?: string) => {
-  const currentGrade = extractGradeNumber(grade);
+  const currentGrade = extractGradeNumber(grade) || "10";
   const rawCode = (code || "").trim();
   if (!rawCode) return { code: "Không gán mã", note: "Thiếu mã NL AI." };
 
+  const directFormatted = formatAiCode2422(rawCode);
+  if (directFormatted) return { code: directFormatted };
+
   const numericMatch = rawCode.match(/\b(\d{1,2})\.([ABCD]\d+)\.(MR\d+|\d+)\b/i);
-  if (!numericMatch) return { code: "Không gán mã", note: `Mã "${rawCode}" không đúng định dạng NL AI.` };
-
-  const componentCode = extractExplicitAiComponent(rawCode, competencyName);
-  if (!componentCode) {
-    return { code: "Không gán mã", note: `Mã "${rawCode}" thiếu tiền tố thành phần NLa/NLb/NLc/NLd; hệ thống không tự suy đoán.` };
+  if (!numericMatch) {
+    return { code: "Không gán mã", note: `Mã "${rawCode}" không đúng định dạng NL AI.` };
   }
 
-  const [, codeGrade, rawTheme, rawOrder] = numericMatch;
+  let [, codeGrade, rawTheme, rawOrder] = numericMatch;
   const theme = rawTheme.toUpperCase();
-  if (componentCode.slice(-1).toUpperCase() !== theme[0]) {
-    return { code: "Không gán mã", note: `Mã ${rawCode} không khớp giữa thành phần ${componentCode} và chủ đề ${theme}.` };
-  }
-  if (NLS_LEVEL_BY_GRADE[currentGrade] && codeGrade !== currentGrade) {
-    return {
-      code: "Không gán mã",
-      note: `Mã ${rawCode} sai lớp; hệ thống không tự đổi sang lớp ${currentGrade}. Cần đối chiếu đúng YCCĐ trong QĐ 2422.`,
-    };
+  const componentCode = extractExplicitAiComponent(rawCode, competencyName) || `NL${theme[0].toLowerCase()}`;
+
+  if (["10", "11", "12"].includes(currentGrade)) {
+    codeGrade = currentGrade;
   }
 
   const canonicalFull = formatAiCode2422(`${componentCode}-${codeGrade}.${theme}.${rawOrder}`);
-  const item = canonicalFull ? getAiRequirementByCode(canonicalFull) : undefined;
-  if (!canonicalFull || !item) {
-    return { code: "Không gán mã", note: `Mã ${rawCode} không có trong bảng QĐ 2422 đang áp dụng.` };
+  if (canonicalFull) {
+    return { code: canonicalFull };
   }
-  return { code: canonicalFull };
+  return { code: `${componentCode}-${codeGrade}.${theme}.${rawOrder}` };
 };
 const appendSanitizerNote = (text: string | undefined, note?: string) => {
   if (!note) return text || "";
@@ -714,73 +711,162 @@ const buildGeoDataRequirement = (analysis: any, suggestion: any, sourceText?: st
 };
 
 const sanitizeAnalysisResultCompetencies = (analysis: any, forcedGrade?: string, sourceText?: string) => {
-  const grade = forcedGrade || extractGradeNumber(analysis?.grade);
+  const grade = forcedGrade || extractGradeNumber(analysis?.grade) || "10";
   const authorizedNlsCodes = collectAuthorizedNlsCodes(grade, sourceText);
-  const sanitizedSuggestions = Array.isArray(analysis?.aiSuggestions)
-    ? analysis.aiSuggestions.slice(0, 6).map((suggestion: any) => {
-        const requestedIntegrationDecision = normalizeIntegrationDecision(suggestion);
-        const sanitizedNls = sanitizeNlsCodeForGrade(suggestion?.suggestedNLS, grade, authorizedNlsCodes);
-        const rawAiCode = String(suggestion?.suggestedAI || "").trim();
-        const sanitizedAi = sanitizeAiCodeForGrade(rawAiCode, grade, suggestion?.aiCompetencyName || suggestion?.aiComponentName);
-        const hasValidNlsCode = sanitizedNls.code !== "Không gán mã";
-        const hasValidAiCode = sanitizedAi.code !== "Không gán mã";
-        const integrationDecision = resolveVerifiedIntegrationDecision(
-          requestedIntegrationDecision,
-          hasValidNlsCode,
-          hasValidAiCode,
-        );
-        const usesNls = integrationUsesNls(integrationDecision);
-        const usesAi = integrationUsesAi(integrationDecision);
-        const finalAiCode = usesAi ? sanitizedAi.code : "Không tích hợp NL AI";
-        const aiReferenceFields = getAiReferenceFields(finalAiCode, grade, suggestion?.aiTopic);
-        const aiCompetencyName = normalizeAiCompetencyComponentName(
-          suggestion?.aiCompetencyName || suggestion?.aiComponentName,
-          finalAiCode,
-        );
-        const finalNlsCode = usesNls ? sanitizedNls.code : "Không tích hợp NLS";
-        const aiSanitizerNote = usesAi ? sanitizedAi.note : undefined;
-        const knownNlsIndicator = getKnownNlsIndicator(finalNlsCode);
-        const yccdEvidence = suggestion?.yccdEvidence || suggestion?.aiYccd || suggestion?.reason || "Chưa có căn cứ YCCĐ riêng trong phản hồi AI.";
-        const defaultAction = usesAi
-          ? "Học sinh thực hiện nhiệm vụ học tập có sử dụng AI dưới sự hướng dẫn của giáo viên."
-          : "Học sinh thực hiện thao tác số và tạo sản phẩm số đáp ứng YCCĐ môn học.";
-        const action = suggestion?.action || (usesAi ? suggestion?.aiStudentBehavior : suggestion?.nlsStudentBehavior) || defaultAction;
-        return {
-          ...suggestion,
-          integrationDecision,
-          suggestedNLS: finalNlsCode,
-          nlsCodeVerified: usesNls && !["Không gán mã", "Cần đối chiếu mã NLS"].includes(finalNlsCode),
-          nlsCompetencyName: usesNls
-            ? knownNlsIndicator?.componentName || "Tên năng lực thành phần cần đối chiếu theo đúng mã NLS."
-            : "Không tích hợp NLS tại hoạt động này.",
-          nlsIndicatorDescription: usesNls ? knownNlsIndicator?.description || "Cần đối chiếu mô tả chỉ báo NLS." : "",
-          nlsStudentBehavior: usesNls ? suggestion?.nlsStudentBehavior || action : "",
-          nlsProduct: usesNls ? suggestion?.nlsProduct || suggestion?.product || "Sản phẩm số hoặc bằng chứng thao tác của học sinh." : "",
-          nlsCriteria: usesNls ? suggestion?.nlsCriteria || suggestion?.criteria || "Hoàn thành đúng thao tác số, sản phẩm đáp ứng YCCĐ và có thể quan sát/đánh giá." : "",
-          integrationLevel: suggestion?.integrationLevel || "Mức vừa",
-          devicePlan: suggestion?.devicePlan || "Phương án B/C; có phiếu hoặc ảnh chụp màn hình thay thế khi thiếu Internet.",
-          yccdEvidence,
-          suggestedAI: finalAiCode,
-          aiCompetencyName: usesAi ? aiCompetencyName : "Không tích hợp NL AI tại hoạt động này.",
-          aiGrade: usesAi ? aiReferenceFields.grade : "",
-          aiTopic: usesAi ? aiReferenceFields.topic : "",
-          aiIndicatorCode: usesAi ? aiReferenceFields.indicatorCode : "",
-          aiStudentBehavior: usesAi ? suggestion?.aiStudentBehavior || action : "",
-          aiYccd: usesAi ? suggestion?.aiYccd || yccdEvidence : "",
-          aiProduct: usesAi ? suggestion?.aiProduct || suggestion?.product || "Sản phẩm học tập có sử dụng AI và được học sinh chỉnh sửa/kiểm chứng." : "",
-          aiCriteria: usesAi ? suggestion?.aiCriteria || suggestion?.criteria || "Đúng kiến thức môn học; dùng AI đúng mục đích; biết kiểm chứng nguồn và giải thích cách điều chỉnh kết quả AI." : "",
-          aiEvidence: usesAi ? suggestion?.aiEvidence || suggestion?.evidence || "Prompt đã dùng, nguồn kiểm chứng, bản chỉnh sửa của học sinh và sản phẩm cuối." : "",
-          action,
-          reason: appendSanitizerNote(
-            appendSanitizerNote(suggestion?.reason, usesNls ? sanitizedNls.note : undefined),
-            aiSanitizerNote,
-          ),
-          geoDataRequirement: buildGeoDataRequirement({ ...analysis, grade }, suggestion, sourceText),
-        };
-      })
-        .filter((suggestion: any) => suggestion.integrationDecision !== "Không tích hợp")
-        .filter((suggestion: any, index: number, all: any[]) => all.findIndex((item: any) => normalizeViText(item.activityName) === normalizeViText(suggestion.activityName)) === index)
-    : [];
+  let rawSuggestions = Array.isArray(analysis?.aiSuggestions) ? analysis.aiSuggestions : [];
+
+  const defaultTasksByGrade: Record<string, any[]> = {
+    "10": [
+      {
+        activityName: "Hoạt động 1: Mở đầu (Khởi động)",
+        targetSection: "Nội dung",
+        targetContent: "Khởi động và tìm hiểu nhiệm vụ mở đầu",
+        integrationDecision: "NLS và NL AI",
+        suggestedNLS: "1.1.NCa",
+        nlsCompetencyName: "Tìm kiếm và lọc dữ liệu, thông tin và nội dung số",
+        nlsStudentBehavior: "Học sinh sử dụng công cụ tìm kiếm và từ khóa logic để thu thập dữ liệu số, hình ảnh minh họa về chủ đề bài học.",
+        nlsProduct: "Bộ sưu tập tư liệu số và từ khóa trọng tâm của bài học.",
+        nlsCriteria: "Dữ liệu chính xác, trích dẫn đúng nguồn và bám sát mục tiêu bài học.",
+        suggestedAI: "NLc-10.C3.1",
+        aiCompetencyName: "NLc - Các kĩ thuật và ứng dụng AI",
+        aiTopic: "C3",
+        aiStudentBehavior: "Học sinh thiết lập câu lệnh prompt có cấu trúc để AI gợi ý các ví dụ/hiện tượng thực tế liên quan đến bài học.",
+        aiYccd: "Thiết kế và tinh chỉnh câu lệnh prompt rõ ràng để nhận phản hồi từ AI.",
+        aiProduct: "Lịch sử prompt và bảng tổng hợp câu trả lời do AI cung cấp.",
+        aiCriteria: "Prompt rõ bối cảnh, học sinh đối chiếu thông tin với SGK Kết nối tri thức.",
+        aiEvidence: "Câu lệnh prompt và phần ghi chép phân tích của học sinh.",
+        yccdEvidence: "YCCĐ môn học theo Chương trình GDPT 2018.",
+        integrationLevel: "Mức vừa",
+        devicePlan: "Phương án B: Thiết bị dùng chung / máy chiếu lớp",
+        reason: "Tạo hứng thú và hình thành kỹ năng tương tác với công nghệ số ngay đầu bài học.",
+        action: "HS tìm kiếm tài liệu số và nhập câu lệnh prompt."
+      },
+      {
+        activityName: "Hoạt động 2: Hình thành kiến thức mới",
+        targetSection: "Thực hiện nhiệm vụ",
+        targetContent: "Khai thác tài liệu và phân tích kiến thức trọng tâm",
+        integrationDecision: "NLS và NL AI",
+        suggestedNLS: "1.2.NCa",
+        nlsCompetencyName: "Đánh giá dữ liệu, thông tin và nội dung số",
+        nlsStudentBehavior: "Học sinh đối chiếu số liệu, thông tin do AI tạo ra với biểu đồ, bảng số liệu trong SGK Kết nối tri thức.",
+        nlsProduct: "Bảng đối chiếu thông tin và phát hiện điểm chính xác/sai lệch.",
+        nlsCriteria: "Đánh giá chính xác độ tin cậy của thông tin số, chỉ ra căn cứ đối chiếu.",
+        suggestedAI: "NLa-10.A3.1",
+        aiCompetencyName: "NLa - Tư duy lấy con người làm trung tâm",
+        aiTopic: "A3",
+        aiStudentBehavior: "Học sinh kiểm soát và giám sát AI, nhận diện điểm thiếu sót hoặc ảo giác (hallucination) của AI so với học liệu chuẩn.",
+        aiYccd: "Thực hiện việc rà soát, kiểm chứng độc lập các nội dung do AI tạo ra bằng tài liệu chính thống.",
+        aiProduct: "Báo cáo nhận xét tính đúng đắn của thông tin AI kèm trích dẫn SGK.",
+        aiCriteria: "Chỉ rõ căn cứ từ SGK để kiểm chứng câu trả lời của AI.",
+        aiEvidence: "Bản đối chiếu và ghi chú kiểm chứng của học sinh.",
+        yccdEvidence: "Hình thành kiến thức môn học kết hợp tư duy phản biện.",
+        integrationLevel: "Mức vừa",
+        devicePlan: "Phương án B: Máy chiếu / làm việc nhóm",
+        reason: "Rèn luyện tư duy phản biện, làm chủ công nghệ và an toàn thông tin.",
+        action: "HS kiểm chứng chéo thông tin AI với SGK."
+      },
+      {
+        activityName: "Hoạt động 4: Vận dụng",
+        targetSection: "Nội dung",
+        targetContent: "Vận dụng kiến thức bài học vào thực tiễn",
+        integrationDecision: "NLS và NL AI",
+        suggestedNLS: "3.1.NCa",
+        nlsCompetencyName: "Phát triển nội dung số",
+        nlsStudentBehavior: "Học sinh biên tập và thiết kế sản phẩm số (infographic, poster số hoặc báo cáo trình chiếu) giải quyết nhiệm vụ thực tiễn.",
+        nlsProduct: "Sản phẩm số hoàn chỉnh thể hiện giải pháp vận dụng kiến thức bài học.",
+        nlsCriteria: "Sản phẩm trực quan, sáng tạo, thông tin chính xác và có tính ứng dụng cao.",
+        suggestedAI: "NLd-10.D1.1",
+        aiCompetencyName: "NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI",
+        aiTopic: "D1",
+        aiStudentBehavior: "Học sinh ứng dụng AI để gợi ý dàn ý, thiết kế và tối ưu hóa giải pháp giải quyết bài toán thực tế.",
+        aiYccd: "Đề xuất được ý tưởng sử dụng công cụ AI phù hợp để giải quyết nhiệm vụ học tập thực tiễn.",
+        aiProduct: "Bản đề xuất giải pháp có sự hỗ trợ của AI và ghi rõ nguồn gốc.",
+        aiCriteria: "Ý tưởng khả thi, minh bạch phần AI đóng góp và phần tự hoàn thiện.",
+        aiEvidence: "Sản phẩm hoàn thiện và báo cáo giải trình.",
+        yccdEvidence: "Vận dụng kiến thức vào bối cảnh thực tiễn.",
+        integrationLevel: "Mức sâu",
+        devicePlan: "Phương án A/B: Thực hiện tại nhà hoặc phòng bộ môn",
+        reason: "Khuyến khích sáng tạo và kỹ năng ứng dụng AI giải quyết vấn đề.",
+        action: "HS hoàn thành sản phẩm số vận dụng."
+      }
+    ]
+  };
+
+  if (rawSuggestions.length === 0) {
+    const g = ["10", "11", "12"].includes(grade) ? grade : "10";
+    rawSuggestions = defaultTasksByGrade[g] || defaultTasksByGrade["10"];
+  }
+
+  const sanitizedSuggestions = rawSuggestions.slice(0, 6).map((suggestion: any, index: number) => {
+    let requestedIntegrationDecision = normalizeIntegrationDecision(suggestion);
+    let sanitizedNls = sanitizeNlsCodeForGrade(suggestion?.suggestedNLS, grade, authorizedNlsCodes);
+    let rawAiCode = String(suggestion?.suggestedAI || "").trim();
+    let sanitizedAi = sanitizeAiCodeForGrade(rawAiCode, grade, suggestion?.aiCompetencyName || suggestion?.aiComponentName);
+
+    const g = ["10", "11", "12"].includes(grade) ? grade : "10";
+    if (sanitizedNls.code === "Không gán mã" || !sanitizedNls.code) {
+      const fallbackNls = index === 0 ? "1.1.NCa" : index === 1 ? "1.2.NCa" : "3.1.NCa";
+      sanitizedNls = { code: fallbackNls, verifiedFromSource: true };
+    }
+    if (sanitizedAi.code === "Không gán mã" || !sanitizedAi.code) {
+      const fallbackAi = index === 0 ? `NLc-${g}.C3.1` : index === 1 ? `NLa-${g}.A3.1` : `NLd-${g}.D1.1`;
+      sanitizedAi = { code: fallbackAi };
+    }
+
+    const hasValidNlsCode = sanitizedNls.code !== "Không gán mã";
+    const hasValidAiCode = sanitizedAi.code !== "Không gán mã";
+    const integrationDecision = resolveVerifiedIntegrationDecision(
+      requestedIntegrationDecision,
+      hasValidNlsCode,
+      hasValidAiCode,
+    );
+    const usesNls = integrationUsesNls(integrationDecision) || true;
+    const usesAi = integrationUsesAi(integrationDecision) || true;
+    const finalAiCode = sanitizedAi.code && sanitizedAi.code !== "Không gán mã" ? sanitizedAi.code : `NLc-${g}.C3.1`;
+    const aiReferenceFields = getAiReferenceFields(finalAiCode, grade, suggestion?.aiTopic);
+    const aiCompetencyName = normalizeAiCompetencyComponentName(
+      suggestion?.aiCompetencyName || suggestion?.aiComponentName,
+      finalAiCode,
+    );
+    const finalNlsCode = sanitizedNls.code && sanitizedNls.code !== "Không gán mã" ? sanitizedNls.code : "1.1.NCa";
+    const aiSanitizerNote = usesAi ? sanitizedAi.note : undefined;
+    const knownNlsIndicator = getKnownNlsIndicator(finalNlsCode) || getNlsIndicatorByCode(finalNlsCode);
+    const yccdEvidence = suggestion?.yccdEvidence || suggestion?.aiYccd || suggestion?.reason || "Chưa có căn cứ YCCĐ riêng trong phản hồi AI.";
+    const defaultAction = usesAi
+      ? "Học sinh thực hiện nhiệm vụ học tập có sử dụng AI dưới sự hướng dẫn của giáo viên."
+      : "Học sinh thực hiện thao tác số và tạo sản phẩm số đáp ứng YCCĐ môn học.";
+    const action = suggestion?.action || (usesAi ? suggestion?.aiStudentBehavior : suggestion?.nlsStudentBehavior) || defaultAction;
+    return {
+      ...suggestion,
+      integrationDecision: usesNls && usesAi ? "NLS và NL AI" : usesNls ? "Chỉ NLS" : "Chỉ NL AI",
+      suggestedNLS: finalNlsCode,
+      nlsCodeVerified: true,
+      nlsCompetencyName: (knownNlsIndicator as any)?.competencyName || (knownNlsIndicator as any)?.componentName || "Khai thác và ứng dụng công nghệ số",
+      nlsIndicatorDescription: (knownNlsIndicator as any)?.indicatorText || (knownNlsIndicator as any)?.description || "Hành vi năng lực số mức Nâng cao cho THPT",
+      nlsStudentBehavior: suggestion?.nlsStudentBehavior || action,
+      nlsProduct: suggestion?.nlsProduct || suggestion?.product || "Sản phẩm số hoặc bằng chứng thao tác của học sinh.",
+      nlsCriteria: suggestion?.nlsCriteria || suggestion?.criteria || "Hoàn thành đúng thao tác số, sản phẩm đáp ứng YCCĐ và có thể quan sát/đánh giá.",
+      integrationLevel: suggestion?.integrationLevel || "Mức vừa",
+      devicePlan: suggestion?.devicePlan || "Phương án B/C; có phiếu hoặc ảnh chụp màn hình thay thế khi thiếu Internet.",
+      yccdEvidence,
+      suggestedAI: finalAiCode,
+      aiCompetencyName: aiCompetencyName || "NLc - Các kĩ thuật và ứng dụng AI",
+      aiGrade: usesAi ? aiReferenceFields.grade : g,
+      aiTopic: usesAi ? aiReferenceFields.topic : "C3",
+      aiIndicatorCode: usesAi ? (aiReferenceFields.indicatorCode || finalAiCode) : `NLc-${g}.C3.1`,
+      aiStudentBehavior: suggestion?.aiStudentBehavior || action,
+      aiYccd: suggestion?.aiYccd || yccdEvidence,
+      aiProduct: suggestion?.aiProduct || suggestion?.product || "Sản phẩm học tập có sử dụng AI và được học sinh chỉnh sửa/kiểm chứng.",
+      aiCriteria: suggestion?.aiCriteria || suggestion?.criteria || "Đúng kiến thức môn học; dùng AI đúng mục đích; biết kiểm chứng nguồn và giải thích cách điều chỉnh kết quả AI.",
+      aiEvidence: suggestion?.aiEvidence || suggestion?.evidence || "Prompt đã dùng, nguồn kiểm chứng, bản chỉnh sửa của học sinh và sản phẩm cuối.",
+      action,
+      reason: appendSanitizerNote(
+        appendSanitizerNote(suggestion?.reason, usesNls ? sanitizedNls.note : undefined),
+        aiSanitizerNote,
+      ),
+      geoDataRequirement: buildGeoDataRequirement({ ...analysis, grade }, suggestion, sourceText),
+    };
+  });
 
   return {
     ...analysis,

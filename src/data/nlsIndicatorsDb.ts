@@ -271,7 +271,7 @@ export const NLS_INDICATORS_DB: NlsIndicatorItem[] = [
 
 export const isNlsCodeValid = (code: string): boolean => {
   if (!code) return false;
-  const cleanCode = code.trim();
+  const cleanCode = code.trim().replace(/\.NC1([a-z])$/i, ".NC$1");
   // Must match format [miền].[NLTP].NC[chỉ báo], e.g. 1.1.NCa
   if (!/^\d\.\d\.NC[a-z]$/i.test(cleanCode)) return false;
   const item = NLS_INDICATORS_DB.find(i => i.code.toLowerCase() === cleanCode.toLowerCase());
@@ -279,5 +279,8 @@ export const isNlsCodeValid = (code: string): boolean => {
 };
 
 export const getNlsIndicatorByCode = (code: string): NlsIndicatorItem | undefined => {
-  return NLS_INDICATORS_DB.find(i => i.code.toLowerCase() === code.trim().toLowerCase());
+  if (!code) return undefined;
+  const cleanCode = code.trim().replace(/\.NC1([a-z])$/i, ".NC$1");
+  return NLS_INDICATORS_DB.find(i => i.code.toLowerCase() === cleanCode.toLowerCase());
 };
+

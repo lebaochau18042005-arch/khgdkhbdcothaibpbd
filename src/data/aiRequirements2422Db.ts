@@ -47,6 +47,19 @@ export const AI_COMPONENTS_MAP = {
   }
 };
 
+export const getComponentByTopicLetter = (topicLetter: string): "NLa" | "NLb" | "NLc" | "NLd" => {
+  const t = (topicLetter || "A").trim().slice(0, 1).toUpperCase();
+  if (t === "A") return "NLa";
+  if (t === "B") return "NLb";
+  if (t === "C") return "NLc";
+  return "NLd";
+};
+
+export const getComponentNameByLetter = (letter: string): string => {
+  const comp = getComponentByTopicLetter(letter);
+  return AI_COMPONENTS_MAP[comp]?.name || "Năng lực AI";
+};
+
 export const AI_REQUIREMENTS_2422_DB: AiRequirementItem[] = [
   // ==================== LỚP 10 ====================
   // NLa - Lớp 10
@@ -540,62 +553,131 @@ export const AI_REQUIREMENTS_2422_DB: AiRequirementItem[] = [
   }
 ];
 
-const parseAiCode2422 = (rawCode: string) => {
-  const match = String(rawCode || "").trim().match(
-    /^(?:\[?(NL[abcd])\]?\s*[-:\u2013\u2014]?\s*)?((?:10|11|12)\.([A-D]\d+)\.(MR\d+|\d+))$/i
+export const parseAiCode2422 = (rawCode: string) => {
+  if (!rawCode) return undefined;
+  const clean = String(rawCode).trim().replace(/\s+/g, " ");
+
+  // Matches various formats:
+  // - NLb-12.B2.1, [NLb]-12.B2.1, NLB - 12.B2.1, NL-12.B2.1, NLD-12.B2.1
+  // - 12.B2.1, 12.B2.01, 12.B2.2, 12.C4.MR1
+  const match = clean.match(
+    /^(?:\[?(NL[abcd]?|NLD|NLA|NLB|NLC)\]?\s*[-:\u2013\u2014]?\s*)?((?:10|11|12)\.([A-D]\d*)\.(MR\d+|\d+))$/i
   );
   if (!match) return undefined;
 
-  const [, rawComponent, , rawTopic, rawIndicator] = match;
-  const topic = rawTopic.toUpperCase();
+  const [, , , rawTopic, rawIndicator] = match;
+  const topicLetter = rawTopic.slice(0, 1).toUpperCase();
+  const correctComp = getComponentByTopicLetter(topicLetter);
+
+  const topicNum = rawTopic.slice(1) || "1";
+  const topic = `${topicLetter}${topicNum}`;
+
   const indicator = /^MR\d+$/i.test(rawIndicator)
     ? rawIndicator.toUpperCase()
-    : String(Number(rawIndicator));
-  if (indicator === "NaN" || indicator === "0") return undefined;
+    : String(Number(rawIndicator) || 1);
 
-  const grade = match[2].slice(0, 2);
+  const grade = match[2].slice(0, 2) as "10" | "11" | "12";
+  const code = `${grade}.${topic}.${indicator}`;
+
   return {
-    component: rawComponent ? `NL${rawComponent.slice(-1).toLowerCase()}` : undefined,
-    code: `${grade}.${topic}.${indicator}`,
+    component: correctComp,
+    code,
+    grade,
+    topic
   };
 };
 
 /**
  * Converts legacy leading-zero codes (for example 11.C2.01) to QD 2422
- * only when the canonical target exists in the application's active database.
+ * and auto-corrects minor formatting issues (like 12.B2.2 -> 12.B2.1).
  */
 export const normalizeAiCode2422 = (rawCode: string): string | undefined => {
   const parsed = parseAiCode2422(rawCode);
   if (!parsed) return undefined;
-  const item = AI_REQUIREMENTS_2422_DB.find(i => i.code.toLowerCase() === parsed.code.toLowerCase() && i.isActive);
-  if (!item || (parsed.component && parsed.component !== item.component)) return undefined;
-  return item.code;
+
+  // 1. Exact match in DB
+  const exact = AI_REQUIREMENTS_2422_DB.find(
+    i => i.code.toLowerCase() === parsed.code.toLowerCase() && i.isActive
+  );
+  if (exact) return exact.code;
+
+  // 2. Fallback to topic base if indicator index is slightly off (e.g. 12.B2.2 -> 12.B2.1)
+  const topicMatch = AI_REQUIREMENTS_2422_DB.find(
+    i => i.grade === parsed.grade && i.topic.toLowerCase() === parsed.topic.toLowerCase() && i.isActive
+  );
+  if (topicMatch) return topicMatch.code;
+
+  // 3. Fallback to component base
+  const compMatch = AI_REQUIREMENTS_2422_DB.find(
+    i => i.grade === parsed.grade && i.component === parsed.component && i.isActive
+  );
+  if (compMatch) return compMatch.code;
+
+  return parsed.code;
 };
 
 export const formatAiCode2422 = (rawCode: string): string | undefined => {
-  const code = normalizeAiCode2422(rawCode);
-  if (!code) return undefined;
-  const item = AI_REQUIREMENTS_2422_DB.find(i => i.code === code && i.isActive);
-  return item ? `${item.component}-${item.code}` : undefined;
+  const normalized = normalizeAiCode2422(rawCode);
+  if (!normalized) return undefined;
+
+  const item = AI_REQUIREMENTS_2422_DB.find(i => i.code === normalized && i.isActive);
+  if (item) return `${item.component}-${item.code}`;
+
+  const parsed = parseAiCode2422(rawCode);
+  if (parsed) return `${parsed.component}-${parsed.code}`;
+  return undefined;
 };
 
-export const normalizeAiCodesInText2422 = (value: unknown): string =>
-  String(value || "").replace(
-    /\b(?:NL[abcd]\s*[-:\u2013\u2014]\s*)?(?:10|11|12)\.[A-D]\d+\.(?:MR\d+|\d+)\b/gi,
-    (rawCode) => {
-      const hadComponent = /^NL[abcd]/i.test(rawCode.trim());
-      const normalized = hadComponent ? formatAiCode2422(rawCode) : normalizeAiCode2422(rawCode);
-      return normalized || rawCode;
+export const normalizeAiCodesInText2422 = (value: unknown): string => {
+  let text = String(value || "");
+
+  // 1. Fix mismatched component names and topics like "NLD - Đạo đức" or "NLc - Tư duy"
+  text = text.replace(
+    /(?:Thành phần(?:\s+NL)?\s+AI:\s*)?(NLa|NLb|NLc|NLd|NLA|NLB|NLC|NLD)\s*[-–—:]\s*(?:Đạo đức|Tư duy|Kỹ thuật|Kĩ thuật|Thiết kế|Giải quyết)[^;,\n]*/gi,
+    (matched) => {
+      if (/Đạo đức/i.test(matched)) return "NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm";
+      if (/Tư duy/i.test(matched)) return "NLa - Tư duy lấy con người làm trung tâm";
+      if (/Kỹ thuật|Kĩ thuật|Ứng dụng/i.test(matched)) return "NLc - Các kĩ thuật và ứng dụng AI";
+      if (/Thiết kế|Giải quyết|Thử nghiệm/i.test(matched)) return "NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI";
+      return matched;
     }
   );
+
+  // 2. Fix structured pattern: "Thành phần NL AI: NLD; Khối lớp: 12; Chủ đề: B2; Mã chỉ báo NL AI: NL-12.B2.2"
+  text = text.replace(
+    /Thành phần(?:\s+NL)?\s+AI:\s*(NLa|NLb|NLc|NLd|NLA|NLB|NLC|NLD)(?:\s*-\s*[^;]+)?;\s*(Khối lớp:\s*(?:10|11|12));\s*(Chủ đề:\s*([A-D]\d*));\s*(Mã chỉ báo NL AI:\s*[^;\n]+)/gi,
+    (_full, _comp, gradePart, topicPart, rawTopic, codePart) => {
+      const topicLetter = String(rawTopic || "A").slice(0, 1).toUpperCase();
+      const compCode = getComponentByTopicLetter(topicLetter);
+      const compName = AI_COMPONENTS_MAP[compCode]?.name || "Năng lực AI";
+
+      const rawCode = codePart.replace(/^Mã chỉ báo NL AI:\s*/i, "").trim();
+      const cleanCode = formatAiCode2422(rawCode) || normalizeAiCode2422(rawCode) || rawCode;
+      return `Thành phần NL AI: ${compCode} - ${compName}; ${gradePart}; ${topicPart}; Mã chỉ báo NL AI: ${cleanCode}`;
+    }
+  );
+
+  // 3. Fix standalone or prefixed AI codes (e.g. NL-12.B2.2, NLD-12.B2.1, 10.A1.01)
+  text = text.replace(
+    /\b(?:\[?(NL[abcd]?|NLD|NLA|NLB|NLC)\]?\s*[-:\u2013\u2014]?\s*)?(10|11|12)\.([A-D]\d*)\.(MR\d+|\d+)\b/gi,
+    (rawCode) => {
+      const formatted = formatAiCode2422(rawCode);
+      return formatted || normalizeAiCode2422(rawCode) || rawCode;
+    }
+  );
+
+  return text;
+};
 
 export const isAiCodeValid2422 = (code: string, grade?: string): boolean => {
   if (!code) return false;
   const cleanCode = code.trim().replace(/\s+/g, "");
   const normalizedCode = normalizeAiCode2422(cleanCode);
   if (!normalizedCode) return false;
+
   const item = AI_REQUIREMENTS_2422_DB.find(i => i.code.toLowerCase() === normalizedCode.toLowerCase());
   if (!item || !item.isActive) return false;
+
   const canonicalBare = item.code.toLowerCase();
   const canonicalFull = `${item.component}-${item.code}`.toLowerCase();
   if (![canonicalBare, canonicalFull].includes(cleanCode.toLowerCase())) return false;

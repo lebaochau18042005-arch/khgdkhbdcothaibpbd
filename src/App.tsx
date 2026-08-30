@@ -79,13 +79,14 @@ const mapAiCompetencyText = (code: string) => {
   if (!code || code.toLowerCase().includes("không")) return "Không tích hợp";
 
   let groupName = "";
-  if (/\.A\./i.test(code) || code.includes("NLa")) groupName = "Tư duy lấy con người làm trung tâm (NLa)";
-  else if (/\.B\./i.test(code) || code.includes("NLb")) groupName = "Đạo đức và trách nhiệm xã hội (NLb)";
-  else if (/\.C\./i.test(code) || code.includes("NLc")) groupName = "Kỹ thuật và ứng dụng (NLc)";
-  else if (/\.D\./i.test(code) || code.includes("NLd")) groupName = "Thiết kế hệ thống và GQVD (NLd)";
+  if (/\.A\d*\./i.test(code) || /NLa/i.test(code) || /\b(?:10|11|12)\.A/i.test(code)) groupName = "NLa - Tư duy lấy con người làm trung tâm";
+  else if (/\.B\d*\./i.test(code) || /NLb/i.test(code) || /\b(?:10|11|12)\.B/i.test(code)) groupName = "NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm";
+  else if (/\.C\d*\./i.test(code) || /NLc/i.test(code) || /\b(?:10|11|12)\.C/i.test(code)) groupName = "NLc - Các kĩ thuật và ứng dụng AI";
+  else if (/\.D\d*\./i.test(code) || /NLd/i.test(code) || /\b(?:10|11|12)\.D/i.test(code)) groupName = "NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI";
   else return code; // return raw code if no match
 
-  return `${groupName} - Mã NL AI: ${code}`;
+  const formattedCode = formatAiCode2422(code) || normalizeAiCode2422(code) || code;
+  return `${groupName} - Mã NL AI: ${formattedCode}`;
 };
 
 const cleanGeneratedPlanText = (value: unknown) => {
@@ -2781,24 +2782,26 @@ export default function App() {
     // Reset input so same file can be re-selected after an error
     event.target.value = "";
     if (!file) return;
-    if (!requireOnlineForAi("Đọc ảnh/PDF bằng AI")) return;
+    if (!requireOnlineForAi("Đọc tài liệu/ảnh bằng AI")) return;
 
     if (!apiKey.trim()) {
-      alert("Vui lòng lấy API key để sử dụng tính năng đọc ảnh/PDF!");
+      alert("Vui lòng lấy API key để sử dụng tính năng phân tích tài liệu!");
       setShowSettings(true);
       return;
     }
 
-    // File type validation: only images and PDF
+    const fileNameLower = file.name.toLowerCase();
     const isImage = file.type.startsWith("image/");
-    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-    if (!isImage && !isPdf) {
-      alert("❌ Chỉ hỗ trợ file ảnh (JPG, PNG, WEBP) hoặc PDF. Vui lòng thử lại.");
+    const isPdf = file.type === "application/pdf" || fileNameLower.endsWith(".pdf");
+    const isWord = fileNameLower.endsWith(".docx") || fileNameLower.endsWith(".doc");
+    const isExcel = fileNameLower.endsWith(".xlsx") || fileNameLower.endsWith(".xls");
+
+    if (!isImage && !isPdf && !isWord && !isExcel) {
+      alert("❌ Chỉ hỗ trợ file Ảnh (JPG, PNG, WEBP), PDF, Word (.docx) hoặc Excel (.xlsx, .xls).");
       return;
     }
 
-    // File size limit: 10MB for images, 20MB for PDF
-    const maxSizeMB = isPdf ? 20 : 10;
+    const maxSizeMB = 30;
     if (file.size > maxSizeMB * 1024 * 1024) {
       alert(`❌ File quá lớn (tối đa ${maxSizeMB}MB). Vui lòng nén file hoặc dùng file nhỏ hơn.`);
       return;
@@ -2806,33 +2809,65 @@ export default function App() {
 
     setUploadingSource(true);
     try {
-      const reader = new FileReader();
-      reader.onerror = () => {
-        alert("❌ Không đọc được file. Vui lòng thử lại.");
-        setUploadingSource(false);
-      };
-      reader.onloadend = async () => {
-        const base64Data = (reader.result as string).split(',')[1];
-        try {
-          const data = await analyzeLessonSource(base64Data, file.type, { apiKey, aiModel });
-          setLessonPlanInput(prev => ({
-            ...prev,
-            topic: data.topic || prev.topic,
-            objectivesKnowledge: data.objectives || prev.objectivesKnowledge,
-            objectivesCompetency: data.methodologies
-              ? (prev.objectivesCompetency ? prev.objectivesCompetency + "\n" + data.methodologies : data.methodologies)
-              : prev.objectivesCompetency,
-          }));
-          alert("✅ Phân tích thành công! Đã tự động điền thông tin vào form.");
-        } catch (err: any) {
-          alert(`❌ Lỗi phân tích ảnh/PDF: ${err?.message}`);
-        } finally {
+      if (isWord) {
+        const mammoth = await import("mammoth");
+        const buffer = await file.arrayBuffer();
+        const extracted = await mammoth.extractRawText({ arrayBuffer: buffer });
+        const rawText = extracted.value || "";
+        const data = await analyzeLessonSource("", "text/plain", { apiKey, aiModel, rawText });
+        setLessonPlanInput(prev => ({
+          ...prev,
+          topic: data.topic || prev.topic,
+          objectivesKnowledge: data.objectives || prev.objectivesKnowledge,
+          objectivesCompetency: data.methodologies
+            ? (prev.objectivesCompetency ? prev.objectivesCompetency + "\n" + data.methodologies : data.methodologies)
+            : prev.objectivesCompetency,
+        }));
+        alert("✅ Phân tích file Word thành công! Đã tự động điền thông tin vào form.");
+      } else if (isExcel) {
+        const excelRows = await parseExcelFile(file);
+        const rawText = excelRows.map(r => Object.values(r).join(" | ")).join("\n");
+        const data = await analyzeLessonSource("", "text/plain", { apiKey, aiModel, rawText });
+        setLessonPlanInput(prev => ({
+          ...prev,
+          topic: data.topic || prev.topic,
+          objectivesKnowledge: data.objectives || prev.objectivesKnowledge,
+          objectivesCompetency: data.methodologies
+            ? (prev.objectivesCompetency ? prev.objectivesCompetency + "\n" + data.methodologies : data.methodologies)
+            : prev.objectivesCompetency,
+        }));
+        alert("✅ Phân tích file Excel thành công! Đã tự động điền thông tin vào form.");
+      } else {
+        const reader = new FileReader();
+        reader.onerror = () => {
+          alert("❌ Không đọc được file. Vui lòng thử lại.");
           setUploadingSource(false);
-        }
-      };
-      reader.readAsDataURL(file);
+        };
+        reader.onloadend = async () => {
+          const base64Data = (reader.result as string).split(',')[1];
+          try {
+            const data = await analyzeLessonSource(base64Data, file.type, { apiKey, aiModel });
+            setLessonPlanInput(prev => ({
+              ...prev,
+              topic: data.topic || prev.topic,
+              objectivesKnowledge: data.objectives || prev.objectivesKnowledge,
+              objectivesCompetency: data.methodologies
+                ? (prev.objectivesCompetency ? prev.objectivesCompetency + "\n" + data.methodologies : data.methodologies)
+                : prev.objectivesCompetency,
+            }));
+            alert("✅ Phân tích thành công! Đã tự động điền thông tin vào form.");
+          } catch (err: any) {
+            alert(`❌ Lỗi phân tích ảnh/PDF: ${err?.message}`);
+          } finally {
+            setUploadingSource(false);
+          }
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
     } catch (err: any) {
       alert("❌ Lỗi đọc file: " + err?.message);
+    } finally {
       setUploadingSource(false);
     }
   };
@@ -3054,9 +3089,22 @@ export default function App() {
       } else if (isDocx) {
         const buffer = await uploadedFile.arrayBuffer();
         const mammoth = await import("mammoth");
-        const resultObj = await mammoth.extractRawText({ arrayBuffer: buffer });
-        const text = resultObj.value;
-        if (!text || text.trim().length < 50) throw new Error("File Word không có nội dung hoặc đọc bị trống. Hãy kiểm tra lại file.");
+        const [htmlRes, rawRes] = await Promise.all([
+          mammoth.convertToHtml({ arrayBuffer: buffer.slice(0) }).catch(() => ({ value: "" })),
+          mammoth.extractRawText({ arrayBuffer: buffer.slice(0) }).catch(() => ({ value: "" }))
+        ]);
+        const htmlVal = htmlRes?.value || "";
+        const rawVal = rawRes?.value || "";
+        let text = rawVal;
+        if (htmlVal.includes("<table")) {
+          const tableMarkdown = htmlVal
+            .replace(/<tr[^>]*>/gi, "\n")
+            .replace(/<t[hd][^>]*>(.*?)<\/t[hd]>/gi, " | $1 ")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/[ \t]+/g, " ");
+          text = `${rawVal}\n\n=== BẢNG PHÂN PHỐI CHƯƠNG TRÌNH ===\n${tableMarkdown}`;
+        }
+        if (!text || text.trim().length < 30) throw new Error("File Word không có nội dung hoặc đọc bị trống. Hãy kiểm tra lại file.");
         data = await parseCurriculumAppendix(text);
       } else {
         throw new Error(`Định dạng file "${uploadedFile.name}" không được hỗ trợ. Vui lòng chọn file định dạng .xlsx, .xls, .docx hoặc .pdf.`);
@@ -6292,18 +6340,18 @@ export default function App() {
                         <PlanQualityAuditPanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
                         <ExportModePanel audit={buildPlanQualityAudit("khgd", getCurrentKhgdRows(), eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
 
-                        <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
+                        <div ref={tableRef} className="bg-white/95 rounded-[24px] p-6 shadow-2xl overflow-x-auto border border-slate-200 print:border-0 print:shadow-none print:bg-white paper">
                           <table className="w-full text-left text-[10px] border-collapse min-w-[1200px]">
                             <thead>
-                              <tr className="border-b-2 border-slate-100 bg-slate-50/50">
+                              <tr className="border-b-2 border-slate-100 bg-slate-50/80">
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-16 text-center">Thứ tự tiết</th>
-                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-64">Bài học</th>
-                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 text-center">Số tiết</th>
-                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Thời điểm</th>
-                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-64">Thiết bị dạy học & Học liệu AI</th>
-                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Địa điểm dạy học</th>
-                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest min-w-[240px]">Nội dung giáo dục tích hợp/lồng ghép</th>
-                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest">Định hướng năng lực số (AI)</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-48 min-w-[150px]">Bài học</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-16 text-center">Số tiết</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-24">Thời điểm</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-56 min-w-[180px]">Thiết bị dạy học & Học liệu AI</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Địa điểm dạy học</th>
+                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest w-48 min-w-[150px]">Nội dung giáo dục tích hợp/lồng ghép</th>
+                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest min-w-[260px]">Định hướng năng lực số (AI)</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 print:hidden text-center">Thao tác</th>
                               </tr>
                             </thead>
@@ -6560,7 +6608,7 @@ export default function App() {
                           { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
                         ), eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
 
-                        <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
+                        <div ref={tableRef} className="bg-white/95 rounded-[24px] p-6 shadow-2xl overflow-x-auto border border-slate-200 print:border-0 print:shadow-none print:bg-white paper">
                           <KhtcmSupplementSections subject={eduPlanInput.subject} grade={eduPlanInput.grade} rows={completeDepartmentPlanRows(
                             Array.isArray(result.data) ? result.data : [],
                             getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
@@ -6576,18 +6624,18 @@ export default function App() {
                               ).length} dòng. Các ô trống được tự động bù từ danh mục chương trình/PL tải lên để tránh thiếu nội dung.
                             </p>
                           </div>
-                          <table className="w-full text-left text-[11px] border-collapse min-w-[1000px]">
+                          <table className="w-full text-left text-[11px] border-collapse min-w-[1100px]">
                             <thead>
-                              <tr className="border-b-2 border-slate-100">
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-12 text-center">STT</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Thời gian</th>
-                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest min-w-[240px]">Nội dung giáo dục tích hợp/lồng ghép</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-48">Nội dung</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-20 text-center">Số tiết</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest">Yêu cầu cần đạt</th>
-                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest w-40">Năng lực số</th>
-                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Mục tiêu & YCCĐ 2422 Tích hợp GD AI</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-24 print:hidden text-center">Thao tác</th>
+                              <tr className="border-b-2 border-slate-100 bg-slate-50/80">
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-12 text-center">STT</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-32 min-w-[110px]">Thời gian</th>
+                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest w-44 min-w-[150px]">Nội dung giáo dục tích hợp/lồng ghép</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-44 min-w-[140px]">Nội dung</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-16 text-center">Số tiết</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest min-w-[280px]">Yêu cầu cần đạt</th>
+                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest w-40 min-w-[140px]">Năng lực số</th>
+                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest min-w-[260px]">Mục tiêu & YCCĐ 2422 Tích hợp GD AI</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-28 print:hidden text-center">Thao tác</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -6760,24 +6808,24 @@ export default function App() {
 
                         <PlanQualityAuditPanel audit={buildPlanQualityAudit("kh-hdgd", result.data, eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
                         <ExportModePanel audit={buildPlanQualityAudit("kh-hdgd", result.data, eduPlanInput.subject, eduPlanInput.grade, collectSelectedSocialIntegrations(eduPlanInput))} />
-                        <div ref={tableRef} className="glass rounded-[24px] p-6 shadow-2xl overflow-x-auto print:border-0 print:shadow-none print:bg-white paper">
+                        <div ref={tableRef} className="bg-white/95 rounded-[24px] p-6 shadow-2xl overflow-x-auto border border-slate-200 print:border-0 print:shadow-none print:bg-white paper">
                           <div className="mb-6">
                             <h4 className="text-lg font-extrabold text-brand-sidebar">Kế hoạch tổ chức các hoạt động giáo dục</h4>
                           </div>
                           <table className="w-full text-left text-[11px] border-collapse min-w-[1200px]">
                             <thead>
-                              <tr className="border-b-2 border-slate-100">
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-12 text-center">STT</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Chủ đề/Hoạt động</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest">Yêu cầu cần đạt</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-16 text-center">Số tiết</th>
-                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest min-w-[240px]">Nội dung giáo dục tích hợp/lồng ghép</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-24">Thời điểm</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Địa điểm</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Người chủ trì</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Phối hợp</th>
-                                <th className="p-4 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Điều kiện thực hiện</th>
-                                <th className="p-4 font-extrabold text-red-600 uppercase tracking-widest">Tích hợp NLS/AI</th>
+                              <tr className="border-b-2 border-slate-100 bg-slate-50/80">
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-12 text-center">STT</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Chủ đề/Hoạt động</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest min-w-[260px]">Yêu cầu cần đạt</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-16 text-center">Số tiết</th>
+                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest w-48 min-w-[150px]">Nội dung giáo dục tích hợp/lồng ghép</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-24">Thời điểm</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Địa điểm</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Người chủ trì</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-32">Phối hợp</th>
+                                <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-40">Điều kiện thực hiện</th>
+                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest min-w-[240px]">Tích hợp NLS/AI</th>
                               </tr>
                             </thead>
                             <tbody>

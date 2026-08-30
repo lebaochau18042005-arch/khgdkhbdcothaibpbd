@@ -169,18 +169,26 @@ export default function UpgradePlan({
         const uploadedFile = e.target.files?.[0];
         if (!uploadedFile) return;
 
-        const isDocx = uploadedFile.name.toLowerCase().endsWith(".docx");
-        if (!isDocx) {
-            alert("❌ Vui lòng tải lên file KHTCM (PL1) định dạng DOCX.");
+        const nameLower = uploadedFile.name.toLowerCase();
+        const isDocx = nameLower.endsWith(".docx");
+        const isExcel = nameLower.endsWith(".xlsx") || nameLower.endsWith(".xls");
+        if (!isDocx && !isExcel) {
+            alert("❌ Vui lòng tải lên file KHTCM (PL1) định dạng DOCX hoặc Excel (.xlsx, .xls).");
             e.target.value = "";
             return;
         }
 
         try {
-            const buffer = await uploadedFile.arrayBuffer();
-            const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-            const text = result.value;
-            if (!text || text.trim().length < 50) {
+            let text = "";
+            if (isExcel) {
+                const excelRows = await parseExcelFile(uploadedFile);
+                text = excelRows.map(r => Object.values(r).join(" | ")).join("\n");
+            } else {
+                const buffer = await uploadedFile.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+                text = result.value;
+            }
+            if (!text || text.trim().length < 30) {
                 alert("❌ Không bóc tách được nội dung từ file KHTCM này.");
                 return;
             }
@@ -251,7 +259,9 @@ export default function UpgradePlan({
             return;
         }
 
-        const isPdf = uploadedFile.type === "application/pdf" || uploadedFile.name.toLowerCase().endsWith(".pdf");
+        const nameLower = uploadedFile.name.toLowerCase();
+        const isPdf = uploadedFile.type === "application/pdf" || nameLower.endsWith(".pdf");
+        const isExcel = nameLower.endsWith(".xlsx") || nameLower.endsWith(".xls");
         const maxSizeMB = isPdf ? 10 : 20;
         if (uploadedFile.size > maxSizeMB * 1024 * 1024) {
             alert(`❌ File quá lớn (tối đa ${maxSizeMB}MB). Vui lòng nén file hoặc thử file DOCX thay thế.`);
@@ -296,11 +306,20 @@ export default function UpgradePlan({
                 setPdfBase64(base64);
                 setRawText("");
                 analysis = await analyzeExistingPlan("", base64, imagePayload, pl1Text || undefined);
+            } else if (isExcel) {
+                const excelRows = await parseExcelFile(uploadedFile);
+                const text = excelRows.map(r => Object.values(r).join(" | ")).join("\n");
+                if (!text || text.trim().length < 30) {
+                    throw new Error("Không bóc tách được nội dung từ file Excel này.");
+                }
+                setRawText(text);
+                setPdfBase64("");
+                analysis = await analyzeExistingPlan(text, undefined, imagePayload, pl1Text || undefined);
             } else {
                 const buffer = await uploadedFile.arrayBuffer();
                 const result = await mammoth.extractRawText({ arrayBuffer: buffer });
                 const text = result.value;
-                if (!text || text.trim().length < 50) {
+                if (!text || text.trim().length < 30) {
                     throw new Error("Không bóc tách được nội dung từ file này. Hãy thử file DOCX khác.");
                 }
                 setRawText(text);
@@ -493,10 +512,18 @@ export default function UpgradePlan({
 
     const getAiCompetencyNameFromCode = (code?: string) => {
         const normalized = (code || "").toUpperCase();
-        if (/\bNLA\b/.test(normalized)) return "NLa - Tư duy lấy con người làm trung tâm";
-        if (/\bNLB\b/.test(normalized)) return "NLb - Đạo đức và trách nhiệm xã hội";
-        if (/\bNLC\b/.test(normalized)) return "NLc - Kỹ thuật và ứng dụng";
-        if (/\bNLD\b/.test(normalized)) return "NLd - Giải quyết vấn đề và thiết kế hệ thống";
+        if (/\bNLA\b/.test(normalized) || /\b(?:10|11|12)\.A/i.test(normalized) || /\bA[1-3]\b/i.test(normalized) || /TƯ DUY/i.test(normalized)) {
+            return "NLa - Tư duy lấy con người làm trung tâm";
+        }
+        if (/\bNLB\b/.test(normalized) || /\b(?:10|11|12)\.B/i.test(normalized) || /\bB[1-3]\b/i.test(normalized) || /ĐẠO ĐỨC/i.test(normalized)) {
+            return "NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm";
+        }
+        if (/\bNLC\b/.test(normalized) || /\b(?:10|11|12)\.C/i.test(normalized) || /\bC[1-5]\b/i.test(normalized) || /KỸ THUẬT|KĨ THUẬT|ỨNG DỤNG/i.test(normalized)) {
+            return "NLc - Các kĩ thuật và ứng dụng AI";
+        }
+        if (/\bNLD\b/.test(normalized) || /\b(?:10|11|12)\.D/i.test(normalized) || /\bD[1-2]\b/i.test(normalized) || /THIẾT KẾ|THỬ NGHIỆM/i.test(normalized)) {
+            return "NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI";
+        }
         return "Thành phần năng lực AI cần đối chiếu theo QĐ 2422/QĐ-BGDĐT";
     };
 

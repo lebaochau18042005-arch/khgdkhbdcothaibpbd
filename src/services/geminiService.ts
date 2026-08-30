@@ -200,12 +200,17 @@ IV. ĐỊNH DẠNG CỘT AI (aiCompetencyIntegrated)
 `;
 
 const AI_COMPETENCY_ORDER_RULE = `
-LỆNH MÃ HÓA NL AI & NLS BẮT BUỘC:
-- Trước khi ghi mã AI, bắt buộc ghi đầy đủ tên thành phần năng lực AI (NLa/NLb/NLc/NLd).
-- Mã NL AI là MỘT chuỗi duy nhất theo mẫu “[Lớp].[Chủ đề].[Số thứ tự]” (chuẩn QĐ 2422), ví dụ: “10.A1.1”, “11.C3.1”, “12.C4.MR1”. TUYỆT ĐỐI KHÔNG dùng mã cũ dạng “10.A2.01”, “10.C2.01”.
-- MẪU TRÌNH BÀY BẮT BUỘC: “Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: 10; Chủ đề: A1; Mã chỉ báo NL AI: 10.A1.1”.
+LỆNH MÃ HÓA NL AI & NLS BẮT BUỘC THEO QĐ 2422/QĐ-BGDĐT:
+- BẮT BUỘC ÁNH XẠ ĐÚNG CHỦ ĐỀ VÀ THÀNH PHẦN NĂNG LỰC AI:
+  * Chủ đề bắt đầu bằng chữ A (A1, A2, A3) -> NLa - Tư duy lấy con người làm trung tâm
+  * Chủ đề bắt đầu bằng chữ B (B1, B2, B3) -> NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm
+  * Chủ đề bắt đầu bằng chữ C (C1, C2, C3, C4, C5) -> NLc - Các kĩ thuật và ứng dụng AI
+  * Chủ đề bắt đầu bằng chữ D (D1, D2) -> NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI
+  TUYỆT ĐỐI KHÔNG ghi nhầm NLD cho chủ đề B hoặc NLc cho chủ đề A.
+- Mã NL AI chuẩn: “[Lớp].[Mã chủ đề].[Số thứ tự]” (hoặc “NL[a/b/c/d]-[Lớp].[Mã chủ đề].[Số thứ tự]”), ví dụ: “10.A1.1”, “11.B2.1”, “12.B2.1”, “12.C3.1”.
+- MẪU TRÌNH BÀY BẮT BUỘC: “Thành phần NL AI: NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm; Khối lớp: 12; Chủ đề: B2; Mã chỉ báo NL AI: 12.B2.1”.
 - Mã NLS phải giữ nguyên đúng mã mức NC trong bảng TT 02/CV 3456, ví dụ “1.1.NCa”, “1.2.NCa”, “6.2.NCa”. Không dùng mã CB, TC hoặc NC1a.
-- Trình bày: “Mã chỉ báo NLS: 1.1.NCa; Thành phần NLS: Duyệt, tìm kiếm và lọc dữ liệu số”.
+- Trình bày NLS: “Mã chỉ báo NLS: 1.1.NCa; Thành phần NLS: Duyệt, tìm kiếm và lọc dữ liệu số”.
 - Mọi mã NLS và mã NL AI trong phần bổ sung phải được chèn vào văn bản bằng chữ màu đỏ (#FF0000); nội dung giáo án gốc giữ nguyên 100% định dạng và màu sắc.
 `;
 
@@ -430,14 +435,15 @@ const sanitizeAiCodeForGrade = (code: string | undefined, grade?: string, compet
   const directFormatted = formatAiCode2422(rawCode);
   if (directFormatted) return { code: directFormatted };
 
-  const numericMatch = rawCode.match(/\b(\d{1,2})\.([ABCD]\d+)\.(MR\d+|\d+)\b/i);
+  const numericMatch = rawCode.match(/\b(\d{1,2})\.([ABCD]\d*)\.(MR\d+|\d+)\b/i);
   if (!numericMatch) {
     return { code: "Không gán mã", note: `Mã "${rawCode}" không đúng định dạng NL AI.` };
   }
 
   let [, codeGrade, rawTheme, rawOrder] = numericMatch;
   const theme = rawTheme.toUpperCase();
-  const componentCode = extractExplicitAiComponent(rawCode, competencyName) || `NL${theme[0].toLowerCase()}`;
+  const topicLetter = theme.slice(0, 1);
+  const componentCode = topicLetter === "A" ? "NLa" : topicLetter === "B" ? "NLb" : topicLetter === "C" ? "NLc" : "NLd";
 
   if (["10", "11", "12"].includes(currentGrade)) {
     codeGrade = currentGrade;
@@ -1756,41 +1762,195 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON MẢNG:
   }
 };
 
+/**
+ * Chuẩn hóa và khắc phục sự cố bóc tách JSON danh sách bài học
+ * Hỗ trợ bóc tách mảng JSON, JSON bị cắt cụt (truncated), markdown fences, và regex từng object
+ */
+export const robustParseCurriculumJson = (rawText: string): any[] | null => {
+  if (!rawText || typeof rawText !== 'string') return null;
+
+  let text = rawText.trim();
+  // Loại bỏ markdown code block nếu có
+  if (text.startsWith('```')) {
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+  }
+
+  const normalizeItem = (item: any) => {
+    if (!item || typeof item !== 'object') return null;
+    const name = String(
+      item.lessonName || item.lessonContent || item.lesson || item.topic || item.name || item.title || item.tenBai || item.ten_bai || ''
+    ).trim();
+
+    // Bỏ qua các hàng tiêu đề vô nghĩa
+    if (!name || /^(stt|tên bài|bài học|chủ đề|tuần|tiết|yêu cầu cần đạt|nội dung)$/i.test(name)) {
+      return null;
+    }
+
+    const periods = typeof item.periods === 'number'
+      ? item.periods
+      : parseInt(String(item.periods || item.soTiet || item.so_tiet || item.duration || '1').replace(/[^\d]/g, ''), 10) || 1;
+
+    const timing = String(item.timing || item.time || item.tuan || item.week || '').trim();
+    const yccd = String(item.yccd || item.lessonGoal || item.mucTieu || item.yeuCauCanDat || item.requirements || '').trim();
+
+    return {
+      lessonName: name,
+      lessonContent: name,
+      topic: name,
+      lesson: name,
+      periods,
+      timing: timing || 'Tuần 1',
+      time: timing || 'Tuần 1',
+      yccd,
+      lessonGoal: yccd,
+    };
+  };
+
+  const sanitizeAndFilter = (list: any[]): any[] | null => {
+    if (!Array.isArray(list)) return null;
+    const normalized = list.map(normalizeItem).filter(Boolean);
+    return normalized.length > 0 ? normalized : null;
+  };
+
+  // 1. Thử parse trực tiếp
+  try {
+    const direct = JSON.parse(text);
+    if (Array.isArray(direct)) {
+      const res = sanitizeAndFilter(direct);
+      if (res) return res;
+    }
+    if (direct && typeof direct === 'object') {
+      for (const k of Object.keys(direct)) {
+        if (Array.isArray(direct[k])) {
+          const res = sanitizeAndFilter(direct[k]);
+          if (res) return res;
+        }
+      }
+    }
+  } catch {
+    // Tiếp tục các phương án phục hồi
+  }
+
+  // 2. Tìm khối [ ... ] hoàn chỉnh bằng regex
+  const fullArrayMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+  if (fullArrayMatch) {
+    try {
+      const arr = JSON.parse(fullArrayMatch[0]);
+      const res = sanitizeAndFilter(arr);
+      if (res) return res;
+    } catch {
+      // Tiếp tục phục hồi mảng bị cắt cụt
+    }
+  }
+
+  // 3. Phục hồi mảng JSON bị cắt cụt (truncated response)
+  const firstBracket = text.indexOf('[');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBracket !== -1 && lastBrace > firstBracket) {
+    let candidate = text.substring(firstBracket, lastBrace + 1) + ']';
+    // Xóa dấu phẩy thừa trước dấu đóng ngoặc vuông nếu có
+    candidate = candidate.replace(/,\s*\]$/, ']');
+    try {
+      const arr = JSON.parse(candidate);
+      const res = sanitizeAndFilter(arr);
+      if (res) return res;
+    } catch {
+      // Thử xử lý unescaped control characters
+      try {
+        const cleaned = candidate.replace(/[\x00-\x1F\x7F-\x9F]/g, ' ');
+        const arr = JSON.parse(cleaned);
+        const res = sanitizeAndFilter(arr);
+        if (res) return res;
+      } catch {}
+    }
+  }
+
+  // 4. Trích xuất từng object JSON riêng lẻ bằng regex
+  const regexObjects: any[] = [];
+  const objectRegex = /\{[^{}]*"(?:lessonName|lesson|lessonContent|topic|name|title|tenBai)"[^{}]*\}/g;
+  let match: RegExpExecArray | null;
+  while ((match = objectRegex.exec(text)) !== null) {
+    try {
+      const obj = JSON.parse(match[0]);
+      const item = normalizeItem(obj);
+      if (item) regexObjects.push(item);
+    } catch {
+      // Bỏ qua object lỗi cú pháp
+    }
+  }
+  if (regexObjects.length > 0) {
+    return regexObjects;
+  }
+
+  // 5. Quét đối tượng mở rộng nhiều dòng với nested string/escaped quotes
+  const broadObjectRegex = /\{(?:[^{}"]|"(?:\\.|[^"\\])*")*\}/g;
+  while ((match = broadObjectRegex.exec(text)) !== null) {
+    try {
+      const obj = JSON.parse(match[0]);
+      const item = normalizeItem(obj);
+      if (item && !regexObjects.some(r => r.lessonName === item.lessonName && r.timing === item.timing)) {
+        regexObjects.push(item);
+      }
+    } catch {}
+  }
+  if (regexObjects.length > 0) {
+    return regexObjects;
+  }
+
+  return null;
+};
+
 export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: string) => {
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
   const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
-  const instruction = `Bạn là chuyên gia phân phối chương trình giáo dục.
+  const instruction = `Bạn là chuyên gia bóc tách phân phối chương trình giáo dục phổ thông (CT GDPT 2018).
 
-QUY TẮC BẮT BUỘC(THỰC THI NGHIÊM NGẶT):
-1. BẮT BUỘC bóc tách TẤT CẢ bài học có trong nội dung(KHÔNG ĐƯỢC bỏ sót bài nào, dù ngắn hay dài).
-2. Mỗi bài học / chủ đề / tiết kiểm tra là một object riêng biệt trong mảng JSON.
-3. TUYỆT ĐỐI không gộp nhiều bài thành một, không rút gọn, không tóm tắt.
-4. Giữ nguyên tên bài học chính xác từng chữ như trong gốc.
-5. Bỏ qua thông tin tiêu đề trang, quốc hiệu, chữ ký cán bộ.
-6. Chỉ gộp nếu một tiết kiểm tra xuất hiện nhiều lần liên tiếp với tên GIỐNG HỆT nhau.
+NHIỆM VỤ: Bóc tách toàn bộ danh sách các bài học / tiết dạy / chủ đề / bài kiểm tra từ tài liệu được cung cấp.
 
-Trạng thái: Trả về ĐÚNG định dạng JSON array (không có markdown, không có giải thích). Nếu bảng gốc có cột "Yêu cầu cần đạt" hoặc tương tự, hãy đưa nội dung đó vào thuộc tính "yccd".
-[{ "lessonName": "Tên bài", "periods": 2, "timing": "Tuần 1", "yccd": "Nội dung Yêu cầu cần đạt nếu có" }, ...]`;
+QUY TẮC BẮT BUỘC:
+1. BẮT BUỘC bóc tách TẤT CẢ các bài học / tiết dạy theo thứ tự từ đầu đến cuối năm học (HK1 và HK2). KHÔNG ĐƯỢC bỏ sót bài nào.
+2. Mỗi tiết học hoặc bài học là 1 object riêng biệt trong JSON array.
+3. Giữ nguyên tên bài học chính xác theo gốc (kể cả tiếng Việt hay tiếng Anh, ví dụ: "Unit 1: LIFE STORIES WE ADMIRE - Getting started").
+4. "periods": Số tiết (dạng số nguyên, ví dụ 1, 2).
+5. "timing": Tuần dạy hoặc thời điểm (ví dụ: "Tuần 1", "Tuần 2", ...).
+6. "yccd": Yêu cầu cần đạt / mục tiêu của bài học. Nếu trong tài liệu gốc quá dài, hãy tóm tắt cô đọng 1-2 câu trọng tâm nhất để đảm bảo phản hồi ngắn gọn và trọn vẹn 100% tất cả các bài học trong năm.
+7. Bỏ qua các tiêu đề hành chính (quốc hiệu, tên trường, lời mở đầu, chữ ký).
+
+Trả về mảng JSON thuần túy theo đúng JSON Schema đã khai báo.`;
 
   let parts: any[];
   if (pdfBase64) {
     parts = [
-      { text: instruction + '\n\nHãy phân tích PDF đính kèm và trích xuất toàn bộ danh sách bài học.' },
+      { text: instruction + '\n\nHãy phân tích file PDF đính kèm và trích xuất toàn bộ danh sách bài học theo phân phối chương trình.' },
       { inlineData: { mimeType: 'application/pdf', data: pdfBase64 } }
     ];
   } else {
-    parts = [{ text: instruction + `\n\nVĂN BẢN GỐC: \n"""\n${rawText.substring(0, 25000)}\n"""` }];
+    // Truyền tối đa 150.000 ký tự để không bỏ sót học kỳ 2 của các môn có PPCT dài
+    parts = [{ text: instruction + `\n\nVĂN BẢN GỐC PHÂN PHỐI CHƯƠNG TRÌNH: \n"""\n${rawText.substring(0, 150000)}\n"""` }];
   }
 
   const body = {
     contents: [{ role: 'user', parts }],
     generationConfig: {
       responseMimeType: 'application/json',
-      maxOutputTokens: 8192,
-      temperature: 0,
+      responseSchema: {
+        type: 'ARRAY' as any,
+        items: {
+          type: 'OBJECT' as any,
+          properties: {
+            lessonName: { type: 'STRING' as any },
+            periods: { type: 'INTEGER' as any },
+            timing: { type: 'STRING' as any },
+            yccd: { type: 'STRING' as any }
+          },
+          required: ['lessonName', 'periods', 'timing']
+        }
+      },
+      maxOutputTokens: 65536,
+      temperature: 0.1,
     },
   };
 
@@ -1806,7 +1966,7 @@ Trạng thái: Trả về ĐÚNG định dạng JSON array (không có markdown,
 
       if (!res.ok) {
         const errText = await res.text();
-        if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
+        if (res.status === 429 || errText.includes('RESOURCE_EXHAUSTED')) throw new Error('QUOTA_EXHAUSTED');
         if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
         throw new Error(`HTTP ${res.status}: ${errText}`);
       }
@@ -1815,28 +1975,7 @@ Trạng thái: Trả về ĐÚNG định dạng JSON array (không có markdown,
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error('AI trả về phản hồi rỗng khi phân tích phụ lục.');
 
-      // Step 1: Try direct parse (may be plain array)
-      let parsed: any = null;
-      try { parsed = JSON.parse(text); } catch { /* not pure JSON */ }
-
-      // Step 2: If wrapped in object (e.g. {"lessons":[...]}, {"data":[...]}), extract array
-      if (parsed && !Array.isArray(parsed) && typeof parsed === 'object') {
-        const keys = Object.keys(parsed);
-        for (const k of keys) {
-          if (Array.isArray(parsed[k]) && parsed[k].length > 0) {
-            parsed = parsed[k];
-            break;
-          }
-        }
-      }
-
-      // Step 3: Regex extract from markdown code block or raw text
-      if (!Array.isArray(parsed)) {
-        const match = text.match(/\[[\s\S]*\]/);
-        if (match) {
-          try { parsed = JSON.parse(match[0]); } catch { /* ignore */ }
-        }
-      }
+      const parsed = robustParseCurriculumJson(text);
 
       if (!Array.isArray(parsed) || parsed.length === 0) {
         throw new Error(`Không trích xuất được bài học nào. AI trả về: ${text.substring(0, 200)}`);
@@ -2260,6 +2399,119 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
   const departmentAuthorizedAiCodes = collectAuthorizedAiCodes(grade, JSON.stringify(options?.customCurriculumData || []), JSON.stringify(options?.curriculumDbData || []));
   const departmentAuthorizedNlsCodes = collectAuthorizedNlsCodes(grade, JSON.stringify(options?.customCurriculumData || []), JSON.stringify(options?.curriculumDbData || []));
   const isGeographyThptBatch = isStandaloneGeographySubject(subject) && ["10", "11", "12"].includes(String(grade).trim()) && !options?.customCurriculumData && geographyCurriculum.length > 0;
+
+  // ===== BATCH PROCESSING FOR CUSTOM CURRICULUM DATA (USER UPLOADED) =====
+  if (Array.isArray(options?.customCurriculumData) && options.customCurriculumData.length > 0) {
+    const customList = options.customCurriculumData;
+    const CUSTOM_BATCH_SIZE = 16;
+    const allBatchResults: any[] = [];
+    let weekCounter = 1;
+
+    for (let bIdx = 0; bIdx < customList.length; bIdx += CUSTOM_BATCH_SIZE) {
+      const batch = customList.slice(bIdx, bIdx + CUSTOM_BATCH_SIZE);
+      const batchNum = Math.floor(bIdx / CUSTOM_BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(customList.length / CUSTOM_BATCH_SIZE);
+
+      const bLines = [
+        CONTENT_INTEGRITY_RULES,
+        "",
+        `Bạn là Chuyên gia xây dựng Kế hoạch giáo dục Tổ chuyên môn tích hợp AI cho môn: ${subject}, lớp: ${grade}.`,
+        "",
+        AI_SUBJECT_GUIDELINES,
+        SOCIAL_INTEGRATION_GUIDELINES,
+        socialSelectionPrompt,
+        competencyGuardrails,
+        AI_COMPETENCY_ORDER_RULE,
+        "",
+        `DANH SÁCH ${batch.length} BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC GỐC DO GIÁO VIÊN CUNG CẤP (Lô ${batchNum}/${totalBatches}, bắt đầu từ Tuần ${weekCounter}):`,
+        JSON.stringify(batch, null, 2),
+        "",
+        "YÊU CẦU TUYỆT ĐỐI BẮT BUỘC:",
+        `1. TẠO ĐÚNG ĐỦ ${batch.length} HÀNG cho ${batch.length} bài học trên. KHÔNG ĐƯỢC BỎ SÓT BÀI NÀO.`,
+        "2. lessonGoal: SAO CHÉP Y NGUYÊN 100% nội dung YCCĐ từ dữ liệu trên. TUYỆT ĐỐI KHÔNG tóm tắt hay cắt xén.",
+        "3. TÍCH HỢP NLS và NL AI chi khi YCCĐ của bài có điểm chạm rõ ràng. Khi tích hợp NL AI bắt buộc ghi: Thành phần NL AI: NL[a/b/c/d] - [Tên thành phần]; Khối lớp: [Lớp]; Chủ đề: [Mã chủ đề]; Mã chỉ báo NL AI: [Mã chuẩn QĐ 2422].",
+        "   - Chủ đề A -> NLa (Tư duy lấy con người làm trung tâm)",
+        "   - Chủ đề B -> NLb (Đạo đức AI, an toàn, pháp luật và trách nhiệm)",
+        "   - Chủ đề C -> NLc (Các kĩ thuật và ứng dụng AI)",
+        "   - Chủ đề D -> NLd (Thiết kế, thử nghiệm và cải tiến hệ thống AI)",
+        `4. Phân bổ thời gian bắt đầu từ Tuần ${weekCounter}.`,
+        "5. socialIntegration: chỉ ghi đúng bài có điểm chạm; bài không phù hợp thì để chuỗi rỗng.",
+        "",
+        `Đầu ra: JSON Array gồm đúng ${batch.length} object với các trường: time, lessonContent, periods, lessonGoal, socialIntegration, digitalCompetencyTT02, aiCompetency2422Integrated.`
+      ];
+      const batchPrompt = bLines.join("\n");
+
+      const batchBody = {
+        contents: [{ role: 'user', parts: [{ text: batchPrompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          maxOutputTokens: 65536,
+          temperature: 0.1,
+          responseSchema: {
+            type: 'ARRAY' as any,
+            items: {
+              type: 'OBJECT' as any,
+              properties: {
+                time: { type: 'STRING' as any },
+                lessonContent: { type: 'STRING' as any },
+                periods: { type: 'STRING' as any },
+                lessonGoal: { type: 'STRING' as any },
+                digitalCompetencyTT02: { type: 'STRING' as any },
+                aiCompetency2422Integrated: { type: 'STRING' as any },
+                socialIntegration: { type: 'STRING' as any }
+              },
+              required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'socialIntegration', 'digitalCompetencyTT02', 'aiCompetency2422Integrated'],
+            },
+          },
+        },
+      };
+
+      const bApiKey = localStorage.getItem('GEMINI_API_KEY');
+      if (!bApiKey) throw new Error('API_KEY_REQUIRED');
+      const bStartModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+      const bModels = getFallbackModels(bStartModel);
+      let batchResult: any[] | null = null;
+
+      for (let mi = 0; mi < bModels.length; mi++) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${bModels[mi]}:generateContent?key=${bApiKey}`;
+          const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(batchBody) });
+          if (!res.ok) {
+            const errText = await res.text();
+            if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
+            if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
+            throw new Error(`HTTP ${res.status}: ${errText}`);
+          }
+          const bjson = await res.json();
+          const btext = bjson?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!btext) throw new Error('Empty batch response');
+          let bparsed: any = null;
+          let bstripped = stripMarkdownJson(btext);
+          try { bparsed = JSON.parse(bstripped); } catch {
+            try {
+              const ob = (bstripped.match(/{/g)||[]).length, cb = (bstripped.match(/}/g)||[]).length;
+              const oa = (bstripped.match(/\[/g)||[]).length, ca = (bstripped.match(/]/g)||[]).length;
+              for (let x=0; x<ob-cb; x++) bstripped+='}';
+              for (let x=0; x<oa-ca; x++) bstripped+=']';
+              bparsed = JSON.parse(bstripped);
+            } catch { /* ignore */ }
+          }
+          if (Array.isArray(bparsed) && bparsed.length > 0) {
+            batchResult = bparsed;
+            weekCounter += Math.max(1, Math.ceil(bparsed.reduce((s: number, it: any) => s + (parseInt(it.periods||'2')||2), 0) / 5));
+            break;
+          }
+        } catch (bErr: any) {
+          if (bErr.message?.startsWith('API_KEY_INVALID') || bErr.message?.includes('QUOTA_EXHAUSTED')) throw bErr;
+          if (mi === bModels.length - 1) throw bErr;
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      }
+      if (batchResult) allBatchResults.push(...batchResult);
+    }
+    if (allBatchResults.length > 0) return sanitizeGeneratedCompetencyRows(allBatchResults, grade, departmentAuthorizedAiCodes, departmentAuthorizedNlsCodes);
+  }
+  // ===== END BATCH PROCESSING FOR CUSTOM CURRICULUM DATA =====
 
   // ===== BATCH PROCESSING FOR DIA LI THPT (prevents output token truncation) =====
   if (isGeographyThptBatch) {
@@ -2813,14 +3065,18 @@ ${input.requirementsText}
     throw error;
   }
 };
-export const analyzeLessonSource = async (fileBase64: string, mimeType: string, options: { apiKey?: string; aiModel?: string }) => {
+export const analyzeLessonSource = async (
+  fileBase64: string,
+  mimeType: string,
+  options: { apiKey?: string; aiModel?: string; rawText?: string } = {}
+) => {
   const apiKey = options.apiKey || localStorage.getItem('GEMINI_API_KEY') || '';
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
   const startModel = options.aiModel || localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
   const promptText = `Bạn là một Chuyên gia Giáo dục và Thị giác máy tính (Computer Vision).
-Nhiệm vụ của bạn là đọc và phân tích bức ảnh/tài liệu (trang Sách giáo khoa) được đính kèm, sau đó trích xuất các thông tin cốt lõi để điền vào form tạo Kế hoạch bài dạy.
+Nhiệm vụ của bạn là đọc và phân tích tài liệu/ảnh (trang Sách giáo khoa/kế hoạch bài dạy) được cung cấp, sau đó trích xuất các thông tin cốt lõi để điền vào form tạo Kế hoạch bài dạy.
 
 YÊU CẦU:
 1. Trích xuất Tên bài học (hoặc nội dung trọng tâm).
@@ -2829,17 +3085,23 @@ YÊU CẦU:
 
 Trả về JSON hợp lệ: {"topic": "Tên bài học", "objectives": "Yêu cầu cần đạt...", "methodologies": "Phương pháp..."}`;
 
+  const isRawText = Boolean(options.rawText) || mimeType === 'text/plain';
+
   for (let i = 0; i < modelsToTry.length; i++) {
     const currentModel = modelsToTry[i];
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const parts: any[] = isRawText
+        ? [{ text: `${promptText}\n\nNỘI DUNG TÀI LIỆU:\n${options.rawText || fileBase64}` }]
+        : [
+            { inlineData: { data: fileBase64, mimeType } },
+            { text: promptText }
+          ];
+
       const body = {
         contents: [{
           role: 'user',
-          parts: [
-            { inlineData: { data: fileBase64, mimeType } },
-            { text: promptText }
-          ]
+          parts
         }],
         generationConfig: {
           responseMimeType: 'application/json',

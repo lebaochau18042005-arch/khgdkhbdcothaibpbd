@@ -181,8 +181,8 @@ export default function UpgradePlan({
         try {
             let text = "";
             if (isExcel) {
-                const excelRows = await parseExcelFile(uploadedFile);
-                text = excelRows.map(r => Object.values(r).join(" | ")).join("\n");
+                const excelRes = await parseExcelFile(uploadedFile);
+                text = excelRes.text;
             } else {
                 const buffer = await uploadedFile.arrayBuffer();
                 const result = await mammoth.extractRawText({ arrayBuffer: buffer });
@@ -307,8 +307,8 @@ export default function UpgradePlan({
                 setRawText("");
                 analysis = await analyzeExistingPlan("", base64, imagePayload, pl1Text || undefined);
             } else if (isExcel) {
-                const excelRows = await parseExcelFile(uploadedFile);
-                const text = excelRows.map(r => Object.values(r).join(" | ")).join("\n");
+                const excelRes = await parseExcelFile(uploadedFile);
+                const text = excelRes.text;
                 if (!text || text.trim().length < 30) {
                     throw new Error("Không bóc tách được nội dung từ file Excel này.");
                 }

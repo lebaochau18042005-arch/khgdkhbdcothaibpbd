@@ -3,6 +3,12 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
+// Auto-reload on dynamic import failure when a new deployment invalidates old chunk hashes
+window.addEventListener("vite:preloadError", (event) => {
+  console.warn("[Vite] Dynamic import preload error detected, reloading page for latest assets...", event);
+  window.location.reload();
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

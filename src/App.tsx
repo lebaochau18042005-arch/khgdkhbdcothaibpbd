@@ -48,7 +48,9 @@ import { ExportGatekeeperModal } from "./components/ExportGatekeeperModal";
 import { validateGatekeeper } from "./utils/gatekeeperValidator";
 import { parseExcelFile, exportAlignmentRowsToExcel } from "./utils/excelParser";
 import { SOCIAL_INTEGRATION_OPTIONS } from "./data/socialIntegrations";
-import { normalizeAiCodesInText2422 } from "./data/aiRequirements2422Db";
+import { normalizeAiCodesInText2422, formatAiCode2422, normalizeAiCode2422 } from "./data/aiRequirements2422Db";
+// @ts-ignore
+import * as mammoth from "mammoth";
 
 const UpgradePlan = React.lazy(() => import("./components/UpgradePlan"));
 const SuDiaSkills = React.lazy(() => import("./components/SuDiaSkills"));
@@ -2810,7 +2812,6 @@ export default function App() {
     setUploadingSource(true);
     try {
       if (isWord) {
-        const mammoth = await import("mammoth");
         const buffer = await file.arrayBuffer();
         const extracted = await mammoth.extractRawText({ arrayBuffer: buffer });
         const rawText = extracted.value || "";
@@ -2825,8 +2826,8 @@ export default function App() {
         }));
         alert("✅ Phân tích file Word thành công! Đã tự động điền thông tin vào form.");
       } else if (isExcel) {
-        const excelRows = await parseExcelFile(file);
-        const rawText = excelRows.map(r => Object.values(r).join(" | ")).join("\n");
+        const excelRes = await parseExcelFile(file);
+        const rawText = excelRes.text;
         const data = await analyzeLessonSource("", "text/plain", { apiKey, aiModel, rawText });
         setLessonPlanInput(prev => ({
           ...prev,
@@ -3088,7 +3089,6 @@ export default function App() {
         data = await parseCurriculumAppendix("", base64);
       } else if (isDocx) {
         const buffer = await uploadedFile.arrayBuffer();
-        const mammoth = await import("mammoth");
         const [htmlRes, rawRes] = await Promise.all([
           mammoth.convertToHtml({ arrayBuffer: buffer.slice(0) }).catch(() => ({ value: "" })),
           mammoth.extractRawText({ arrayBuffer: buffer.slice(0) }).catch(() => ({ value: "" }))

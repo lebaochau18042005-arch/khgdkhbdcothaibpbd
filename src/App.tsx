@@ -49,8 +49,8 @@ import { validateGatekeeper } from "./utils/gatekeeperValidator";
 import { parseExcelFile, exportAlignmentRowsToExcel } from "./utils/excelParser";
 import { SOCIAL_INTEGRATION_OPTIONS } from "./data/socialIntegrations";
 import { normalizeAiCodesInText2422, formatAiCode2422, normalizeAiCode2422 } from "./data/aiRequirements2422Db";
-// @ts-ignore
 import * as mammoth from "mammoth";
+import { parseDocxHtmlTable, parseExcelCurriculumTable } from "./utils/docxTableParser";
 
 const UpgradePlan = React.lazy(() => import("./components/UpgradePlan"));
 const SuDiaSkills = React.lazy(() => import("./components/SuDiaSkills"));
@@ -3069,11 +3069,16 @@ export default function App() {
 
       if (isExcel) {
         const parseRes = await parseExcelFile(uploadedFile);
-        const text = parseRes.text;
-        if (!text || text.trim().length < 20) {
-          throw new Error("File Excel không có nội dung hoặc đọc bị trống. Hãy kiểm tra lại bảng tính.");
+        const directExcelData = parseExcelCurriculumTable(parseRes.tables);
+        if (directExcelData && directExcelData.length >= 2) {
+          data = directExcelData;
+        } else {
+          const text = parseRes.text;
+          if (!text || text.trim().length < 20) {
+            throw new Error("File Excel không có nội dung hoặc đọc bị trống. Hãy kiểm tra lại bảng tính.");
+          }
+          data = await parseCurriculumAppendix(text);
         }
-        data = await parseCurriculumAppendix(text);
       } else if (isPdf) {
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
@@ -3095,19 +3100,28 @@ export default function App() {
         ]);
         const htmlVal = htmlRes?.value || "";
         const rawVal = rawRes?.value || "";
-        if (htmlVal.includes("<table")) {
-          const tableMarkdown = htmlVal
-            .replace(/<li[^>]*>/gi, "\n- ")
-            .replace(/<p[^>]*>/gi, "\n")
-            .replace(/<br\s*\/?>/gi, "\n")
-            .replace(/<tr[^>]*>/gi, "\n---\n")
-            .replace(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi, " | $1 ")
-            .replace(/<[^>]+>/g, " ")
-            .replace(/[ \t]+/g, " ");
-          text = `=== BẢNG PHÂN PHỐI CHƯƠNG TRÌNH ===\n${tableMarkdown}\n\n=== NỘI DUNG VĂN BẢN GỐC ===\n${rawVal}`;
+
+        // 1. Thử bóc tách trực tiếp bằng bộ bóc tách bảng Word (Bảo toàn 100% nguyên văn YCCĐ)
+        const directDocxData = parseDocxHtmlTable(htmlVal);
+        if (directDocxData && directDocxData.length >= 2) {
+          data = directDocxData;
+        } else {
+          // Fallback sang AI nếu không tìm thấy bảng chuẩn
+          let text = rawVal;
+          if (htmlVal.includes("<table")) {
+            const tableMarkdown = htmlVal
+              .replace(/<li[^>]*>/gi, "\n- ")
+              .replace(/<p[^>]*>/gi, "\n")
+              .replace(/<br\s*\/?>/gi, "\n")
+              .replace(/<tr[^>]*>/gi, "\n---\n")
+              .replace(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi, " | $1 ")
+              .replace(/<[^>]+>/g, " ")
+              .replace(/[ \t]+/g, " ");
+            text = `=== BẢNG PHÂN PHỐI CHƯƠNG TRÌNH ===\n${tableMarkdown}\n\n=== NỘI DUNG VĂN BẢN GỐC ===\n${rawVal}`;
+          }
+          if (!text || text.trim().length < 30) throw new Error("File Word không có nội dung hoặc đọc bị trống. Hãy kiểm tra lại file.");
+          data = await parseCurriculumAppendix(text);
         }
-        if (!text || text.trim().length < 30) throw new Error("File Word không có nội dung hoặc đọc bị trống. Hãy kiểm tra lại file.");
-        data = await parseCurriculumAppendix(text);
       } else {
         throw new Error(`Định dạng file "${uploadedFile.name}" không được hỗ trợ. Vui lòng chọn file định dạng .xlsx, .xls, .docx hoặc .pdf.`);
       }

@@ -570,64 +570,68 @@ function autoAlignCompetencyForInstructionalLesson(row: any, grade: string = "10
   const normSubject = (subject || row.subject || "").toLowerCase();
   const isEnglish = normSubject.includes("tiếng anh") || normSubject.includes("english") || /units*d|getting started|language|reading|speaking|listening|writing/i.test(content);
 
-  // Check if NLS is missing or rejected lazily
-  const nlsMissing = !row.digitalCompetencyTT02 || /not integrated|không tích hợp|không gán mã/i.test(row.digitalCompetencyTT02);
+  // 1. NĂNG LỰC SỐ (NLS)
+  const isNlsDetailed = row.digitalCompetencyTT02 && /Hành vi|Sản phẩm|YCCĐ/i.test(row.digitalCompetencyTT02);
+  const nlsMissing = !row.digitalCompetencyTT02 || /not integrated|không tích hợp|không gán mã/i.test(row.digitalCompetencyTT02) || !isNlsDetailed;
+
   if (nlsMissing) {
     if (isEnglish) {
       if (/getting started/i.test(combined)) {
-        row.digitalCompetencyTT02 = "1.1.NCa: Tìm kiếm và khai thác hình ảnh, tư liệu âm thanh/video số về chủ đề bài học qua môi trường số.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 1.1.NCa; Thành phần NLS: Duyệt, tìm kiếm và lọc dữ liệu số\n- YCCĐ NLS: Tìm kiếm và khai thác hình ảnh, tư liệu âm thanh/video số về chủ đề bài học qua môi trường số.\n- Hành vi HS: Sử dụng công cụ tìm kiếm số để thu thập từ vựng và hình ảnh mở đầu.\n- Sản phẩm đầu ra: Bộ sưu tập từ vựng, hình ảnh số theo chủ đề bài học.`;
       } else if (/language|pronunciation|grammar|vocabulary/i.test(combined)) {
-        row.digitalCompetencyTT02 = "6.2.NCa: Sử dụng phần mềm số và từ điển trực tuyến để rèn luyện phát âm và tra cứu cấu trúc ngôn ngữ.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 6.2.NCa; Thành phần NLS: Sử dụng phần mềm và công nghệ số chuyên ngành\n- YCCĐ NLS: Sử dụng phần mềm số và từ điển trực tuyến để rèn luyện phát âm và tra cứu cấu trúc ngôn ngữ.\n- Hành vi HS: Tra cứu ngữ âm, phát âm mẫu trên ứng dụng từ điển số và ghi âm đối chiếu.\n- Sản phẩm đầu ra: File ghi âm phát âm chuẩn và bảng tra cứu từ vựng số.`;
       } else if (/reading/i.test(combined)) {
-        row.digitalCompetencyTT02 = "1.2.NCa: Đánh giá độ tin cậy của thông tin số và khai thác tư liệu đọc mở rộng bằng tiếng Anh.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 1.2.NCa; Thành phần NLS: Đánh giá dữ liệu, thông tin và nội dung số\n- YCCĐ NLS: Đánh giá độ tin cậy của thông tin số và khai thác tư liệu đọc mở rộng bằng tiếng Anh.\n- Hành vi HS: Đọc hiểu và phân tích độ tin cậy của các bài báo, tư liệu tiếng Anh trên internet.\n- Sản phẩm đầu ra: Bản tóm tắt bài đọc kèm danh mục nguồn tin kiểm chứng.`;
       } else if (/speaking/i.test(combined)) {
-        row.digitalCompetencyTT02 = "2.2.NCa: Chia sẻ bản ghi âm, clip thuyết trình tiếng Anh qua nền tảng số của lớp.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 2.2.NCa; Thành phần NLS: Chia sẻ thông tin và nội dung số\n- YCCĐ NLS: Chia sẻ bản ghi âm, clip thuyết trình tiếng Anh qua nền tảng số của lớp.\n- Hành vi HS: Ghi hình/ghi âm bài nói tiếng Anh và đăng tải lên không gian học tập trực tuyến.\n- Sản phẩm đầu ra: Video/audio thuyết trình tiếng Anh được số hóa hoàn chỉnh.`;
       } else if (/listening/i.test(combined)) {
-        row.digitalCompetencyTT02 = "1.1.NCa: Tiếp nhận, xử lý và điều hướng giữa các nguồn học liệu âm thanh số trong học tập.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 1.1.NCa; Thành phần NLS: Duyệt, tìm kiếm và lọc dữ liệu số\n- YCCĐ NLS: Tiếp nhận, xử lý và điều hướng giữa các nguồn học liệu âm thanh số trong học tập.\n- Hành vi HS: Nghe podcast/audio số, điều chỉnh tốc độ nghe và ghi chú thông tin then chốt.\n- Sản phẩm đầu ra: Bản ghi chép (note-taking) số hóa các ý chính từ bài nghe.`;
       } else if (/writing/i.test(combined)) {
-        row.digitalCompetencyTT02 = "3.1.NCa: Tạo lập và định dạng bài viết đoạn văn, bài luận tiếng Anh bằng công cụ soạn thảo số.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 3.1.NCa; Thành phần NLS: Phát triển nội dung số\n- YCCĐ NLS: Tạo lập và định dạng bài viết đoạn văn, bài luận tiếng Anh bằng công cụ soạn thảo số.\n- Hành vi HS: Soạn thảo bài viết, sử dụng công cụ kiểm tra chính tả/ngữ pháp và định dạng văn bản số.\n- Sản phẩm đầu ra: Bài luận tiếng Anh được số hóa và trình bày chuẩn mực.`;
       } else if (/project|looking back/i.test(combined)) {
-        row.digitalCompetencyTT02 = "2.4.NCa: Hợp tác nhóm trực tuyến trên nền tảng số để thiết kế sản phẩm dự án học tập.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 2.4.NCa; Thành phần NLS: Hợp tác thông qua công nghệ số\n- YCCĐ NLS: Hợp tác nhóm trực tuyến trên nền tảng số để thiết kế sản phẩm dự án học tập.\n- Hành vi HS: Phân công nhiệm vụ nhóm qua bảng số, cùng chỉnh sửa slide thuyết trình dự án.\n- Sản phẩm đầu ra: Bộ slide thuyết trình dự án hoàn chỉnh của nhóm trên không gian số.`;
       } else {
-        row.digitalCompetencyTT02 = "1.1.NCa: Khai thác dữ liệu, thông tin số phục vụ nhiệm vụ học tập.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 1.1.NCa; Thành phần NLS: Duyệt, tìm kiếm và lọc dữ liệu số\n- YCCĐ NLS: Khai thác dữ liệu, thông tin số chính thống phục vụ nhiệm vụ học tập tiếng Anh.\n- Hành vi HS: Tìm kiếm và chọn lọc tư liệu số liên quan đến bài học.\n- Sản phẩm đầu ra: Phiếu học tập số hóa ghi nhận thông tin đã tìm kiếm.`;
       }
     } else {
       // Non-English subjects (Địa lí, Lịch sử, Toán, Lý, Hóa, Sinh, Tin học, Công nghệ, GDCD...)
       if (/thực hành|báo cáo|dự án|tuyên truyền|sản phẩm|infographic|áp phích|poster|thuyết trình/i.test(combined)) {
-        row.digitalCompetencyTT02 = "3.1.NCa: Tạo lập, biên tập và định dạng sản phẩm số phục vụ báo cáo thực hành, tuyên truyền hoặc dự án học tập.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 3.1.NCa; Thành phần NLS: Phát triển nội dung số\n- YCCĐ NLS: Tạo lập, biên tập và định dạng sản phẩm số phục vụ báo cáo thực hành, tuyên truyền hoặc dự án học tập.\n- Hành vi HS: Sử dụng công cụ đồ họa/soạn thảo số để thiết kế báo cáo, infographic hoặc poster số.\n- Sản phẩm đầu ra: Báo cáo thực hành/infographic số được số hóa và chia sẻ trên nền tảng học tập của lớp.`;
       } else if (/đối chiếu|kiểm chứng|so sánh|đánh giá|phản biện|độ tin cậy|chọn lọc/i.test(combined)) {
-        row.digitalCompetencyTT02 = "1.2.NCa: Đánh giá dữ liệu, thông tin và nội dung số; kiểm chứng chéo độ tin cậy của các nguồn học liệu số.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 1.2.NCa; Thành phần NLS: Đánh giá dữ liệu, thông tin và nội dung số\n- YCCĐ NLS: Đánh giá dữ liệu, thông tin và nội dung số; kiểm chứng chéo độ tin cậy của các nguồn học liệu số.\n- Hành vi HS: Tra cứu nhiều nguồn tư liệu số chính thống, đối chiếu và thẩm định độ chính xác của thông tin.\n- Sản phẩm đầu ra: Bảng đối chiếu và thẩm định độ tin cậy của các nguồn dữ liệu số.`;
       } else if (/chia sẻ|thảo luận|làm việc nhóm|hợp tác|trao đổi/i.test(combined)) {
-        row.digitalCompetencyTT02 = "2.4.NCa: Hợp tác nhóm trực tuyến thông qua công cụ và nền tảng số để hoàn thành nhiệm vụ học tập.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 2.4.NCa; Thành phần NLS: Hợp tác thông qua công nghệ số\n- YCCĐ NLS: Hợp tác nhóm trực tuyến thông qua công cụ và nền tảng số để hoàn thành nhiệm vụ học tập.\n- Hành vi HS: Phối hợp làm việc nhóm trên tài liệu số dùng chung, thảo luận và phản hồi trực tuyến.\n- Sản phẩm đầu ra: Sản phẩm học tập hợp tác nhóm được số hóa hoàn chỉnh.`;
       } else {
-        row.digitalCompetencyTT02 = "1.1.NCa: Tìm kiếm, duyệt và lọc dữ liệu, thông tin số chính thống phục vụ yêu cầu cần đạt của bài học.";
+        row.digitalCompetencyTT02 = `Mã chỉ báo NLS: 1.1.NCa; Thành phần NLS: Duyệt, tìm kiếm và lọc dữ liệu số\n- YCCĐ NLS: Tìm kiếm, duyệt và lọc dữ liệu, thông tin số chính thống phục vụ yêu cầu cần đạt của bài học.\n- Hành vi HS: Sử dụng từ khóa logic để tra cứu văn bản, biểu đồ, hình ảnh số chính thống trên internet.\n- Sản phẩm đầu ra: Bộ dữ liệu số tổng hợp thông tin cốt lõi phục vụ bài học.`;
       }
     }
   }
 
-  // Check if NL AI is missing or rejected lazily
-  const aiMissing = !row.aiCompetency2422Integrated || /not integrated|không tích hợp|không gán mã/i.test(row.aiCompetency2422Integrated);
+  // 2. NĂNG LỰC AI (NL AI)
+  const isAiDetailed = row.aiCompetency2422Integrated && /Hành vi|Sản phẩm|Tiêu chí/i.test(row.aiCompetency2422Integrated);
+  const aiMissing = !row.aiCompetency2422Integrated || /not integrated|không tích hợp|không gán mã/i.test(row.aiCompetency2422Integrated) || !isAiDetailed;
+
   if (aiMissing) {
     if (isEnglish) {
       if (/getting started/i.test(combined)) {
-        row.aiCompetency2422Integrated = `NLc - ${g}.C3.1: Kỹ thuật Prompt Engineering cơ bản (Sử dụng prompt để AI gợi ý từ vựng, ngữ cảnh giao tiếp theo chủ đề bài học và đối chiếu với SGK).`;
+        row.aiCompetency2422Integrated = `Thành phần NL AI: NLc - Các kĩ thuật và ứng dụng AI; Khối lớp: ${g}; Chủ đề: C3; Mã chỉ báo NL AI: NLc-${g}.C3.1\n- Yêu cầu cần đạt AI: Kỹ thuật Prompt Engineering cơ bản (Sử dụng prompt để AI gợi ý từ vựng, ngữ cảnh giao tiếp theo chủ đề bài học).\n- Hành vi học sinh: Học sinh nhập câu lệnh prompt có bối cảnh để AI gợi ý từ vựng và câu đàm thoại; đối chiếu với SGK.\n- Sản phẩm đầu ra: Lịch sử câu lệnh prompt và bảng từ vựng gợi ý đã được kiểm chứng.\n- Tiêu chí đánh giá: Câu lệnh rõ ràng, thông tin từ vựng chính xác và phù hợp chủ đề.`;
       } else if (/language|pronunciation|grammar|vocabulary/i.test(combined)) {
-        row.aiCompetency2422Integrated = `NLc - ${g}.C2.1: Ứng dụng AI trong học tập (Sử dụng AI hỗ trợ giải thích sắc thái từ vựng, ngữ pháp; học sinh đóng vai trò kiểm soát).`;
+        row.aiCompetency2422Integrated = `Thành phần NL AI: NLc - Các kĩ thuật và ứng dụng AI; Khối lớp: ${g}; Chủ đề: C2; Mã chỉ báo NL AI: NLc-${g}.C2.1\n- Yêu cầu cần đạt AI: Ứng dụng AI trong học tập ngôn ngữ (Sử dụng AI giải thích sắc thái từ vựng, cấu trúc ngữ pháp).\n- Hành vi học sinh: Học sinh yêu cầu AI phân biệt các cấu trúc ngữ pháp tương đồng và đưa ra ví dụ minh họa.\n- Sản phẩm đầu ra: Bảng so sánh ngữ pháp/sắc thái từ vựng do AI gợi ý và học sinh chỉnh sửa.\n- Tiêu chí đánh giá: Giải thích đúng ngữ pháp, có ví dụ đối chiếu chuẩn xác với SGK.`;
       } else if (/reading/i.test(combined)) {
-        row.aiCompetency2422Integrated = `NLa - ${g}.A3.1: Kiểm soát và giám sát AI (Đọc hiểu văn bản SGK và kiểm chứng tính chính xác của các nội dung tóm tắt/câu hỏi do AI tạo ra).`;
+        row.aiCompetency2422Integrated = `Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: ${g}; Chủ đề: A3; Mã chỉ báo NL AI: NLa-${g}.A3.1\n- Yêu cầu cần đạt AI: Kiểm soát và giám sát AI (Đọc hiểu văn bản SGK và kiểm chứng tính chính xác của bản tóm tắt do AI tạo ra).\n- Hành vi học sinh: Học sinh yêu cầu AI tóm tắt văn bản đọc, sau đó rà soát và chỉ ra các điểm AI tóm tắt chưa chuẩn hoặc ảo giác.\n- Sản phẩm đầu ra: Bản nhận xét đối chiếu văn bản tóm tắt của AI với nội dung bài đọc SGK.\n- Tiêu chí đánh giá: Phát hiện chính xác điểm chưa chuẩn xác của AI, lập luận dựa trên dẫn chứng bài đọc.`;
       } else if (/speaking/i.test(combined)) {
-        row.aiCompetency2422Integrated = `NLc - ${g}.C2.1: Ứng dụng AI trong học tập (Tương tác với AI chatbot luyện tập phản xạ giao tiếp tiếng Anh theo chủ đề).`;
+        row.aiCompetency2422Integrated = `Thành phần NL AI: NLc - Các kĩ thuật và ứng dụng AI; Khối lớp: ${g}; Chủ đề: C2; Mã chỉ báo NL AI: NLc-${g}.C2.1\n- Yêu cầu cần đạt AI: Ứng dụng AI tương tác đàm thoại (Luyện tập phản xạ giao tiếp tiếng Anh theo chủ đề).\n- Hành vi học sinh: Học sinh tương tác thoại hoặc chat với AI chatbot đóng vai nhân vật trong tình huống giao tiếp.\n- Sản phẩm đầu ra: Bản ghi chép/lịch sử đoạn hội thoại tiếng Anh với AI.\n- Tiêu chí đánh giá: Phản xạ ngôn ngữ tự nhiên, sử dụng đúng từ vựng và cấu trúc của bài học.`;
       } else if (/listening/i.test(combined)) {
-        row.aiCompetency2422Integrated = `NLa - ${g}.A1.1: Con người trong hệ thống AI (Học sinh nghe hiểu audio gốc và đánh giá độ chính xác của phụ đề do AI nhận diện).`;
+        row.aiCompetency2422Integrated = `Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: ${g}; Chủ đề: A1; Mã chỉ báo NL AI: NLa-${g}.A1.1\n- Yêu cầu cần đạt AI: Con người trong hệ thống AI (Đánh giá độ chính xác của phụ đề do AI nhận diện).\n- Hành vi học sinh: Học sinh nghe audio gốc và kiểm tra lại transcript/phụ đề tự động do AI sinh ra.\n- Sản phẩm đầu ra: Bản transcript đã được học sinh nghe và đính chính các lỗi nhận diện của AI.\n- Tiêu chí đánh giá: Sửa đúng các từ vựng AI nhận diện sai, hiểu chính xác nội dung audio.`;
       } else if (/writing/i.test(combined)) {
-        row.aiCompetency2422Integrated = `NLb - ${g}.B3.1: Trách nhiệm xã hội khi sử dụng AI (Sử dụng AI gợi ý dàn ý, cam kết không sao chép nguyên văn và ghi rõ nguồn khi dùng AI).`;
+        row.aiCompetency2422Integrated = `Thành phần NL AI: NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm; Khối lớp: ${g}; Chủ đề: B3; Mã chỉ báo NL AI: NLb-${g}.B3.1\n- Yêu cầu cần đạt AI: Liêm chính học thuật và trách nhiệm khi sử dụng AI (Ghi rõ nguồn, không sao chép nguyên văn).\n- Hành vi học sinh: Sử dụng AI để gợi ý dàn ý, tự viết bài luận và lập bảng minh bạch nội dung AI gợi ý.\n- Sản phẩm đầu ra: Bài viết hoàn chỉnh kèm phần chú thích minh bạch mức độ sử dụng AI.\n- Tiêu chí đánh giá: Tự thể hiện văn phong cá nhân, tuyệt đối không sao chép nguyên văn từ AI, có trích dẫn rõ ràng.`;
       } else if (/project|looking back/i.test(combined)) {
-        row.aiCompetency2422Integrated = `NLd - ${g}.D1.1: Nhận diện bài toán và đề xuất giải pháp ứng dụng AI (Thiết kế bài thuyết trình dự án có sự hỗ trợ công cụ AI).`;
+        row.aiCompetency2422Integrated = `Thành phần NL AI: NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI; Khối lớp: ${g}; Chủ đề: D1; Mã chỉ báo NL AI: NLd-${g}.D1.1\n- Yêu cầu cần đạt AI: Thiết kế dự án học tập có ứng dụng AI (Thiết kế bài thuyết trình dự án có sự hỗ trợ công cụ AI).\n- Hành vi học sinh: Sử dụng AI để lên ý tưởng trình bày, hỗ trợ thiết kế slide và chuẩn bị nội dung thuyết trình.\n- Sản phẩm đầu ra: Hồ sơ dự án học tập có ứng dụng AI và được kiểm chứng bởi học sinh.\n- Tiêu chí đánh giá: Ý tưởng sáng tạo, nội dung tiếng Anh chuẩn xác, minh bạch công cụ AI sử dụng.`;
       } else {
-        row.aiCompetency2422Integrated = `NLc - ${g}.C3.1: Kỹ thuật Prompt Engineering cơ bản (Đặt câu lệnh có cấu trúc để khai thác tư liệu học tập có chọn lọc).`;
+        row.aiCompetency2422Integrated = `Thành phần NL AI: NLc - Các kĩ thuật và ứng dụng AI; Khối lớp: ${g}; Chủ đề: C3; Mã chỉ báo NL AI: NLc-${g}.C3.1\n- Yêu cầu cần đạt AI: Kỹ thuật Prompt Engineering (Đặt câu lệnh có cấu trúc để khai thác tư liệu học tập có chọn lọc).\n- Hành vi học sinh: Thiết lập câu lệnh truy vấn thông tin học tập, phân tích và chọn lọc kết quả từ AI.\n- Sản phẩm đầu ra: Phiếu học tập ghi nhận câu lệnh prompt và kết quả chọn lọc.\n- Tiêu chí đánh giá: Prompt có cấu trúc rõ ràng, thông tin thu nhận có tính chọn lọc và chính xác.`;
       }
     } else {
-      // Non-English subjects: Contextually distribute across NLa, NLb, NLc, NLd
+      // Non-English subjects (Địa lí, Lịch sử, Toán, Lý, Hóa, Sinh, Tin học, Công nghệ, GDCD...)
       const isPracticalOrProject = /thực hành|báo cáo|dự án|tuyên truyền|sản phẩm|infographic|thiết kế|địa phương/i.test(combined);
       const isSecurityOrEthics = /chủ quyền|biển đảo|an ninh|pháp luật|đạo đức|tin giả|deepfake|bản quyền|liêm chính|môi trường|bền vững|tài nguyên/i.test(combined);
       const isDataOrSim = /số liệu|biểu đồ|bảng số liệu|bản đồ|gis|thống kê|tính toán|mô phỏng|thuật toán|dữ liệu/i.test(combined);
@@ -637,55 +641,55 @@ function autoAlignCompetencyForInstructionalLesson(row: any, grade: string = "10
       if (g === "12") {
         if (isSecurityOrEthics) {
           if (/môi trường|bền vững|tài nguyên/i.test(combined)) {
-            row.aiCompetency2422Integrated = "NLb - 12.B3.1: Trách nhiệm xã hội và tính bền vững của AI (Đánh giá tác động tiêu thụ tài nguyên tính toán của AI đối với môi trường và phát triển bền vững).";
+            row.aiCompetency2422Integrated = `Thành phần NL AI: NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm; Khối lớp: 12; Chủ đề: B3; Mã chỉ báo NL AI: NLb-12.B3.1\n- Yêu cầu cần đạt AI: Đánh giá được tác động của việc tiêu thụ năng lượng và tài nguyên tính toán của AI đối với môi trường và phát triển bền vững.\n- Hành vi học sinh: Học sinh phân tích tác động môi trường từ hạ tầng AI và đề xuất giải pháp sử dụng công nghệ xanh, bền vững.\n- Sản phẩm đầu ra: Báo cáo ngắn hoặc sơ đồ tư duy đánh giá tác động môi trường của AI trong môn học.\n- Tiêu chí đánh giá: Lập luận có căn cứ khoa học, đề xuất giải pháp khả thi gắn với bảo vệ môi trường.`;
           } else if (/pháp luật|quy định|trách nhiệm giải trình/i.test(combined)) {
-            row.aiCompetency2422Integrated = "NLb - 12.B1.1: Khung pháp lý và đạo đức công nghệ AI (Phân tích các quy định pháp luật về trách nhiệm giải trình và an toàn khi vận hành hệ thống AI).";
+            row.aiCompetency2422Integrated = `Thành phần NL AI: NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm; Khối lớp: 12; Chủ đề: B1; Mã chỉ báo NL AI: NLb-12.B1.1\n- Yêu cầu cần đạt AI: Phân tích được các quy định pháp luật về trách nhiệm giải trình và an toàn khi vận hành hệ thống AI.\n- Hành vi học sinh: Học sinh nghiên cứu các quy định pháp lý, phân tích tình huống thực tế về trách nhiệm khi sử dụng AI.\n- Sản phẩm đầu ra: Bảng phân tích tình huống pháp lý và trách nhiệm đạo đức khi ứng dụng AI.\n- Tiêu chí đánh giá: Đúng quy chuẩn pháp luật, nêu rõ trách nhiệm giải trình của người sử dụng.`;
           } else {
-            row.aiCompetency2422Integrated = "NLb - 12.B2.1: Đánh giá rủi ro an ninh mạng và thao túng thông tin (Nhận diện nguy cơ deepfake, tin giả; thực hiện các biện pháp xác thực nguồn tin đa kênh và bảo vệ chủ quyền dữ liệu số).";
+            row.aiCompetency2422Integrated = `Thành phần NL AI: NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm; Khối lớp: 12; Chủ đề: B2; Mã chỉ báo NL AI: NLb-12.B2.1\n- Yêu cầu cần đạt AI: Nhận diện được các nguy cơ deepfake, tin giả, thông tin sai lệch do AI tạo ra; thực hiện được các biện pháp xác thực nguồn tin đa kênh.\n- Hành vi học sinh: Học sinh nhận diện nguy cơ thông tin sai lệch/deepfake từ AI, thực hiện kiểm chứng chéo với cổng thông tin chính thống và SGK để bảo vệ chủ quyền dữ liệu.\n- Sản phẩm đầu ra: Bản báo cáo tư liệu có kèm bảng đối chiếu xác thực đa nguồn và ghi chú kiểm chứng tin giả.\n- Tiêu chí đánh giá: Đảm bảo tính xác thực tuyệt đối của nguồn tin, bảo vệ chủ quyền thông tin quốc gia.`;
           }
         } else if (isPracticalOrProject) {
-          row.aiCompetency2422Integrated = "NLd - 12.D1.1: Thiết kế dự án nghiên cứu học tập ứng dụng AI (Xây dựng và thực hiện dự án học tập có ứng dụng AI từ thu thập, xử lý đến báo cáo kết quả và đánh giá).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI; Khối lớp: 12; Chủ đề: D1; Mã chỉ báo NL AI: NLd-12.D1.1\n- Yêu cầu cần đạt AI: Xây dựng và thực hiện một dự án học tập hoàn chỉnh có ứng dụng AI từ bước thu thập dữ liệu, xử lý, phân tích đến báo cáo kết quả và đánh giá.\n- Hành vi học sinh: Học sinh ứng dụng AI để tổng hợp dữ liệu, thiết kế đồ họa/báo cáo thực hành, thuyết minh và kiểm chứng kết quả với số liệu thực tế.\n- Sản phẩm đầu ra: Báo cáo thực hành/dự án số hoàn chỉnh có minh bạch phần đóng góp của AI và phần tự làm của học sinh.\n- Tiêu chí đánh giá: Đúng chuẩn kiến thức môn học, minh bạch lịch sử prompt, có số liệu đối chiếu kiểm chứng rõ ràng.`;
         } else if (isDataOrSim) {
-          row.aiCompetency2422Integrated = "NLc - 12.C3.1: Khai thác hệ thống AI chuyên ngành (Sử dụng thành thạo mô hình AI chuyên ngành để phân tích dữ liệu chuyên sâu, mô phỏng và kiểm chứng với SGK/Atlat).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLc - Các kĩ thuật và ứng dụng AI; Khối lớp: 12; Chủ đề: C3; Mã chỉ báo NL AI: NLc-12.C3.1\n- Yêu cầu cần đạt AI: Sử dụng thành thạo các mô hình AI chuyên ngành để phân tích cấu trúc không gian, biểu đồ, bảng số liệu hoặc dữ liệu chuyên sâu.\n- Hành vi học sinh: Học sinh thiết lập câu lệnh prompt truy vấn mô hình AI chuyên ngành để xử lý số liệu, phân tích không gian và mô phỏng biểu đồ.\n- Sản phẩm đầu ra: Bảng số liệu thống kê, biểu đồ phân tích và kết quả nhận xét địa lí được kiểm chứng.\n- Tiêu chí đánh giá: Số liệu chính xác, biểu đồ trực quan, đối chiếu chuẩn xác với Atlat/SGK.`;
         } else if (isCareer) {
-          row.aiCompetency2422Integrated = "NLa - 12.A2.1: Định hướng nghề nghiệp và thích ứng với AI (Xác định lộ trình phát triển năng lực bản thân để thích ứng và cộng tác hiệu quả với AI trong lĩnh vực tương lai).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: 12; Chủ đề: A2; Mã chỉ báo NL AI: NLa-12.A2.1\n- Yêu cầu cần đạt AI: Xác định được lộ trình phát triển năng lực bản thân để thích ứng và cộng tác hiệu quả với AI trong lĩnh vực tương lai.\n- Hành vi học sinh: Học sinh sử dụng AI để khảo sát xu hướng nghề nghiệp, tự đánh giá điểm mạnh và lập kế hoạch thích ứng nghề nghiệp.\n- Sản phẩm đầu ra: Bản kế hoạch phát triển năng lực cá nhân trong kỷ nguyên AI.\n- Tiêu chí đánh giá: Mục tiêu rõ ràng, định hướng nghề nghiệp thực tế, chủ động làm chủ công nghệ.`;
         } else {
-          row.aiCompetency2422Integrated = "NLa - 12.A1.1: Lãnh đạo và quản trị trong kỷ nguyên AI (Thể hiện tư duy độc lập và năng lực làm chủ công nghệ; đưa ra phán đoán phản biện và quyết định cuối cùng trong môn học).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: 12; Chủ đề: A1; Mã chỉ báo NL AI: NLa-12.A1.1\n- Yêu cầu cần đạt AI: Thể hiện được tư duy độc lập và năng lực làm chủ công nghệ; đưa ra phán đoán phản biện và quyết định cuối cùng trong môn học.\n- Hành vi học sinh: Học sinh đối chiếu các thông tin gợi ý của AI với kiến thức SGK/Atlat, phản biện và đưa ra kết luận độc lập.\n- Sản phẩm đầu ra: Bản ghi chép bài học có tích hợp nhận xét phản biện câu trả lời của AI kèm căn cứ SGK.\n- Tiêu chí đánh giá: Thể hiện tư duy độc lập, con người làm chủ quyết định, không sao chép thụ động.`;
         }
       } else if (g === "11") {
         if (isSecurityOrEthics) {
           if (/định kiến|bias|công bằng/i.test(combined)) {
-            row.aiCompetency2422Integrated = "NLb - 11.B2.1: Định kiến và tính công bằng trong AI (Nhận diện và phân tích biểu hiện thiên lệch/bias trong phản hồi của AI; đề xuất cách kiểm chứng).";
+            row.aiCompetency2422Integrated = `Thành phần NL AI: NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm; Khối lớp: 11; Chủ đề: B2; Mã chỉ báo NL AI: NLb-11.B2.1\n- Yêu cầu cần đạt AI: Nhận diện và phân tích biểu hiện thiên lệch/bias trong phản hồi của AI; đề xuất cách kiểm chứng.\n- Hành vi học sinh: Học sinh so sánh nhiều câu trả lời từ AI để nhận diện định kiến hoặc thiếu sót thông tin.\n- Sản phẩm đầu ra: Bảng phân tích phát hiện định kiến/thiên lệch của AI và phương án kiểm chứng chéo.\n- Tiêu chí đánh giá: Phân tích khách quan, chỉ rõ góc nhìn thiên kiến và căn cứ đối chiếu chuẩn.`;
           } else {
-            row.aiCompetency2422Integrated = "NLb - 11.B3.1: Quy chuẩn liêm chính học thuật và AI (Vận dụng chuẩn mực liêm chính học thuật khi dùng AI; lập bảng đối chiếu minh bạch nội dung AI gợi ý và tự làm).";
+            row.aiCompetency2422Integrated = `Thành phần NL AI: NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm; Khối lớp: 11; Chủ đề: B3; Mã chỉ báo NL AI: NLb-11.B3.1\n- Yêu cầu cần đạt AI: Vận dụng chuẩn mực liêm chính học thuật khi dùng AI; lập bảng đối chiếu minh bạch nội dung AI gợi ý và tự làm.\n- Hành vi học sinh: Sử dụng AI để tham khảo ý tưởng, tự viết nội dung và trích dẫn rõ ràng phần AI đóng góp.\n- Sản phẩm đầu ra: Bản báo cáo/bài tập có bảng chú thích minh bạch mức độ sử dụng AI.\n- Tiêu chí đánh giá: Tuân thủ liêm chính học thuật, phân định rõ ràng giữa AI và tư duy cá nhân.`;
           }
         } else if (isPracticalOrProject) {
-          row.aiCompetency2422Integrated = "NLd - 11.D1.1: Thiết kế giải pháp học tập tích hợp AI (Xây dựng quy trình học tập cá nhân hóa có sự trợ giúp của AI và kiểm tra chéo kết quả).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI; Khối lớp: 11; Chủ đề: D1; Mã chỉ báo NL AI: NLd-11.D1.1\n- Yêu cầu cần đạt AI: Xây dựng quy trình học tập cá nhân hóa có sự trợ giúp của AI và kiểm tra chéo kết quả.\n- Hành vi học sinh: Thiết kế các bước thực hiện nhiệm vụ học tập có ứng dụng AI và tự đánh giá qua rubric.\n- Sản phẩm đầu ra: Quy trình giải pháp học tập tích hợp AI hoàn chỉnh.\n- Tiêu chí đánh giá: Quy trình logic, có tiêu chí kiểm thử kết quả và minh chứng rõ ràng.`;
         } else if (isDataOrSim) {
-          row.aiCompetency2422Integrated = "NLc - 11.C5.1: Phân tích dữ liệu bằng AI (Sử dụng AI để xử lý, làm sạch và phân tích các tập dữ liệu thực nghiệm/thống kê trong môn học; rút ra kết luận logic).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLc - Các kĩ thuật và ứng dụng AI; Khối lớp: 11; Chủ đề: C5; Mã chỉ báo NL AI: NLc-11.C5.1\n- Yêu cầu cần đạt AI: Sử dụng AI để xử lý, làm sạch và phân tích các tập dữ liệu thực nghiệm/thống kê trong môn học; rút ra kết luận logic.\n- Hành vi học sinh: Nhập dữ liệu bảng vào AI để lọc, tính toán tốc độ tăng trưởng/cơ cấu và vẽ biểu đồ minh họa.\n- Sản phẩm đầu ra: Báo cáo phân tích dữ liệu thống kê kèm biểu đồ số do AI hỗ trợ.\n- Tiêu chí đánh giá: Tính toán chính xác, nhận xét rút ra có căn cứ khoa học.`;
         } else if (isCareer) {
-          row.aiCompetency2422Integrated = "NLa - 11.A2.1: Đánh giá tác động của AI đối với nghề nghiệp (Đánh giá sự thay đổi ngành nghề dưới tác động của AI; xác định kỹ năng cần trau dồi).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: 11; Chủ đề: A2; Mã chỉ báo NL AI: NLa-11.A2.1\n- Yêu cầu cần đạt AI: Đánh giá sự thay đổi ngành nghề dưới tác động của AI; xác định kỹ năng cần trau dồi.\n- Hành vi học sinh: Tra cứu và phân tích tác động của AI đến các ngành nghề liên quan đến môn học.\n- Sản phẩm đầu ra: Bài thu hoạch phân tích cơ hội và thách thức nghề nghiệp trong thời đại AI.\n- Tiêu chí đánh giá: Đánh giá đa chiều, xác định đúng các kỹ năng cốt lõi con người cần có.`;
         } else {
-          row.aiCompetency2422Integrated = "NLa - 11.A1.1: Phân công trách nhiệm Người và AI (Phân tích vai trò bổ trợ của AI; giải thích tại sao quyết định nhân văn và phán đoán đạo đức thuộc về con người).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: 11; Chủ đề: A1; Mã chỉ báo NL AI: NLa-11.A1.1\n- Yêu cầu cần đạt AI: Phân tích vai trò bổ trợ của AI; giải thích tại sao quyết định nhân văn và phán đoán thuộc về con người.\n- Hành vi học sinh: Học sinh thảo luận nhóm về các phương án do AI đề xuất và đưa ra lựa chọn có trách nhiệm.\n- Sản phẩm đầu ra: Biên bản thảo luận nhóm khẳng định vai trò quyết định của con người.\n- Tiêu chí đánh giá: Lập luận chặt chẽ, khẳng định con người làm chủ công nghệ.`;
         }
       } else {
         // Grade 10
         if (isSecurityOrEthics) {
           if (/dữ liệu cá nhân|quyền riêng tư|bảo vệ/i.test(combined)) {
-            row.aiCompetency2422Integrated = "NLb - 10.B2.1: Bảo vệ dữ liệu cá nhân và quyền riêng tư (Tuân thủ nguyên tắc không chia sẻ dữ liệu nhạy cảm, định danh cá nhân khi tương tác với công cụ AI).";
+            row.aiCompetency2422Integrated = `Thành phần NL AI: NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm; Khối lớp: 10; Chủ đề: B2; Mã chỉ báo NL AI: NLb-10.B2.1\n- Yêu cầu cần đạt AI: Tuân thủ nguyên tắc không chia sẻ dữ liệu nhạy cảm, định danh cá nhân khi tương tác với AI.\n- Hành vi học sinh: Thực hành bảo mật thông tin cá nhân, không nhập thông tin định danh khi đặt prompt.\n- Sản phẩm đầu ra: Bản cam kết/quy tắc sử dụng AI an toàn của học sinh.\n- Tiêu chí đánh giá: Tuân thủ nghiêm ngặt quy định an toàn và bảo mật dữ liệu.`;
           } else {
-            row.aiCompetency2422Integrated = "NLb - 10.B3.1: Sở hữu trí tuệ và tính minh bạch (Giải thích sự cần thiết của việc ghi rõ nguồn gốc, mức độ hỗ trợ của AI; tôn trọng bản quyền tác giả).";
+            row.aiCompetency2422Integrated = `Thành phần NL AI: NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm; Khối lớp: 10; Chủ đề: B3; Mã chỉ báo NL AI: NLb-10.B3.1\n- Yêu cầu cần đạt AI: Giải thích sự cần thiết của việc ghi rõ nguồn gốc, mức độ hỗ trợ của AI; tôn trọng bản quyền.\n- Hành vi học sinh: Ghi chú rõ nguồn tài liệu tham khảo và câu lệnh prompt đã sử dụng trong bài tập.\n- Sản phẩm đầu ra: Bài làm có phần trích dẫn nguồn AI đúng chuẩn mực.\n- Tiêu chí đánh giá: Minh bạch thông tin, tôn trọng quyền tác giả và liêm chính.`;
           }
         } else if (isPracticalOrProject) {
-          row.aiCompetency2422Integrated = "NLd - 10.D1.1: Ý tưởng ứng dụng AI giải quyết vấn đề (Đề xuất ý tưởng sử dụng công cụ AI phù hợp để giải quyết nhiệm vụ học tập thực tiễn môn học).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI; Khối lớp: 10; Chủ đề: D1; Mã chỉ báo NL AI: NLd-10.D1.1\n- Yêu cầu cần đạt AI: Đề xuất ý tưởng sử dụng công cụ AI phù hợp để giải quyết nhiệm vụ học tập thực tiễn môn học.\n- Hành vi học sinh: Lựa chọn công cụ AI phù hợp và phác thảo ý tưởng hoàn thành bài thực hành.\n- Sản phẩm đầu ra: Bản đề xuất ý tưởng giải quyết bài toán thực hành có sự hỗ trợ của AI.\n- Tiêu chí đánh giá: Ý tưởng sáng tạo, công cụ phù hợp và có tính khả thi cao.`;
         } else if (isDataOrSim || /prompt|câu lệnh/i.test(combined)) {
-          row.aiCompetency2422Integrated = "NLc - 10.C3.1: Kỹ năng thiết lập câu lệnh Prompt (Thiết kế và tinh chỉnh câu lệnh có cấu trúc rõ ràng để nhận phản hồi chính xác từ AI).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLc - Các kĩ thuật và ứng dụng AI; Khối lớp: 10; Chủ đề: C3; Mã chỉ báo NL AI: NLc-10.C3.1\n- Yêu cầu cần đạt AI: Thiết kế và tinh chỉnh câu lệnh có cấu trúc rõ ràng để nhận phản hồi chính xác từ AI.\n- Hành vi học sinh: Thực hành đặt câu lệnh prompt có bối cảnh, vai trò và yêu cầu cụ thể để AI hỗ trợ tra cứu.\n- Sản phẩm đầu ra: Bảng ghi nhận các câu lệnh prompt và kết quả phản hồi đã được tinh chỉnh.\n- Tiêu chí đánh giá: Câu lệnh rõ ràng, mạch lạc, kết quả AI trả về đạt yêu cầu.`;
         } else if (isFactCheck) {
-          row.aiCompetency2422Integrated = "NLa - 10.A3.1: Kiểm soát và giám sát AI (Thực hiện rà soát, kiểm chứng độc lập các nội dung do AI tạo ra bằng các nguồn tài liệu chính thống như SGK).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: 10; Chủ đề: A3; Mã chỉ báo NL AI: NLa-10.A3.1\n- Yêu cầu cần đạt AI: Thực hiện rà soát, kiểm chứng độc lập các nội dung do AI tạo ra bằng các nguồn SGK chính thống.\n- Hành vi học sinh: Đối chiếu câu trả lời của AI với SGK Kết nối tri thức, phát hiện các điểm chưa chính xác.\n- Sản phẩm đầu ra: Bảng so sánh thông tin AI và kiến thức chuẩn SGK kèm dẫn chứng trang sách.\n- Tiêu chí đánh giá: Nhận diện chính xác lỗi sai của AI, chỉ rõ căn cứ SGK.`;
         } else if (isCareer) {
-          row.aiCompetency2422Integrated = "NLa - 10.A2.1: AI vì sự tiến bộ của con người (Nêu ví dụ về lợi ích và rủi ro của AI; khẳng định AI chỉ hỗ trợ chứ không thay thế tư duy con người).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: 10; Chủ đề: A2; Mã chỉ báo NL AI: NLa-10.A2.1\n- Yêu cầu cần đạt AI: Nêu ví dụ về lợi ích và rủi ro của AI; khẳng định AI chỉ hỗ trợ chứ không thay thế tư duy con người.\n- Hành vi học sinh: Nêu dẫn chứng về việc AI hỗ trợ học tập môn học và các giới hạn của công cụ.\n- Sản phẩm đầu ra: Bản ghi chép thu hoạch về cơ hội và giới hạn của AI.\n- Tiêu chí đánh giá: Hiểu đúng bản chất công cụ, không phụ thuộc vào AI.`;
         } else {
-          row.aiCompetency2422Integrated = "NLa - 10.A1.1: Con người trong hệ thống AI (Nhận biết con người là chủ thể thiết kế, kiểm soát hoạt động và chịu trách nhiệm về quyết định của hệ thống AI).";
+          row.aiCompetency2422Integrated = `Thành phần NL AI: NLa - Tư duy lấy con người làm trung tâm; Khối lớp: 10; Chủ đề: A1; Mã chỉ báo NL AI: NLa-10.A1.1\n- Yêu cầu cần đạt AI: Nhận biết con người là chủ thể thiết kế, kiểm soát hoạt động và chịu trách nhiệm về quyết định của AI.\n- Hành vi học sinh: Học sinh chủ động đóng vai trò người kiểm soát, ra quyết định cuối cùng khi sử dụng AI.\n- Sản phẩm đầu ra: Bản kết luận bài học do học sinh tự tổng hợp và quyết định.\n- Tiêu chí đánh giá: Khẳng định vai trò chủ thể của người học, làm chủ tri thức.`;
         }
       }
     }
@@ -2660,7 +2664,18 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
         "YÊU CẦU TUYỆT ĐỐI BẮT BUỘC:",
         `1. TẠO ĐÚNG ĐỦ ${batch.length} HÀNG cho ${batch.length} bài học trên. KHÔNG ĐƯỢC BỎ SÓT BÀI NÀO.`,
         "2. lessonGoal: SAO CHÉP Y NGUYÊN 100% nội dung YCCĐ từ dữ liệu trên. TUYỆT ĐỐI KHÔNG tóm tắt hay cắt xén.",
-        "3. TÍCH HỢP NLS và NL AI chi khi YCCĐ của bài có điểm chạm rõ ràng. Khi tích hợp NL AI bắt buộc ghi: Thành phần NL AI: NL[a/b/c/d] - [Tên thành phần]; Khối lớp: [Lớp]; Chủ đề: [Mã chủ đề]; Mã chỉ báo NL AI: [Mã chuẩn QĐ 2422].",
+        "3. TÍCH HỢP NLS và NL AI chi khi YCCĐ của bài có điểm chạm rõ ràng. Mỗi ô BẮT BUỘC ghi đầy đủ chi tiết:",
+        "   - digitalCompetencyTT02 (NLS):",
+        "     Mã chỉ báo NLS: [Mã chuẩn TT02]; Thành phần NLS: [Tên thành phần]",
+        "     - YCCĐ NLS: [Nội dung YCCĐ cụ thể]",
+        "     - Hành vi HS: [Hành vi thao tác số cụ thể]",
+        "     - Sản phẩm đầu ra: [Sản phẩm số cụ thể]",
+        "   - aiCompetency2422Integrated (NL AI):",
+        "     Thành phần NL AI: NL[a/b/c/d] - [Tên thành phần]; Khối lớp: [Lớp]; Chủ đề: [Mã chủ đề]; Mã chỉ báo NL AI: [Mã chuẩn QĐ 2422]",
+        "     - Yêu cầu cần đạt AI: [Nội dung YCCĐ chuẩn theo QĐ 2422]",
+        "     - Hành vi học sinh: [Hành vi tương tác/prompt/kiểm chứng của HS]",
+        "     - Sản phẩm đầu ra: [Sản phẩm học tập cụ thể]",
+        "     - Tiêu chí đánh giá: [Tiêu chí đánh giá & minh chứng kiểm chứng]",
         "   - Chủ đề A -> NLa (Tư duy lấy con người làm trung tâm)",
         "   - Chủ đề B -> NLb (Đạo đức AI, an toàn, pháp luật và trách nhiệm)",
         "   - Chủ đề C -> NLc (Các kĩ thuật và ứng dụng AI)",
@@ -2774,12 +2789,10 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
         "1. TAO DUNG DU " + batch.length + " HANG cho " + batch.length + " bai tren. KHONG DUOC BO SOT BAI NAO.",
         "2. lessonGoal: SAO CHEP Y NGUYEN 100% noi dung yccd tu du lieu tren. TUYET DOI KHONG tom tat hay cat xen.",
         "3. TICH HOP NLS va NL AI chi khi YCCD cua bai co diem cham ro rang. Neu khong du can cu, ghi 'Khong tich hop - ly do: ...' hoac 'Khong gan ma - ly do: ...'. KHONG duoc ghi cut 'Khong'.",
-        "4. digitalCompetencyTT02: voi THPT dung ma NLS muc NC1 (VD: 1.1.NC1a: Khai thac nguon du lieu...; 2.4.NC1b: Hop tac tren cong cu so...). Moi ma phai bam vao YCCD va san pham hoc tap.",
-        "5. aiCompetency2422Integrated: truoc khi ghi ma NL AI phai ghi ten thanh phan nang luc AI; chi dung ma NL AI hop le theo lop va chu de QD 2422, kem YCCD cu the.",
+        "4. digitalCompetencyTT02: Bắt buộc ghi đủ 4 mục chi tiết: Mã chỉ báo NLS, Thành phần NLS, - YCCĐ NLS: ..., - Hành vi HS: ..., - Sản phẩm đầu ra: ...",
+        "5. aiCompetency2422Integrated: Bắt buộc ghi đủ 5 mục chi tiết: Thành phần NL AI: NL[a/b/c/d] - [Tên]; Khối lớp: [Lớp]; Chủ đề: [Mã]; Mã chỉ báo NL AI: [Mã chuẩn]\n- Yêu cầu cần đạt AI: [YCCĐ]\n- Hành vi học sinh: [Hành vi cụ thể]\n- Sản phẩm đầu ra: [Sản phẩm]\n- Tiêu chí đánh giá: [Tiêu chí & kiểm chứng]",
         AI_COMPETENCY_ORDER_RULE,
-        "   Chỉ dùng mã chi tiết khi dữ liệu đầu vào đã cung cấp và khớp nguyên văn YCCĐ; nếu chưa có, ghi thành phần + YCCĐ + 'Can doi chieu ma AI'",
         "   - Mach A: Tu duy lay con nguoi lam trung tam | Mach B: Dao duc & trach nhiem | Mach C: Ky thuat & ung dung | Mach D: Giai quyet van de",
-        "   KHONG ép mã phải khác nhau giữa các bài; một mã chỉ được lặp khi từng bài đều có chuỗi minh chứng độc lập. Không tự tạo mã để làm đa dạng.",
         "6. Phan bo thoi gian bat dau tu Tuan " + weekCounter + ".",
         "7. socialIntegration: chi ghi dung bai co diem cham; theo thu tu Chu de -> Can cu YCCD -> Hanh vi HS -> San pham -> Tieu chi/minh chung. Bai khong phu hop thi de chuoi rong.",
         "",

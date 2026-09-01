@@ -631,21 +631,16 @@ export const formatAiCode2422 = (rawCode: string): string | undefined => {
 export const normalizeAiCodesInText2422 = (value: unknown): string => {
   let text = String(value || "");
 
-  // 1. Fix mismatched component names and topics like "NLD - Đạo đức" or "NLc - Tư duy"
-  text = text.replace(
-    /(?:Thành phần(?:\s+NL)?\s+AI:\s*)?(NLa|NLb|NLc|NLd|NLA|NLB|NLC|NLD)\s*[-–—:]\s*(?:Đạo đức|Tư duy|Kỹ thuật|Kĩ thuật|Thiết kế|Giải quyết)[^;,\n]*/gi,
-    (matched) => {
-      if (/Đạo đức/i.test(matched)) return "NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm";
-      if (/Tư duy/i.test(matched)) return "NLa - Tư duy lấy con người làm trung tâm";
-      if (/Kỹ thuật|Kĩ thuật|Ứng dụng/i.test(matched)) return "NLc - Các kĩ thuật và ứng dụng AI";
-      if (/Thiết kế|Giải quyết|Thử nghiệm/i.test(matched)) return "NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI";
-      return matched;
-    }
-  );
+  // 1. Clean up duplicate repeats caused by previous mangling like "thử nghiệm và cải tiến hệ thống AI, thử nghiệm và cải tiến hệ thống AI"
+  text = text.replace(/(?:,\s*thử nghiệm và cải tiến hệ thống AI)+/gi, "");
+  text = text.replace(/(?:,\s*an toàn, pháp luật và trách nhiệm)+/gi, "");
+  text = text.replace(/(?:,\s*pháp luật và trách nhiệm)+/gi, "");
+  text = text.replace(/(?:,\s*các kĩ thuật và ứng dụng AI)+/gi, "");
+  text = text.replace(/(?:,\s*các kỹ thuật và ứng dụng AI)+/gi, "");
 
   // 2. Fix structured pattern: "Thành phần NL AI: NLD; Khối lớp: 12; Chủ đề: B2; Mã chỉ báo NL AI: NL-12.B2.2"
   text = text.replace(
-    /Thành phần(?:\s+NL)?\s+AI:\s*(NLa|NLb|NLc|NLd|NLA|NLB|NLC|NLD)(?:\s*-\s*[^;]+)?;\s*(Khối lớp:\s*(?:10|11|12));\s*(Chủ đề:\s*([A-D]\d*));\s*(Mã chỉ báo NL AI:\s*[^;\n]+)/gi,
+    /(?:Thành phần(?:\s+NL)?\s+AI:\s*)?(NLa|NLb|NLc|NLd|NLA|NLB|NLC|NLD)(?:\s*-\s*[^;\n]+)?;\s*(Khối lớp:\s*(?:10|11|12));\s*(Chủ đề:\s*([A-D]\d*));\s*(Mã chỉ báo NL AI:\s*[^;\n\r]+)/gi,
     (_full, _comp, gradePart, topicPart, rawTopic, codePart) => {
       const topicLetter = String(rawTopic || "A").slice(0, 1).toUpperCase();
       const compCode = getComponentByTopicLetter(topicLetter);

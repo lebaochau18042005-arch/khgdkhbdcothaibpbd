@@ -423,8 +423,7 @@ export default function UpgradePlan({
     };
 
     const handleConfirmDownload = async () => {
-        setExportTargetFormat("docx");
-        setIsGatekeeperOpen(true);
+        await handleDirectDocxDownload();
     };
 
     const safeFileSegment = (value?: string) =>
@@ -1550,12 +1549,13 @@ export default function UpgradePlan({
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
                                     <button
-                                        onClick={handleConfirmDownload}
+                                        onClick={handleDirectDocxDownload}
                                         disabled={isUpdatingDocxWithAssessment}
-                                        className={`${previewToolbarButtonClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-md transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                         title="Tải xuống Word DOCX giữ nguyên giáo án gốc"
                                     >
-                                        {isUpdatingDocxWithAssessment ? <Loader2 className="w-4 h-4 text-blue-600 animate-spin" /> : <FileDown className="w-4 h-4 text-blue-600" />}
+                                        {isUpdatingDocxWithAssessment ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Download className="w-4 h-4 text-white" />}
+                                        <span>Tải Giáo Án (.DOCX)</span>
                                     </button>
                                     <button onClick={handleDownloadPreviewPdf} className={previewToolbarButtonClass} title="Tải xuống PDF xem nhanh">
                                         <FileDown className="w-4 h-4 text-red-500" />
@@ -1610,21 +1610,31 @@ export default function UpgradePlan({
                             </div>
 
                             {/* Header Summary */}
-                            <div className={`rounded-xl p-4 border flex items-start gap-3 ${injectionResult.injectedCount > 0 ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
-                                <div className={`rounded-full p-1.5 mt-0.5 ${injectionResult.injectedCount > 0 ? "bg-green-100" : "bg-amber-100"}`}>
-                                    <CheckCircle2 className={`w-5 h-5 ${injectionResult.injectedCount > 0 ? "text-green-600" : "text-amber-600"}`} />
+                            <div className={`rounded-xl p-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${injectionResult.injectedCount > 0 ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
+                                <div className="flex items-start gap-3">
+                                    <div className={`rounded-full p-1.5 mt-0.5 ${injectionResult.injectedCount > 0 ? "bg-green-100" : "bg-amber-100"}`}>
+                                        <CheckCircle2 className={`w-5 h-5 ${injectionResult.injectedCount > 0 ? "text-green-600" : "text-amber-600"}`} />
+                                    </div>
+                                    <div>
+                                        <p className={`font-bold text-sm ${injectionResult.injectedCount > 0 ? "text-green-800" : "text-amber-800"}`}>
+                                            ✅ Đã chèn thành công {injectionResult.injectedCount}/{injectionResult.previewItems.length} mục bổ sung
+                                        </p>
+                                        <p className="text-xs text-slate-600 mt-1">
+                                            File: <span className="font-semibold">{file?.name.replace(".docx", "_AI_NangCap.docx")}</span> đã sẵn sàng tải xuống.
+                                            {injectionResult.skippedActivities.length > 0 && (
+                                                <span className="text-amber-700"> ({injectionResult.skippedActivities.length} hoạt động chưa tìm được đoạn nguyên văn hoặc mục con tương ứng nên được bỏ qua để tránh chèn sai.)</span>
+                                            )}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className={`font-bold text-sm ${injectionResult.injectedCount > 0 ? "text-green-800" : "text-amber-800"}`}>
-                                        ✅ Đã chèn thành công {injectionResult.injectedCount}/{injectionResult.previewItems.length} mục bổ sung
-                                    </p>
-                                    <p className="text-xs text-slate-600 mt-1">
-                                        File: <span className="font-semibold">{file?.name.replace(".docx", "_AI_NangCap.docx")}</span> đã sẵn sàng tải xuống.
-                                        {injectionResult.skippedActivities.length > 0 && (
-                                            <span className="text-amber-700"> ({injectionResult.skippedActivities.length} hoạt động chưa tìm được đoạn nguyên văn hoặc mục con tương ứng nên được bỏ qua để tránh chèn sai.)</span>
-                                        )}
-                                    </p>
-                                </div>
+                                <button
+                                    onClick={handleDirectDocxDownload}
+                                    disabled={isUpdatingDocxWithAssessment}
+                                    className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md text-xs font-extrabold flex items-center justify-center gap-2 transition-all shrink-0 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                                >
+                                    {isUpdatingDocxWithAssessment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                    <span>TẢI FILE WORD (.DOCX)</span>
+                                </button>
                             </div>
 
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">

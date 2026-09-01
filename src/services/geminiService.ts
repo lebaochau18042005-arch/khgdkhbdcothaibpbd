@@ -1115,6 +1115,12 @@ export const sanitizeAnalysisResultForGrade = (
     aiSuggestions: sanitizedSuggestions,
   };
 };
+
+export const sanitizeAnalysisResultCompetencies = (
+  analysis: any,
+  grade?: string,
+  sourceText?: string,
+) => sanitizeAnalysisResultForGrade(analysis, sourceText, grade);
 const normalizeCurriculumCompetencyData = (items: any[] = [], grade?: string) =>
   items.map((item) => {
     const safeCode = getSafeAiIndicatorCode(item.indicatorCode, grade);

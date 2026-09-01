@@ -7,6 +7,30 @@ export type SocialIntegrationOption = {
 
 export const SOCIAL_INTEGRATION_OPTIONS: SocialIntegrationOption[] = [
   {
+    id: "SeaAndIslands",
+    label: "Giáo dục chủ quyền biển, đảo và an ninh biên giới hải đảo",
+    shortLabel: "Biển đảo",
+    guidance: "Khẳng định chủ quyền biển đảo Việt Nam (Hoàng Sa, Trường Sa, vùng đặc quyền kinh tế theo UNCLOS 1982 và Luật Biển Việt Nam); khai thác tài nguyên biển bền vững và bảo vệ an ninh dữ liệu số hải đảo."
+  },
+  {
+    id: "Environment",
+    label: "Giáo dục bảo vệ môi trường, tài nguyên thiên nhiên và phát triển kinh tế xanh",
+    shortLabel: "Bảo vệ môi trường",
+    guidance: "Nhận diện suy giảm tài nguyên (rừng, đất, nước, khoáng sản, sinh vật); đề xuất giải pháp bảo vệ môi trường, phân loại rác thải, kinh tế tuần hoàn và phát triển kinh tế xanh."
+  },
+  {
+    id: "DisasterPrevention",
+    label: "Giáo dục phòng, chống thiên tai và giảm nhẹ rủi ro thảm họa",
+    shortLabel: "Phòng chống thiên tai",
+    guidance: "Nhận diện quy luật bão, lũ lụt, lũ quét, sạt lở đất, hạn mặn, triều cường; rèn luyện kĩ năng cảnh báo sớm, sơ tán an toàn và ứng phó khẩn cấp để giảm thiểu thiệt hại."
+  },
+  {
+    id: "ClimateChange",
+    label: "Giáo dục ứng phó biến đổi khí hậu và chuyển đổi năng lượng xanh",
+    shortLabel: "Biến đổi khí hậu",
+    guidance: "Phân tích tác động của biến đổi khí hậu, nước biển dâng, thời tiết cực đoan (El Nino, La Nina); hình thành ý thức giảm phát thải khí nhà kính và thích ứng linh hoạt trong đời sống, sản xuất."
+  },
+  {
     id: "Heritage",
     label: "Giáo dục di sản văn hóa",
     shortLabel: "Di sản",

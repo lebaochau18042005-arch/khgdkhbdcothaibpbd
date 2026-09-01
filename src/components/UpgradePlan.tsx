@@ -443,11 +443,16 @@ export default function UpgradePlan({
 
 
     const socialThemeColors: Record<string, string> = {
+        "Biển đảo": "bg-blue-50 border-blue-300 text-blue-800",
+        "Môi trường": "bg-emerald-50 border-emerald-300 text-emerald-800",
+        "Thiên tai": "bg-rose-50 border-rose-300 text-rose-800",
+        "Biến đổi khí hậu": "bg-teal-50 border-teal-300 text-teal-800",
         "Di sản": "bg-amber-50 border-amber-300 text-amber-800",
         "Dân số": "bg-cyan-50 border-cyan-300 text-cyan-800",
         "Ma túy": "bg-red-50 border-red-300 text-red-800",
         "Thuốc lá": "bg-orange-50 border-orange-300 text-orange-800",
         "Hòa nhập": "bg-purple-50 border-purple-300 text-purple-800",
+        "Tham nhũng": "bg-indigo-50 border-indigo-300 text-indigo-800",
     };
 
     const getSocialThemeColor = (theme: string) => {

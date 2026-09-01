@@ -194,9 +194,19 @@ III. YÊU CẦU TÁCH YCCĐ AI VÀ ĐẶC THÙ ĐỊA LÍ
 - Công thức: Học sinh + động từ quan sát được + nội dung AI + bối cảnh Địa lí + sản phẩm/minh chứng + tiêu chí đánh giá.
 - Động từ ưu tiên: Xác định, Mô tả, Giải thích, Phân tích, Đối chiếu, Kiểm chứng, Đánh giá, Thiết kế, Thu thập...
 
-IV. ĐỊNH DẠNG CỘT AI (aiCompetencyIntegrated)
-- Viết cô đọng trong một đoạn tối đa 90 từ theo thứ tự: thành phần (NLa/NLb/NLc/NLd) -> hành vi HS -> YCCĐ AI -> mã NL AI cụ thể -> sản phẩm -> kiểm chứng/tiêu chí.
-- Nếu không có điểm chạm ghi “Không tích hợp NLS/NL AI trong hoạt động này.”
+IV. TÍCH HỢP 4 TRỤ CỘT GIÁO DỤC XÃ HỘI TRỌNG TÂM MÔN ĐỊA LÍ (BẮT BUỘC):
+1. GIÁO DỤC CHỦ QUYỀN BIỂN, ĐẢO:
+   - Bài học áp dụng: Vị trí địa lí, phạm vi lãnh thổ, vùng biển Việt Nam, các đảo và quần đảo Hoàng Sa, Trường Sa, khai thác tổng hợp kinh tế biển, thực hành tuyên truyền chủ quyền biển đảo.
+   - Chuỗi chuẩn hóa: Chủ đề: Giáo dục chủ quyền biển, đảo -> Căn cứ YCCĐ: Khẳng định chủ quyền biển đảo Việt Nam (Hoàng Sa, Trường Sa theo UNCLOS 1982 và Luật Biển VN) và phát triển kinh tế biển bền vững -> Hành vi HS: Tra cứu tư liệu pháp lý, phân tích bản đồ biển đảo, thiết kế sản phẩm tuyên truyền bảo vệ chủ quyền -> Sản phẩm: Báo cáo/infographic số tuyên truyền chủ quyền biển đảo -> Tiêu chí/minh chứng: Đúng căn cứ pháp lý, khẳng định toàn vẹn lãnh thổ.
+2. GIÁO DỤC BẢO VỆ MÔI TRƯỜNG & PHÁT TRIỂN XANH:
+   - Bài học áp dụng: Thổ nhưỡng, sinh quyển, khoáng sản, rừng, tài nguyên thiên nhiên, sử dụng hợp lí tài nguyên, công nghiệp với môi trường, phát triển bền vững và tăng trưởng xanh.
+   - Chuỗi chuẩn hóa: Chủ đề: Giáo dục bảo vệ môi trường -> Căn cứ YCCĐ: Phân tích hiện trạng suy giảm tài nguyên và đề xuất giải pháp bảo vệ môi trường, phát triển kinh tế xanh -> Hành vi HS: Thu thập dữ liệu thực tế, đề xuất giải pháp kinh tế tuần hoàn và giảm thiểu rác thải nhựa tại địa phương -> Sản phẩm: Sơ đồ tư duy/bản tin giải pháp bảo vệ môi trường và tăng trưởng xanh -> Tiêu chí/minh chứng: Giải pháp khả thi, liên hệ sát thực tiễn.
+3. GIÁO DỤC PHÒNG, CHỐNG THIÊN TAI:
+   - Bài học áp dụng: Khí quyển, thủy văn, bão, áp thấp nhiệt đới, lũ quét, sạt lở đất, hạn mặn, thiên tai ở các vùng kinh tế Bắc Trung Bộ, Duyên hải miền Trung, ĐBSCL.
+   - Chuỗi chuẩn hóa: Chủ đề: Giáo dục phòng, chống thiên tai -> Căn cứ YCCĐ: Nhận diện quy luật thiên tai và rèn luyện kĩ năng ứng phó, giảm nhẹ rủi ro thảm họa -> Hành vi HS: Khai thác bản đồ cảnh báo thiên tai số, xây dựng kịch bản ứng phó và quy trình sơ tán an toàn -> Sản phẩm: Cẩm nang/kế hoạch hành động phòng chống thiên tai tại trường học và gia đình -> Tiêu chí/minh chứng: Phương án an toàn, thao tác chuẩn xác.
+4. GIÁO DỤC ỨNG PHÓ BIẾN ĐỔI KHÍ HẬU:
+   - Bài học áp dụng: Khí hậu, biến đổi khí hậu toàn cầu, nước biển dâng, ĐBSCL sống chung với lũ và thích ứng BĐKH, chuyển dịch năng lượng tái tạo (điện gió, điện mặt trời).
+   - Chuỗi chuẩn hóa: Chủ đề: Giáo dục ứng phó biến đổi khí hậu -> Căn cứ YCCĐ: Phân tích tác động của biến đổi khí hậu và đề xuất giải pháp thích ứng, giảm phát thải -> Hành vi HS: Phân tích dữ liệu khí tượng, đề xuất mô hình thích ứng linh hoạt trong sản xuất và đời sống -> Sản phẩm: Bản cam kết hành động xanh thích ứng biến đổi khí hậu -> Tiêu chí/minh chứng: Nhận thức khoa học, hành động thiết thực.
 `;
 
 const AI_COMPETENCY_ORDER_RULE = `
@@ -695,6 +705,24 @@ function autoAlignCompetencyForInstructionalLesson(row: any, grade: string = "10
     }
   }
 
+  // 3. NỘI DUNG GIÁO DỤC TÍCH HỢP / LỒNG GHÉP (socialIntegration)
+  const isSocialMissing = !row.socialIntegration || row.socialIntegration === "—" || row.socialIntegration === "" || /chưa có|không/i.test(row.socialIntegration);
+  if (isSocialMissing) {
+    if (/biển|đảo|hải đảo|hoàng sa|trường sa|vùng biển|thềm lục địa|unclos|hàng hải|kinh tế biển/i.test(combined)) {
+      row.socialIntegration = "Chủ đề: Giáo dục chủ quyền biển, đảo -> Căn cứ YCCĐ: Khẳng định chủ quyền biển đảo Việt Nam (Hoàng Sa, Trường Sa) và khai thác bền vững tài nguyên biển -> Hành vi HS: Tìm hiểu tư liệu pháp lý (UNCLOS 1982, Luật Biển VN), phân tích bản đồ biển đảo và thiết kế tư liệu tuyên truyền -> Sản phẩm: Bản báo cáo/infographic số tuyên truyền chủ quyền biển đảo -> Tiêu chí/minh chứng: Đúng căn cứ pháp lý, khẳng định toàn vẹn lãnh thổ.";
+    } else if (/thiên tai|bão|lũ lụt|lũ quét|sạt lở|hạn hán|sương muối|ngập lụt|áp thấp nhiệt đới|triều cường|dự báo thời tiết/i.test(combined)) {
+      row.socialIntegration = "Chủ đề: Giáo dục phòng, chống thiên tai -> Căn cứ YCCĐ: Nhận diện quy luật thiên tai và rèn luyện kĩ năng ứng phó, giảm nhẹ rủi ro thảm họa -> Hành vi HS: Khai thác bản đồ cảnh báo thiên tai số, xây dựng kịch bản ứng phó và quy trình sơ tán an toàn -> Sản phẩm: Kế hoạch hành động/cẩm nang phòng chống thiên tai tại trường học và gia đình -> Tiêu chí/minh chứng: Phương án an toàn, khả thi, thao tác chuẩn xác.";
+    } else if (/biến đổi khí hậu|khí quyển|khí hậu|nước biển dâng|el nino|la nina|nóng lên toàn cầu|năng lượng tái tạo|năng lượng xanh|phát thải|năng lượng/i.test(combined)) {
+      row.socialIntegration = "Chủ đề: Giáo dục ứng phó biến đổi khí hậu -> Căn cứ YCCĐ: Phân tích tác động của biến đổi khí hậu và đề xuất giải pháp thích ứng, giảm phát thải -> Hành vi HS: Phân tích dữ liệu khí tượng, đề xuất mô hình thích ứng linh hoạt trong sản xuất và đời sống -> Sản phẩm: Bản cam kết hành động xanh thích ứng biến đổi khí hậu -> Tiêu chí/minh chứng: Nhận thức đúng đắn, giải pháp thiết thực.";
+    } else if (/môi trường|tài nguyên|suy giảm tài nguyên|rừng|đất|khoáng sản|đa dạng sinh học|thổ nhưỡng|sinh quyển|thủy quyển|rác thải|kinh tế tuần hoàn|tăng trưởng xanh|phát triển bền vững/i.test(combined)) {
+      row.socialIntegration = "Chủ đề: Giáo dục bảo vệ môi trường -> Căn cứ YCCĐ: Phân tích hiện trạng tài nguyên và đề xuất giải pháp bảo vệ môi trường, phát triển xanh -> Hành vi HS: Thu thập dữ liệu thực tế, đề xuất các biện pháp bảo vệ tài nguyên và phân loại rác thải tại địa phương -> Sản phẩm: Sơ đồ tư duy/bản tin giải pháp bảo vệ môi trường và tăng trưởng xanh -> Tiêu chí/minh chứng: Giải pháp khả thi, gắn liền với thực tiễn.";
+    } else if (/dân số|dân cư|đô thị hóa|lao động|việc làm/i.test(combined)) {
+      row.socialIntegration = "Chủ đề: Giáo dục dân số và phát triển bền vững -> Căn cứ YCCĐ: Phân tích dữ liệu dân cư và tác động đến phát triển kinh tế - xã hội -> Hành vi HS: Phân tích bảng số liệu dân cư, tháp tuổi và đề xuất giải pháp an sinh xã hội -> Sản phẩm: Báo cáo phân tích dân số và phát triển bền vững -> Tiêu chí/minh chứng: Số liệu chính xác, phân tích logic.";
+    } else if (/di sản|văn hóa|lễ hội|nghệ thuật|du lịch/i.test(combined)) {
+      row.socialIntegration = "Chủ đề: Giáo dục di sản văn hóa -> Căn cứ YCCĐ: Nhận thức giá trị di sản và đề xuất giải pháp bảo tồn, phát huy gắn với phát triển du lịch -> Hành vi HS: Khai thác tư liệu di sản, thiết kế ấn phẩm số quảng bá di sản -> Sản phẩm: Video/infographic quảng bá di sản văn hóa -> Tiêu chí/minh chứng: Thông tin chuẩn xác, tôn vinh giá trị văn hóa dân tộc.";
+    }
+  }
+
   return row;
 }
 
@@ -1190,24 +1218,40 @@ Dưới đây là nhóm NỘI DUNG LỒNG GHÉP XÃ HỘI RIÊNG BIỆT để d�
 
 LƯU Ý QUAN TRỌNG: Thông tư 02/2025/TT-BGDĐT quy định về Khung Năng lực số cho người học, còn các nội dung dưới đây là nhóm giáo dục tích hợp xã hội được giáo viên chọn thêm trong kế hoạch bài dạy.
 
-1. Giáo dục Di sản văn hóa:
+1. Giáo dục Chủ quyền biển, đảo và bảo vệ an ninh biên giới hải đảo:
+   - Mục tiêu: Bồi dưỡng tình yêu quê hương, ý thức khẳng định và bảo vệ chủ quyền biển đảo thiêng liêng của Tổ quốc (Hoàng Sa, Trường Sa, thềm lục địa, vùng đặc quyền kinh tế theo UNCLOS 1982 và Luật Biển Việt Nam); phát triển bền vững kinh tế biển.
+   - Nội dung: Tuyên truyền chủ quyền, khai thác tổng hợp kinh tế biển (thủy hải sản, du lịch biển, khoáng sản dầu khí, giao thông hàng hải), bảo vệ hệ sinh thái biển và chống khai thác IUU.
+
+2. Giáo dục Bảo vệ môi trường, tài nguyên thiên nhiên và phát triển kinh tế xanh:
+   - Mục tiêu: Nâng cao ý thức bảo vệ môi trường, bảo tồn đa dạng sinh học và sử dụng tiết kiệm, hiệu quả tài nguyên.
+   - Nội dung: Phân tích thực trạng suy giảm tài nguyên (rừng, đất, nước, khoáng sản), giải pháp giảm rác thải nhựa, kinh tế tuần hoàn, tăng trưởng xanh.
+
+3. Giáo dục Phòng, chống thiên tai và giảm nhẹ rủi ro thảm họa:
+   - Mục tiêu: Chủ động nhận biết hiểm họa thiên tai, rèn luyện kỹ năng tự bảo vệ và ứng phó an toàn để giảm thiểu thiệt hại.
+   - Nội dung: Quy luật và tác hại của bão, áp thấp nhiệt đới, lũ lụt, lũ quét, sạt lở đất, hạn hán, xâm nhập mặn; kỹ năng theo dõi bản đồ cảnh báo số, sơ tán an toàn.
+
+4. Giáo dục Ứng phó biến đổi khí hậu và chuyển đổi năng lượng xanh:
+   - Mục tiêu: Hiểu rõ thách thức toàn cầu của biến đổi khí hậu, nước biển dâng và hiện tượng thời tiết cực đoan (El Nino, La Nina).
+   - Nội dung: Đánh giá nguy cơ ngập lụt ở đồng bằng ven biển, giải pháp thích ứng thông minh trong nông nghiệp/đô thị, giảm phát thải khí nhà kính và chuyển đổi sang năng lượng tái tạo (điện gió, điện mặt trời).
+
+5. Giáo dục Di sản văn hóa:
    - Mục tiêu: Bảo tồn, phát huy giá trị di sản văn hóa dân tộc và địa phương.
    - Nội dung: Khai thác tư liệu di sản, địa danh, nhân vật, lễ hội, phong tục, nghệ thuật và bảo tàng/số hóa di sản.
 
-2. Phòng chống Ma túy & Thuốc lá:
+6. Phòng chống Ma túy & Thuốc lá:
    - Mục tiêu: Nâng cao nhận thức, hình thành kỹ năng phòng tránh hành vi nguy cơ.
    - Nội dung: Phân tích tác hại, tình huống từ chối, truyền thông học đường và trách nhiệm với sức khỏe cộng đồng.
 
-3. Dân số & Phát triển bền vững:
+7. Dân số & Phát triển bền vững:
    - Mục tiêu: Nhận thức mối quan hệ giữa dân số, chất lượng cuộc sống, bình đẳng giới và phát triển bền vững.
    - Nội dung: Phân tích dữ liệu dân cư, tác động của quy mô dân số đến chất lượng cuộc sống và an sinh xã hội.
 
-4. Giáo dục Hòa nhập (Inclusive Education):
+8. Giáo dục Hòa nhập (Inclusive Education):
    - Căn cứ: Thông tư 03/2018/TT-BGDĐT về Giáo dục Hòa nhập.
    - Mục tiêu: Đảm bảo quyền được học tập của mọi học sinh, bao gồm học sinh khuyết tật hoặc có hoàn cảnh đặc biệt.
    - Nội dung: Thiết kế hoạt động linh hoạt, đa dạng hóa phương thức tiếp cận để mọi học sinh đều có thể tham gia.
 
-5. Giáo dục phòng, chống tham nhũng:
+9. Giáo dục phòng, chống tham nhũng:
    - Mục tiêu: Hình thành thái độ liêm chính, minh bạch, trách nhiệm và tôn trọng lợi ích chung.
    - Nội dung: Nhận diện hành vi thiếu trung thực, xung đột lợi ích và lựa chọn cách ứng xử phù hợp lứa tuổi trong các tình huống có liên hệ tự nhiên với YCCĐ.
 `;

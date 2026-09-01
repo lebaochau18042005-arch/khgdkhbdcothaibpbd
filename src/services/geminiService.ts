@@ -2206,13 +2206,16 @@ export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: strin
 
 NHIỆM VỤ: Bóc tách toàn bộ danh sách các bài học / tiết dạy / chủ đề / bài kiểm tra từ tài liệu được cung cấp.
 
-QUY TẮC BẮT BUỘC:
+QUY TẮC BẢO TOÀN NỘI DUNG TUYỆT ĐỐI BẮT BUỘC:
 1. BẮT BUỘC bóc tách TẤT CẢ các bài học / tiết dạy theo thứ tự từ đầu đến cuối năm học (HK1 và HK2). KHÔNG ĐƯỢC bỏ sót bài nào.
 2. Mỗi tiết học hoặc bài học là 1 object riêng biệt trong JSON array.
-3. Giữ nguyên tên bài học chính xác theo gốc (kể cả tiếng Việt hay tiếng Anh, ví dụ: "Unit 1: LIFE STORIES WE ADMIRE - Getting started").
+3. "lessonName": Tên bài học chính xác 100% theo tài liệu gốc (kể cả tiếng Việt hay tiếng Anh).
 4. "periods": Số tiết (dạng số nguyên, ví dụ 1, 2).
-5. "timing": Tuần dạy hoặc thời điểm (ví dụ: "Tuần 1", "Tuần 2", ...).
-6. "yccd": Yêu cầu cần đạt / mục tiêu của bài học. Nếu trong tài liệu gốc quá dài, hãy tóm tắt cô đọng 1-2 câu trọng tâm nhất để đảm bảo phản hồi ngắn gọn và trọn vẹn 100% tất cả các bài học trong năm.
+5. "timing": Tuần dạy hoặc thời điểm (ví dụ: "Tuần 1", "Tuần 2", "Tiết 40"...).
+6. "yccd": YÊU CẦU CẦN ĐẠT / MỤC TIÊU CỦA BÀI HỌC.
+   - BẮT BUỘC SAO CHÉP NGUYÊN VĂN 100% TOÀN BỘ NỘI DUNG YCCĐ TỪ FILE GỐC.
+   - GIỮ NGUYÊN TẤT CẢ CÁC GẠCH ĐẦU DÒNG, CÁC Ý, TỪNG DÒNG MỤC TIÊU/YCCĐ (bao gồm cả kiến thức, kĩ năng, liên hệ thực tế, vẽ biểu đồ, phân tích sơ đồ...).
+   - TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG CẮT XÉN, KHÔNG RÚT GỌN, KHÔNG TỰ Ý BỎ BẤT KỲ GẠCH ĐẦU DÒNG NÀO CỦA TÀI LIỆU GỐC.
 7. Bỏ qua các tiêu đề hành chính (quốc hiệu, tên trường, lời mở đầu, chữ ký).
 
 Trả về mảng JSON thuần túy theo đúng JSON Schema đã khai báo.`;

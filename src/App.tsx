@@ -3095,14 +3095,16 @@ export default function App() {
         ]);
         const htmlVal = htmlRes?.value || "";
         const rawVal = rawRes?.value || "";
-        let text = rawVal;
         if (htmlVal.includes("<table")) {
           const tableMarkdown = htmlVal
-            .replace(/<tr[^>]*>/gi, "\n")
-            .replace(/<t[hd][^>]*>(.*?)<\/t[hd]>/gi, " | $1 ")
+            .replace(/<li[^>]*>/gi, "\n- ")
+            .replace(/<p[^>]*>/gi, "\n")
+            .replace(/<br\s*\/?>/gi, "\n")
+            .replace(/<tr[^>]*>/gi, "\n---\n")
+            .replace(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi, " | $1 ")
             .replace(/<[^>]+>/g, " ")
             .replace(/[ \t]+/g, " ");
-          text = `${rawVal}\n\n=== BẢNG PHÂN PHỐI CHƯƠNG TRÌNH ===\n${tableMarkdown}`;
+          text = `=== BẢNG PHÂN PHỐI CHƯƠNG TRÌNH ===\n${tableMarkdown}\n\n=== NỘI DUNG VĂN BẢN GỐC ===\n${rawVal}`;
         }
         if (!text || text.trim().length < 30) throw new Error("File Word không có nội dung hoặc đọc bị trống. Hãy kiểm tra lại file.");
         data = await parseCurriculumAppendix(text);

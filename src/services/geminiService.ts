@@ -207,7 +207,13 @@ LỆNH MÃ HÓA NL AI & NLS BẮT BUỘC THEO QĐ 2422/QĐ-BGDĐT:
   * Chủ đề bắt đầu bằng chữ C (C1, C2, C3, C4, C5) -> NLc - Các kĩ thuật và ứng dụng AI
   * Chủ đề bắt đầu bằng chữ D (D1, D2) -> NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI
   TUYỆT ĐỐI KHÔNG ghi nhầm NLD cho chủ đề B hoặc NLc cho chủ đề A.
-- Mã NL AI chuẩn: “[Lớp].[Mã chủ đề].[Số thứ tự]” (hoặc “NL[a/b/c/d]-[Lớp].[Mã chủ đề].[Số thứ tự]”), ví dụ: “10.A1.1”, “11.B2.1”, “12.B2.1”, “12.C3.1”.
+- NGUYÊN TẮC PHÂN BỔ ĐA DẠNG & CÂN ĐỐI 4 THÀNH PHẦN NL AI:
+  * TUYỆT ĐỐI KHÔNG dồn toàn bộ bài học vào mạch NLc. Phải phân bổ hài hòa cả 4 thành phần (NLa, NLb, NLc, NLd) đúng bản chất bài học:
+    + Bài thực hành / Báo cáo / Dự án / Tuyên truyền / Sản phẩm -> Ưu tiên NLd (Dự án/Thiết kế giải pháp, vd: 10.D1.1, 11.D1.1, 12.D1.1) hoặc NLb (An toàn thông tin, bảo vệ dữ liệu chủ quyền, liêm chính học thuật, vd: 12.B2.1, 11.B3.1, 10.B3.1).
+    + Bài lý thuyết trọng tâm / Kiểm chứng / Phản biện / Đọc Atlat, SGK -> Ưu tiên NLa (Kiểm soát, giám sát AI, fact-check, tư duy độc lập, con người làm chủ, vd: 10.A3.1, 11.A1.1, 12.A1.1).
+    + Bài phân tích số liệu / Bảng số liệu / Biểu đồ / Tra cứu thuật toán -> Ưu tiên NLc (Mô hình AI chuyên ngành, phân tích dữ liệu, prompt, vd: 10.C3.1, 11.C5.1, 12.C3.1).
+    + Bài về đạo đức / Pháp luật / Môi trường / An ninh mạng / Tin giả -> Ưu tiên NLb (Đạo đức, trách nhiệm xã hội, pháp lý, vd: 10.B2.1, 11.B2.1, 12.B1.1, 12.B2.1, 12.B3.1).
+- Mã NL AI chuẩn: “[Lớp].[Mã chủ đề].[Số thứ tự]” (hoặc “NL[a/b/c/d]-[Lớp].[Mã chủ đề].[Số thứ tự]”), ví dụ: “10.A1.1”, “11.B2.1”, “12.B2.1”, “12.C3.1”, “12.D1.1”.
 - MẪU TRÌNH BÀY BẮT BUỘC: “Thành phần NL AI: NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm; Khối lớp: 12; Chủ đề: B2; Mã chỉ báo NL AI: 12.B2.1”.
 - Mã NLS phải giữ nguyên đúng mã mức NC trong bảng TT 02/CV 3456, ví dụ “1.1.NCa”, “1.2.NCa”, “6.2.NCa”. Không dùng mã CB, TC hoặc NC1a.
 - Trình bày NLS: “Mã chỉ báo NLS: 1.1.NCa; Thành phần NLS: Duyệt, tìm kiếm và lọc dữ liệu số”.
@@ -491,6 +497,7 @@ const resolveVerifiedIntegrationDecision = (
   if (keepsAi) return "Chỉ NL AI";
   return "Không tích hợp";
 };
+
 const collectAuthorizedAiCodes = (grade: string | undefined, ...sources: unknown[]) => {
   const codes = new Set<string>();
   sources.forEach((source) => {
@@ -538,7 +545,6 @@ const sanitizeCompetencyCodesDeep = (value: any, grade?: string, authorizedAiCod
   return value;
 };
 
-
 /**
  * Tự động chuẩn hóa và gán điểm chạm NLS & NL AI chuẩn cho các bài học nếu AI sinh thiếu hoặc ghi từ chối không có căn cứ
  */
@@ -547,6 +553,7 @@ function autoAlignCompetencyForInstructionalLesson(row: any, grade: string = "10
 
   const content = String(row.lessonContent || row.lesson || row.topic || "").trim();
   const yccd = String(row.lessonGoal || row.yccd || "").trim();
+  const combined = `${content} ${yccd}`.toLowerCase();
   const isAssessment = /(kiểm tra|kiem tra|đánh giá định kì|danh gia dinh ki|giữa kì|giua ki|cuối kì|cuoi ki|dự trữ|du tru|ôn tập học kì|on tap hoc ki|mid-term|end-of-term|reviews*d|tests*d)/i.test(content);
 
   if (isAssessment) {
@@ -560,33 +567,41 @@ function autoAlignCompetencyForInstructionalLesson(row: any, grade: string = "10
   }
 
   const g = ["10", "11", "12"].includes(String(grade)) ? String(grade) : "10";
-  const normContent = content.toLowerCase();
-  const normSubject = subject.toLowerCase();
+  const normSubject = (subject || row.subject || "").toLowerCase();
   const isEnglish = normSubject.includes("tiếng anh") || normSubject.includes("english") || /units*d|getting started|language|reading|speaking|listening|writing/i.test(content);
 
   // Check if NLS is missing or rejected lazily
   const nlsMissing = !row.digitalCompetencyTT02 || /not integrated|không tích hợp|không gán mã/i.test(row.digitalCompetencyTT02);
   if (nlsMissing) {
     if (isEnglish) {
-      if (/getting started/i.test(normContent)) {
+      if (/getting started/i.test(combined)) {
         row.digitalCompetencyTT02 = "1.1.NCa: Tìm kiếm và khai thác hình ảnh, tư liệu âm thanh/video số về chủ đề bài học qua môi trường số.";
-      } else if (/language|pronunciation|grammar|vocabulary/i.test(normContent)) {
+      } else if (/language|pronunciation|grammar|vocabulary/i.test(combined)) {
         row.digitalCompetencyTT02 = "6.2.NCa: Sử dụng phần mềm số và từ điển trực tuyến để rèn luyện phát âm và tra cứu cấu trúc ngôn ngữ.";
-      } else if (/reading/i.test(normContent)) {
+      } else if (/reading/i.test(combined)) {
         row.digitalCompetencyTT02 = "1.2.NCa: Đánh giá độ tin cậy của thông tin số và khai thác tư liệu đọc mở rộng bằng tiếng Anh.";
-      } else if (/speaking/i.test(normContent)) {
+      } else if (/speaking/i.test(combined)) {
         row.digitalCompetencyTT02 = "2.2.NCa: Chia sẻ bản ghi âm, clip thuyết trình tiếng Anh qua nền tảng số của lớp.";
-      } else if (/listening/i.test(normContent)) {
+      } else if (/listening/i.test(combined)) {
         row.digitalCompetencyTT02 = "1.1.NCa: Tiếp nhận, xử lý và điều hướng giữa các nguồn học liệu âm thanh số trong học tập.";
-      } else if (/writing/i.test(normContent)) {
+      } else if (/writing/i.test(combined)) {
         row.digitalCompetencyTT02 = "3.1.NCa: Tạo lập và định dạng bài viết đoạn văn, bài luận tiếng Anh bằng công cụ soạn thảo số.";
-      } else if (/project|looking back/i.test(normContent)) {
+      } else if (/project|looking back/i.test(combined)) {
         row.digitalCompetencyTT02 = "2.4.NCa: Hợp tác nhóm trực tuyến trên nền tảng số để thiết kế sản phẩm dự án học tập.";
       } else {
         row.digitalCompetencyTT02 = "1.1.NCa: Khai thác dữ liệu, thông tin số phục vụ nhiệm vụ học tập.";
       }
     } else {
-      row.digitalCompetencyTT02 = "1.1.NCa: Khai thác và xử lý nguồn dữ liệu số chính thống phục vụ yêu cầu cần đạt của bài học.";
+      // Non-English subjects (Địa lí, Lịch sử, Toán, Lý, Hóa, Sinh, Tin học, Công nghệ, GDCD...)
+      if (/thực hành|báo cáo|dự án|tuyên truyền|sản phẩm|infographic|áp phích|poster|thuyết trình/i.test(combined)) {
+        row.digitalCompetencyTT02 = "3.1.NCa: Tạo lập, biên tập và định dạng sản phẩm số phục vụ báo cáo thực hành, tuyên truyền hoặc dự án học tập.";
+      } else if (/đối chiếu|kiểm chứng|so sánh|đánh giá|phản biện|độ tin cậy|chọn lọc/i.test(combined)) {
+        row.digitalCompetencyTT02 = "1.2.NCa: Đánh giá dữ liệu, thông tin và nội dung số; kiểm chứng chéo độ tin cậy của các nguồn học liệu số.";
+      } else if (/chia sẻ|thảo luận|làm việc nhóm|hợp tác|trao đổi/i.test(combined)) {
+        row.digitalCompetencyTT02 = "2.4.NCa: Hợp tác nhóm trực tuyến thông qua công cụ và nền tảng số để hoàn thành nhiệm vụ học tập.";
+      } else {
+        row.digitalCompetencyTT02 = "1.1.NCa: Tìm kiếm, duyệt và lọc dữ liệu, thông tin số chính thống phục vụ yêu cầu cần đạt của bài học.";
+      }
     }
   }
 
@@ -594,25 +609,85 @@ function autoAlignCompetencyForInstructionalLesson(row: any, grade: string = "10
   const aiMissing = !row.aiCompetency2422Integrated || /not integrated|không tích hợp|không gán mã/i.test(row.aiCompetency2422Integrated);
   if (aiMissing) {
     if (isEnglish) {
-      if (/getting started/i.test(normContent)) {
+      if (/getting started/i.test(combined)) {
         row.aiCompetency2422Integrated = `NLc - ${g}.C3.1: Kỹ thuật Prompt Engineering cơ bản (Sử dụng prompt để AI gợi ý từ vựng, ngữ cảnh giao tiếp theo chủ đề bài học và đối chiếu với SGK).`;
-      } else if (/language|pronunciation|grammar|vocabulary/i.test(normContent)) {
+      } else if (/language|pronunciation|grammar|vocabulary/i.test(combined)) {
         row.aiCompetency2422Integrated = `NLc - ${g}.C2.1: Ứng dụng AI trong học tập (Sử dụng AI hỗ trợ giải thích sắc thái từ vựng, ngữ pháp; học sinh đóng vai trò kiểm soát).`;
-      } else if (/reading/i.test(normContent)) {
+      } else if (/reading/i.test(combined)) {
         row.aiCompetency2422Integrated = `NLa - ${g}.A3.1: Kiểm soát và giám sát AI (Đọc hiểu văn bản SGK và kiểm chứng tính chính xác của các nội dung tóm tắt/câu hỏi do AI tạo ra).`;
-      } else if (/speaking/i.test(normContent)) {
+      } else if (/speaking/i.test(combined)) {
         row.aiCompetency2422Integrated = `NLc - ${g}.C2.1: Ứng dụng AI trong học tập (Tương tác với AI chatbot luyện tập phản xạ giao tiếp tiếng Anh theo chủ đề).`;
-      } else if (/listening/i.test(normContent)) {
+      } else if (/listening/i.test(combined)) {
         row.aiCompetency2422Integrated = `NLa - ${g}.A1.1: Con người trong hệ thống AI (Học sinh nghe hiểu audio gốc và đánh giá độ chính xác của phụ đề do AI nhận diện).`;
-      } else if (/writing/i.test(normContent)) {
+      } else if (/writing/i.test(combined)) {
         row.aiCompetency2422Integrated = `NLb - ${g}.B3.1: Trách nhiệm xã hội khi sử dụng AI (Sử dụng AI gợi ý dàn ý, cam kết không sao chép nguyên văn và ghi rõ nguồn khi dùng AI).`;
-      } else if (/project|looking back/i.test(normContent)) {
+      } else if (/project|looking back/i.test(combined)) {
         row.aiCompetency2422Integrated = `NLd - ${g}.D1.1: Nhận diện bài toán và đề xuất giải pháp ứng dụng AI (Thiết kế bài thuyết trình dự án có sự hỗ trợ công cụ AI).`;
       } else {
         row.aiCompetency2422Integrated = `NLc - ${g}.C3.1: Kỹ thuật Prompt Engineering cơ bản (Đặt câu lệnh có cấu trúc để khai thác tư liệu học tập có chọn lọc).`;
       }
     } else {
-      row.aiCompetency2422Integrated = `NLc - ${g}.C3.1: Kỹ thuật Prompt Engineering cơ bản (Sử dụng prompt rõ ràng để AI hỗ trợ thu thập thông tin và kiểm chứng lại với SGK).`;
+      // Non-English subjects: Contextually distribute across NLa, NLb, NLc, NLd
+      const isPracticalOrProject = /thực hành|báo cáo|dự án|tuyên truyền|sản phẩm|infographic|thiết kế|địa phương/i.test(combined);
+      const isSecurityOrEthics = /chủ quyền|biển đảo|an ninh|pháp luật|đạo đức|tin giả|deepfake|bản quyền|liêm chính|môi trường|bền vững|tài nguyên/i.test(combined);
+      const isDataOrSim = /số liệu|biểu đồ|bảng số liệu|bản đồ|gis|thống kê|tính toán|mô phỏng|thuật toán|dữ liệu/i.test(combined);
+      const isCareer = /nghề nghiệp|định hướng nghề|thị trường lao động/i.test(combined);
+      const isFactCheck = /kiểm chứng|rà soát|fact-check|phản biện|đối chiếu|đánh giá độ tin cậy/i.test(combined);
+
+      if (g === "12") {
+        if (isSecurityOrEthics) {
+          if (/môi trường|bền vững|tài nguyên/i.test(combined)) {
+            row.aiCompetency2422Integrated = "NLb - 12.B3.1: Trách nhiệm xã hội và tính bền vững của AI (Đánh giá tác động tiêu thụ tài nguyên tính toán của AI đối với môi trường và phát triển bền vững).";
+          } else if (/pháp luật|quy định|trách nhiệm giải trình/i.test(combined)) {
+            row.aiCompetency2422Integrated = "NLb - 12.B1.1: Khung pháp lý và đạo đức công nghệ AI (Phân tích các quy định pháp luật về trách nhiệm giải trình và an toàn khi vận hành hệ thống AI).";
+          } else {
+            row.aiCompetency2422Integrated = "NLb - 12.B2.1: Đánh giá rủi ro an ninh mạng và thao túng thông tin (Nhận diện nguy cơ deepfake, tin giả; thực hiện các biện pháp xác thực nguồn tin đa kênh và bảo vệ chủ quyền dữ liệu số).";
+          }
+        } else if (isPracticalOrProject) {
+          row.aiCompetency2422Integrated = "NLd - 12.D1.1: Thiết kế dự án nghiên cứu học tập ứng dụng AI (Xây dựng và thực hiện dự án học tập có ứng dụng AI từ thu thập, xử lý đến báo cáo kết quả và đánh giá).";
+        } else if (isDataOrSim) {
+          row.aiCompetency2422Integrated = "NLc - 12.C3.1: Khai thác hệ thống AI chuyên ngành (Sử dụng thành thạo mô hình AI chuyên ngành để phân tích dữ liệu chuyên sâu, mô phỏng và kiểm chứng với SGK/Atlat).";
+        } else if (isCareer) {
+          row.aiCompetency2422Integrated = "NLa - 12.A2.1: Định hướng nghề nghiệp và thích ứng với AI (Xác định lộ trình phát triển năng lực bản thân để thích ứng và cộng tác hiệu quả với AI trong lĩnh vực tương lai).";
+        } else {
+          row.aiCompetency2422Integrated = "NLa - 12.A1.1: Lãnh đạo và quản trị trong kỷ nguyên AI (Thể hiện tư duy độc lập và năng lực làm chủ công nghệ; đưa ra phán đoán phản biện và quyết định cuối cùng trong môn học).";
+        }
+      } else if (g === "11") {
+        if (isSecurityOrEthics) {
+          if (/định kiến|bias|công bằng/i.test(combined)) {
+            row.aiCompetency2422Integrated = "NLb - 11.B2.1: Định kiến và tính công bằng trong AI (Nhận diện và phân tích biểu hiện thiên lệch/bias trong phản hồi của AI; đề xuất cách kiểm chứng).";
+          } else {
+            row.aiCompetency2422Integrated = "NLb - 11.B3.1: Quy chuẩn liêm chính học thuật và AI (Vận dụng chuẩn mực liêm chính học thuật khi dùng AI; lập bảng đối chiếu minh bạch nội dung AI gợi ý và tự làm).";
+          }
+        } else if (isPracticalOrProject) {
+          row.aiCompetency2422Integrated = "NLd - 11.D1.1: Thiết kế giải pháp học tập tích hợp AI (Xây dựng quy trình học tập cá nhân hóa có sự trợ giúp của AI và kiểm tra chéo kết quả).";
+        } else if (isDataOrSim) {
+          row.aiCompetency2422Integrated = "NLc - 11.C5.1: Phân tích dữ liệu bằng AI (Sử dụng AI để xử lý, làm sạch và phân tích các tập dữ liệu thực nghiệm/thống kê trong môn học; rút ra kết luận logic).";
+        } else if (isCareer) {
+          row.aiCompetency2422Integrated = "NLa - 11.A2.1: Đánh giá tác động của AI đối với nghề nghiệp (Đánh giá sự thay đổi ngành nghề dưới tác động của AI; xác định kỹ năng cần trau dồi).";
+        } else {
+          row.aiCompetency2422Integrated = "NLa - 11.A1.1: Phân công trách nhiệm Người và AI (Phân tích vai trò bổ trợ của AI; giải thích tại sao quyết định nhân văn và phán đoán đạo đức thuộc về con người).";
+        }
+      } else {
+        // Grade 10
+        if (isSecurityOrEthics) {
+          if (/dữ liệu cá nhân|quyền riêng tư|bảo vệ/i.test(combined)) {
+            row.aiCompetency2422Integrated = "NLb - 10.B2.1: Bảo vệ dữ liệu cá nhân và quyền riêng tư (Tuân thủ nguyên tắc không chia sẻ dữ liệu nhạy cảm, định danh cá nhân khi tương tác với công cụ AI).";
+          } else {
+            row.aiCompetency2422Integrated = "NLb - 10.B3.1: Sở hữu trí tuệ và tính minh bạch (Giải thích sự cần thiết của việc ghi rõ nguồn gốc, mức độ hỗ trợ của AI; tôn trọng bản quyền tác giả).";
+          }
+        } else if (isPracticalOrProject) {
+          row.aiCompetency2422Integrated = "NLd - 10.D1.1: Ý tưởng ứng dụng AI giải quyết vấn đề (Đề xuất ý tưởng sử dụng công cụ AI phù hợp để giải quyết nhiệm vụ học tập thực tiễn môn học).";
+        } else if (isDataOrSim || /prompt|câu lệnh/i.test(combined)) {
+          row.aiCompetency2422Integrated = "NLc - 10.C3.1: Kỹ năng thiết lập câu lệnh Prompt (Thiết kế và tinh chỉnh câu lệnh có cấu trúc rõ ràng để nhận phản hồi chính xác từ AI).";
+        } else if (isFactCheck) {
+          row.aiCompetency2422Integrated = "NLa - 10.A3.1: Kiểm soát và giám sát AI (Thực hiện rà soát, kiểm chứng độc lập các nội dung do AI tạo ra bằng các nguồn tài liệu chính thống như SGK).";
+        } else if (isCareer) {
+          row.aiCompetency2422Integrated = "NLa - 10.A2.1: AI vì sự tiến bộ của con người (Nêu ví dụ về lợi ích và rủi ro của AI; khẳng định AI chỉ hỗ trợ chứ không thay thế tư duy con người).";
+        } else {
+          row.aiCompetency2422Integrated = "NLa - 10.A1.1: Con người trong hệ thống AI (Nhận biết con người là chủ thể thiết kế, kiểm soát hoạt động và chịu trách nhiệm về quyết định của hệ thống AI).";
+        }
+      }
     }
   }
 
@@ -621,7 +696,7 @@ function autoAlignCompetencyForInstructionalLesson(row: any, grade: string = "10
 
 const sanitizeGeneratedCompetencyRows = (rows: any[], grade?: string, authorizedAiCodes = new Set<string>(), authorizedNlsCodes = new Set<string>()) =>
   rows.map((row) => {
-    const aligned = autoAlignCompetencyForInstructionalLesson(row, grade);
+    const aligned = autoAlignCompetencyForInstructionalLesson(row, grade, row?.subject);
     return sanitizeCompetencyCodesDeep(aligned, grade, authorizedAiCodes, authorizedNlsCodes);
   });
 const normalizeViText = (value?: string) =>
@@ -672,7 +747,7 @@ const getSubjectCompetencyRule = (subject: string) => {
   if (/the chat|quoc phong|trai nghiem|huong nghiep/.test(key)) {
     return "- Nhóm hoạt động/kĩ năng: bám nhiệm vụ thực hành, trải nghiệm, an toàn, hợp tác, tự đánh giá và minh chứng sản phẩm; không gán mã AI nếu không có thao tác số/AI thật.";
   }
-  return "- Với môn học này, chỉ chọn mã dựa trên thao tác học tập thật sự được nêu trong YCCĐ; không gán mã theo tên bài một cách hình thức.";
+  return "- Ưu tiên năng lực số và năng lực AI xuất hiện tự nhiên từ yêu cầu bài học, không gượng ép.";
 };
 
 const needsGeoDataArtifact = (analysis: any, suggestion: any, sourceText?: string) => {
@@ -716,7 +791,11 @@ const buildGeoDataRequirement = (analysis: any, suggestion: any, sourceText?: st
   };
 };
 
-const sanitizeAnalysisResultCompetencies = (analysis: any, forcedGrade?: string, sourceText?: string) => {
+export const sanitizeAnalysisResultForGrade = (
+  analysis: any,
+  sourceText?: string,
+  forcedGrade?: string,
+) => {
   const grade = forcedGrade || extractGradeNumber(analysis?.grade) || "10";
   const authorizedNlsCodes = collectAuthorizedNlsCodes(grade, sourceText);
   let rawSuggestions = Array.isArray(analysis?.aiSuggestions) ? analysis.aiSuggestions : [];
@@ -795,6 +874,154 @@ const sanitizeAnalysisResultCompetencies = (analysis: any, forcedGrade?: string,
         reason: "Khuyến khích sáng tạo và kỹ năng ứng dụng AI giải quyết vấn đề.",
         action: "HS hoàn thành sản phẩm số vận dụng."
       }
+    ],
+    "11": [
+      {
+        activityName: "Hoạt động 1: Mở đầu (Khởi động)",
+        targetSection: "Nội dung",
+        targetContent: "Khởi động và kết nối tri thức",
+        integrationDecision: "NLS và NL AI",
+        suggestedNLS: "1.1.NCa",
+        nlsCompetencyName: "Tìm kiếm và lọc dữ liệu, thông tin và nội dung số",
+        nlsStudentBehavior: "Học sinh sử dụng công cụ tìm kiếm và từ khóa chuyên ngành để thu thập dữ liệu số phục vụ bài học.",
+        nlsProduct: "Tư liệu số tổng hợp ban đầu.",
+        nlsCriteria: "Nguồn chính thống, bám sát yêu cầu cần đạt.",
+        suggestedAI: "NLc-11.C3.1",
+        aiCompetencyName: "NLc - Các kĩ thuật và ứng dụng AI",
+        aiTopic: "C3",
+        aiStudentBehavior: "Học sinh áp dụng kỹ thuật prompt nâng cao (Few-shot, Chain-of-thought) để AI gợi ý góc nhìn đa chiều về vấn đề học tập.",
+        aiYccd: "Áp dụng kỹ thuật prompt nâng cao để xử lý các bài toán, tình huống phức tạp trong môn học.",
+        aiProduct: "Bản ghi prompt và kết quả gợi ý từ AI.",
+        aiCriteria: "Prompt có cấu trúc rõ ràng, tư duy logic.",
+        aiEvidence: "Lịch sử tương tác và ghi chép của học sinh.",
+        yccdEvidence: "YCCĐ môn học Chương trình GDPT 2018.",
+        integrationLevel: "Mức vừa",
+        devicePlan: "Phương án B: Thiết bị dùng chung / máy chiếu",
+        reason: "Khai thác kỹ thuật prompt nâng cao trong bối cảnh lớp 11.",
+        action: "HS thực hiện lệnh prompt nâng cao với AI."
+      },
+      {
+        activityName: "Hoạt động 2: Hình thành kiến thức mới",
+        targetSection: "Thực hiện nhiệm vụ",
+        targetContent: "Phân tích, xử lý dữ liệu và hình thành kiến thức",
+        integrationDecision: "NLS và NL AI",
+        suggestedNLS: "1.2.NCa",
+        nlsCompetencyName: "Đánh giá dữ liệu, thông tin và nội dung số",
+        nlsStudentBehavior: "Học sinh đối chiếu, phát hiện thiên kiến và kiểm chứng độ chính xác của thông tin do AI cung cấp.",
+        nlsProduct: "Bảng phân tích đối chiếu thông tin AI và SGK.",
+        nlsCriteria: "Đánh giá khách quan, chỉ rõ căn cứ đối chiếu.",
+        suggestedAI: "NLa-11.A1.1",
+        aiCompetencyName: "NLa - Tư duy lấy con người làm trung tâm",
+        aiTopic: "A1",
+        aiStudentBehavior: "Học sinh phân tích vai trò bổ trợ của AI, thực hiện phán đoán phản biện và ra quyết định độc lập.",
+        aiYccd: "Phân tích được vai trò bổ trợ của AI; giải thích tại sao quyết định nhân văn và phán đoán thuộc về con người.",
+        aiProduct: "Báo cáo nhận định phản biện của học sinh.",
+        aiCriteria: "Lập luận chặt chẽ, khẳng định con người làm chủ AI.",
+        aiEvidence: "Bản phân tích và biên bản làm việc nhóm.",
+        yccdEvidence: "Rèn luyện tư duy độc lập và làm chủ công nghệ.",
+        integrationLevel: "Mức vừa",
+        devicePlan: "Phương án B: Thảo luận nhóm / máy chiếu",
+        reason: "Khẳng định vai trò chủ đạo của con người trong kỷ nguyên AI.",
+        action: "HS đánh giá phản biện kết quả AI."
+      },
+      {
+        activityName: "Hoạt động 4: Vận dụng",
+        targetSection: "Nội dung",
+        targetContent: "Vận dụng và phát triển giải pháp",
+        integrationDecision: "NLS và NL AI",
+        suggestedNLS: "3.1.NCa",
+        nlsCompetencyName: "Phát triển nội dung số",
+        nlsStudentBehavior: "Học sinh thiết kế giải pháp học tập hoặc sản phẩm số cá nhân hóa có sự hỗ trợ của AI.",
+        nlsProduct: "Sản phẩm dự án hoặc quy trình học tập cá nhân hóa.",
+        nlsCriteria: "Tính ứng dụng cao, minh bạch phần AI đóng góp.",
+        suggestedAI: "NLd-11.D1.1",
+        aiCompetencyName: "NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI",
+        aiTopic: "D1",
+        aiStudentBehavior: "Học sinh xây dựng quy trình học tập cá nhân hóa có sự trợ giúp của AI và kiểm tra chéo kết quả.",
+        aiYccd: "Xây dựng được quy trình học tập cá nhân hóa có sự trợ giúp của AI.",
+        aiProduct: "Kế hoạch giải pháp học tập tích hợp AI hoàn chỉnh.",
+        aiCriteria: "Quy trình rõ ràng, có tiêu chí kiểm thử kết quả.",
+        aiEvidence: "Hồ sơ dự án học tập.",
+        yccdEvidence: "Vận dụng giải quyết vấn đề thực tiễn.",
+        integrationLevel: "Mức sâu",
+        devicePlan: "Phương án A/B: Thực hiện tại nhà hoặc phòng bộ môn",
+        reason: "Phát triển năng lực thiết kế giải pháp có AI hỗ trợ.",
+        action: "HS hoàn thành quy trình giải pháp số."
+      }
+    ],
+    "12": [
+      {
+        activityName: "Hoạt động 1: Mở đầu (Khởi động)",
+        targetSection: "Nội dung",
+        targetContent: "Khởi động và kết nối vấn đề chuyên sâu",
+        integrationDecision: "NLS và NL AI",
+        suggestedNLS: "1.1.NCa",
+        nlsCompetencyName: "Tìm kiếm và lọc dữ liệu, thông tin và nội dung số",
+        nlsStudentBehavior: "Học sinh tra cứu dữ liệu số chuyên ngành từ các nguồn tài liệu chính thống của bộ ngành.",
+        nlsProduct: "Bộ số liệu và tư liệu số chuyên đề.",
+        nlsCriteria: "Số liệu chuẩn xác, trích dẫn đúng quy chuẩn.",
+        suggestedAI: "NLc-12.C3.1",
+        aiCompetencyName: "NLc - Các kĩ thuật và ứng dụng AI",
+        aiTopic: "C3",
+        aiStudentBehavior: "Học sinh sử dụng mô hình AI chuyên ngành để phân tích sơ bộ dữ liệu không gian, thống kê hoặc tình huống thực tế.",
+        aiYccd: "Sử dụng thành thạo các mô hình AI chuyên ngành để phân tích dữ liệu chuyên sâu và giải quyết bài toán môn học.",
+        aiProduct: "Kết quả truy vấn và phân tích dữ liệu từ AI chuyên ngành.",
+        aiCriteria: "Khai thác hiệu quả công cụ AI, đối chiếu dữ liệu gốc.",
+        aiEvidence: "Lịch sử truy vấn và bản ghi số liệu.",
+        yccdEvidence: "YCCĐ chuyên sâu môn học lớp 12.",
+        integrationLevel: "Mức vừa",
+        devicePlan: "Phương án B: Thiết bị dùng chung / máy chiếu",
+        reason: "Ứng dụng AI chuyên sâu trong học tập lớp 12.",
+        action: "HS truy vấn mô hình AI chuyên ngành."
+      },
+      {
+        activityName: "Hoạt động 2: Hình thành kiến thức mới",
+        targetSection: "Thực hiện nhiệm vụ",
+        targetContent: "Nghiên cứu chuyên sâu, đánh giá an toàn và phản biện",
+        integrationDecision: "NLS và NL AI",
+        suggestedNLS: "1.2.NCa",
+        nlsCompetencyName: "Đánh giá dữ liệu, thông tin và nội dung số",
+        nlsStudentBehavior: "Học sinh nhận diện nguy cơ tin giả, deepfake, xác thực nguồn tin đa kênh và bảo vệ chủ quyền dữ liệu số.",
+        nlsProduct: "Báo cáo xác thực nguồn tin và đánh giá an toàn thông tin.",
+        nlsCriteria: "Xác minh chuẩn xác, tuân thủ pháp luật và an toàn thông tin.",
+        suggestedAI: "NLb-12.B2.1",
+        aiCompetencyName: "NLb - Đạo đức AI, an toàn, pháp luật và trách nhiệm",
+        aiTopic: "B2",
+        aiStudentBehavior: "Học sinh nhận diện các nguy cơ deepfake, tin giả do AI tạo ra; thực hiện các biện pháp xác thực nguồn tin đa kênh.",
+        aiYccd: "Nhận diện được nguy cơ deepfake, tin giả; thực hiện biện pháp xác thực nguồn tin đa kênh và bảo vệ dữ liệu.",
+        aiProduct: "Bảng đối chiếu kiểm chứng tính xác thực đa nguồn.",
+        aiCriteria: "Chỉ rõ rủi ro sai lệch, phương pháp xác thực đáng tin cậy.",
+        aiEvidence: "Bản thẩm định nguồn tin của học sinh.",
+        yccdEvidence: "Phát triển tư duy đạo đức, an toàn và trách nhiệm số.",
+        integrationLevel: "Mức vừa",
+        devicePlan: "Phương án B: Máy chiếu / thảo luận nhóm",
+        reason: "Nâng cao nhận thức đạo đức, pháp lý và bảo vệ chủ quyền thông tin.",
+        action: "HS kiểm định tính an toàn và xác thực của thông tin AI."
+      },
+      {
+        activityName: "Hoạt động 4: Vận dụng",
+        targetSection: "Nội dung",
+        targetContent: "Thực hiện dự án nghiên cứu học tập thực tế",
+        integrationDecision: "NLS và NL AI",
+        suggestedNLS: "3.1.NCa",
+        nlsCompetencyName: "Phát triển nội dung số",
+        nlsStudentBehavior: "Học sinh xây dựng và hoàn thiện sản phẩm báo cáo/dự án học tập hoàn chỉnh có ứng dụng AI.",
+        nlsProduct: "Báo cáo dự án học tập hoàn chỉnh kèm phần giải trình sử dụng AI.",
+        nlsCriteria: "Sản phẩm chất lượng cao, minh bạch đạo đức AI và có tính ứng dụng thực tiễn.",
+        suggestedAI: "NLd-12.D1.1",
+        aiCompetencyName: "NLd - Thiết kế, thử nghiệm và cải tiến hệ thống AI",
+        aiTopic: "D1",
+        aiStudentBehavior: "Học sinh xây dựng và thực hiện một dự án học tập hoàn chỉnh có ứng dụng AI từ thu thập, phân tích đến báo cáo kết quả.",
+        aiYccd: "Xây dựng và thực hiện một dự án học tập hoàn chỉnh có ứng dụng AI từ thu thập dữ liệu đến báo cáo kết quả.",
+        aiProduct: "Hồ sơ dự án học tập hoàn chỉnh có sự hỗ trợ của AI.",
+        aiCriteria: "Đầy đủ các bước quy trình, minh bạch đóng góp của AI và học sinh.",
+        aiEvidence: "Báo cáo tổng kết dự án và sản phẩm số.",
+        yccdEvidence: "Vận dụng kiến thức chuyên sâu vào giải quyết vấn đề thực tiễn.",
+        integrationLevel: "Mức sâu",
+        devicePlan: "Phương án A/B: Thực hiện tại nhà hoặc phòng bộ môn",
+        reason: "Hoàn thiện năng lực thiết kế dự án học tập tích hợp AI cấp THPT.",
+        action: "HS hoàn thành dự án học tập vận dụng."
+      }
     ]
   };
 
@@ -815,7 +1042,11 @@ const sanitizeAnalysisResultCompetencies = (analysis: any, forcedGrade?: string,
       sanitizedNls = { code: fallbackNls, verifiedFromSource: true };
     }
     if (sanitizedAi.code === "Không gán mã" || !sanitizedAi.code) {
-      const fallbackAi = index === 0 ? `NLc-${g}.C3.1` : index === 1 ? `NLa-${g}.A3.1` : `NLd-${g}.D1.1`;
+      const fallbackAi = index === 0
+        ? `NLc-${g}.C3.1`
+        : index === 1
+          ? (g === "12" ? `NLb-12.B2.1` : `NLa-${g}.A3.1`)
+          : (g === "12" ? `NLd-12.D1.1` : `NLd-${g}.D1.1`);
       sanitizedAi = { code: fallbackAi };
     }
 

@@ -86,11 +86,19 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
         },
       };
 
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
+      let res: Response;
+      try {
+        res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!res.ok) {
         const errText = await res.text();
@@ -2688,128 +2696,38 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
   const departmentAuthorizedNlsCodes = collectAuthorizedNlsCodes(grade, JSON.stringify(options?.customCurriculumData || []), JSON.stringify(options?.curriculumDbData || []));
   const isGeographyThptBatch = isStandaloneGeographySubject(subject) && ["10", "11", "12"].includes(String(grade).trim()) && !options?.customCurriculumData && geographyCurriculum.length > 0;
 
-  // ===== BATCH PROCESSING FOR CUSTOM CURRICULUM DATA (USER UPLOADED) =====
+  // ===== INSTANT HIGH-SPEED GENERATION FOR CUSTOM CURRICULUM DATA (USER UPLOADED) =====
   if (Array.isArray(options?.customCurriculumData) && options.customCurriculumData.length > 0) {
     const customList = options.customCurriculumData;
-    const CUSTOM_BATCH_SIZE = 16;
-    const allBatchResults: any[] = [];
     let weekCounter = 1;
-
-    for (let bIdx = 0; bIdx < customList.length; bIdx += CUSTOM_BATCH_SIZE) {
-      const batch = customList.slice(bIdx, bIdx + CUSTOM_BATCH_SIZE);
-      const batchNum = Math.floor(bIdx / CUSTOM_BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(customList.length / CUSTOM_BATCH_SIZE);
-
-      const bLines = [
-        CONTENT_INTEGRITY_RULES,
-        "",
-        `Bạn là Chuyên gia xây dựng Kế hoạch giáo dục Tổ chuyên môn tích hợp AI cho môn: ${subject}, lớp: ${grade}.`,
-        "",
-        AI_SUBJECT_GUIDELINES,
-        SOCIAL_INTEGRATION_GUIDELINES,
-        socialSelectionPrompt,
-        competencyGuardrails,
-        AI_COMPETENCY_ORDER_RULE,
-        "",
-        `DANH SÁCH ${batch.length} BÀI HỌC BẮT BUỘC TỪ PHỤ LỤC GỐC DO GIÁO VIÊN CUNG CẤP (Lô ${batchNum}/${totalBatches}, bắt đầu từ Tuần ${weekCounter}):`,
-        JSON.stringify(batch, null, 2),
-        "",
-        "YÊU CẦU TUYỆT ĐỐI BẮT BUỘC:",
-        `1. TẠO ĐÚNG ĐỦ ${batch.length} HÀNG cho ${batch.length} bài học trên. KHÔNG ĐƯỢC BỎ SÓT BÀI NÀO.`,
-        "2. lessonGoal: SAO CHÉP Y NGUYÊN 100% nội dung YCCĐ từ dữ liệu trên. TUYỆT ĐỐI KHÔNG tóm tắt hay cắt xén.",
-        "3. TÍCH HỢP NLS và NL AI chi khi YCCĐ của bài có điểm chạm rõ ràng. Mỗi ô BẮT BUỘC ghi đầy đủ chi tiết:",
-        "   - digitalCompetencyTT02 (NLS):",
-        "     Mã chỉ báo NLS: [Mã chuẩn TT02]; Thành phần NLS: [Tên thành phần]",
-        "     - YCCĐ NLS: [Nội dung YCCĐ cụ thể]",
-        "     - Hành vi HS: [Hành vi thao tác số cụ thể]",
-        "     - Sản phẩm đầu ra: [Sản phẩm số cụ thể]",
-        "   - aiCompetency2422Integrated (NL AI):",
-        "     Thành phần NL AI: NL[a/b/c/d] - [Tên thành phần]; Khối lớp: [Lớp]; Chủ đề: [Mã chủ đề]; Mã chỉ báo NL AI: [Mã chuẩn QĐ 2422]",
-        "     - Yêu cầu cần đạt AI: [Nội dung YCCĐ chuẩn theo QĐ 2422]",
-        "     - Hành vi học sinh: [Hành vi tương tác/prompt/kiểm chứng của HS]",
-        "     - Sản phẩm đầu ra: [Sản phẩm học tập cụ thể]",
-        "     - Tiêu chí đánh giá: [Tiêu chí đánh giá & minh chứng kiểm chứng]",
-        "   - Chủ đề A -> NLa (Tư duy lấy con người làm trung tâm)",
-        "   - Chủ đề B -> NLb (Đạo đức AI, an toàn, pháp luật và trách nhiệm)",
-        "   - Chủ đề C -> NLc (Các kĩ thuật và ứng dụng AI)",
-        "   - Chủ đề D -> NLd (Thiết kế, thử nghiệm và cải tiến hệ thống AI)",
-        `4. Phân bổ thời gian bắt đầu từ Tuần ${weekCounter}.`,
-        "5. socialIntegration: chỉ ghi đúng bài có điểm chạm; bài không phù hợp thì để chuỗi rỗng.",
-        "",
-        `Đầu ra: JSON Array gồm đúng ${batch.length} object với các trường: time, lessonContent, periods, lessonGoal, socialIntegration, digitalCompetencyTT02, aiCompetency2422Integrated.`
-      ];
-      const batchPrompt = bLines.join("\n");
-
-      const batchBody = {
-        contents: [{ role: 'user', parts: [{ text: batchPrompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          maxOutputTokens: 65536,
-          temperature: 0.1,
-          responseSchema: {
-            type: 'ARRAY' as any,
-            items: {
-              type: 'OBJECT' as any,
-              properties: {
-                time: { type: 'STRING' as any },
-                lessonContent: { type: 'STRING' as any },
-                periods: { type: 'STRING' as any },
-                lessonGoal: { type: 'STRING' as any },
-                digitalCompetencyTT02: { type: 'STRING' as any },
-                aiCompetency2422Integrated: { type: 'STRING' as any },
-                socialIntegration: { type: 'STRING' as any }
-              },
-              required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'socialIntegration', 'digitalCompetencyTT02', 'aiCompetency2422Integrated'],
-            },
-          },
-        },
-      };
-
-      const bApiKey = localStorage.getItem('GEMINI_API_KEY');
-      if (!bApiKey) throw new Error('API_KEY_REQUIRED');
-      const bStartModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
-      const bModels = getFallbackModels(bStartModel);
-      let batchResult: any[] | null = null;
-
-      for (let mi = 0; mi < bModels.length; mi++) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${bModels[mi]}:generateContent?key=${bApiKey}`;
-          const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(batchBody) });
-          if (!res.ok) {
-            const errText = await res.text();
-            if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
-            if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
-            throw new Error(`HTTP ${res.status}: ${errText}`);
-          }
-          const bjson = await res.json();
-          const btext = bjson?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (!btext) throw new Error('Empty batch response');
-          let bparsed: any = null;
-          let bstripped = stripMarkdownJson(btext);
-          try { bparsed = JSON.parse(bstripped); } catch {
-            try {
-              const ob = (bstripped.match(/{/g)||[]).length, cb = (bstripped.match(/}/g)||[]).length;
-              const oa = (bstripped.match(/\[/g)||[]).length, ca = (bstripped.match(/]/g)||[]).length;
-              for (let x=0; x<ob-cb; x++) bstripped+='}';
-              for (let x=0; x<oa-ca; x++) bstripped+=']';
-              bparsed = JSON.parse(bstripped);
-            } catch { /* ignore */ }
-          }
-          if (Array.isArray(bparsed) && bparsed.length > 0) {
-            batchResult = bparsed;
-            weekCounter += Math.max(1, Math.ceil(bparsed.reduce((s: number, it: any) => s + (parseInt(it.periods||'2')||2), 0) / 5));
-            break;
-          }
-        } catch (bErr: any) {
-          if (bErr.message?.startsWith('API_KEY_INVALID') || bErr.message?.includes('QUOTA_EXHAUSTED')) throw bErr;
-          if (mi === bModels.length - 1) throw bErr;
-          await new Promise(r => setTimeout(r, 2000));
-        }
+    let accumulatedPeriods = 0;
+    const directRows = customList.map((item: any) => {
+      const pCount = parseInt(item.periods || "1") || 1;
+      const week = item.time || item.order || `Tuần ${weekCounter}`;
+      accumulatedPeriods += pCount;
+      if (accumulatedPeriods >= 2) {
+        weekCounter++;
+        accumulatedPeriods = 0;
       }
-      if (batchResult) allBatchResults.push(...batchResult);
-    }
-    if (allBatchResults.length > 0) return sanitizeGeneratedCompetencyRows(allBatchResults, grade, departmentAuthorizedAiCodes, departmentAuthorizedNlsCodes);
+      return {
+        time: week,
+        lessonContent: item.lessonContent || item.lesson || item.topic || `Bài ${weekCounter}`,
+        periods: String(item.periods || "1"),
+        lessonGoal: item.lessonGoal || item.yccd || "",
+        digitalCompetencyTT02: item.digitalCompetencyTT02 || "",
+        aiCompetency2422Integrated: item.aiCompetency2422Integrated || "",
+        socialIntegration: item.socialIntegration || ""
+      };
+    });
+
+    return sanitizeGeneratedCompetencyRows(
+      directRows,
+      grade,
+      departmentAuthorizedAiCodes,
+      departmentAuthorizedNlsCodes
+    );
   }
+  // ===== END INSTANT GENERATION FOR CUSTOM CURRICULUM DATA =====
   // ===== END BATCH PROCESSING FOR CUSTOM CURRICULUM DATA =====
 
   // ===== INSTANT HIGH-SPEED GENERATION FOR DIA LI THPT =====

@@ -33,6 +33,27 @@ const normalizeHeader = (text: string): string =>
     .trim();
 
 /**
+ * Lọc bỏ thông tin AI cũ dính trong cột YCCĐ của file tải lên
+ */
+export function cleanSubjectYccd(text: string): string {
+  if (!text) return "";
+  const lines = text.split("\n");
+  const filtered = lines.filter((line) => {
+    const norm = line.toLowerCase();
+    return (
+      !norm.includes("mã nlai quy ước") &&
+      !norm.includes("yccd ai tích hợp") &&
+      !norm.includes("nhiệm vụ học tập có sử dụng ai") &&
+      !norm.includes("công cụ và dữ liệu sử dụng:") &&
+      !norm.includes("sản phẩm học tập & tiêu chí đánh giá:") &&
+      !norm.includes("cách kiểm chứng kết quả ai:") &&
+      !norm.includes("quy định bản quyền, dữ liệu & phương án khi mất internet")
+    );
+  });
+  return filtered.join("\n").trim();
+}
+
+/**
  * Trích xuất văn bản từ thẻ HTML của ô <td> / <th>, bảo toàn ngắt dòng và gạch đầu dòng
  */
 function extractCellContent(cellHtml: string): string {
@@ -193,7 +214,7 @@ export function parseDocxHtmlTable(html: string): ParsedCurriculumItem[] {
       }
 
       const yccdRaw = colYccd !== -1 && cells[colYccd]
-        ? extractCellContent(cells[colYccd].innerHTML || cells[colYccd].textContent || "")
+        ? cleanSubjectYccd(extractCellContent(cells[colYccd].innerHTML || cells[colYccd].textContent || ""))
         : "";
 
       const periodsRaw = colPeriods !== -1 && cells[colPeriods]
@@ -357,7 +378,7 @@ export function parseExcelCurriculumTable(tables: Record<string, any[][]>): Pars
         continue;
       }
 
-      const yccdRaw = colYccd !== -1 && row[colYccd] ? String(row[colYccd]).trim() : "";
+      const yccdRaw = colYccd !== -1 && row[colYccd] ? cleanSubjectYccd(String(row[colYccd]).trim()) : "";
       const periodsRaw = colPeriods !== -1 && row[colPeriods] ? String(row[colPeriods]).trim() : "1";
       const periodsMatch = periodsRaw.match(/\d+/);
       const periods = periodsMatch ? periodsMatch[0] : "1";

@@ -50,7 +50,7 @@ import { parseExcelFile, exportAlignmentRowsToExcel } from "./utils/excelParser"
 import { SOCIAL_INTEGRATION_OPTIONS } from "./data/socialIntegrations";
 import { normalizeAiCodesInText2422, formatAiCode2422, normalizeAiCode2422 } from "./data/aiRequirements2422Db";
 import * as mammoth from "mammoth";
-import { parseDocxHtmlTable, parseExcelCurriculumTable } from "./utils/docxTableParser";
+import { parseDocxHtmlTable, parseExcelCurriculumTable, cleanSubjectYccd } from "./utils/docxTableParser";
 
 const UpgradePlan = React.lazy(() => import("./components/UpgradePlan"));
 const SuDiaSkills = React.lazy(() => import("./components/SuDiaSkills"));
@@ -185,13 +185,19 @@ const normalizeKey = (value?: string) =>
 const readLessonTitle = (item: any) =>
   String(item?.lesson || item?.topic || item?.lessonContent || item?.lessonName || item?.title || "Nội dung cần bổ sung");
 
-const readLessonGoal = (item: any) =>
-  String(
+const readLessonGoal = (item: any) => {
+  const raw = String(
     item?.yccd ||
     item?.lessonGoal ||
     [item?.objectivesKnowledge, item?.objectivesCompetency, item?.objectivesQuality].filter(Boolean).join("; ") ||
+    ""
+  );
+  const cleaned = cleanSubjectYccd(raw);
+  return (
+    cleaned ||
     "Tổ chuyên môn rà soát và bổ sung yêu cầu cần đạt theo Chương trình GDPT 2018."
   );
+};
 
 const readPeriods = (item: any) => {
   const raw = String(item?.periods || item?.duration || item?.timeAmount || "1");
@@ -759,9 +765,15 @@ const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[], options: 
       : hasMeaningfulText(row?.lessonContent || row?.lessonName || row?.topic)
       ? String(row.lessonContent || row.lessonName || row.topic)
       : readLessonTitle(sourceItem);
-    const lessonGoal = shouldLockSourceSchedule && sourceItem
+    const rawGoal = shouldLockSourceSchedule && sourceItem
       ? readLessonGoal(sourceItem)
-      : hasMeaningfulText(row?.lessonGoal) ? String(row.lessonGoal) : readLessonGoal(sourceItem);
+      : hasMeaningfulText(row?.lessonGoal || row?.yccd)
+      ? String(row.lessonGoal || row.yccd)
+      : readLessonGoal(sourceItem);
+    let lessonGoal = cleanSubjectYccd(rawGoal);
+    if (!lessonGoal && sourceItem) {
+      lessonGoal = readLessonGoal(sourceItem);
+    }
     const time = shouldLockSourceSchedule && sourceItem
       ? (shouldLockGeographySchedule
         ? buildGeographyDepartmentTime(sourceItem, periods)

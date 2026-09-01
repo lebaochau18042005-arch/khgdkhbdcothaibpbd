@@ -87,7 +87,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
       };
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000);
+      const timeoutId = setTimeout(() => controller.abort(), 90000);
       let res: Response;
       try {
         res = await fetch(url, {
@@ -130,6 +130,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
     } catch (err: any) {
       console.error(`Lỗi với model ${currentModel}:`, err);
 
+      const isAbortError = err.name === 'AbortError' || (err.message && err.message.toLowerCase().includes('aborted'));
       const isQuotaExhausted = err.message && (err.message.includes('QUOTA_EXHAUSTED') || err.message.includes('429') || err.message.toLowerCase().includes('quota'));
       const isApiKeyInvalid = err.message && (err.message.startsWith('API_KEY_INVALID') || err.message.includes('401'));
       const isModelOverloaded = err.message && (err.message.includes('MODEL_OVERLOADED') || err.message.includes('503') || err.message.toLowerCase().includes('overloaded'));
@@ -137,14 +138,15 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
 
       // Auth failures: stop immediately — key rotation won't help
       if (isApiKeyInvalid) throw new Error('API_KEY_INVALID');
-      // Quota exhausted: stop immediately at last model
+      // Quota exhausted or aborted: try next model or fail gracefully
       if (isLastModel) {
         if (isQuotaExhausted) throw new Error('QUOTA_EXHAUSTED');
         if (isModelOverloaded) throw new Error('MODEL_OVERLOADED');
+        if (isAbortError) throw new Error('Yêu cầu tạo kế hoạch vượt quá thời gian chờ (90s). Vui lòng thử lại.');
         throw err;
       }
-      // Model overloaded: try next model, don't wait as long
-      await new Promise(r => setTimeout(r, isModelOverloaded ? 500 : 1000));
+      // Model overloaded or timed out: try next model
+      await new Promise(r => setTimeout(r, isModelOverloaded || isAbortError ? 500 : 1000));
     }
   }
 };

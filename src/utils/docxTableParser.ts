@@ -17,6 +17,9 @@ export interface ParsedCurriculumItem {
   lessonGoal?: string;
   timing?: string;
   time?: string;
+  socialIntegration?: string;
+  digitalCompetencyTT02?: string;
+  aiCompetency2422Integrated?: string;
 }
 
 const normalizeHeader = (text: string): string =>
@@ -103,6 +106,9 @@ export function parseDocxHtmlTable(html: string): ParsedCurriculumItem[] {
     let colPeriods = -1;
     let colTiming = -1;
     let colOrder = -1;
+    let colSocial = -1;
+    let colNls = -1;
+    let colAi = -1;
 
     for (let r = 0; r < Math.min(5, trs.length); r++) {
       const cells = Array.from(trs[r].querySelectorAll("th, td"));
@@ -113,21 +119,41 @@ export function parseDocxHtmlTable(html: string): ParsedCurriculumItem[] {
       let foundPeriods = -1;
       let foundTiming = -1;
       let foundOrder = -1;
+      let foundSocial = -1;
+      let foundNls = -1;
+      let foundAi = -1;
 
       cellTexts.forEach((header, idx) => {
-        if (colLesson === -1 && /(bai hoc|ten bai|chu de|noi dung|ten bai hoc|ten chu de|bai|lesson|topic)/.test(header)) {
+        const isAiHeader = /(gd ai|tich hop ai|tich hop gd ai|nang luc ai|nl ai|2422|3439)/.test(header);
+        const isNlsHeader = /(nang luc so|nls|tt02|tt 02)/.test(header);
+        const isSocialHeader = /(tich hop|long ghep|giao duc tich hop|noi dung giao duc)/.test(header) && !isAiHeader && !isNlsHeader;
+
+        if (isAiHeader) {
+          if (foundAi === -1) foundAi = idx;
+          return;
+        }
+        if (isNlsHeader) {
+          if (foundNls === -1) foundNls = idx;
+          return;
+        }
+        if (isSocialHeader) {
+          if (foundSocial === -1) foundSocial = idx;
+          return;
+        }
+
+        if (foundLesson === -1 && /(bai hoc|ten bai|chu de|ten chu de|noi dung|bai|lesson|topic)/.test(header) && !/(yeu cau|yccd|tiet|stt|tuan)/.test(header)) {
           foundLesson = idx;
         }
-        if (colYccd === -1 && /(yeu cau can dat|yccd|muc tieu|yeu cau|objectives|goal)/.test(header)) {
+        if (foundYccd === -1 && /(yeu cau can dat|yccd|muc tieu|yeu cau|objectives|goal)/.test(header) && !isAiHeader && !isNlsHeader) {
           foundYccd = idx;
         }
-        if (colPeriods === -1 && /(so tiet|thoi luong|tiet|periods|duration)/.test(header)) {
+        if (foundPeriods === -1 && /(so tiet|thoi luong|periods|duration)/.test(header) && !/(tuan|thoi diem)/.test(header)) {
           foundPeriods = idx;
         }
-        if (colTiming === -1 && /(tuan|thoi diem|thoi gian|timing|time)/.test(header)) {
+        if (foundTiming === -1 && /(tuan|thoi diem|thoi gian|timing|time)/.test(header)) {
           foundTiming = idx;
         }
-        if (colOrder === -1 && /(stt|thu tu|tiet thu|order)/.test(header)) {
+        if (foundOrder === -1 && /(stt|thu tu|tiet thu|order)/.test(header)) {
           foundOrder = idx;
         }
       });
@@ -139,6 +165,9 @@ export function parseDocxHtmlTable(html: string): ParsedCurriculumItem[] {
         colPeriods = foundPeriods;
         colTiming = foundTiming;
         colOrder = foundOrder;
+        colSocial = foundSocial;
+        colNls = foundNls;
+        colAi = foundAi;
         break;
       }
     }
@@ -181,6 +210,18 @@ export function parseDocxHtmlTable(html: string): ParsedCurriculumItem[] {
         ? cells[colOrder].textContent?.trim() || ""
         : "";
 
+      const socialRaw = colSocial !== -1 && cells[colSocial]
+        ? extractCellContent(cells[colSocial].innerHTML || cells[colSocial].textContent || "")
+        : undefined;
+
+      const nlsRaw = colNls !== -1 && cells[colNls]
+        ? extractCellContent(cells[colNls].innerHTML || cells[colNls].textContent || "")
+        : undefined;
+
+      const aiRaw = colAi !== -1 && cells[colAi]
+        ? extractCellContent(cells[colAi].innerHTML || cells[colAi].textContent || "")
+        : undefined;
+
       const timing = timingRaw || (orderRaw && orderRaw.toLowerCase().includes("tuần") ? orderRaw : `Tuần ${weekCounter}`);
       if (items.length % 2 === 1) {
         weekCounter++;
@@ -196,7 +237,10 @@ export function parseDocxHtmlTable(html: string): ParsedCurriculumItem[] {
         yccd: yccdRaw,
         lessonGoal: yccdRaw,
         timing,
-        time: timing
+        time: timing,
+        socialIntegration: socialRaw,
+        digitalCompetencyTT02: nlsRaw,
+        aiCompetency2422Integrated: aiRaw
       });
     }
 
@@ -226,6 +270,9 @@ export function parseExcelCurriculumTable(tables: Record<string, any[][]>): Pars
     let colPeriods = -1;
     let colTiming = -1;
     let colOrder = -1;
+    let colSocial = -1;
+    let colNls = -1;
+    let colAi = -1;
 
     for (let r = 0; r < Math.min(10, rows.length); r++) {
       const row = rows[r];
@@ -238,15 +285,35 @@ export function parseExcelCurriculumTable(tables: Record<string, any[][]>): Pars
       let foundPeriods = -1;
       let foundTiming = -1;
       let foundOrder = -1;
+      let foundSocial = -1;
+      let foundNls = -1;
+      let foundAi = -1;
 
       cellTexts.forEach((header, idx) => {
-        if (foundLesson === -1 && /(bai hoc|ten bai|chu de|noi dung|ten bai hoc|ten chu de|bai|lesson|topic)/.test(header)) {
+        const isAiHeader = /(gd ai|tich hop ai|tich hop gd ai|nang luc ai|nl ai|2422|3439)/.test(header);
+        const isNlsHeader = /(nang luc so|nls|tt02|tt 02)/.test(header);
+        const isSocialHeader = /(tich hop|long ghep|giao duc tich hop|noi dung giao duc)/.test(header) && !isAiHeader && !isNlsHeader;
+
+        if (isAiHeader) {
+          if (foundAi === -1) foundAi = idx;
+          return;
+        }
+        if (isNlsHeader) {
+          if (foundNls === -1) foundNls = idx;
+          return;
+        }
+        if (isSocialHeader) {
+          if (foundSocial === -1) foundSocial = idx;
+          return;
+        }
+
+        if (foundLesson === -1 && /(bai hoc|ten bai|chu de|ten chu de|noi dung|bai|lesson|topic)/.test(header) && !/(yeu cau|yccd|tiet|stt|tuan)/.test(header)) {
           foundLesson = idx;
         }
-        if (foundYccd === -1 && /(yeu cau can dat|yccd|muc tieu|yeu cau|objectives|goal)/.test(header)) {
+        if (foundYccd === -1 && /(yeu cau can dat|yccd|muc tieu|yeu cau|objectives|goal)/.test(header) && !isAiHeader && !isNlsHeader) {
           foundYccd = idx;
         }
-        if (foundPeriods === -1 && /(so tiet|thoi luong|tiet|periods|duration)/.test(header)) {
+        if (foundPeriods === -1 && /(so tiet|thoi luong|periods|duration)/.test(header) && !/(tuan|thoi diem)/.test(header)) {
           foundPeriods = idx;
         }
         if (foundTiming === -1 && /(tuan|thoi diem|thoi gian|timing|time)/.test(header)) {
@@ -264,6 +331,9 @@ export function parseExcelCurriculumTable(tables: Record<string, any[][]>): Pars
         colPeriods = foundPeriods;
         colTiming = foundTiming;
         colOrder = foundOrder;
+        colSocial = foundSocial;
+        colNls = foundNls;
+        colAi = foundAi;
         break;
       }
     }
@@ -295,6 +365,10 @@ export function parseExcelCurriculumTable(tables: Record<string, any[][]>): Pars
       const timingRaw = colTiming !== -1 && row[colTiming] ? String(row[colTiming]).trim() : "";
       const orderRaw = colOrder !== -1 && row[colOrder] ? String(row[colOrder]).trim() : "";
 
+      const socialRaw = colSocial !== -1 && row[colSocial] ? String(row[colSocial]).trim() : undefined;
+      const nlsRaw = colNls !== -1 && row[colNls] ? String(row[colNls]).trim() : undefined;
+      const aiRaw = colAi !== -1 && row[colAi] ? String(row[colAi]).trim() : undefined;
+
       const timing = timingRaw || (orderRaw && orderRaw.toLowerCase().includes("tuần") ? orderRaw : `Tuần ${weekCounter}`);
       if (items.length % 2 === 1) {
         weekCounter++;
@@ -310,7 +384,10 @@ export function parseExcelCurriculumTable(tables: Record<string, any[][]>): Pars
         yccd: yccdRaw,
         lessonGoal: yccdRaw,
         timing,
-        time: timing
+        time: timing,
+        socialIntegration: socialRaw,
+        digitalCompetencyTT02: nlsRaw,
+        aiCompetency2422Integrated: aiRaw
       });
     }
 

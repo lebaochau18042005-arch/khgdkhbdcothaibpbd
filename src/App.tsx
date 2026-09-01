@@ -6645,10 +6645,10 @@ export default function App() {
                               <tr className="border-b-2 border-slate-100 bg-slate-50/80">
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-12 text-center">STT</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-32 min-w-[110px]">Thời gian</th>
-                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest w-44 min-w-[150px]">Nội dung giáo dục tích hợp/lồng ghép</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-44 min-w-[140px]">Nội dung</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-16 text-center">Số tiết</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest min-w-[280px]">Yêu cầu cần đạt</th>
+                                <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest w-44 min-w-[150px]">Nội dung giáo dục tích hợp/lồng ghép</th>
                                 <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest w-40 min-w-[140px]">Năng lực số</th>
                                 <th className="p-3 font-extrabold text-red-600 uppercase tracking-widest min-w-[260px]">Mục tiêu & YCCĐ 2422 Tích hợp GD AI</th>
                                 <th className="p-3 font-extrabold text-brand-sidebar uppercase tracking-widest w-28 print:hidden text-center">Thao tác</th>
@@ -6667,12 +6667,12 @@ export default function App() {
                                   <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors align-top">
                                     <td className="p-4 text-center font-bold text-slate-400">{i + 1}</td>
                                     <td className="p-4 font-bold text-brand-sidebar">{item.time || item.topic || item.lessonName}</td>
+                                    <td className="p-4 text-brand-sidebar leading-relaxed whitespace-pre-line text-[11px] font-medium">{item.lessonContent || item.lessonName}</td>
+                                    <td className="p-4 text-center font-bold text-slate-600">{item.periods}</td>
+                                    <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.lessonGoal}</td>
                                     <td className={`p-4 font-bold leading-relaxed whitespace-pre-line text-[10px] ${item.socialIntegration ? "text-red-700 bg-red-50/20" : "text-slate-300"}`}>
                                       {item.socialIntegration || "—"}
                                     </td>
-                                    <td className="p-4 text-brand-sidebar leading-relaxed whitespace-pre-line text-[11px]">{item.lessonContent || item.lessonName}</td>
-                                    <td className="p-4 text-center font-bold text-slate-600">{item.periods}</td>
-                                    <td className="p-4 text-brand-muted leading-relaxed whitespace-pre-line text-[10px]">{item.lessonGoal}</td>
                                     <td className={`p-4 font-bold leading-relaxed whitespace-pre-line text-[10px] ${hasNlsIntegration ? "text-red-700 bg-red-50/20" : "text-slate-400"}`}>{item.digitalCompetencyTT02 || "Không"}</td>
                                     <td className={`p-4 font-bold ${isNotIntegrated ? "text-slate-400" : "text-red-700 bg-red-50/20"} whitespace-pre-line text-[11px]`}>
                                       {aiText}

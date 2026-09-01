@@ -833,8 +833,10 @@ const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[], options: 
 const readNlsFromPlanRow = (item: any) =>
   String(item?.digitalCompetencyTT02 || item?.digitalCompetency || item?.nls || item?.năng_lực_số_TT02 || "");
 
-const readAiFromPlanRow = (item: any) =>
-  String(item?.aiCompetency2422Integrated || item?.aiCompetency2422 || item?.ai || item?.nlai || item?.yccd2422 || "");
+const readAiFromPlanRow = (item: any) => {
+  const raw = String(item?.aiCompetency2422Integrated || item?.aiCompetency2422 || item?.aiCompetency || item?.ai || item?.nlai || item?.yccd2422 || "");
+  return normalizeAiCodesInText2422(raw);
+};
 
 const readSocialIntegrationFromPlanRow = (item: any) =>
   String(item?.socialIntegration || item?.integratedEducation || item?.social || item?.noi_dung_giao_duc_tich_hop || "");
@@ -915,7 +917,32 @@ const uniqueRegexMatches = (texts: any[], regex: RegExp) => {
 const summarizePl3Competency = (sourceNls: any, sourceAi: any, sourceGoal: any, generatedCompetency: any) => {
   const blocks = [sourceNls, sourceAi, generatedCompetency, sourceGoal];
   const nlsCodes = uniqueRegexMatches(blocks, /\b\d+\.\d+\.?(?:CB|TC|NC)\d*[a-z]?\b/gi);
-  const aiCodes = uniqueRegexMatches(blocks, /\b(?:NL[a-d]-)?(?:10|11|12|[1-9])\.[A-D]\d+(?:\.(?:MR\d+|\d+))?\b/gi);
+
+  const extractValidAiCodes = (text: any): string[] => {
+    if (!text) return [];
+    const rawMatches = uniqueRegexMatches([text], /\b(?:NL[a-d]-)?(?:10|11|12|[1-9])\.[A-D]\d+(?:\.(?:MR\d+|\d+))?\b/gi);
+    const validFormatted: string[] = [];
+    const seen = new Set<string>();
+
+    for (const raw of rawMatches) {
+      const formatted = formatAiCode2422(raw) || normalizeAiCode2422(raw);
+      if (formatted) {
+        const fullCode = formatted.startsWith("NL") ? formatted : `NL-${formatted}`;
+        if (!seen.has(fullCode)) {
+          seen.add(fullCode);
+          validFormatted.push(fullCode);
+        }
+      }
+    }
+    return validFormatted;
+  };
+
+  // Ưu tiên 1: Lấy chuẩn mã AI từ Phụ lục 1 (sourceAi) để đảm bảo PL3 đồng bộ 100% với PL1
+  let aiCodes = extractValidAiCodes(sourceAi);
+  if (aiCodes.length === 0) {
+    aiCodes = extractValidAiCodes([generatedCompetency, sourceGoal].join(" "));
+  }
+
   const aiComponents = uniqueRegexMatches(blocks, /\bNL[abcd]\b/gi)
     .map((code) => code.replace(/^NL([abcd])$/i, (_, c) => `NL${String(c).toLowerCase()}`));
   const hasNoIntegration = blocks.some((block) => /không\s+(tích hợp|gán mã)|khong\s+(tich hop|gan ma)/i.test(String(block || "")));

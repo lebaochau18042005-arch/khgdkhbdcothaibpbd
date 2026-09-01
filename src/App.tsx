@@ -902,8 +902,8 @@ const uniqueRegexMatches = (texts: any[], regex: RegExp) => {
 
 const summarizePl3Competency = (sourceNls: any, sourceAi: any, sourceGoal: any, generatedCompetency: any) => {
   const blocks = [sourceNls, sourceAi, generatedCompetency, sourceGoal];
-  const nlsCodes = uniqueRegexMatches(blocks, /\b\d+\.\d+\.NC\d+[a-z]?\b/gi);
-  const aiCodes = uniqueRegexMatches(blocks, /\b(?:10|11|12)\.[A-D]\d+\.(?:MR\d+|\d+)\b/gi);
+  const nlsCodes = uniqueRegexMatches(blocks, /\b\d+\.\d+\.?(?:CB|TC|NC)\d*[a-z]?\b/gi);
+  const aiCodes = uniqueRegexMatches(blocks, /\b(?:NL[a-d]-)?(?:10|11|12|[1-9])\.[A-D]\d+(?:\.(?:MR\d+|\d+))?\b/gi);
   const aiComponents = uniqueRegexMatches(blocks, /\bNL[abcd]\b/gi)
     .map((code) => code.replace(/^NL([abcd])$/i, (_, c) => `NL${String(c).toLowerCase()}`));
   const hasNoIntegration = blocks.some((block) => /không\s+(tích hợp|gán mã)|khong\s+(tich hop|gan ma)/i.test(String(block || "")));
@@ -973,7 +973,7 @@ const extractAiCodes = (text: any) =>
   Array.from(new Set((String(text || "").match(/\b(?:10|11|12|[1-9])\.[ABCD]\d+\.\d{1,2}\b/g) || [])));
 
 const extractNlsCodes = (text: any) =>
-  Array.from(new Set((String(text || "").match(/\b\d+\.\d+\.?(?:CB1|CB2|TC1|TC2|NC1|NC2)[a-z]\b/gi) || [])));
+  Array.from(new Set((String(text || "").match(/\b\d+\.\d+\.?(?:CB|TC|NC)\d*[a-z]?\b/gi) || [])));
 
 const hasCompetencySignal = (text: any) => {
   const raw = String(text || "");

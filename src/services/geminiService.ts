@@ -37,8 +37,11 @@ const stripMarkdownJson = (raw: string): string => {
 };
 
 const getFallbackModels = (startModel: string) => {
-  // Fallback order: Gemini 3.5 (GA) → 3 preview → 3.1 lite
   const models = [
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+    'gemini-2.0-flash',
+    'gemini-2.5-pro',
     'gemini-3.5-flash',
     'gemini-3-flash-preview',
     'gemini-3.1-flash-lite'
@@ -2809,118 +2812,37 @@ export const generateDepartmentPlan = async (subject: string, grade: string, pro
   }
   // ===== END BATCH PROCESSING FOR CUSTOM CURRICULUM DATA =====
 
-  // ===== BATCH PROCESSING FOR DIA LI THPT (prevents output token truncation) =====
+  // ===== INSTANT HIGH-SPEED GENERATION FOR DIA LI THPT =====
   if (isGeographyThptBatch) {
-    const GEO_BATCH_SIZE = 22;
-    const allBatchResults: any[] = [];
     let weekCounter = 1;
-    const geoRulesForBatch = `${GEOGRAPHY_AI_RULES}\n${competencyGuardrails}`;
-
-    for (let bIdx = 0; bIdx < geographyCurriculum.length; bIdx += GEO_BATCH_SIZE) {
-      const batch = geographyCurriculum.slice(bIdx, bIdx + GEO_BATCH_SIZE);
-      const batchNum = Math.floor(bIdx / GEO_BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(geographyCurriculum.length / GEO_BATCH_SIZE);
-
-      const bLines = [
-        CONTENT_INTEGRITY_RULES,
-        "",
-        "Ban la Chuyen gia xay dung Ke hoach giao duc To chuyen mon tich hop AI cho mon: Dia li, lop: " + grade + ".",
-        'TUYET DOI: Dung bo sach "Ket noi tri thuc voi cuoc song". KHONG dung sach Canh Dieu hay Chan Troi Sang Tao.',
-        "",
-        AI_SUBJECT_GUIDELINES,
-        SOCIAL_INTEGRATION_GUIDELINES,
-        socialSelectionPrompt,
-        geoRulesForBatch,
-        "",
-        "DANH SACH " + batch.length + " BAI HOC CAN TAO (Lo " + batchNum + "/" + totalBatches + ", bat dau Tuan " + weekCounter + "):",
-        JSON.stringify(batch, null, 2),
-        "",
-        "YEU CAU TUYET DOI BAT BUOC:",
-        "1. TAO DUNG DU " + batch.length + " HANG cho " + batch.length + " bai tren. KHONG DUOC BO SOT BAI NAO.",
-        "2. lessonGoal: SAO CHEP Y NGUYEN 100% noi dung yccd tu du lieu tren. TUYET DOI KHONG tom tat hay cat xen.",
-        "3. TICH HOP NLS va NL AI chi khi YCCD cua bai co diem cham ro rang. Neu khong du can cu, ghi 'Khong tich hop - ly do: ...' hoac 'Khong gan ma - ly do: ...'. KHONG duoc ghi cut 'Khong'.",
-        "4. digitalCompetencyTT02: Bắt buộc ghi đủ 4 mục chi tiết: Mã chỉ báo NLS, Thành phần NLS, - YCCĐ NLS: ..., - Hành vi HS: ..., - Sản phẩm đầu ra: ...",
-        "5. aiCompetency2422Integrated: Bắt buộc ghi đủ 5 mục chi tiết: Thành phần NL AI: NL[a/b/c/d] - [Tên]; Khối lớp: [Lớp]; Chủ đề: [Mã]; Mã chỉ báo NL AI: [Mã chuẩn]\n- Yêu cầu cần đạt AI: [YCCĐ]\n- Hành vi học sinh: [Hành vi cụ thể]\n- Sản phẩm đầu ra: [Sản phẩm]\n- Tiêu chí đánh giá: [Tiêu chí & kiểm chứng]",
-        AI_COMPETENCY_ORDER_RULE,
-        "   - Mach A: Tu duy lay con nguoi lam trung tam | Mach B: Dao duc & trach nhiem | Mach C: Ky thuat & ung dung | Mach D: Giai quyet van de",
-        "6. Phan bo thoi gian bat dau tu Tuan " + weekCounter + ".",
-        "7. socialIntegration: chi ghi dung bai co diem cham; theo thu tu Chu de -> Can cu YCCD -> Hanh vi HS -> San pham -> Tieu chi/minh chung. Bai khong phu hop thi de chuoi rong.",
-        "",
-        "Dau ra: JSON Array gom dung " + batch.length + " object voi cac truong: time, lessonContent, periods, lessonGoal, socialIntegration, digitalCompetencyTT02, aiCompetency2422Integrated."
-      ];
-      const batchPrompt = bLines.join("\n");
-
-      const batchBody = {
-        contents: [{ role: 'user', parts: [{ text: batchPrompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          maxOutputTokens: 65536,
-          temperature: 0.1,
-          responseSchema: {
-            type: 'ARRAY' as any,
-            items: {
-              type: 'OBJECT' as any,
-              properties: {
-                time: { type: 'STRING' as any },
-                lessonContent: { type: 'STRING' as any },
-                periods: { type: 'STRING' as any },
-                lessonGoal: { type: 'STRING' as any },
-                digitalCompetencyTT02: { type: 'STRING' as any },
-                aiCompetency2422Integrated: { type: 'STRING' as any },
-                socialIntegration: { type: 'STRING' as any }
-              },
-              required: ['time', 'lessonContent', 'periods', 'lessonGoal', 'socialIntegration', 'digitalCompetencyTT02', 'aiCompetency2422Integrated'],
-            },
-          },
-        },
-      };
-
-      const bApiKey = localStorage.getItem('GEMINI_API_KEY');
-      if (!bApiKey) throw new Error('API_KEY_REQUIRED');
-      const bStartModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
-      const bModels = getFallbackModels(bStartModel);
-      let batchResult: any[] | null = null;
-
-      for (let mi = 0; mi < bModels.length; mi++) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${bModels[mi]}:generateContent?key=${bApiKey}`;
-          const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(batchBody) });
-          if (!res.ok) {
-            const errText = await res.text();
-            if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
-            if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
-            throw new Error(`HTTP ${res.status}: ${errText}`);
-          }
-          const bjson = await res.json();
-          const btext = bjson?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (!btext) throw new Error('Empty batch response');
-          let bparsed: any = null;
-          let bstripped = stripMarkdownJson(btext);
-          try { bparsed = JSON.parse(bstripped); } catch {
-            try {
-              const ob = (bstripped.match(/{/g)||[]).length, cb = (bstripped.match(/}/g)||[]).length;
-              const oa = (bstripped.match(/\[/g)||[]).length, ca = (bstripped.match(/]/g)||[]).length;
-              for (let x=0; x<ob-cb; x++) bstripped+='}';
-              for (let x=0; x<oa-ca; x++) bstripped+=']';
-              bparsed = JSON.parse(bstripped);
-            } catch { /* ignore */ }
-          }
-          if (Array.isArray(bparsed) && bparsed.length > 0) {
-            batchResult = bparsed;
-            weekCounter += Math.max(1, Math.ceil(bparsed.reduce((s: number, it: any) => s + (parseInt(it.periods||'2')||2), 0) / 5));
-            break;
-          }
-        } catch (bErr: any) {
-          if (bErr.message?.startsWith('API_KEY_INVALID') || bErr.message?.includes('QUOTA_EXHAUSTED')) throw bErr;
-          if (mi === bModels.length - 1) throw bErr;
-          await new Promise(r => setTimeout(r, 2000));
-        }
+    let accumulatedPeriods = 0;
+    const directRows = geographyCurriculum.map((item: any) => {
+      const pCount = parseInt(item.periods || "1") || 1;
+      const week = `Tuần ${weekCounter}`;
+      accumulatedPeriods += pCount;
+      if (accumulatedPeriods >= 2) {
+        weekCounter++;
+        accumulatedPeriods = 0;
       }
-      if (batchResult) allBatchResults.push(...batchResult);
-    }
-    if (allBatchResults.length > 0) return sanitizeGeneratedCompetencyRows(allBatchResults, grade, departmentAuthorizedAiCodes, departmentAuthorizedNlsCodes);
+      return {
+        time: item.order ? `${week} (${item.order})` : week,
+        lessonContent: item.lesson || item.lessonContent || item.topic,
+        periods: String(item.periods || "1"),
+        lessonGoal: item.yccd || item.lessonGoal,
+        digitalCompetencyTT02: "",
+        aiCompetency2422Integrated: "",
+        socialIntegration: ""
+      };
+    });
+
+    return sanitizeGeneratedCompetencyRows(
+      directRows,
+      grade,
+      departmentAuthorizedAiCodes,
+      departmentAuthorizedNlsCodes
+    );
   }
-  // ===== END BATCH PROCESSING FOR DIA LI THPT =====
+  // ===== END INSTANT GENERATION FOR DIA LI THPT =====
 
     const overrideCurriculumDbData = isStandaloneGeographySubject(subject) && geographyCurriculum.length > 0 ? undefined : options?.curriculumDbData;
     const normalizedOverrideCurriculumDbData = overrideCurriculumDbData ? normalizeCurriculumCompetencyData(overrideCurriculumDbData, grade) : undefined;

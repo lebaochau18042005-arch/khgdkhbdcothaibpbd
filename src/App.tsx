@@ -926,12 +926,11 @@ const summarizePl3Competency = (sourceNls: any, sourceAi: any, sourceGoal: any, 
     const seen = new Set<string>();
 
     for (const raw of rawMatches) {
-      const formatted = formatAiCode2422(raw) || normalizeAiCode2422(raw);
+      const formatted = normalizeAiCode2422(raw) || formatAiCode2422(raw);
       if (formatted) {
-        const fullCode = formatted.startsWith("NL") ? formatted : `NL-${formatted}`;
-        if (!seen.has(fullCode)) {
-          seen.add(fullCode);
-          validFormatted.push(fullCode);
+        if (!seen.has(formatted)) {
+          seen.add(formatted);
+          validFormatted.push(formatted);
         }
       }
     }

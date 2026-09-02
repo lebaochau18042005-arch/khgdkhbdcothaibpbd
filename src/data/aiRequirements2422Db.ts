@@ -811,49 +811,59 @@ export const normalizeAiCode2422 = (rawCode: string): string | undefined => {
 export const formatAiCode2422 = (rawCode: string): string | undefined => {
   const normalized = normalizeAiCode2422(rawCode);
   if (!normalized) return undefined;
-
-  const item = AI_REQUIREMENTS_2422_DB.find(i => i.code === normalized && i.isActive);
-  if (item) return `${item.component}-${item.code}`;
-
-  const parsed = parseAiCode2422(rawCode);
-  if (parsed) return `${parsed.component}-${parsed.code}`;
-  return undefined;
+  return normalized;
 };
 
 export const normalizeAiCodesInText2422 = (value: unknown): string => {
   let text = String(value || "");
 
-  // 1. Clean up duplicate repeats caused by previous mangling like "thử nghiệm và cải tiến hệ thống AI, thử nghiệm và cải tiến hệ thống AI"
+  // 1. Remove legacy labels "Mã NLAI quy ước", "Mã NLAI quy ước & Chủ đề:", etc.
+  text = text.replace(/[-–—]?\s*Mã\s+NLAI\s+quy\s+ước(?:\s*&\s*Chủ\s+đề)?\s*:?/gi, "");
+  text = text.replace(/Mã\s+NLAI\s+quy\s+ước/gi, "");
+
+  // 2. Remove NLa-, NLb-, NLc-, NLd- prefixes from codes (e.g. NLc-12.C2.1 -> 12.C2.1)
+  text = text.replace(/\b(?:NL[abcd]|NLA|NLB|NLC|NLD)\s*[-:\u2013\u2014]\s*((?:10|11|12)\.[A-D]\d*(?:\.(?:MR\d+|\d+))?)\b/gi, "$1");
+
+  // 3. Clean up structured pattern legacy repeats
   text = text.replace(/(?:,\s*thử nghiệm và cải tiến hệ thống AI)+/gi, "");
   text = text.replace(/(?:,\s*an toàn, pháp luật và trách nhiệm)+/gi, "");
   text = text.replace(/(?:,\s*pháp luật và trách nhiệm)+/gi, "");
   text = text.replace(/(?:,\s*các kĩ thuật và ứng dụng AI)+/gi, "");
   text = text.replace(/(?:,\s*các kỹ thuật và ứng dụng AI)+/gi, "");
 
-  // 2. Fix structured pattern: "Thành phần NL AI: NLD; Khối lớp: 12; Chủ đề: B2; Mã chỉ báo NL AI: NL-12.B2.2"
+  // 4. Format structured pattern "Thành phần NL AI: ..." to concise QD 2422 standard
   text = text.replace(
     /(?:Thành phần(?:\s+NL)?\s+AI:\s*)?(NLa|NLb|NLc|NLd|NLA|NLB|NLC|NLD)(?:\s*-\s*[^;\n]+)?;\s*(Khối lớp:\s*(?:10|11|12));\s*(Chủ đề:\s*([A-D]\d*));\s*(Mã chỉ báo NL AI:\s*[^;\n\r]+)/gi,
-    (_full, _comp, gradePart, topicPart, rawTopic, codePart) => {
-      const topicLetter = String(rawTopic || "A").slice(0, 1).toUpperCase();
-      const compCode = getComponentByTopicLetter(topicLetter);
-      const compName = AI_COMPONENTS_MAP[compCode]?.name || "Năng lực AI";
-
+    (_full, _comp, _gradePart, _topicPart, _rawTopic, codePart) => {
       const rawCode = codePart.replace(/^Mã chỉ báo NL AI:\s*/i, "").trim();
-      const cleanCode = formatAiCode2422(rawCode) || normalizeAiCode2422(rawCode) || rawCode;
-      return `Thành phần NL AI: ${compCode} - ${compName}; ${gradePart}; ${topicPart}; Mã chỉ báo NL AI: ${cleanCode}`;
+      const cleanCode = normalizeAiCode2422(rawCode) || rawCode;
+      return `Mã chỉ báo NL AI (QĐ 2422): ${cleanCode}`;
     }
   );
 
-  // 3. Fix standalone or prefixed AI codes (e.g. NL-12.B2.2, NLD-12.B2.1, 10.A1.01)
+  // 5. Clean up standalone bare AI codes
   text = text.replace(
-    /\b(?:\[?(NL[abcd]?|NLD|NLA|NLB|NLC)\]?\s*[-:\u2013\u2014]?\s*)?(10|11|12)\.([A-D]\d*)\.(MR\d+|\d+)\b/gi,
-    (rawCode) => {
-      const formatted = formatAiCode2422(rawCode);
-      return formatted || normalizeAiCode2422(rawCode) || rawCode;
-    }
+    /\b(?:10|11|12)\.([A-D]\d*)\.(MR\d+|\d+)\b/gi,
+    (rawCode) => normalizeAiCode2422(rawCode) || rawCode
   );
 
-  return text;
+  // 6. Condense verbose multi-sentence AI integration text into clean concise 3-bullet format
+  if (/YCCĐ AI|Nhiệm vụ học tập|Công cụ và dữ liệu/i.test(text)) {
+    const codeMatch = text.match(/(?:10|11|12)\.[A-D]\d*(?:\.(?:MR\d+|\d+))?/i);
+    const code = codeMatch ? (normalizeAiCode2422(codeMatch[0]) || codeMatch[0]) : "";
+
+    const yccdMatch = text.match(/YCCĐ\s*AI(?:\s*tích\s*hợp)?\s*:?\s*([^;\n\r]+)/i);
+    const yccd = yccdMatch ? yccdMatch[1].trim() : "";
+
+    const spMatch = text.match(/Sản\s*phẩm[^;\n\r]*:\s*([^;\n\r]+)/i);
+    const sp = spMatch ? spMatch[1].trim() : "";
+
+    if (code && yccd) {
+      return `Mã chỉ báo NL AI (QĐ 2422): ${code}\n- YCCĐ AI: ${yccd}${sp ? `\n- Sản phẩm đầu ra & kiểm chứng: ${sp}` : ""}`;
+    }
+  }
+
+  return text.trim();
 };
 
 export const isAiCodeValid2422 = (code: string, grade?: string): boolean => {

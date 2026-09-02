@@ -752,20 +752,27 @@ const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[], options: 
   const source = Array.isArray(sourceLessons) ? sourceLessons : [];
   const existing = (Array.isArray(rows) ? rows : []).map((row, index) => ({ ...row, __index: index }));
   const used = new Set<number>();
-  let runningWeek = 1;
-  const shouldLockGeographySchedule = isGeographyThptSubject(options.subject, options.grade);
+  let runningPeriod = 1;
 
   const completeRow = (row: any, sourceItem: any | null, index: number) => {
-    const shouldLockSourceSchedule = Boolean(sourceItem?.scheduleLocked) || shouldLockGeographySchedule;
-    const periods = shouldLockSourceSchedule && sourceItem
-      ? readPeriods(sourceItem)
-      : hasMeaningfulText(row?.periods) ? String(row.periods) : readPeriods(sourceItem);
-    const lessonContent = shouldLockSourceSchedule && sourceItem
+    const periods = hasMeaningfulText(row?.periods) ? String(row.periods) : readPeriods(sourceItem);
+    const periodCount = Math.max(1, parseInt(String(periods).match(/\d+/)?.[0] || "1", 10));
+    
+    const startPeriod = runningPeriod;
+    const endPeriod = startPeriod + periodCount - 1;
+    runningPeriod += periodCount;
+
+    const startWeek = Math.min(35, Math.max(1, Math.ceil(startPeriod / 2)));
+    const endWeek = Math.min(35, Math.max(1, Math.ceil(endPeriod / 2)));
+    const calculatedWeekLabel = startWeek === endWeek ? `Tuần ${startWeek}` : `Tuần ${startWeek}-${endWeek}`;
+    const calculatedPeriodLabel = startPeriod === endPeriod ? `Tiết ${startPeriod}` : `Tiết ${startPeriod} - ${endPeriod}`;
+
+    const lessonContent = sourceItem
       ? readLessonTitle(sourceItem)
       : hasMeaningfulText(row?.lessonContent || row?.lessonName || row?.topic)
       ? String(row.lessonContent || row.lessonName || row.topic)
       : readLessonTitle(sourceItem);
-    const rawGoal = shouldLockSourceSchedule && sourceItem
+    const rawGoal = sourceItem
       ? readLessonGoal(sourceItem)
       : hasMeaningfulText(row?.lessonGoal || row?.yccd)
       ? String(row.lessonGoal || row.yccd)
@@ -774,18 +781,12 @@ const completeDepartmentPlanRows = (rows: any[], sourceLessons: any[], options: 
     if (!lessonGoal && sourceItem) {
       lessonGoal = readLessonGoal(sourceItem);
     }
-    const time = shouldLockSourceSchedule && sourceItem
-      ? (shouldLockGeographySchedule
-        ? buildGeographyDepartmentTime(sourceItem, periods)
-        : String(sourceItem?.time || sourceItem?.timing || `Tuần ${Math.max(1, runningWeek)}`).trim())
-      : hasMeaningfulText(row?.time) ? String(row.time) : `Tuần ${Math.max(1, runningWeek)}`;
-    const periodCount = parseInt(String(periods).match(/\d+/)?.[0] || "1", 10);
-    runningWeek += Math.max(1, Math.ceil(periodCount / 2));
+    const time = `${calculatedWeekLabel} - ${calculatedPeriodLabel}`;
 
     return {
       time,
-      order: sourceItem ? (hasMeaningfulText(sourceItem?.order) ? String(sourceItem.order) : formatPeriodRangeLabel(sourceItem, periods)) : (hasMeaningfulText(row?.order) ? String(row.order) : ""),
-      periodRange: sourceItem?.periodRange || row?.periodRange || "",
+      order: calculatedPeriodLabel,
+      periodRange: `${startPeriod}${endPeriod > startPeriod ? `-${endPeriod}` : ""}`,
       section: sourceItem?.section || row?.section || "",
       lessonContent,
       lesson: sourceItem ? readLessonTitle(sourceItem) : (row?.lesson || lessonContent),
@@ -1362,31 +1363,23 @@ const completeEducationalPlanRows = (rows: any[], sourcePlan: any[], subject: st
   const shouldLockGeographySchedule = isGeographyThptSubject(subject, grade);
 
   const completeRow = (row: any, sourceItem: any | null, index: number) => {
-    const shouldLockSourceSchedule = Boolean(sourceItem?.scheduleLocked) || shouldLockGeographySchedule;
-    const periods = shouldLockSourceSchedule && sourceItem
-      ? readPeriods(sourceItem)
-      : hasMeaningfulText(row?.periods) ? String(row.periods) : readPeriods(sourceItem);
+    const periods = hasMeaningfulText(row?.periods) ? String(row.periods) : readPeriods(sourceItem);
     const periodCount = Math.max(1, parseInt(String(periods).match(/\d+/)?.[0] || "1", 10));
-    const lesson = shouldLockSourceSchedule && sourceItem
+    
+    const startPeriod = runningPeriod;
+    const endPeriod = startPeriod + periodCount - 1;
+    runningPeriod += periodCount;
+
+    const startWeek = Math.min(35, Math.max(1, Math.ceil(startPeriod / 2)));
+    const endWeek = Math.min(35, Math.max(1, Math.ceil(endPeriod / 2)));
+    const timing = startWeek === endWeek ? `Tuần ${startWeek}` : `Tuần ${startWeek}-${endWeek}`;
+    const order = startPeriod === endPeriod ? `Tiết ${startPeriod}` : `Tiết ${startPeriod} - ${endPeriod}`;
+
+    const lesson = sourceItem
       ? readLessonTitle(sourceItem)
       : hasMeaningfulText(row?.lesson || row?.lessonContent || row?.lessonName || row?.topic)
       ? String(row.lesson || row.lessonContent || row.lessonName || row.topic)
       : readLessonTitle(sourceItem);
-    const timing = shouldLockSourceSchedule && sourceItem
-      ? (shouldLockGeographySchedule
-        ? (buildGeographyWeekLabel(sourceItem) || String(sourceItem?.timing || sourceItem?.time || "").replace(/\s*-\s*Tiết.+$/i, "").trim())
-        : String(sourceItem?.timing || sourceItem?.time || `Tuần ${Math.max(1, Math.ceil(runningPeriod / 2))}`).trim())
-      : hasMeaningfulText(row?.timing || row?.time)
-      ? String(row.timing || row.time)
-      : hasMeaningfulText(sourceItem?.time || sourceItem?.timing)
-        ? String(sourceItem?.time || sourceItem?.timing)
-        : `Tuần ${Math.max(1, Math.ceil(runningPeriod / 2))}`;
-    const order = shouldLockSourceSchedule && sourceItem
-      ? (hasMeaningfulText(sourceItem?.order) ? String(sourceItem.order) : formatPeriodRangeLabel(sourceItem, periods))
-      : hasMeaningfulText(row?.order)
-      ? String(row.order)
-      : buildLessonPeriodOrder(runningPeriod, periodCount);
-    runningPeriod += periodCount;
 
     const sourceGoal = sourceItem ? readLessonGoal(sourceItem) : "";
     const sourceNls = sourceItem ? readNlsFromPlanRow(sourceItem) : "";

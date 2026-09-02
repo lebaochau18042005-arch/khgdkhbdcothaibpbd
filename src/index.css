@@ -129,3 +129,18 @@
     }
   }
 }
+
+@media print {
+  thead {
+    display: table-header-group;
+  }
+  tfoot {
+    display: table-footer-group;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+  table {
+    page-break-inside: auto;
+  }
+}

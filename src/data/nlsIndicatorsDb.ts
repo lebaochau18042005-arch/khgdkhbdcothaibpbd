@@ -284,3 +284,13 @@ export const getNlsIndicatorByCode = (code: string): NlsIndicatorItem | undefine
   return NLS_INDICATORS_DB.find(i => i.code.toLowerCase() === cleanCode.toLowerCase());
 };
 
+export const verifyVerbatimNlsTT02 = (codeStr: string): { isValid: boolean; item?: NlsIndicatorItem; note: string } => {
+  if (!codeStr) return { isValid: false, note: "Cần đối chiếu thêm tài liệu gốc." };
+  const cleanCode = codeStr.trim().replace(/\.NC1([a-z])$/i, ".NC$1");
+  const item = NLS_INDICATORS_DB.find(i => i.code.toLowerCase() === cleanCode.toLowerCase() && i.isActive);
+  if (!item) {
+    return { isValid: false, note: "Cần đối chiếu thêm tài liệu gốc." };
+  }
+  return { isValid: true, item, note: `Khớp nguyên văn TT 02/2025/TT-BGDĐT (Miền ${item.domainNumber}: ${item.domainName} - ${item.code}): ${item.indicatorText}` };
+};
+

@@ -882,6 +882,18 @@ export const isAiCodeValid2422 = (code: string, grade?: string): boolean => {
   return true;
 };
 
+export const verifyVerbatimAiCode2422 = (codeStr: string): { isValid: boolean; item?: AiRequirement2422Item; note: string } => {
+  const normalized = normalizeAiCode2422(codeStr);
+  if (!normalized) {
+    return { isValid: false, note: "Cần đối chiếu thêm tài liệu gốc." };
+  }
+  const item = AI_REQUIREMENTS_2422_DB.find(i => i.code === normalized && i.isActive);
+  if (!item) {
+    return { isValid: false, note: "Cần đối chiếu thêm tài liệu gốc." };
+  }
+  return { isValid: true, item, note: `Khớp nguyên văn QĐ 2422/QĐ-BGDĐT (${item.component}-${item.code}): ${item.yccd}` };
+};
+
 export const getAiRequirementByCode = (code: string): AiRequirementItem | undefined => {
   const normalizedCode = normalizeAiCode2422(code);
   if (!normalizedCode) return undefined;

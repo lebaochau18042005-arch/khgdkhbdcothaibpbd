@@ -4,7 +4,7 @@ import * as mammoth from "mammoth";
 // @ts-ignore
 import html2pdf from "html2pdf.js";
 import { UploadCloud, CheckCircle2, Bot, Zap, Loader2, Sparkles, FileText, ImagePlus, X, BookOpen, AlertTriangle, Users, Download, Eye, FileDown, FileCode, Printer, ClipboardCheck, Calendar, BrainCircuit, Search, LayoutGrid, AlertCircle } from "lucide-react";
-import { analyzeExistingPlan, generateDirectSnippets } from "../services/geminiService";
+import { analyzeExistingPlan, generateDirectSnippets, sanitizeAnalysisResultForGrade, extractGradeNumber } from "../services/geminiService";
 import { appendAssessmentDesignToDocx, injectSnippetsIntoDocx, InjectionResult, Snippet } from "../utils/docxInjector";
 import { IntermediateAlignmentTable, AlignmentRow } from "./IntermediateAlignmentTable";
 import { VisualAlignmentMatrix } from "./VisualAlignmentMatrix";
@@ -138,6 +138,7 @@ export default function UpgradePlan({
     const [alignmentRows, setAlignmentRows] = useState<AlignmentRow[]>([]);
     const [isGatekeeperOpen, setIsGatekeeperOpen] = useState(false);
     const [exportTargetFormat, setExportTargetFormat] = useState<"docx" | "xlsx" | "pdf">("docx");
+    const [selectedGradeOption, setSelectedGradeOption] = useState<string>("auto");
 
     const handleTextbookImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -207,13 +208,15 @@ export default function UpgradePlan({
         return (analysis.aiSuggestions || []).map((sug: any, idx: number) => {
             const rawNls = sug.suggestedNLS || "";
             const rawAi = sug.suggestedAI || "";
-            const grade = (analysis.grade === "11" ? "11" : analysis.grade === "12" ? "12" : "10") as "10" | "11" | "12";
+            const cleanG = extractGradeNumber(analysis?.grade) || "10";
+            const grade = (cleanG === "11" ? "11" : cleanG === "12" ? "12" : "10") as "10" | "11" | "12";
             
             let aiComp: "NLa" | "NLb" | "NLc" | "NLd" | "Không" = "Không";
-            if (/NLa/i.test(sug.aiComponentName || sug.aiCompetencyName || rawAi)) aiComp = "NLa";
-            else if (/NLb/i.test(sug.aiComponentName || sug.aiCompetencyName || rawAi)) aiComp = "NLb";
-            else if (/NLc/i.test(sug.aiComponentName || sug.aiCompetencyName || rawAi)) aiComp = "NLc";
-            else if (/NLd/i.test(sug.aiComponentName || sug.aiCompetencyName || rawAi)) aiComp = "NLd";
+            const compText = `${sug.aiComponentName || ''} ${sug.aiCompetencyName || ''} ${rawAi}`;
+            if (/NLa|\bA\d|12\.A|11\.A|10\.A/i.test(compText)) aiComp = "NLa";
+            else if (/NLb|\bB\d|12\.B|11\.B|10\.B/i.test(compText)) aiComp = "NLb";
+            else if (/NLc|\bC\d|12\.C|11\.C|10\.C/i.test(compText)) aiComp = "NLc";
+            else if (/NLd|\bD\d|12\.D|11\.D|10\.D/i.test(compText)) aiComp = "NLd";
 
             return {
                 id: "align-" + (idx + 1),
@@ -242,6 +245,16 @@ export default function UpgradePlan({
                 offlineAlternative: sug.offlineFallback || "Phương án dự phòng ngoại tuyến: phiếu học tập in sẵn và bản đồ giấy"
             };
         });
+    };
+
+    const handleGradeChange = (newGrade: string) => {
+        if (!analysisResult) return;
+        const cleanGrade = extractGradeNumber(newGrade) || newGrade;
+        const sanitized = sanitizeAnalysisResultForGrade(analysisResult, rawText, cleanGrade);
+        setAnalysisResult(sanitized);
+        const newAlignmentRows = buildAlignmentRowsFromAnalysis(sanitized);
+        setAlignmentRows(newAlignmentRows);
+        setSelectedIntegrations(sanitized.aiSuggestions || []);
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -291,6 +304,7 @@ export default function UpgradePlan({
         try {
             let analysis;
             const imagePayload = textbookImages.length > 0 ? textbookImages.map(img => ({ mimeType: img.mimeType, data: img.data })) : undefined;
+            const forcedGrade = selectedGradeOption !== "auto" ? selectedGradeOption : undefined;
 
             if (isPdf) {
                 const base64 = await new Promise<string>((resolve, reject) => {
@@ -305,7 +319,7 @@ export default function UpgradePlan({
 
                 setPdfBase64(base64);
                 setRawText("");
-                analysis = await analyzeExistingPlan("", base64, imagePayload, pl1Text || undefined);
+                analysis = await analyzeExistingPlan("", base64, imagePayload, pl1Text || undefined, forcedGrade, uploadedFile.name);
             } else if (isExcel) {
                 const excelRes = await parseExcelFile(uploadedFile);
                 const text = excelRes.text;
@@ -314,7 +328,7 @@ export default function UpgradePlan({
                 }
                 setRawText(text);
                 setPdfBase64("");
-                analysis = await analyzeExistingPlan(text, undefined, imagePayload, pl1Text || undefined);
+                analysis = await analyzeExistingPlan(text, undefined, imagePayload, pl1Text || undefined, forcedGrade, uploadedFile.name);
             } else {
                 const buffer = await uploadedFile.arrayBuffer();
                 const result = await mammoth.extractRawText({ arrayBuffer: buffer });
@@ -325,7 +339,7 @@ export default function UpgradePlan({
                 setRawText(text);
                 setPdfBase64("");
 
-                analysis = await analyzeExistingPlan(text, undefined, imagePayload, pl1Text || undefined);
+                analysis = await analyzeExistingPlan(text, undefined, imagePayload, pl1Text || undefined, forcedGrade, uploadedFile.name);
             }
 
             setAnalysisResult(analysis);
@@ -481,6 +495,8 @@ export default function UpgradePlan({
         const expectedGrade = getGradeNumber(grade);
         return isAiCodeValid2422(clean, expectedGrade || undefined)
             || isAiCodeValid2422(clean.replace(/^NL[abcd]-/i, ""), expectedGrade || undefined)
+            || isAiCodeValid2422(clean)
+            || isAiCodeValid2422(clean.replace(/^NL[abcd]-/i, ""))
             || /^NL[abcd]-(?:10|11|12)\.[A-D]\d+\.(?:MR\d+|\d+)$/i.test(clean)
             || /^(?:10|11|12)\.[A-D]\d+\.(?:MR\d+|\d+)$/i.test(clean);
     };
@@ -540,18 +556,21 @@ export default function UpgradePlan({
     };
 
     const buildAiOrderedFields = (sug: any) => {
-        const code = plain(sug?.suggestedAI || sug?.aiIndicatorCode || "");
-        const canonicalCode = formatAiCode2422(code);
-        const codeMatch = canonicalCode?.match(/^NL([abcd])-(\d{1,2})\.([ABCD]\d+)\.(MR\d+|\d+)$/i);
-        const isValidCode = hasValidAiCode(canonicalCode);
+        const rawCode = plain(sug?.suggestedAI || sug?.aiIndicatorCode || "");
+        const formattedCode = formatAiCode2422(rawCode);
+        const effectiveCode = formattedCode || rawCode;
+        const codeMatch = (effectiveCode || rawCode)?.match(/^(?:NL([abcd])[-:\s]*)?(\d{1,2})\.([ABCD]\d+)\.(MR\d+|\d+)$/i);
+        const isValidCode = hasValidAiCode(effectiveCode) || hasValidAiCode(rawCode) || Boolean(formattedCode);
         const topicMatch = String(sug?.aiTopic || "").match(/\b([ABCD]\d+)\b/i);
-        const indicatorCode = codeMatch && isValidCode
-            ? canonicalCode!
-            : "Mã NL AI không hợp lệ — không thể chèn";
-        const grade = plain(sug?.aiGrade || codeMatch?.[2] || analysisResult?.grade || "");
+
         const topic = plain(codeMatch?.[3]?.toUpperCase() || topicMatch?.[1]?.toUpperCase() || "");
-        const competencyName = getAiCompetencyDisplayName(sug?.aiCompetencyName || sug?.aiComponentName, code);
-        const componentCode = codeMatch && isValidCode ? `NL${codeMatch[1].toLowerCase()}` : "";
+        const compLetter = codeMatch?.[1]?.toLowerCase() || (topic ? topic.charAt(0).toLowerCase() : "a");
+        const componentCode = isValidCode ? `NL${compLetter}` : "";
+        const indicatorCode = (effectiveCode || rawCode) && isValidCode
+            ? (effectiveCode || rawCode)
+            : (effectiveCode || rawCode || "Mã NL AI không hợp lệ — không thể chèn");
+        const grade = plain(sug?.aiGrade || codeMatch?.[2] || analysisResult?.grade || "");
+        const competencyName = getAiCompetencyDisplayName(sug?.aiCompetencyName || sug?.aiComponentName, effectiveCode);
         const behavior = plain(sug?.aiStudentBehavior || sug?.action || "Học sinh thực hiện nhiệm vụ học tập có sử dụng AI dưới sự hướng dẫn của giáo viên.");
         const yccd = plain(sug?.aiYccd || sug?.yccdEvidence || sug?.reason || "Căn cứ YCCĐ cần được giáo viên đối chiếu trước khi sử dụng.");
         return {
@@ -1282,6 +1301,46 @@ export default function UpgradePlan({
                                 )}
                             </div>
 
+                            {/* Grade Pre-selector */}
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div>
+                                        <p className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                                            <span>Khối lớp giáo án</span>
+                                            <span className="text-xs font-normal text-slate-500">(Chọn trước hoặc để AI tự động nhận diện)</span>
+                                        </p>
+                                    </div>
+                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                        {selectedGradeOption === "auto" ? "Tự động nhận diện" : `Đã chọn Lớp ${selectedGradeOption}`}
+                                    </span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {[
+                                        { value: "auto", label: "✨ Tự động nhận diện" },
+                                        { value: "10", label: "Lớp 10" },
+                                        { value: "11", label: "Lớp 11" },
+                                        { value: "12", label: "Lớp 12" },
+                                        { value: "6", label: "Lớp 6" },
+                                        { value: "7", label: "Lớp 7" },
+                                        { value: "8", label: "Lớp 8" },
+                                        { value: "9", label: "Lớp 9" },
+                                    ].map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            onClick={() => setSelectedGradeOption(opt.value)}
+                                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                                selectedGradeOption === opt.value
+                                                    ? "bg-blue-600 text-white shadow-sm ring-2 ring-blue-300"
+                                                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200"
+                                            }`}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
                             {/* Main Lesson Plan File Upload */}
                             <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-12 bg-slate-50 relative">
                                 {isAnalyzing ? (
@@ -1320,10 +1379,51 @@ export default function UpgradePlan({
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Thông tin bài học</h3>
-                                    <ul className="space-y-2 text-sm">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Thông tin bài học</h3>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm">
                                         <li><span className="font-semibold text-slate-700">Tên bài:</span> {analysisResult.topic}</li>
-                                        <li><span className="font-semibold text-slate-700">Khối lớp:</span> {analysisResult.grade}</li>
+                                        <li className="flex flex-wrap items-center gap-2">
+                                            <span className="font-semibold text-slate-700">Khối lớp:</span>
+                                            <div className="inline-flex items-center gap-1 bg-white border border-slate-300 rounded-lg p-0.5 shadow-sm">
+                                                {["10", "11", "12"].map((g) => {
+                                                    const isCurrent = (extractGradeNumber(analysisResult.grade) || "10") === g;
+                                                    return (
+                                                        <button
+                                                            key={g}
+                                                            type="button"
+                                                            onClick={() => handleGradeChange(g)}
+                                                            className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                                                                isCurrent
+                                                                    ? "bg-blue-600 text-white shadow-sm ring-1 ring-blue-400"
+                                                                    : "text-slate-600 hover:bg-slate-100"
+                                                            }`}
+                                                            title={`Chuyển giáo án sang chuẩn Lớp ${g}`}
+                                                        >
+                                                            Lớp {g}
+                                                        </button>
+                                                    );
+                                                })}
+                                                <select
+                                                    value={extractGradeNumber(analysisResult.grade) || "10"}
+                                                    onChange={(e) => handleGradeChange(e.target.value)}
+                                                    className="bg-transparent text-xs font-semibold text-slate-600 px-1 py-1 focus:outline-none cursor-pointer"
+                                                    title="Chọn khối lớp khác"
+                                                >
+                                                    <option value="10">Lớp 10</option>
+                                                    <option value="11">Lớp 11</option>
+                                                    <option value="12">Lớp 12</option>
+                                                    <option value="6">Lớp 6</option>
+                                                    <option value="7">Lớp 7</option>
+                                                    <option value="8">Lớp 8</option>
+                                                    <option value="9">Lớp 9</option>
+                                                </select>
+                                            </div>
+                                            <span className="text-[11px] text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                Click để đổi lớp tự động khớp mã
+                                            </span>
+                                        </li>
                                         <li><span className="font-semibold text-slate-700">Môn học:</span> {analysisResult.subject}</li>
                                     </ul>
                                 </div>

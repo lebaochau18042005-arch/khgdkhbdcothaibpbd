@@ -3,7 +3,7 @@ import { DiaLy } from '../data/curriculum/diaLy';
 import { INDICATORS as KNOWN_NLS_INDICATORS } from '../components/NlsLookup';
 import { isNlsCodeValid, getNlsIndicatorByCode } from '../data/nlsIndicatorsDb';
 import { buildSocialIntegrationSelectionPrompt } from '../data/socialIntegrations';
-import { formatAiCode2422, getAiRequirementByCode, normalizeAiCode2422 } from '../data/aiRequirements2422Db';
+import { formatAiCode2422, getAiRequirementByCode, normalizeAiCode2422, AI_REQUIREMENTS_2422_DB } from '../data/aiRequirements2422Db';
 
 // --- Google AI Key Validation (per google-api skill) ---
 // Accepts both legacy AIzaSy... keys and new AQ... keys from Google AI Studio
@@ -18,7 +18,7 @@ export const isValidGoogleAiApiKey = (key: string): boolean =>
  */
 const getModel = (apiKey?: string, modelName?: string) => {
   const key = apiKey || localStorage.getItem('GEMINI_API_KEY') || '';
-  const model = modelName || localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const model = modelName || localStorage.getItem('GEMINI_MODEL') || 'gemini-3-flash-preview';
   const ai = new GoogleGenAI({ apiKey: key });
   return {
     generateContent: (params: Parameters<typeof ai.models.generateContent>[0]) =>
@@ -38,13 +38,13 @@ const stripMarkdownJson = (raw: string): string => {
 
 const getFallbackModels = (startModel: string) => {
   const models = [
-    'gemini-2.5-flash',
-    'gemini-1.5-flash',
-    'gemini-2.0-flash',
-    'gemini-2.5-pro',
-    'gemini-3.5-flash',
     'gemini-3-flash-preview',
-    'gemini-3.1-flash-lite'
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-2.5-pro',
+    'gemini-3-pro-preview',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash'
   ];
   const deduplicated = [startModel, ...models.filter(m => m !== startModel)];
   return deduplicated;
@@ -55,7 +55,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
   if (!apiKey) {
     throw new Error('API_KEY_REQUIRED');
   }
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3-flash-preview';
   const modelsToTry = getFallbackModels(startModel);
 
   // Build parts array for the request
@@ -273,7 +273,7 @@ const AI_THEMES_BY_THPT_GRADE: Record<string, string[]> = {
   "12": ["A1", "A2", "A3", "B1", "B2", "B3", "C2", "C3", "C4", "D1", "D2"],
 };
 
-const extractGradeNumber = (grade?: string) => {
+export const extractGradeNumber = (grade?: string) => {
   const match = (grade || "").match(/\b(10|11|12|[1-9])\b/);
   return match?.[1] || (grade || "").trim();
 };
@@ -293,26 +293,60 @@ const getExpectedNlsLevel = (grade?: string) => NLS_LEVEL_BY_GRADE[extractGradeN
 
 type GradeCandidate = { grade: string; score: number };
 
-const findGradeCandidate = (text?: string): GradeCandidate | undefined => {
-  const lines = String(text || "").slice(0, 60000).split(/\r?\n/);
+const findGradeCandidate = (text?: string, fileName?: string): GradeCandidate | undefined => {
   const scores = new Map<string, number>();
+
+  // 1. Check file name if available (very high signal, e.g. HDTN_11.docx, Lop11, 11A, _11)
+  if (fileName) {
+    const cleanFileName = normalizeViText(fileName);
+    const fileMatches = cleanFileName.match(/(?:[\b_\-\s\.]|^)(?:khoi|lop|k|c)?\s*(10|11|12|[1-9])(?:[a-z0-9_\-\s\.]|$)/i);
+    if (fileMatches) {
+      const g = fileMatches[1];
+      scores.set(g, (scores.get(g) || 0) + 15);
+    }
+  }
+
+  const lines = String(text || "").slice(0, 60000).split(/\r?\n/);
+
+  // Subject title + grade pattern, e.g. Hoạt động trải nghiệm, hướng nghiệp 11, HĐTN 11, Toán 11, GDQP-AN 11...
+  const subjectGradePattern = /(?:hoat\s*dong\s*trai\s*nghiem(?:[\s,]+huong\s*nghiep)?|hdtn(?:[\s,]+hn)?|toan|ngu\s*van|van|tieng\s*anh|tieng\s*nuoc\s*ngoai|vat\s*li|vat\s*ly|li|ly|hoa\s*hoc|hoa|sinh\s*hoc|sinh|lich\s*su|su|dia\s*li|dia\s*ly|dia|tin\s*hoc|tin|cong\s*nghe|gdcd|gdkt\s*&\s*pl|gdkt\s*va\s*pl|gdqp\s*[-–—]?\s*an|gdqp|giao\s*duc\s*the\s*chat|gdtc|giao\s*duc\s*dia\s*phuong|gddp)\s*([:\-–—]?)\s*(10|11|12|[1-9])\b/gi;
+
+  // Grade / classroom pattern, e.g. Khối lớp 11, Lớp 11A1, Lớp: 11/1, Lớp 11
+  const gradePattern = /(?:khối\s*lớp|khoi\s*lop|lớp\s*dạy|lop\s*day|dạy\s*lớp|day\s*lop|lớp|lop|khối|khoi)\s*(?:học|hoc)?\s*([:\-–—]?)\s*(10|11|12|[1-9])([A-Za-z0-9_/-]*)\b/gi;
 
   lines.forEach((line, lineIndex) => {
     const normalizedLine = normalizeViText(line);
     if (!normalizedLine) return;
 
-    // Generated integration lines may contain an old/wrong grade. They are not
-    // reliable evidence for the actual grade of the lesson plan.
+    // Generated integration lines may contain an old/wrong grade. They are not reliable evidence.
     if (/ma chi bao|thanh phan nl ai|tich hop nls|tich hop nl ai|nl[abcd]\s*[-:]/i.test(normalizedLine)) return;
 
+    // Retrospective phrases referring to lower/past grades (e.g. "học sinh đã học ở lớp 10", "kế thừa từ lớp 10")
+    if (/(?:da hoc o lop|ke thua tu lop|on tap kien thuc lop|so voi lop|o cap thcs|tu lop 10|tu lop 6|o lop 10|o lop 11)/i.test(normalizedLine)) return;
+
     const nearbyText = normalizeViText(lines.slice(Math.max(0, lineIndex - 2), lineIndex + 3).join(" "));
-    const gradePattern = /(?:khối\s*lớp|khoi\s*lop|lớp|lop|khối|khoi)\s*(?:học|hoc)?\s*([:\-–—]?)\s*(10|11|12|[1-9])\b/gi;
+
+    // Check subject + grade match
+    let subMatch: RegExpExecArray | null;
+    subjectGradePattern.lastIndex = 0;
+    while ((subMatch = subjectGradePattern.exec(normalizedLine)) !== null) {
+      const grade = subMatch[2];
+      let score = 10;
+      if (lineIndex < 60) score += 6;
+      else if (lineIndex < 180) score += 3;
+      if (/ke hoach bai day|giao an|ke hoach giao duc|mon\s*[:\-]/i.test(nearbyText)) score += 6;
+      scores.set(grade, (scores.get(grade) || 0) + score);
+    }
+
+    // Check grade pattern
     let match: RegExpExecArray | null;
-    while ((match = gradePattern.exec(line)) !== null) {
+    gradePattern.lastIndex = 0;
+    while ((match = gradePattern.exec(normalizedLine)) !== null) {
       const grade = match[2];
-      let score = 4;
+      let score = 5;
       if (match[1]) score += 3;
-      if (lineIndex < 80) score += 4;
+      if (match[3]) score += 4; // Classroom suffix like 11A1, 11B
+      if (lineIndex < 80) score += 5;
       else if (lineIndex < 200) score += 2;
       if (/ke hoach bai day|giao an|ke hoach giao duc|mon\s*[:\-]|khoi lop/i.test(nearbyText)) score += 7;
       scores.set(grade, (scores.get(grade) || 0) + score);
@@ -325,8 +359,8 @@ const findGradeCandidate = (text?: string): GradeCandidate | undefined => {
   return ranked[0];
 };
 
-const detectGradeFromText = (lessonPlanText?: string, pl1Text?: string) => {
-  const lessonGrade = findGradeCandidate(lessonPlanText);
+export const detectGradeFromText = (lessonPlanText?: string, pl1Text?: string, fileName?: string) => {
+  const lessonGrade = findGradeCandidate(lessonPlanText, fileName);
   const pl1Grade = findGradeCandidate(pl1Text);
 
   if (lessonGrade && pl1Grade?.grade === lessonGrade.grade) return lessonGrade.grade;
@@ -400,16 +434,12 @@ const extractExplicitAiComponent = (...values: Array<string | undefined>) => {
 };
 
 const isValidAiIndicatorCode = (code: string, grade?: string) => {
+  if (!code) return false;
   const normalizedCode = code.trim();
   const currentGrade = extractGradeNumber(grade);
-  const match = normalizedCode.match(AI_CODE_PATTERN);
-  if (!match) return false;
-  const [, , componentLetter, codeGrade, rawTheme] = match;
-  if (componentLetter.toUpperCase() !== rawTheme[0].toUpperCase()) return false;
-  if (NLS_LEVEL_BY_GRADE[currentGrade] && codeGrade !== currentGrade) return false;
-  const canonicalFull = formatAiCode2422(normalizedCode);
-  if (!canonicalFull || canonicalFull.toLowerCase() !== normalizedCode.replace(/\s+/g, "").toLowerCase()) return false;
-  const item = getAiRequirementByCode(canonicalFull);
+  const canonical = normalizeAiCode2422(normalizedCode) || formatAiCode2422(normalizedCode);
+  if (!canonical) return false;
+  const item = getAiRequirementByCode(canonical);
   return Boolean(item && (!currentGrade || item.grade === currentGrade));
 };
 
@@ -417,7 +447,7 @@ const getSafeAiIndicatorCode = (code?: string, grade?: string) => {
   if (!code || isLikelyPlaceholderIndicatorCode(code)) return undefined;
   const trimmed = code.trim();
   if (!isValidAiIndicatorCode(trimmed, grade)) return undefined;
-  return formatAiCode2422(trimmed);
+  return normalizeAiCode2422(trimmed) || formatAiCode2422(trimmed);
 };
 
 const getAiCompetencyComponentName = (code?: string) => {
@@ -462,7 +492,27 @@ const sanitizeAiCodeForGrade = (code: string | undefined, grade?: string, compet
   if (!rawCode) return { code: "Không gán mã", note: "Thiếu mã NL AI." };
 
   const directFormatted = formatAiCode2422(rawCode);
-  if (directFormatted) return { code: directFormatted };
+  if (directFormatted) {
+    const codeMatch = directFormatted.match(/^(\d{1,2})\.([ABCD]\d+)\.(MR\d+|\d+)$/i);
+    if (codeMatch && ["10", "11", "12"].includes(currentGrade) && codeMatch[1] !== currentGrade) {
+      // Remap grade to currentGrade
+      const topic = codeMatch[2].toUpperCase();
+      const order = codeMatch[3].toUpperCase();
+      const remappedCandidate = `${currentGrade}.${topic}.${order}`;
+      const remappedFormatted = formatAiCode2422(remappedCandidate);
+      if (remappedFormatted) {
+        return { code: remappedFormatted };
+      }
+      const compLetter = topic.slice(0, 1);
+      const componentCode = compLetter === "A" ? "NLa" : compLetter === "B" ? "NLb" : compLetter === "C" ? "NLc" : "NLd";
+      const fallbackReq = AI_REQUIREMENTS_2422_DB.find(i => i.grade === currentGrade && i.component === componentCode && i.isActive);
+      if (fallbackReq) {
+        return { code: fallbackReq.code };
+      }
+    } else {
+      return { code: directFormatted };
+    }
+  }
 
   const numericMatch = rawCode.match(/\b(\d{1,2})\.([ABCD]\d*)\.(MR\d+|\d+)\b/i);
   if (!numericMatch) {
@@ -481,6 +531,10 @@ const sanitizeAiCodeForGrade = (code: string | undefined, grade?: string, compet
   const canonicalFull = formatAiCode2422(`${componentCode}-${codeGrade}.${theme}.${rawOrder}`);
   if (canonicalFull) {
     return { code: canonicalFull };
+  }
+  const fallbackReq = AI_REQUIREMENTS_2422_DB.find(i => i.grade === codeGrade && i.component === componentCode && i.isActive);
+  if (fallbackReq) {
+    return { code: fallbackReq.code };
   }
   return { code: `${componentCode}-${codeGrade}.${theme}.${rawOrder}` };
 };
@@ -644,57 +698,76 @@ function autoAlignCompetencyForInstructionalLesson(row: any, grade: string = "10
   }
 
   // 2. NĂNG LỰC AI (NL AI - QĐ 2422 & CV 5588)
-  // CHÚ Ý RÀ SOÁT: KHÔNG GÁN ĐẠI TRÀ 35/35 BÀI! Chỉ gán AI cho bài thực sự có thao tác AI (Thực hành, Dự án, Giao thông thông minh, Tin giả/Biển đảo, Nghề nghiệp AI, Môi trường năng lượng AI). Các bài lý thuyết thuần túy khác ghi "Không tích hợp NL AI".
-  const isAiDetailed = row.aiCompetency2422Integrated && /Hành vi|Sản phẩm|Tiêu chí|Trách nhiệm/i.test(row.aiCompetency2422Integrated);
+  const isAiDetailed = row.aiCompetency2422Integrated && /Hành vi|Sản phẩm|Tiêu chí|Trách nhiệm|kiểm chứng/i.test(row.aiCompetency2422Integrated);
   const aiMissing = !row.aiCompetency2422Integrated || /not integrated|không tích hợp|không gán mã/i.test(row.aiCompetency2422Integrated) || !isAiDetailed;
 
   if (aiMissing) {
-    // Kiểm tra xem bài học có thuộc diện thực sự tích hợp AI không
-    const requiresAiIntegration = /thực hành|báo cáo|dự án|infographic|áp phích|giao thông|đô thị thông minh|biển đông|hải đảo|chủ quyền|tin giả|deepfake|lao động|nghề nghiệp|việc làm|năng lượng|hạ tầng ai|prompt/i.test(combined);
-
-    if (!requiresAiIntegration && !isEnglish) {
-      // Các bài lý thuyết thuần túy không gán AI cơ học
-      row.aiCompetency2422Integrated = "Không tích hợp NL AI - Bài học lý thuyết thuần túy/Không sử dụng công cụ AI.";
-    } else if (isEnglish) {
-      if (/getting started|project/i.test(combined)) {
-        row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.C3.1; Thành phần NL AI: NLc - Nêu và lựa chọn công cụ AI miễn phí\n- YCCĐ AI: Lựa chọn công cụ AI phù hợp để hỗ trợ gợi ý từ vựng và ngữ cảnh giao tiếp cho chủ đề ${topicLabel}.\n- Nhiệm vụ AI: Nhập prompt bối cảnh để AI gợi ý từ vựng tiếng Anh.\n- Hành vi HS: Sử dụng AI gợi ý từ vựng, đối chiếu với SGK và ghi chú lại.\n- Sản phẩm đầu ra & kiểm chứng: Bảng từ vựng đã được kiểm chứng đối chiếu với SGK.`;
-      } else if (/writing/i.test(combined)) {
-        row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.B3.1; Thành phần NL AI: NLb - Liêm chính học thuật và trách nhiệm AI\n- YCCĐ AI: Thực hiện liêm chính học thuật, ghi rõ trích dẫn và không sao chép nguyên văn khi viết bài ${cleanLessonName}.\n- Nhiệm vụ AI: Sử dụng AI tham khảo dàn ý bài viết tiếng Anh.\n- Hành vi HS: Sử dụng AI để tham khảo cấu trúc bài viết, tự diễn đạt bằng văn phong cá nhân.\n- Sản phẩm đầu ra & kiểm chứng: Bài viết tiếng Anh hoàn chỉnh kèm trích dẫn sử dụng AI minh bạch.`;
+    if (isEnglish) {
+      if (/getting started|project|speaking|vocabulary/i.test(combined)) {
+        row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): ${g}.C3.1; Thành phần NL AI: NLc - Lựa chọn công cụ AI và thiết lập câu lệnh Prompt\n- YCCĐ AI: Lựa chọn công cụ AI phù hợp để hỗ trợ gợi ý từ vựng, ngữ cảnh giao tiếp và phát âm cho chủ đề ${topicLabel}.\n- Nhiệm vụ AI: Nhập prompt bối cảnh để AI gợi ý từ vựng và câu giao tiếp tiếng Anh.\n- Hành vi HS: Sử dụng AI gợi ý từ vựng, đối chiếu với SGK và ghi chú lại.\n- Sản phẩm đầu ra & kiểm chứng: Bảng từ vựng đã được kiểm chứng đối chiếu với SGK.`;
+      } else if (/writing|essay|paragraph/i.test(combined)) {
+        row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): ${g}.B3.1; Thành phần NL AI: NLb - Liêm chính học thuật và trách nhiệm AI\n- YCCĐ AI: Thực hiện liêm chính học thuật, ghi rõ trích dẫn và không sao chép nguyên văn khi viết bài ${cleanLessonName}.\n- Nhiệm vụ AI: Sử dụng AI tham khảo dàn ý bài viết tiếng Anh.\n- Hành vi HS: Sử dụng AI để tham khảo cấu trúc bài viết, tự diễn đạt bằng văn phong cá nhân.\n- Sản phẩm đầu ra & kiểm chứng: Bài viết tiếng Anh hoàn chỉnh kèm trích dẫn sử dụng AI minh bạch.`;
       } else {
-        row.aiCompetency2422Integrated = "Không tích hợp NL AI - Tiết học ngôn ngữ thuần túy.";
+        row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): ${g}.A3.1; Thành phần NL AI: NLa - Kiểm soát và giám sát AI\n- YCCĐ AI: Thực hiện rà soát, kiểm chứng độc lập các nội dung học liệu tiếng Anh do AI tạo ra bằng SGK và nguồn uy tín.\n- Nhiệm vụ AI: Đối chiếu văn bản tiếng Anh do AI dịch hoặc tạo lập với ngữ liệu bài học.\n- Hành vi HS: Phát hiện các lỗi ngữ pháp hoặc diễn đạt chưa chuẩn từ phản hồi của AI và hiệu chỉnh.\n- Sản phẩm đầu ra & kiểm chứng: Bản ghi chép ngữ liệu đã qua kiểm chứng độc lập của học sinh.`;
       }
     } else {
-      // Môn học khác (Địa lí Khối 12, 11, 10) - Chỉ gán đúng nhiệm vụ chuẩn QĐ 2422 cho các bài phù hợp
-      if (g === "12") {
-        if (/vị trí địa lí|biển đông|vùng biển|hải đảo|chủ quyền|an ninh quốc phòng|biên giới/i.test(combined)) {
-          // Mã 12.B2.1: Nhận diện deepfake, tin giả và xác thực nguồn tin đa kênh
-          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.B2.1; Thành phần NL AI: NLb - Nhận diện nguy cơ deepfake, tin giả và xác thực nguồn tin\n- YCCĐ AI: Nhận diện nguy cơ tin giả, thông tin sai lệch do AI tạo ra; thực hiện xác thực nguồn tin đa kênh khi tìm hiểu bài "${cleanLessonName}".\n- Nhiệm vụ AI: Thẩm định thông tin do AI tổng hợp về chủ quyền biên giới, hải đảo.\n- Hành vi HS: Nhận diện thông tin sai lệch từ AI, đối chiếu xác thực đa kênh với cổng thông tin chính phủ và SGK.\n- Sản phẩm đầu ra & kiểm chứng: Báo cáo tư liệu ${topicLabel} kèm bảng đối chiếu xác thực đa nguồn tin chính thống.\n- Trách nhiệm & Đánh giá: Bảo vệ tính xác thực tuyệt đối của nguồn tin quốc gia.`;
-        } else if (/tài nguyên|suy giảm tài nguyên|môi trường|bền vững|năng lượng/i.test(combined)) {
-          // Mã 12.B3.1: Đánh giá tác động tiêu thụ năng lượng và hạ tầng AI đến môi trường
-          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.B3.1; Thành phần NL AI: NLb - Đánh giá tác động tiêu thụ năng lượng của AI đến môi trường\n- YCCĐ AI: Đánh giá được tác động của việc tiêu thụ năng lượng và tài nguyên tính toán của AI đối với phát triển bền vững khi học bài "${cleanLessonName}".\n- Nhiệm vụ AI: Phân tích lượng phát thải carbon và mức tiêu thụ năng lượng của các trung tâm dữ liệu AI.\n- Hành vi HS: Tra cứu dữ liệu tác động môi trường từ hạ tầng AI, đề xuất giải pháp ứng dụng công nghệ xanh.\n- Sản phẩm đầu ra & kiểm chứng: Sơ đồ tư duy/báo cáo phân tích tác động môi trường của AI trong môn học.\n- Trách nhiệm & Đánh giá: Nâng cao nhận thức bảo vệ môi trường trong kỷ nguyên số.`;
-        } else if (/giao thông|đô thị hóa|đô thị thông minh/i.test(combined)) {
-          // Mã 12.C2.1: Lựa chọn ý tưởng thiết kế công cụ AI (cho giao thông/đô thị)
-          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.C2.1; Thành phần NL AI: NLc - Lựa chọn ý tưởng thiết kế công cụ AI\n- YCCĐ AI: Lựa chọn ý tưởng ứng dụng giải pháp AI trong điều phối giao thông thông minh và tối ưu hóa logistics cho bài "${cleanLessonName}".\n- Nhiệm vụ AI: Phân tích bài toán giao thông đô thị và đề xuất lựa chọn ứng dụng AI thích hợp.\n- Hành vi HS: Thảo luận lựa chọn ý tưởng AI điều phối đèn giao thông thông minh, kiểm chứng với dữ liệu thực tế Hà Nội/TP.HCM.\n- Sản phẩm đầu ra & kiểm chứng: Bài viết/bản đề xuất giải pháp giao thông thông minh ứng dụng AI được kiểm chứng.\n- Trách nhiệm & Đánh giá: Minh bạch giải pháp AI, đối chiếu với thực tiễn giao thông.`;
-        } else if (/dân cư|dân số|lao động|việc làm|nghề nghiệp/i.test(combined)) {
-          // Mã 12.A2.1: Định hướng bản thân và phát triển kỹ năng thích ứng với AI
-          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.A2.1; Thành phần NL AI: NLa - Định hướng bản thân và thích ứng nghề nghiệp kỷ nguyên AI\n- YCCĐ AI: Phân tích sự chuyển dịch thị trường lao động và lập kế hoạch rèn luyện kỹ năng cộng tác với AI trong nghề nghiệp liên quan đến "${cleanLessonName}".\n- Nhiệm vụ AI: Khảo sát xu hướng việc làm biến đổi dưới tác động của công nghệ AI.\n- Hành vi HS: Sử dụng AI để khảo sát cơ cấu việc làm, tự đánh giá thế mạnh cá nhân và xây dựng lộ trình thích ứng.\n- Sản phẩm đầu ra & kiểm chứng: Bản kế hoạch phát triển năng lực cá nhân trong kỷ nguyên AI.\n- Trách nhiệm & Đánh giá: Chủ động định hướng sự nghiệp, làm chủ công nghệ.`;
-        } else if (/thực hành|báo cáo|dự án|infographic/i.test(combined)) {
-          if (/xử lý số liệu|vẽ biểu đồ/i.test(combined)) {
-            // Mã 12.C3.1: Nêu và lựa chọn công cụ mã nguồn mở/miễn phí AI
-            row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.C3.1; Thành phần NL AI: NLc - Nêu và lựa chọn công cụ mã nguồn mở/miễn phí AI\n- YCCĐ AI: Nêu và lựa chọn các công cụ AI mã nguồn mở/miễn phí để xử lý số liệu thống kê và phân tích biểu đồ cho bài "${cleanLessonName}".\n- Nhiệm vụ AI: Sử dụng công cụ AI miễn phí để xử lý chuỗi số liệu địa lí.\n- Hành vi HS: Nhập số liệu vào công cụ AI để tính toán cơ cấu/tốc độ tăng trưởng, kiểm chứng kết quả với Atlat/SGK.\n- Sản phẩm đầu ra & kiểm chứng: Bảng số liệu phân tích do AI hỗ trợ được đối chiếu kiểm chứng chuẩn xác.\n- Trách nhiệm & Đánh giá: Trích dẫn công cụ AI đã dùng, chịu trách nhiệm về tính xác thực của số liệu.`;
-          } else {
-            // Mã 12.D1.1: Nhận biết phương án thiết kế và vận hành hệ thống AI
-            row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.D1.1; Thành phần NL AI: NLd - Nhận biết phương án thiết kế và vận hành dự án AI\n- YCCĐ AI: Nhận biết phương án thiết kế và vận hành dự án báo cáo thực hành địa lí có sự hỗ trợ của công cụ AI bài "${cleanLessonName}".\n- Nhiệm vụ AI: Lập phương án vận hành dự án thực hành từ thu thập dữ liệu đến báo cáo kết quả.\n- Hành vi HS: Phác thảo sơ đồ quy trình ứng dụng AI trong bài thực hành, triển khai và kiểm tra chất lượng kết quả.\n- Sản phẩm đầu ra & kiểm chứng: Hồ sơ báo cáo thực hành tích hợp ứng dụng AI hoàn chỉnh.\n- Trách nhiệm & Đánh giá: Đánh giá độc lập chất lượng sản phẩm AI, minh bạch quy trình.`;
-          }
+      // Các môn học khác: Lịch sử, Địa lí, GDCD/GDKT&PL, Ngữ văn, Toán, Vật lí, Hóa học, Sinh học, Tin học, Công nghệ...
+      if (/di sản|văn hóa|lịch sử|văn minh|khảo cổ|chiến tranh|kháng chiến|triều đại|cách mạng|nhân vật|sự kiện|tư liệu/i.test(combined)) {
+        if (g === "12") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.B2.1; Thành phần NL AI: NLb - Nhận diện nguy cơ deepfake, tin giả và xác thực nguồn tin\n- YCCĐ AI: Nhận diện nguy cơ tin giả, thông tin sai lệch do AI tạo ra; thực hiện xác thực nguồn tin đa kênh khi tìm hiểu bài "${cleanLessonName}".\n- Nhiệm vụ AI: Thẩm định thông tin lịch sử do AI tổng hợp, phát hiện thông tin xuyên tạc/sai lệch.\n- Hành vi HS: Nhận diện thông tin sai lệch từ AI, đối chiếu xác thực đa kênh với tư liệu lịch sử và cổng thông tin chính thống.\n- Sản phẩm đầu ra & kiểm chứng: Báo cáo tư liệu ${topicLabel} kèm bảng đối chiếu xác thực đa nguồn tin chính thống.\n- Trách nhiệm & Đánh giá: Bảo vệ tính xác thực tuyệt đối của dữ liệu lịch sử quốc gia.`;
+        } else if (g === "11") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 11.C3.1; Thành phần NL AI: NLc - Kỹ thuật Prompt nâng cao (Few-shot, Chain-of-thought)\n- YCCĐ AI: Áp dụng kỹ thuật prompt nâng cao để AI so sánh, phân tích nguyên nhân và bối cảnh lịch sử của bài "${cleanLessonName}".\n- Nhiệm vụ AI: Sử dụng prompt nhiều bước để AI gợi ý các góc nhìn lịch sử đa chiều.\n- Hành vi HS: Yêu cầu AI giải thích từng bước, phát hiện các định kiến hoặc thiên lệch trong câu trả lời của AI và hiệu chỉnh lại.\n- Sản phẩm đầu ra & kiểm chứng: Bài phân tích bối cảnh lịch sử có trích dẫn nguồn AI và bản kiểm chứng độc lập của học sinh.\n- Trách nhiệm & Đánh giá: Rèn luyện tư duy phản biện lịch sử và bảo đảm liêm chính học thuật.`;
         } else {
-          row.aiCompetency2422Integrated = "Không tích hợp NL AI - Bài học lý thuyết thuần túy/Không sử dụng công cụ AI.";
+          // Lớp 10 (Chuẩn khớp chính xác bài trong ảnh của người dùng: Lịch sử 10 Bài 5 Văn minh phương Tây!)
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 10.C3.1; Thành phần NL AI: NLc - Kỹ năng thiết lập câu lệnh Prompt\n- YCCĐ AI: Thiết kế và tinh chỉnh câu lệnh prompt để AI hỗ trợ tra cứu, tóm tắt tư liệu lịch sử và tái hiện các thành tựu văn minh trong bài "${cleanLessonName}".\n- Nhiệm vụ AI: Nhập prompt bối cảnh để AI tóm tắt các thành tựu văn minh và mốc lịch sử tiêu biểu.\n- Hành vi HS: Đặt câu lệnh prompt có cấu trúc rõ ràng, đối chiếu độc lập nội dung AI tạo ra với SGK Lịch sử Kết nối tri thức.\n- Sản phẩm đầu ra & kiểm chứng: Bảng tổng hợp dữ liệu lịch sử/infographic di sản do AI hỗ trợ kèm ghi chú đối chiếu nguồn SGK.\n- Trách nhiệm & Đánh giá: Tôn trọng tính chân xác lịch sử, kiểm chứng nguồn tin, không suy diễn thiếu căn cứ.`;
+        }
+      } else if (/vị trí địa lí|biển đông|vùng biển|hải đảo|chủ quyền|an ninh quốc phòng|biên giới/i.test(combined)) {
+        if (g === "12") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.B2.1; Thành phần NL AI: NLb - Nhận diện nguy cơ deepfake, tin giả và xác thực nguồn tin\n- YCCĐ AI: Nhận diện nguy cơ tin giả, thông tin sai lệch do AI tạo ra; thực hiện xác thực nguồn tin đa kênh khi tìm hiểu bài "${cleanLessonName}".\n- Nhiệm vụ AI: Thẩm định thông tin do AI tổng hợp về chủ quyền biên giới, hải đảo.\n- Hành vi HS: Nhận diện thông tin sai lệch từ AI, đối chiếu xác thực đa kênh với cổng thông tin chính phủ và SGK.\n- Sản phẩm đầu ra & kiểm chứng: Báo cáo tư liệu ${topicLabel} kèm bảng đối chiếu xác thực đa nguồn tin chính thống.\n- Trách nhiệm & Đánh giá: Bảo vệ tính xác thực tuyệt đối của nguồn tin quốc gia.`;
+        } else if (g === "11") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 11.B2.1; Thành phần NL AI: NLb - Định kiến và tính công bằng trong AI\n- YCCĐ AI: Nhận diện và phát hiện các biểu hiện sai lệch hoặc thiên kiến thông tin khi tra cứu tư liệu chủ quyền bằng AI trong bài "${cleanLessonName}".\n- Nhiệm vụ AI: Tra cứu các nguồn tư liệu quốc tế và đối chiếu dữ liệu biên giới lãnh thổ.\n- Hành vi HS: Phân tích khách quan các nguồn thông tin, đối chiếu với tuyên bố chủ quyền chính thức của Việt Nam.\n- Sản phẩm đầu ra & kiểm chứng: Phiếu đối chiếu tư liệu khẳng định căn cứ chủ quyền hợp pháp.\n- Trách nhiệm & Đánh giá: Kiên định bảo vệ chủ quyền lãnh thổ quốc gia.`;
+        } else {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 10.A3.1; Thành phần NL AI: NLa - Kiểm soát và giám sát AI\n- YCCĐ AI: Thực hiện việc rà soát, kiểm chứng độc lập các nội dung do AI tạo ra bằng các nguồn tài liệu chính thống về chủ quyền lãnh thổ trong bài "${cleanLessonName}".\n- Nhiệm vụ AI: Kiểm tra tính chuẩn xác của các thông tin địa lí, biên giới từ công cụ AI.\n- Hành vi HS: Đối chiếu thông tin từ AI với bản đồ hành chính chính thức của Việt Nam.\n- Sản phẩm đầu ra & kiểm chứng: Bảng kiểm tra tính chính xác của dữ liệu số.\n- Trách nhiệm & Đánh giá: Cẩn trọng, chuẩn mực với thông tin chủ quyền quốc gia.`;
+        }
+      } else if (/tài nguyên|suy giảm tài nguyên|môi trường|bền vững|năng lượng|sinh quyển|rừng|đất/i.test(combined)) {
+        if (g === "12") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.B3.1; Thành phần NL AI: NLb - Đánh giá tác động tiêu thụ năng lượng của AI đến môi trường\n- YCCĐ AI: Đánh giá được tác động của việc tiêu thụ năng lượng và tài nguyên tính toán của AI đối với phát triển bền vững khi học bài "${cleanLessonName}".\n- Nhiệm vụ AI: Phân tích lượng phát thải carbon và mức tiêu thụ năng lượng của các trung tâm dữ liệu AI.\n- Hành vi HS: Tra cứu dữ liệu tác động môi trường từ hạ tầng AI, đề xuất giải pháp ứng dụng công nghệ xanh.\n- Sản phẩm đầu ra & kiểm chứng: Sơ đồ tư duy/báo cáo phân tích tác động môi trường của AI trong môn học.\n- Trách nhiệm & Đánh giá: Nâng cao nhận thức bảo vệ môi trường trong kỷ nguyên số.`;
+        } else if (g === "11") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 11.C5.1; Thành phần NL AI: NLc - Phân tích dữ liệu bằng AI\n- YCCĐ AI: Sử dụng AI để xử lý và phân tích các tập dữ liệu môi trường, tài nguyên trong bài "${cleanLessonName}".\n- Nhiệm vụ AI: Nhập bảng số liệu suy giảm tài nguyên để AI tính toán xu hướng biến động.\n- Hành vi HS: Yêu cầu AI trực quan hóa dữ liệu, nhận xét xu hướng và kiểm chứng kết quả với số liệu SGK.\n- Sản phẩm đầu ra & kiểm chứng: Báo cáo phân tích thực trạng tài nguyên môi trường có biểu đồ số hóa.\n- Trách nhiệm & Đánh giá: Sử dụng dữ liệu khoa học, trung thực.`;
+        } else {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 10.C2.1; Thành phần NL AI: NLc - Ứng dụng AI trong học tập môn học\n- YCCĐ AI: Sử dụng công cụ AI để tìm kiếm thông tin, tóm tắt hiện trạng môi trường và đề xuất giải pháp xanh cho bài "${cleanLessonName}".\n- Nhiệm vụ AI: Sử dụng AI tìm kiếm giải pháp bảo vệ môi trường và giảm phát thải carbon.\n- Hành vi HS: Đặt prompt tìm kiếm sáng kiến môi trường, chọn lọc giải pháp phù hợp với thực tiễn địa phương.\n- Sản phẩm đầu ra & kiểm chứng: Bản kế hoạch hành động xanh có sự tham vấn từ AI và kiểm chứng của học sinh.\n- Trách nhiệm & Đánh giá: Nâng cao ý thức trách nhiệm bảo vệ môi trường sinh thái.`;
+        }
+      } else if (/giao thông|đô thị hóa|đô thị thông minh/i.test(combined)) {
+        if (g === "12") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.C2.1; Thành phần NL AI: NLc - Lựa chọn ý tưởng thiết kế công cụ AI\n- YCCĐ AI: Lựa chọn ý tưởng ứng dụng giải pháp AI trong điều phối giao thông thông minh và tối ưu hóa logistics cho bài "${cleanLessonName}".\n- Nhiệm vụ AI: Phân tích bài toán giao thông đô thị và đề xuất lựa chọn ứng dụng AI thích hợp.\n- Hành vi HS: Thảo luận lựa chọn ý tưởng AI điều phối đèn giao thông thông minh, kiểm chứng với dữ liệu thực tế Hà Nội/TP.HCM.\n- Sản phẩm đầu ra & kiểm chứng: Bài viết/bản đề xuất giải pháp giao thông thông minh ứng dụng AI được kiểm chứng.\n- Trách nhiệm & Đánh giá: Minh bạch giải pháp AI, đối chiếu với thực tiễn giao thông.`;
+        } else {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): ${g}.C3.1; Thành phần NL AI: NLc - Kỹ năng thiết lập câu lệnh Prompt\n- YCCĐ AI: Thiết kế câu lệnh prompt để AI hỗ trợ phân tích thực trạng đô thị hóa và giải pháp giao thông bài "${cleanLessonName}".\n- Nhiệm vụ AI: Nhập dữ liệu để AI gợi ý các mô hình đô thị thông minh trên thế giới.\n- Hành vi HS: Đặt câu lệnh phân tích điểm mạnh/hạn chế của đô thị hóa, đối chiếu với SGK.\n- Sản phẩm đầu ra & kiểm chứng: Bảng phân tích mô hình đô thị thông minh có trích dẫn nguồn AI.\n- Trách nhiệm & Đánh giá: Định hướng giải pháp văn minh, bền vững.`;
+        }
+      } else if (/dân cư|dân số|lao động|việc làm|nghề nghiệp/i.test(combined)) {
+        if (g === "12") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.A2.1; Thành phần NL AI: NLa - Định hướng bản thân và thích ứng nghề nghiệp kỷ nguyên AI\n- YCCĐ AI: Phân tích sự chuyển dịch thị trường lao động và lập kế hoạch rèn luyện kỹ năng cộng tác với AI trong nghề nghiệp liên quan đến "${cleanLessonName}".\n- Nhiệm vụ AI: Khảo sát xu hướng việc làm biến đổi dưới tác động của công nghệ AI.\n- Hành vi HS: Sử dụng AI để khảo sát cơ cấu việc làm, tự đánh giá thế mạnh cá nhân và xây dựng lộ trình thích ứng.\n- Sản phẩm đầu ra & kiểm chứng: Bản kế hoạch phát triển năng lực cá nhân trong kỷ nguyên AI.\n- Trách nhiệm & Đánh giá: Chủ động định hướng sự nghiệp, làm chủ công nghệ.`;
+        } else if (g === "11") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 11.A2.1; Thành phần NL AI: NLa - Đánh giá tác động của AI đối với nghề nghiệp\n- YCCĐ AI: Đánh giá sự thay đổi của các ngành nghề liên quan đến dân cư, lao động dưới tác động của AI trong bài "${cleanLessonName}".\n- Nhiệm vụ AI: Khảo sát các công việc mới xuất hiện nhờ AI trong lĩnh vực bài học.\n- Hành vi HS: Thảo luận nhóm về các kỹ năng con người cần trau dồi để không bị thay thế bởi AI.\n- Sản phẩm đầu ra & kiểm chứng: Sơ đồ tư duy định hướng nghề nghiệp tương lai thích ứng với AI.\n- Trách nhiệm & Đánh giá: Nâng cao năng lực tự học và phát triển bản thân.`;
+        } else {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 10.A2.1; Thành phần NL AI: NLa - AI vì sự tiến bộ của con người\n- YCCĐ AI: Nêu được ví dụ về lợi ích và rủi ro tiềm ẩn của AI đối với lao động và việc làm trong bài "${cleanLessonName}"; khẳng định vai trò chủ đạo của con người.\n- Nhiệm vụ AI: Tra cứu các ví dụ ứng dụng AI trong quản lý dân số và việc làm.\n- Hành vi HS: So sánh năng suất giữa lao động truyền thống và lao động ứng dụng AI, thảo luận trách nhiệm con người.\n- Sản phẩm đầu ra & kiểm chứng: Phiếu học tập phân tích lợi ích và rủi ro của AI đối với lao động.\n- Trách nhiệm & Đánh giá: Khẳng định con người luôn làm chủ công nghệ.`;
+        }
+      } else if (/thực hành|báo cáo|dự án|infographic|xử lý số liệu|vẽ biểu đồ/i.test(combined)) {
+        if (g === "12") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.C3.1; Thành phần NL AI: NLc - Nêu và lựa chọn công cụ mã nguồn mở/miễn phí AI\n- YCCĐ AI: Nêu và lựa chọn các công cụ AI mã nguồn mở/miễn phí để xử lý số liệu thống kê và phân tích biểu đồ cho bài "${cleanLessonName}".\n- Nhiệm vụ AI: Sử dụng công cụ AI miễn phí để xử lý chuỗi số liệu bài học.\n- Hành vi HS: Nhập số liệu vào công cụ AI để tính toán cơ cấu/tốc độ tăng trưởng, kiểm chứng kết quả với SGK.\n- Sản phẩm đầu ra & kiểm chứng: Bảng số liệu phân tích do AI hỗ trợ được đối chiếu kiểm chứng chuẩn xác.\n- Trách nhiệm & Đánh giá: Trích dẫn công cụ AI đã dùng, chịu trách nhiệm về tính xác thực của số liệu.`;
+        } else if (g === "11") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 11.C5.1; Thành phần NL AI: NLc - Phân tích dữ liệu bằng AI\n- YCCĐ AI: Sử dụng AI để xử lý, làm sạch và phân tích các tập dữ liệu bài thực hành "${cleanLessonName}".\n- Nhiệm vụ AI: Xử lý chuỗi thông tin học tập và vẽ biểu đồ số bằng AI.\n- Hành vi HS: Đặt câu lệnh prompt để AI gợi ý phân tích số liệu, đối chiếu kiểm chứng với SGK.\n- Sản phẩm đầu ra & kiểm chứng: Bản phân tích số liệu có trích dẫn nguồn AI và kiểm chứng.\n- Trách nhiệm & Đánh giá: Minh bạch quá trình sử dụng công nghệ số.`;
+        } else {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 10.C3.1; Thành phần NL AI: NLc - Kỹ năng thiết lập câu lệnh Prompt\n- YCCĐ AI: Thiết kế và tinh chỉnh câu lệnh prompt để AI hỗ trợ xử lý dữ liệu và trình bày báo cáo bài thực hành "${cleanLessonName}".\n- Nhiệm vụ AI: Nhập bảng dữ liệu bài thực hành để AI gợi ý cấu trúc báo cáo.\n- Hành vi HS: Thao tác prompt, nhận diện điểm chưa tối ưu từ AI và chỉnh sửa thành sản phẩm báo cáo hoàn chỉnh.\n- Sản phẩm đầu ra & kiểm chứng: Báo cáo thực hành số hóa kèm lịch sử prompt và bản kiểm chứng SGK.\n- Trách nhiệm & Đánh giá: Trung thực trong học tập, minh bạch nguồn tư liệu.`;
         }
       } else {
-        // Grade 10 & 11
-        if (/thực hành|báo cáo|dự án/i.test(combined)) {
-          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): ${g}.C3.1; Thành phần NL AI: NLc - Lựa chọn công cụ AI hỗ trợ xử lý dữ liệu\n- YCCĐ AI: Sử dụng công cụ AI miễn phí để hỗ trợ phân tích dữ liệu bài thực hành "${cleanLessonName}".\n- Nhiệm vụ AI: Xử lý chuỗi thông tin học tập bằng AI.\n- Hành vi HS: Đặt câu lệnh prompt để AI gợi ý phân tích số liệu, đối chiếu kiểm chứng với SGK.\n- Sản phẩm đầu ra & kiểm chứng: Bản phân tích số liệu có trích dẫn nguồn AI và kiểm chứng.\n- Trách nhiệm & Đánh giá: Minh bạch quá trình sử dụng công nghệ số.`;
+        // TẤT CẢ CÁC BÀI HỌC LÝ THUYẾT / KIẾN THỨC MỚI KHÁC (Đảm bảo 100% bài học đều có điểm chạm AI chuẩn QĐ 2422)
+        if (g === "12") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 12.C3.1; Thành phần NL AI: NLc - Nêu và lựa chọn công cụ mã nguồn mở/miễn phí AI\n- YCCĐ AI: Lựa chọn và khai thác công cụ AI miễn phí phù hợp để hỗ trợ tự học, nghiên cứu sâu và vận dụng kiến thức bài "${cleanLessonName}".\n- Nhiệm vụ AI: Ứng dụng AI hỗ trợ hệ thống hóa chuyên đề bài học và liên hệ thực tế.\n- Hành vi HS: Thao tác với công cụ AI để tổng hợp tài liệu chuyên sâu, đối chiếu kiểm chứng đa kênh trước khi sử dụng.\n- Sản phẩm đầu ra & kiểm chứng: Báo cáo học tập số hóa chuyên đề có phần đánh giá độc lập của học sinh về kết quả AI.\n- Trách nhiệm & Đánh giá: Chịu trách nhiệm về tính xác thực của sản phẩm, bảo đảm an toàn dữ liệu và bản quyền tri thức.`;
+        } else if (g === "11") {
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 11.C3.1; Thành phần NL AI: NLc - Kỹ thuật Prompt nâng cao (Few-shot, Chain-of-thought)\n- YCCĐ AI: Áp dụng kỹ thuật prompt nâng cao để AI hỗ trợ giải thích quy luật, phân tích mối liên hệ kiến thức trong bài "${cleanLessonName}".\n- Nhiệm vụ AI: Thiết lập prompt phân tầng để AI gợi ý câu hỏi đào sâu và liên hệ thực tiễn.\n- Hành vi HS: So sánh phản hồi của AI với bài học trong SGK, phát hiện điểm chưa chuẩn xác để tinh chỉnh câu lệnh.\n- Sản phẩm đầu ra & kiểm chứng: Bảng phân tích nội dung học tập tích hợp AI kèm lịch sử prompt và nhận xét kiểm chứng.\n- Trách nhiệm & Đánh giá: Làm chủ công cụ công nghệ, nâng cao tư duy phản biện và liêm chính học thuật.`;
         } else {
-          row.aiCompetency2422Integrated = "Không tích hợp NL AI - Bài học lý thuyết thuần túy/Không sử dụng công cụ AI.";
+          // Lớp 10
+          row.aiCompetency2422Integrated = `Mã chỉ báo NL AI (QĐ 2422): 10.C3.1; Thành phần NL AI: NLc - Kỹ năng thiết lập câu lệnh Prompt\n- YCCĐ AI: Thiết kế và tinh chỉnh câu lệnh prompt để AI hỗ trợ tra cứu, tóm tắt và hệ thống hóa kiến thức trọng tâm bài "${cleanLessonName}".\n- Nhiệm vụ AI: Sử dụng công cụ AI để gợi ý dàn ý, tóm tắt nội dung và giải thích các khái niệm cốt lõi bài học.\n- Hành vi HS: Nhập prompt có cấu trúc rõ ràng, đối chiếu thông tin AI trả về với SGK Kết nối tri thức và chỉnh sửa cho chính xác.\n- Sản phẩm đầu ra & kiểm chứng: Phiếu học tập số hóa/sơ đồ tư duy bài học có trích dẫn nguồn hỗ trợ từ AI và ghi chú đối chiếu SGK.\n- Trách nhiệm & Đánh giá: Chủ động kiểm soát thông tin AI, không sao chép máy móc, bảo đảm tính chính xác của kiến thức.`;
         }
       }
     }
@@ -1577,13 +1650,15 @@ export const analyzeExistingPlan = async (
   fileText: string,
   pdfBase64?: string,
   textbookImages?: { mimeType: string; data: string }[],
-  pl1Data?: string
+  pl1Data?: string,
+  forcedGrade?: string,
+  fileName?: string
 ) => {
   const hasImages = textbookImages && textbookImages.length > 0;
-  const detectedGrade = detectGradeFromText(fileText, pl1Data);
+  const detectedGrade = forcedGrade || detectGradeFromText(fileText, pl1Data, fileName);
   const competencyGuardrails = getCompetencyGuardrails("môn học trong giáo án", detectedGrade);
   const detectedGradeInstruction = detectedGrade
-    ? `\nLỚP ĐÃ PHÁT HIỆN TỪ GIÁO ÁN GỐC: ${detectedGrade}. Mọi mã NL AI phải đúng lớp ${detectedGrade}. Khi hoạt động có điểm chạm NL AI rõ, bắt buộc mã hóa cụ thể theo mẫu NLa-${detectedGrade}.A1.1; không được trả về “Cần đối chiếu mã AI”.`
+    ? `\nLỚP CỦA GIÁO ÁN: ${detectedGrade}. Mọi mã NL AI phải đúng lớp ${detectedGrade}. Khi hoạt động có điểm chạm NL AI rõ, bắt buộc mã hóa cụ thể theo mẫu NLa-${detectedGrade}.A1.1; không được trả về “Cần đối chiếu mã AI”.`
     : `\nPhải trích xuất chính xác lớp trước khi mã hóa. Chỉ khi không thể xác định lớp hoặc YCCĐ mới được ghi “Cần đối chiếu mã”; không dùng trạng thái này để thay cho việc rà soát.`;
 
   // Build the textbook image section of the prompt
@@ -1598,7 +1673,9 @@ C. Chỉ đề xuất nội dung xã hội (Di sản, Dân số, Phòng chống 
     ? `\n\n--- LỆNH TỐI CẤP ĐỒNG BỘ TỪ KHTCM (PL1) ---\nDưới đây là Kế hoạch Tổ chuyên môn (PL1) được tải lên:
 ${pl1Data.substring(0, 5000)}
 
-LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với PL1 ở trên. Tìm ra chính xác dòng chứa bài học này trong PL1. Chỉ trích xuất mã NLS/NL AI từ PL1 nếu mã đó khớp đúng lớp của giáo án và có căn cứ YCCĐ. Nếu PL1 chứa mã sai lớp hoặc mã tạm, phải ghi "Không gán mã" và nêu lý do, không được bê nguyên mã sai.`
+LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với PL1 ở trên. Tìm ra chính xác dòng chứa bài học này trong PL1.
+- Ưu tiên kế thừa mã NLS và mã NL AI từ PL1 nếu mã đó hợp lệ theo QĐ 2422 và TT 02.
+- NẾU dòng bài học trong PL1 chưa có mã NL AI hoặc ghi "Không tích hợp NL AI", bạn BẮT BUỘC phải chủ động đề xuất điểm chạm tích hợp NL AI mới theo chuẩn QĐ 2422 (như kỹ năng prompt C3, kiểm chứng A3, liêm chính B3...) phù hợp với các hoạt động của giáo án, tuyệt đối KHÔNG bỏ trống điểm chạm AI.`
     : "";
 
   const jsonFormat = `{
@@ -2183,7 +2260,7 @@ export const robustParseCurriculumJson = (rawText: string): any[] | null => {
 export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: string) => {
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3-flash-preview';
   const modelsToTry = getFallbackModels(startModel);
 
   const instruction = `Bạn là chuyên gia bóc tách phân phối chương trình giáo dục phổ thông (CT GDPT 2018).
@@ -2794,10 +2871,10 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
     Nhiệm vụ cụ thể:
     1. Rà soát toàn bộ dữ liệu nguồn: không bỏ sót, gộp hoặc tự thêm bài/chuyên đề/kiểm tra. Chỉ lập đủ 35 tuần khi nguồn chính thức đã cung cấp đủ; không tự bịa dòng để lấp lịch.
     1b. KHÔNG ĐƯỢC ĐỂ THIẾU TRƯỜNG: Mỗi dòng bắt buộc có đủ 7 trường time, lessonContent, periods, lessonGoal, socialIntegration, digitalCompetencyTT02, aiCompetency2422Integrated. Riêng socialIntegration được để chuỗi rỗng khi không có điểm chạm; NLS/NL AI không phù hợp phải ghi rõ lý do.
-    2. TÍCH HỢP NLS VÀ NL AI THEO YCCĐ, KHÔNG GƯỢNG ÉP:
-    - Chỉ tích hợp Năng lực số (NLS) và Năng lực AI (NL AI) khi YCCĐ của bài có thao tác phù hợp: khai thác dữ liệu, kiểm chứng nguồn, tạo sản phẩm số, phân tích biểu đồ/bản đồ/bảng số liệu, mô phỏng, thiết kế, đánh giá rủi ro...
-    - Không đặt chỉ tiêu 95%/100% số bài. Nếu bài không có điểm chạm rõ, ghi "Không tích hợp - lý do: ..." hoặc "Không gán mã - lý do: ..." và nêu lý do ngắn.
-    - Mỗi mã được đề xuất phải có chuỗi chứng minh: YCCĐ -> thao tác học sinh -> công cụ/dữ liệu -> sản phẩm/minh chứng -> mã.
+    2. TÍCH HỢP NLS VÀ NL AI THEO YCCĐ:
+    - Xây dựng điểm chạm tích hợp Năng lực số (NLS theo TT 02) và Năng lực AI (NL AI theo QĐ 2422) cho tất cả các bài học chính khóa (kiến thức mới, luyện tập, thực hành, dự án, vận dụng). Chỉ ghi "Không tích hợp - Tiết kiểm tra / đánh giá định kì." cho các tiết kiểm tra định kì (giữa kì, cuối kì).
+    - Với mỗi bài học, tích hợp NL AI thông qua: thiết kế prompt tra cứu/tóm tắt tư liệu, đối chiếu thông tin AI với SGK, nhận diện thiên lệch/ảo giác của AI, hoặc tạo lập sản phẩm số có sự hỗ trợ của AI.
+    - Mỗi mã được đề xuất phải có chuỗi chứng minh chuẩn xác: Tên thành phần NL AI -> Hành vi học sinh -> Yêu cầu cần đạt AI -> Mã NL AI (QĐ 2422) -> Sản phẩm đầu ra -> Tiêu chí & Minh chứng.
     3. Ánh xạ Năng lực:
     - Thời gian (time): Ước lượng thời gian thực hiện (Ví dụ: Học kì I, Tháng 9, Tuần 1...).
        - Nội dung (lessonContent): Tên bài học, chủ đề, chuyên đề hoặc tên bài kiểm tra. Phải lấy từ danh sách gốc.
@@ -2828,7 +2905,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3-flash-preview';
   const modelsToTry = getFallbackModels(startModel);
 
   const parts = [{ text: prompt }];
@@ -3193,7 +3270,7 @@ export const analyzeLessonSource = async (
 ) => {
   const apiKey = options.apiKey || localStorage.getItem('GEMINI_API_KEY') || '';
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = options.aiModel || localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const startModel = options.aiModel || localStorage.getItem('GEMINI_MODEL') || 'gemini-3-flash-preview';
   const modelsToTry = getFallbackModels(startModel);
 
   const promptText = `Bạn là một Chuyên gia Giáo dục và Thị giác máy tính (Computer Vision).
@@ -3375,7 +3452,7 @@ export const generateEducationalActivitiesPlan = async (subject: string, grade: 
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3-flash-preview';
   const modelsToTry = getFallbackModels(startModel);
 
   const parts = [{ text: prompt }];

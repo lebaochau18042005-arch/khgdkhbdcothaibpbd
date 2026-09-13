@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Settings,
+  Key,
   Zap,
   UploadCloud,
   Trash2,
@@ -76,9 +77,17 @@ const loadCurriculumDb = () => {
   return curriculumDbPromise;
 };
 
+export const isCompetencyExplicitlyDisabled = (value: unknown): boolean => {
+  if (!value) return true;
+  const s = String(value).trim().toLowerCase();
+  if (!s || s === "—" || s === "-" || s === "không" || s === "none") return true;
+  if (/^không\s*(tích hợp|gán mã|áp dụng|\s*[-–—:])/i.test(s)) return true;
+  return false;
+};
+
 // Add competency mapper utility function
 const mapAiCompetencyText = (code: string) => {
-  if (!code || code.toLowerCase().includes("không")) return "Không tích hợp";
+  if (isCompetencyExplicitlyDisabled(code)) return "Không tích hợp";
 
   let groupName = "";
   if (/\.A\d*\./i.test(code) || /NLa/i.test(code) || /\b(?:10|11|12)\.A/i.test(code)) groupName = "NLa - Tư duy lấy con người làm trung tâm";
@@ -2240,11 +2249,11 @@ export default function App() {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
   const [aiModel, setAiModel] = useState(() => {
     const saved = localStorage.getItem("GEMINI_MODEL");
-    if (saved === "gemini-2.5-flash" || saved === "gemini-3.1-flash-lite") {
-      localStorage.setItem("GEMINI_MODEL", "gemini-3.5-flash");
-      return "gemini-3.5-flash";
+    if (saved && (saved === "gemini-3-flash-preview" || saved === "gemini-3-pro-preview" || saved === "gemini-2.5-flash")) {
+      return saved;
     }
-    return saved || "gemini-3.5-flash";
+    localStorage.setItem("GEMINI_MODEL", "gemini-3-flash-preview");
+    return "gemini-3-flash-preview";
   });
   const [apiTestResult, setApiTestResult] = useState<string | null>(null);
   const [apiTesting, setApiTesting] = useState(false);
@@ -2656,12 +2665,21 @@ export default function App() {
       localStorage.setItem("GEMINI_API_KEY", apiKey.trim());
       localStorage.setItem("GEMINI_MODEL", aiModel);
       setShowSettings(false);
-      alert("Đã lưu Cài đặt thành công!");
+      alert("Đã lưu Cài đặt API Key & Model AI thành công!");
     } else {
       localStorage.removeItem("GEMINI_API_KEY");
       setApiKey("");
-      alert("Đã xóa API Key!");
+      alert("Đã xóa API Key! Vui lòng nhập API Key để sử dụng app.");
     }
+  };
+
+  const handleCloseSettings = () => {
+    const savedKey = localStorage.getItem("GEMINI_API_KEY");
+    if (!savedKey && !apiKey.trim()) {
+      alert("⚠️ Thầy/Cô vui lòng nhập và lưu API Key từ Google AI Studio để có thể sử dụng ứng dụng.");
+      return;
+    }
+    setShowSettings(false);
   };
 
   useEffect(() => {
@@ -4237,8 +4255,9 @@ export default function App() {
           ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx >= 5 }))
         }),
         ...planRows.map((item: any, i: number) => {
-          const isNotIntegrated = !item.aiCompetency2422Integrated || item.aiCompetency2422Integrated.toLowerCase().includes("không");
+          const isNotIntegrated = isCompetencyExplicitlyDisabled(item.aiCompetency2422Integrated);
           const aiText = item.aiCompetency2422Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
+          const hasNls = hasMeaningfulText(item.digitalCompetencyTT02) && !isCompetencyExplicitlyDisabled(item.digitalCompetencyTT02);
           return new TableRow({
             children: [
               wordCell(i + 1, { center: true }),
@@ -4248,9 +4267,9 @@ export default function App() {
               wordCell(item.lessonGoal),
               wordCell(item.socialIntegration || "", { red: Boolean(item.socialIntegration), bold: Boolean(item.socialIntegration), fill: item.socialIntegration ? "FEF2F2" : undefined }),
               wordCell(item.digitalCompetencyTT02 || "Không", {
-                red: hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không"),
-                bold: hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không"),
-                fill: hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không") ? "FEF2F2" : undefined
+                red: hasNls,
+                bold: hasNls,
+                fill: hasNls ? "FEF2F2" : undefined
               }),
               wordCell(isNotIntegrated ? aiText : item.aiCompetency2422Integrated, {
                 red: !isNotIntegrated,
@@ -4322,7 +4341,7 @@ export default function App() {
           ].map((h, idx) => wordCell(h, { bold: true, center: true, fill: "F1F5F9", red: idx >= 9 }))
         }),
         ...(Array.isArray(result.data) ? result.data : []).map((item: any, i: number) => {
-          const hasAiIntegration = hasMeaningfulText(item.aiIntegration) && !String(item.aiIntegration).toLowerCase().includes("không");
+          const hasAiIntegration = hasMeaningfulText(item.aiIntegration) && !isCompetencyExplicitlyDisabled(item.aiIntegration);
           return new TableRow({
             children: [
               wordCell(i + 1, { center: true }),
@@ -4521,7 +4540,7 @@ export default function App() {
       );
       const supplement = buildKhtcmSupplement(eduPlanInput.subject, eduPlanInput.grade, planRows);
       content = `TRƯỜNG: .................................\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nTỔ: .................................\nĐộc lập - Tự do - Hạnh phúc\n\nKẾ HOẠCH DẠY HỌC CỦA TỔ CHUYÊN MÔN\nMôn học/Hoạt động giáo dục: ${eduPlanInput.subject}, khối lớp ${eduPlanInput.grade}\n\nI. Đặc điểm tình hình\n${supplement.situation.map((line, i) => `${i + 1}. ${line}`).join("\n")}\n\n3. Thiết bị dạy học\nThiết bị | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.equipmentRows.map(row => `${row.name} | ${row.lessons} | ${row.note}`).join("\n")}\n\n4. Phòng học bộ môn/phòng chức năng\nPhòng học | Bài/Chủ đề áp dụng | Ghi chú\n${supplement.rooms.map(row => `${row.room} | ${row.lessons} | ${row.note}`).join("\n")}\n\nII. Kế hoạch dạy học\n1. Phân phối chương trình\nSTT | Thời gian | Nội dung | Số tiết | Yêu cầu cần đạt | Nội dung giáo dục tích hợp/lồng ghép | Năng lực số | Mục tiêu & YCCĐ 2422 Tích hợp GD AI\n${planRows.map((item: any, i: number) => {
-        const isNotIntegrated = !item.aiCompetency2422Integrated || item.aiCompetency2422Integrated.toLowerCase().includes("không");
+        const isNotIntegrated = isCompetencyExplicitlyDisabled(item.aiCompetency2422Integrated);
         const aiText = item.aiCompetency2422Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
         return `${i + 1} | ${item.time || item.topic || item.lessonName} | ${item.lessonContent || item.lessonName} | ${item.periods} | ${item.lessonGoal} | ${item.socialIntegration || ""} | ${item.digitalCompetencyTT02 || "Không"} | ${isNotIntegrated ? aiText : item.aiCompetency2422Integrated}`;
       }).join("\n")}\n\n2. Chuyên đề lựa chọn (đối với cấp trung học phổ thông)\n${supplement.selectedTopics.length > 0 ? supplement.selectedTopics.map(row => `${row.topic} | ${row.periods} | ${row.time} | ${row.requirement}`).join("\n") : "Không áp dụng hoặc tổ chuyên môn bổ sung theo kế hoạch nhà trường."}\n\nIII. Kiểm tra, đánh giá định kỳ\nThời gian | Bài kiểm tra/đánh giá | Hình thức | Số tiết\n${supplement.assessmentRows.map(row => `${row.time} | ${row.content} | ${row.form} | ${row.duration}`).join("\n")}\n\nIV. Các nội dung khác (nếu có)\n${supplement.professionalActivities.map(line => `- ${line}`).join("\n")}`;
@@ -4686,9 +4705,15 @@ export default function App() {
               </div>
               <button
                 onClick={() => setShowSettings(true)}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-all text-white/60 hover:bg-white/5 hover:text-white"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-bold rounded-xl transition-all text-white/80 hover:bg-white/10 hover:text-white"
               >
-                <Settings className="w-4 h-4" /> Cài đặt API
+                <div className="flex items-center gap-3">
+                  <Settings className="w-4 h-4 text-indigo-300" />
+                  <span>Cài đặt API</span>
+                </div>
+                <span className="text-[10px] font-bold text-red-400 bg-red-500/20 px-2 py-0.5 rounded-full border border-red-500/30">
+                  Lấy API key
+                </span>
               </button>
             </nav>
 
@@ -4708,28 +4733,55 @@ export default function App() {
 
           {/* Main Content */}
           <main className="lg:ml-[280px] min-h-screen flex flex-col pt-4 lg:pt-0">
-            {/* Mobile Header */}
-            <header className="lg:hidden flex items-center justify-between p-4 border-b border-white/10 sticky top-0 bg-indigo-900/80 backdrop-blur-md z-40 text-white">
-              <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setMode("dashboard"); setResult(null); }}>
-                <span className="font-black text-base sm:text-xl tracking-normal truncate max-w-[180px]">EduPlan AI</span>
-              </div>
+            {/* Desktop Top Header - Always shows Settings (API Key) with red prompt */}
+            <header className="hidden lg:flex items-center justify-between px-8 py-3.5 border-b border-white/10 sticky top-0 bg-indigo-950/80 backdrop-blur-md z-30 text-white">
               <div className="flex items-center gap-4">
-                <div className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase ${isOnline ? "border-emerald-300/40 bg-emerald-400/10 text-emerald-100" : "border-amber-300/40 bg-amber-400/10 text-amber-100"}`}>
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setMode("dashboard"); setResult(null); }}>
+                  <span className="font-black text-lg tracking-tight">EduPlan AI</span>
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-white/10 text-white/70 font-semibold border border-white/10">
+                    CT GDPT 2018 • TT 02/2025 • QĐ 2422
+                  </span>
+                </div>
+                <div className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${isOnline ? "border-emerald-300/40 bg-emerald-400/10 text-emerald-300" : "border-amber-300/40 bg-amber-400/10 text-amber-300"}`}>
                   {isOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
                   {isOnline ? "Online" : "Offline"}
                 </div>
-                <UserCircle className="w-6 h-6 text-white/80" />
+              </div>
+
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowSettings(true)}
-                  className="p-2 border border-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
+                  className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 transition-all text-xs font-bold text-white shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+                  title="Cài đặt API Key & Model AI"
                 >
-                  <Settings className="w-5 h-5" />
+                  <Settings className="w-4 h-4 text-indigo-300" />
+                  <span>Settings (API Key)</span>
+                  <span className="font-black text-red-400 bg-red-500/20 border border-red-500/40 px-2.5 py-0.5 rounded-full text-[11px] animate-pulse">
+                    Lấy API key để sử dụng app
+                  </span>
                 </button>
+              </div>
+            </header>
+
+            {/* Mobile Header - Always shows Settings (API Key) with red prompt */}
+            <header className="lg:hidden flex items-center justify-between p-3 border-b border-white/10 sticky top-0 bg-indigo-900/80 backdrop-blur-md z-40 text-white">
+              <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setMode("dashboard"); setResult(null); }}>
+                <span className="font-black text-base sm:text-lg tracking-normal truncate max-w-[120px]">EduPlan AI</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black uppercase ${isOnline ? "border-emerald-300/40 bg-emerald-400/10 text-emerald-100" : "border-amber-300/40 bg-amber-400/10 text-amber-100"}`}>
+                  {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                  {isOnline ? "Online" : "Offline"}
+                </div>
                 <button
-                  onClick={() => { setMode("dashboard"); setResult(null); }}
-                  className="p-2 border border-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
+                  onClick={() => setShowSettings(true)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/20 text-xs font-bold text-white hover:bg-white/20 transition-colors"
+                  title="Cài đặt API Key & Model AI"
                 >
-                  <BookOpen className="w-5 h-5" />
+                  <Settings className="w-3.5 h-3.5 text-indigo-300" />
+                  <span className="font-black text-red-300 bg-red-500/25 border border-red-400/40 px-1.5 py-0.5 rounded text-[10px] animate-pulse">
+                    Lấy API key để sử dụng app
+                  </span>
                 </button>
               </div>
             </header>
@@ -6691,9 +6743,9 @@ export default function App() {
                                 getKhtcmExpectedLessons(eduPlanInput.subject, eduPlanInput.grade, customCurriculumData),
                                 { subject: eduPlanInput.subject, grade: eduPlanInput.grade }
                               ).map((item: any, i: number) => {
-                                const isNotIntegrated = !item.aiCompetency2422Integrated || item.aiCompetency2422Integrated.toLowerCase().includes("không");
+                                const isNotIntegrated = isCompetencyExplicitlyDisabled(item.aiCompetency2422Integrated);
                                 const aiText = item.aiCompetency2422Integrated || "Không tích hợp - chưa có căn cứ YCCĐ đủ rõ để gán mã NL AI.";
-                                const hasNlsIntegration = hasMeaningfulText(item.digitalCompetencyTT02) && !String(item.digitalCompetencyTT02).toLowerCase().includes("không");
+                                const hasNlsIntegration = hasMeaningfulText(item.digitalCompetencyTT02) && !isCompetencyExplicitlyDisabled(item.digitalCompetencyTT02);
                                 return (
                                   <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors align-top">
                                     <td className="p-4 text-center font-bold text-slate-400">{i + 1}</td>
@@ -7089,61 +7141,130 @@ export default function App() {
 
           <AnimatePresence>
             {showSettings && (
-              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 overflow-y-auto py-8"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) {
+                    handleCloseSettings();
+                  }
+                }}
+              >
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white rounded-[24px] shadow-2xl p-8 max-w-md w-full relative"
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  className="bg-white rounded-[24px] shadow-2xl p-6 sm:p-8 max-w-lg w-full relative max-h-[90vh] overflow-y-auto"
                 >
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                      <Settings className="w-6 h-6 text-indigo-500" /> Cài đặt Hệ thống
-                    </h3>
-                    <p className="text-sm text-slate-500 mt-2">
-                      API key chỉ được lưu trên trình duyệt hiện tại và không nằm trong file sao lưu. Không sử dụng khóa đã công khai hoặc chia sẻ cho nhiều người.
+                  <div className="mb-5">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2">
+                        <Settings className="w-6 h-6 text-indigo-600" /> Thiết lập Model & API Key
+                      </h3>
+                      {!localStorage.getItem("GEMINI_API_KEY") && (
+                        <span className="text-[11px] font-black text-red-600 bg-red-100 border border-red-200 px-2 py-0.5 rounded-full">
+                          Bắt buộc nhập
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                      API key được lưu an toàn trực tiếp trên trình duyệt thiết bị của bạn (<code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-600 font-mono">localStorage</code>).
                     </p>
+                  </div>
+
+                  {/* Step-by-step instructions */}
+                  <div className="mb-5 bg-gradient-to-br from-indigo-50/80 to-blue-50/50 border border-indigo-100/80 rounded-2xl p-4 text-xs text-slate-700 space-y-2">
+                    <div className="flex items-center gap-2 text-indigo-900 font-black">
+                      <Key className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span>Hướng dẫn lấy Google Gemini API Key miễn phí:</span>
+                    </div>
+                    <ol className="list-decimal list-inside space-y-1.5 pl-1 text-[11px] leading-relaxed text-slate-600">
+                      <li>
+                        Mở liên kết:{" "}
+                        <a
+                          href="https://aistudio.google.com/api-keys"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 font-bold underline hover:text-indigo-800"
+                        >
+                          https://aistudio.google.com/api-keys
+                        </a>
+                      </li>
+                      <li>Đăng nhập bằng tài khoản <strong>Gmail</strong> của bạn.</li>
+                      <li>
+                        Nhấn nút <strong>&quot;Create API key&quot;</strong> &rarr; Chọn Project mặc định &rarr; Nhấn tạo key.
+                      </li>
+                      <li>
+                        Sao chép mã API key (bắt đầu bằng <code className="bg-white/80 px-1 py-0.5 rounded font-mono text-indigo-700">AIzaSy...</code> hoặc <code className="bg-white/80 px-1 py-0.5 rounded font-mono text-indigo-700">AQ...</code>) và dán vào ô bên dưới.
+                      </li>
+                      <li>Bấm <strong>&quot;Lưu cài đặt&quot;</strong> để bắt đầu sử dụng.</li>
+                    </ol>
+                    <div className="pt-2 border-t border-indigo-100/60 text-[10px] text-amber-800 bg-amber-50/60 p-2 rounded-lg leading-relaxed flex items-start gap-1.5">
+                      <span className="font-bold shrink-0">💡 Mẹo quota:</span>
+                      <span>Nếu tài khoản Gmail hết quota miễn phí trong ngày, thầy/cô chỉ cần vào lại link trên bằng một Gmail khác, lấy key mới và dán vào đây để tiếp tục sử dụng ngay!</span>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        Google Gemini API Key
+                      <label className="text-[11px] font-black text-slate-600 uppercase tracking-wider flex items-center justify-between">
+                        <span>Google Gemini API Key</span>
+                        {apiKey.trim() && (
+                          <span className="text-emerald-600 font-bold lowercase text-[10px]">
+                            ✓ Đã nhập {apiKey.trim().substring(0, 7)}...
+                          </span>
+                        )}
                       </label>
                       <input
                         type="password"
-                        placeholder="Nhập API Key (AIzaSy... hoặc AQ...)"
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-slate-700 bg-slate-50"
+                        placeholder="Dán API Key vào đây (AIzaSy... hoặc AQ...)"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm font-mono text-slate-800 bg-slate-50 transition-all placeholder:font-sans"
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
                       />
-                      <p className="text-xs text-slate-500 italic mt-1">
-                        Bạn có thể lấy API Key miễn phí từ <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-indigo-500 font-bold hover:underline">Google AI Studio</a>.
-                        API Key dạng <code className="bg-slate-100 px-1 rounded">AIzaSy...</code> hoặc <code className="bg-slate-100 px-1 rounded">AQ...</code> đều được hỗ trợ.
-                      </p>
                     </div>
 
-                    <div className="space-y-3 pt-4 border-t border-slate-100">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        Chọn Model AI Ưu tiên
+                    <div className="space-y-3 pt-3 border-t border-slate-100">
+                      <label className="text-[11px] font-black text-slate-600 uppercase tracking-wider">
+                        Chọn Model AI Ưu tiên (Tự động Fallback khi lỗi)
                       </label>
-                      <div className="grid grid-cols-1 gap-3">
+                      <div className="grid grid-cols-1 gap-2.5">
                         {[
-                          { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", desc: "⚡ Mới nhất, nhanh nhất (Mặc định - Khuyến dùng)" },
-                          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview", desc: "🛡️ Gemini 3 ổn định, dự phòng tốt" }
+                          {
+                            id: "gemini-3-flash-preview",
+                            name: "gemini-3-flash-preview",
+                            badge: "Default • Tốc độ cao",
+                            desc: "⚡ Khuyên dùng: Phản hồi cực nhanh, thông minh, tối ưu hóa toàn diện cho CT 2018 & TT 02/2025."
+                          },
+                          {
+                            id: "gemini-3-pro-preview",
+                            name: "gemini-3-pro-preview",
+                            badge: "Chất lượng cao",
+                            desc: "🧠 Suy luận sâu sắc, hội đồng phản biện AI và thẩm định kế hoạch giáo dục đa tầng."
+                          },
+                          {
+                            id: "gemini-2.5-flash",
+                            name: "gemini-2.5-flash",
+                            badge: "Ổn định • Dự phòng",
+                            desc: "🛡️ Tính ổn định cao, dự phòng tin cậy khi các mô hình mới gặp quá tải hoặc nghẽn mạng."
+                          }
                         ].map(model => (
                           <div
                             key={model.id}
                             onClick={() => setAiModel(model.id)}
-                            className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${aiModel === model.id ? "border-indigo-500 bg-indigo-50" : "border-slate-100 hover:border-slate-300 bg-white"}`}
+                            className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${aiModel === model.id ? "border-indigo-600 bg-indigo-50/60 shadow-sm" : "border-slate-200 hover:border-slate-300 bg-white"}`}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${aiModel === model.id ? "border-indigo-500 bg-indigo-500" : "border-slate-300"}`}>
+                            <div className="flex items-start gap-3">
+                              <div className={`w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 ${aiModel === model.id ? "border-indigo-600 bg-indigo-600" : "border-slate-300"}`}>
                                 {aiModel === model.id && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                               </div>
-                              <div>
-                                <p className={`text-sm font-bold ${aiModel === model.id ? "text-indigo-900" : "text-slate-700"}`}>{model.name}</p>
-                                <p className={`text-[10px] font-medium mt-0.5 ${aiModel === model.id ? "text-indigo-600" : "text-slate-500"}`}>{model.desc}</p>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <p className={`text-xs font-mono font-bold ${aiModel === model.id ? "text-indigo-950" : "text-slate-800"}`}>{model.name}</p>
+                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${aiModel === model.id ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600"}`}>
+                                    {model.badge}
+                                  </span>
+                                </div>
+                                <p className={`text-[11px] font-medium mt-1 leading-snug ${aiModel === model.id ? "text-indigo-900" : "text-slate-500"}`}>{model.desc}</p>
                               </div>
                             </div>
                           </div>
@@ -7153,7 +7274,7 @@ export default function App() {
                   </div>
 
                   {/* Test API Connection */}
-                  <div className="pt-3">
+                  <div className="pt-4">
                     <button
                       onClick={async () => {
                         const key = apiKey.trim();
@@ -7165,27 +7286,35 @@ export default function App() {
                           const json = await res.json();
                           if (!res.ok) { setApiTestResult(`❌ Lỗi: ${json?.error?.message || res.status}`); return; }
                           const names = (json.models || []).map((m: any) => m.name.replace('models/', ''));
-                          setApiTestResult(`✅ Kết nối thành công! Models: ${names.slice(0, 5).join(', ')}`);
+                          setApiTestResult(`✅ Kết nối thành công! Key hợp lệ. Models: ${names.slice(0, 5).join(', ')}`);
                         } catch (e: any) { setApiTestResult(`❌ Lỗi mạng: ${e.message}`); }
                         finally { setApiTesting(false); }
                       }}
-                      className="w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors"
+                      className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors flex items-center justify-center gap-2"
                     >
-                      {apiTesting ? '⏳ Đang kiểm tra...' : '🔍 Kiểm tra kết nối API'}
+                      {apiTesting ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang kiểm tra kết nối...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-3.5 h-3.5 text-indigo-600" /> Kiểm tra kết nối API Key
+                        </>
+                      )}
                     </button>
-                    {apiTestResult && <p className="mt-2 text-xs px-1 text-slate-600 break-all">{apiTestResult}</p>}
+                    {apiTestResult && <p className="mt-2 text-xs px-1 font-medium text-slate-700 break-all">{apiTestResult}</p>}
                   </div>
 
-                  <div className="flex gap-3 mt-8">
+                  <div className="flex gap-3 mt-6">
                     <button
-                      onClick={() => setShowSettings(false)}
+                      onClick={handleCloseSettings}
                       className="flex-1 py-3 px-4 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
                     >
                       Đóng
                     </button>
                     <button
                       onClick={saveApiKey}
-                      className="flex-1 py-3 px-4 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200"
+                      className="flex-1 py-3 px-4 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200 hover:shadow-lg"
                     >
                       Lưu cài đặt
                     </button>

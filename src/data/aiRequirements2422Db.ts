@@ -882,7 +882,7 @@ export const isAiCodeValid2422 = (code: string, grade?: string): boolean => {
   return true;
 };
 
-export const verifyVerbatimAiCode2422 = (codeStr: string): { isValid: boolean; item?: AiRequirement2422Item; note: string } => {
+export const verifyVerbatimAiCode2422 = (codeStr: string): { isValid: boolean; item?: AiRequirementItem; note: string } => {
   const normalized = normalizeAiCode2422(codeStr);
   if (!normalized) {
     return { isValid: false, note: "Cần đối chiếu thêm tài liệu gốc." };
@@ -891,7 +891,7 @@ export const verifyVerbatimAiCode2422 = (codeStr: string): { isValid: boolean; i
   if (!item) {
     return { isValid: false, note: "Cần đối chiếu thêm tài liệu gốc." };
   }
-  return { isValid: true, item, note: `Khớp nguyên văn QĐ 2422/QĐ-BGDĐT (${item.component}-${item.code}): ${item.yccd}` };
+  return { isValid: true, item, note: `Khớp nguyên văn QĐ 2422/QĐ-BGDĐT (${item.component}-${item.code}): ${item.requirementText}` };
 };
 
 export const getAiRequirementByCode = (code: string): AiRequirementItem | undefined => {

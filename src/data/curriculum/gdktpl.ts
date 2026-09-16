@@ -1,14 +1,171 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ * Phân phối chương trình & YCCĐ Môn Giáo dục kinh tế và pháp luật (Lớp 10, 11, 12)
+ * Bộ sách: Kết nối tri thức với cuộc sống - NXB Giáo dục Việt Nam
+ * Tích hợp chuẩn Năng lực số TT 02/2025 (Mức NC) & Năng lực AI QĐ 2422/QĐ-BGDĐT
+ */
+
 export const GDKTPL = {
-    "10": [
-        { indicatorCode: "10.A1.a", topic: "Chủ đề 1. Nền kinh tế và các chủ thể của nền kinh tế", duration: "4 tiết", contextStudents: "Nhận biết hoạt động cơ bản.", contextSchool: "Sơ đồ.", objectivesKnowledge: "Thị trường, người sản xuất, người tiêu dùng.", objectivesCompetency: "Xác định vai trò kinh tế cá nhân.", objectivesQuality: "Cẩn thận tài chính." },
-        { indicatorCode: "10.A2.a", topic: "Chủ đề 2. Pháp luật nước Cộng hòa xã hội chủ nghĩa Việt Nam", duration: "10 tiết", contextStudents: "Nhận thức tuổi công dân.", contextSchool: "Hiến pháp.", objectivesKnowledge: "Hệ thống pháp luật, Hiến pháp 2013.", objectivesCompetency: "Thực hiện nghĩa vụ công dân.", objectivesQuality: "Tuân thủ luật." }
-    ],
-    "11": [
-        { indicatorCode: "11.A1.a", topic: "Chủ đề 1. Cạnh tranh, cung cầu trong kinh tế thị trường", duration: "6 tiết", contextStudents: "Thị trường mở.", contextSchool: "Tin tức giá cả.", objectivesKnowledge: "Khái niệm cung cầu, lạm phát, thất nghiệp.", objectivesCompetency: "Đánh giá sự biến động.", objectivesQuality: "Hiểu biết an sinh xã hội." },
-        { indicatorCode: "11.A2.a", topic: "Chủ đề 2. Quyền bình đẳng của công dân", duration: "6 tiết", contextStudents: "Quyền con người.", contextSchool: "Luật dân sự.", objectivesKnowledge: "Bình đẳng trước pháp luật.", objectivesCompetency: "Bảo vệ quyền lợi cá nhân.", objectivesQuality: "Công bằng." }
-    ],
-    "12": [
-        { indicatorCode: "12.A1.a", topic: "Chủ đề 1. Tăng trưởng và phát triển kinh tế", duration: "4 tiết", contextStudents: "Kinh tế vĩ mô.", contextSchool: "GNI/GDP data.", objectivesKnowledge: "Chỉ số HDI, Tăng trưởng xanh.", objectivesCompetency: "Lập kế hoạch cá nhân.", objectivesQuality: "Góp phần vào tăng trưởng đất nước." },
-        { indicatorCode: "12.A2.a", topic: "Chủ đề 2. Pháp luật quốc tế", duration: "6 tiết", contextStudents: "Hội nhập kinh tế quốc tế.", contextSchool: "WTO, ASEAN info.", objectivesKnowledge: "Luật quốc tế, Công pháp QT.", objectivesCompetency: "Phân biệt pháp luật trong và ngoài nước.", objectivesQuality: "Khách quan quốc tế." }
-    ]
+  "10": [
+    {
+      subject: "Giáo dục kinh tế và pháp luật",
+      grade: "10",
+      source: "PPCT GDKT&PL 10 KNTT 2026-2027",
+      periodRange: "1,2",
+      order: "Tiết 1,2",
+      week: "Tuần 1",
+      lesson: "Bài 1. Các hoạt động kinh tế cơ bản trong đời sống xã hội",
+      topic: "Chủ đề 1. Nền kinh tế và các hoạt động kinh tế",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Nêu được vai trò của các hoạt động kinh tế cơ bản: sản xuất, phân phối, trao đổi, tiêu dùng; Nhận biết được mối quan hệ tác động qua lại giữa các hoạt động kinh tế.",
+      lessonGoal: "Nhận thức trách nhiệm của bản thân khi tham gia vào các hoạt động kinh tế với tư cách là người tiêu dùng thông thái.",
+      objectivesKnowledge: "Khái niệm sản xuất của cải vật chất, phân phối thu nhập, trao đổi hàng hóa, tiêu dùng bền vững.",
+      objectivesCompetency: "Năng lực điều chỉnh hành vi kinh tế, lập kế hoạch chi tiêu cá nhân hợp lý.",
+      objectivesQuality: "Tiết kiệm, có ý thức ủng hộ hàng Việt Nam chất lượng cao và tiêu dùng xanh.",
+      equipment: "Phiếu khảo sát thói quen tiêu dùng của học sinh, video về chuỗi cung ứng hàng hóa.",
+      digitalCompetencyTT02: "[1.1.NCb]: Sử dụng ứng dụng quản lý tài chính số để theo dõi và phân bổ ngân sách tiêu dùng cá nhân.",
+      aiCompetency2422Integrated: "[10.C3.2]: Prompt AI phân tích xu hướng tiêu dùng xanh (Green Consumerism) của giới trẻ hiện nay.",
+      nlsCode: "1.1.NCb",
+      aiCode: "10.C3.2"
+    },
+    {
+      subject: "Giáo dục kinh tế và pháp luật",
+      grade: "10",
+      source: "PPCT GDKT&PL 10 KNTT 2026-2027",
+      periodRange: "3,4",
+      order: "Tiết 3,4",
+      week: "Tuần 2",
+      lesson: "Bài 12. Hệ thống pháp luật và văn bản quy phạm pháp luật Việt Nam",
+      topic: "Chủ đề 9. Hệ thống pháp luật Việt Nam",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Trình bày được cấu trúc của hệ thống pháp luật Việt Nam (quy phạm pháp luật, chế định pháp luật, ngành luật); Phân biệt được các loại văn bản quy phạm pháp luật theo thứ bậc hiệu lực pháp lý.",
+      lessonGoal: "Biết cách tra cứu số hiệu, ngày ban hành và cơ quan có thẩm quyền ban hành văn bản pháp luật.",
+      objectivesKnowledge: "Hiến pháp (đạo luật cơ bản có hiệu lực pháp lý cao nhất), Luật, Nghị định, Thông tư.",
+      objectivesCompetency: "Kỹ năng tra cứu và viện dẫn điều luật chính xác khi xử lý tình huống thực tế.",
+      objectivesQuality: "Ý thức tôn trọng pháp luật, sống và làm việc theo Hiến pháp và pháp luật.",
+      equipment: "Sơ đồ hình tháp thứ bậc hiệu lực văn bản pháp luật, máy tính kết nối Internet.",
+      digitalCompetencyTT02: "[1.1.NCa]: Tra cứu văn bản quy phạm pháp luật trên Cơ sở dữ liệu Quốc gia (vbpl.vn) và Thư viện Pháp luật.",
+      aiCompetency2422Integrated: "[10.B1.1]: Kiểm chứng tính hiệu lực của các điều luật do AI trích dẫn, phát hiện các văn bản đã hết hiệu lực thi hành.",
+      nlsCode: "1.1.NCa",
+      aiCode: "10.B1.1"
+    },
+    {
+      subject: "Giáo dục kinh tế và pháp luật",
+      grade: "10",
+      source: "PPCT GDKT&PL 10 KNTT 2026-2027",
+      periodRange: "5,6",
+      order: "Tiết 5,6",
+      week: "Tuần 3",
+      lesson: "Bài 17. Hiến pháp nước CHXHCN Việt Nam về quyền con người, quyền và nghĩa vụ cơ bản của công dân",
+      topic: "Chủ đề 10. Hiến pháp nước CHXHCN Việt Nam",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Nêu được các quyền và nghĩa vụ cơ bản của công dân về chính trị, dân sự, kinh tế, văn hóa, xã hội theo Hiến pháp 2013; Phê phán các hành vi xâm phạm quyền và nghĩa vụ cơ bản của công dân.",
+      lessonGoal: "Hiểu quyền công dân không tách rời nghĩa vụ công dân; mọi người đều bình đẳng trước pháp luật.",
+      objectivesKnowledge: "Chương II Hiến pháp 2013, quyền tự do ngôn luận, quyền học tập, nghĩa vụ bảo vệ Tổ quốc, nghĩa vụ nộp thuế.",
+      objectivesCompetency: "Bảo vệ quyền lợi hợp pháp của bản thân và người khác trong nhà trường và xã hội.",
+      objectivesQuality: "Tinh thần thượng tôn pháp luật, tôn trọng nhân phẩm và quyền tự do chính đáng của người khác.",
+      equipment: "Văn bản Hiến pháp 2013, các vụ việc thực tế giải quyết tranh chấp dân sự.",
+      digitalCompetencyTT02: "[4.1.NCa]: Nhận diện các hành vi xâm phạm quyền riêng tư số và xúc phạm nhân phẩm trên mạng xã hội.",
+      aiCompetency2422Integrated: "[10.B1.1]: Thảo luận về quyền bảo vệ dữ liệu cá nhân của công dân trước các thuật toán thu thập thông tin của AI.",
+      nlsCode: "4.1.NCa",
+      aiCode: "10.B1.1"
+    }
+  ],
+  "11": [
+    {
+      subject: "Giáo dục kinh tế và pháp luật",
+      grade: "11",
+      source: "PPCT GDKT&PL 11 KNTT 2026-2027",
+      periodRange: "1,2",
+      order: "Tiết 1,2",
+      week: "Tuần 1",
+      lesson: "Bài 1, 2. Cạnh tranh và Cung - cầu trong kinh tế thị trường",
+      topic: "Chủ đề 1. Cạnh tranh, cung cầu trong kinh tế thị trường",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Nêu được khái niệm và vai trò của cạnh tranh lành mạnh; Phân tích được tác động của quan hệ cung - cầu đến giá cả thị trường; Giải thích được sự điều tiết của giá cả đối với quy mô sản xuất.",
+      lessonGoal: "Hiểu quy luật cung - cầu: khi cung > cầu giá giảm, khi cung < cầu giá tăng; ứng dụng trong chiến lược kinh doanh.",
+      objectivesKnowledge: "Cạnh tranh không lành mạnh (bán phá giá, quảng cáo sai sự thật), điểm cân bằng thị trường.",
+      objectivesCompetency: "Phân tích biến động giá nông sản (giải cứu nông sản) và đề xuất giải pháp bình ổn cung cầu.",
+      objectivesQuality: "Kinh doanh trung thực, đạo đức thương trường, tôn trọng quyền lợi người tiêu dùng.",
+      equipment: "Đồ thị đường cung - đường cầu, bảng tin giá cả thị trường nông sản.",
+      digitalCompetencyTT02: "[1.2.NCa]: Khai thác dữ liệu chỉ số giá tiêu dùng (CPI) và thị trường hàng hóa từ Cổng thông tin Tổng cục Thống kê.",
+      aiCompetency2422Integrated: "[11.C3.MR1]: Prompt AI mô phỏng sự dịch chuyển của đường cung khi có sự biến động về giá nguyên vật liệu đầu vào.",
+      nlsCode: "1.2.NCa",
+      aiCode: "11.C3.MR1"
+    },
+    {
+      subject: "Giáo dục kinh tế và pháp luật",
+      grade: "11",
+      source: "PPCT GDKT&PL 11 KNTT 2026-2027",
+      periodRange: "3,4",
+      order: "Tiết 3,4",
+      week: "Tuần 2",
+      lesson: "Bài 17. Quyền bất khả xâm phạm về thân thể, tính mạng, sức khỏe, danh dự và nhân phẩm",
+      topic: "Chủ đề 8. Quyền cơ bản của công dân",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Trình bày được nội dung quyền bất khả xâm phạm về thân thể và quyền được pháp luật bảo hộ về tính mạng, sức khỏe, danh dự, nhân phẩm; Phân tích được các hành vi vi phạm và hậu quả pháp lý.",
+      lessonGoal: "Nhận thức rõ không ai có quyền tự ý bắt giữ người trái pháp luật; phê phán bạo lực học đường và bôi nhọ trên mạng.",
+      objectivesKnowledge: "Điều 20 Hiến pháp 2013, các tội danh trong Bộ luật Hình sự về cố ý gây thương tích, làm nhục người khác.",
+      objectivesCompetency: "Kỹ năng tự bảo vệ bản thân, tìm kiếm sự trợ giúp pháp lý khi bị đe dọa xâm hại.",
+      objectivesQuality: "Lòng nhân ái, tôn trọng ranh giới thân thể và danh dự của mọi người xung quanh.",
+      equipment: "Tài liệu tập huấn phòng chống bạo lực học đường, án lệ xét xử vụ án xâm phạm danh dự nhân phẩm.",
+      digitalCompetencyTT02: "[4.1.NCa]: Nhận diện các dấu hiệu bắt nạt trên không gian mạng (cyberbullying) và lưu trữ chứng cứ số để báo cáo cơ quan chức năng.",
+      aiCompetency2422Integrated: "[11.B2.1]: Thảo luận về trách nhiệm pháp lý khi sử dụng AI tạo sinh để bôi nhọ, cắt ghép hình ảnh sai sự thật về người khác.",
+      nlsCode: "4.1.NCa",
+      aiCode: "11.B2.1"
+    }
+  ],
+  "12": [
+    {
+      subject: "Giáo dục kinh tế và pháp luật",
+      grade: "12",
+      source: "PPCT GDKT&PL 12 KNTT 2026-2027",
+      periodRange: "1,2",
+      order: "Tiết 1,2",
+      week: "Tuần 1",
+      lesson: "Bài 1. Tăng trưởng và phát triển kinh tế",
+      topic: "Chủ đề 1. Tăng trưởng và phát triển kinh tế",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Phân biệt được tăng trưởng kinh tế (GDP, GNI) và phát triển kinh tế; Phân tích được các chỉ tiêu của phát triển kinh tế: cơ cấu kinh tế tiến bộ, chỉ số phát triển con người (HDI), tiến bộ và công bằng xã hội; Nêu được khái niệm phát triển bền vững và kinh tế xanh.",
+      lessonGoal: "Hiểu tăng trưởng kinh tế không đồng nghĩa với hủy hoại môi trường sinh thái; định hướng phát triển bền vững của Việt Nam.",
+      objectivesKnowledge: "Tổng sản phẩm quốc nội GDP, thu nhập bình quân đầu người, hệ số bất bình đẳng Gini, chỉ số HDI.",
+      objectivesCompetency: "Đọc và so sánh tháp phát triển kinh tế của các nhóm nước phát triển và đang phát triển.",
+      objectivesQuality: "Ý thức trách nhiệm đóng góp sức lực, trí tuệ vào sự phát triển phồn vinh của đất nước.",
+      equipment: "Báo cáo thường niên của UNDP về chỉ số HDI của Việt Nam, bảng số liệu kinh tế vĩ mô.",
+      digitalCompetencyTT02: "[1.1.NCa]: Truy xuất bộ dữ liệu chỉ số phát triển con người HDI từ cổng thông tin Ngân hàng Thế giới (World Bank Data).",
+      aiCompetency2422Integrated: "[12.C4.MR1]: Nhập prompt yêu cầu AI phân tích mối tương quan giữa chỉ số tăng trưởng GDP và chỉ số hạnh phúc quốc gia.",
+      nlsCode: "1.1.NCa",
+      aiCode: "12.C4.MR1"
+    },
+    {
+      subject: "Giáo dục kinh tế và pháp luật",
+      grade: "12",
+      source: "PPCT GDKT&PL 12 KNTT 2026-2027",
+      periodRange: "3,4",
+      order: "Tiết 3,4",
+      week: "Tuần 2",
+      lesson: "Bài 2. Hội nhập kinh tế quốc tế",
+      topic: "Chủ đề 1. Tăng trưởng và phát triển kinh tế",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Nêu được khái niệm và các hình thức hội nhập kinh tế quốc tế (song phương, khu vực, toàn cầu); Phân tích được các cơ hội và thách thức của Việt Nam khi tham gia các hiệp định thương mại tự do thế hệ mới (CPTPP, EVFTA).",
+      lessonGoal: "Cung cấp kiến thức về mở cửa thị trường hàng hóa, thu hút vốn đầu tư nước ngoài FDI và bảo vệ thương hiệu quốc gia.",
+      objectivesKnowledge: "Tổ chức Thương mại Thế giới (WTO), Cộng đồng Kinh tế ASEAN (AEC), hàng rào thuế quan và phi thuế quan.",
+      objectivesCompetency: "Đề xuất giải pháp nâng cao năng lực cạnh tranh của nông sản Việt Nam khi xuất khẩu ra thị trường châu Âu.",
+      objectivesQuality: "Tự tin hội nhập quốc tế, giữ gìn bản sắc và lợi ích quốc gia - dân tộc.",
+      equipment: "Bản đồ các khối liên kết kinh tế khu vực, video giới thiệu Hiệp định EVFTA.",
+      digitalCompetencyTT02: "[1.2.NCa]: Tra cứu các quy định về quy tắc xuất xứ hàng hóa trên Cổng thông tin Bộ Công Thương.",
+      aiCompetency2422Integrated: "[12.C4.MR1]: Yêu cầu AI lập ma trận SWOT phân tích cơ hội và thách thức của doanh nghiệp khởi nghiệp trẻ Việt Nam trong bối cảnh toàn cầu hóa.",
+      nlsCode: "1.2.NCa",
+      aiCode: "12.C4.MR1"
+    }
+  ]
 };

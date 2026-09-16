@@ -1,14 +1,193 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ * Phân phối chương trình & YCCĐ Môn Lịch sử (Lớp 10, 11, 12)
+ * Bộ sách: Kết nối tri thức với cuộc sống - NXB Giáo dục Việt Nam
+ * Tích hợp chuẩn Năng lực số TT 02/2025 (Mức NC) & Năng lực AI QĐ 2422/QĐ-BGDĐT
+ */
+
 export const LichSu = {
-    "10": [
-        { indicatorCode: "10.A1.a", topic: "Chủ đề 1. Lịch sử và Sử học", duration: "6 tiết", contextStudents: "Tri thức cơ sở.", contextSchool: "Tài liệu mạng.", objectivesKnowledge: "Sự phân biệt Lịch sử và Sử học.", objectivesCompetency: "Báo cáo khoa học.", objectivesQuality: "Trân trọng lịch sử." },
-        { indicatorCode: "10.A2.a", topic: "Chủ đề 2. Một số nền văn minh thế giới thời Cổ - Trung đại", duration: "12 tiết", contextStudents: "Kiến trúc nhân loại.", contextSchool: "Mô hình tháp cổ.", objectivesKnowledge: "Văn minh Ai Cập, Ấn Độ, Hy Lạp.", objectivesCompetency: "Đánh giá quá khứ.", objectivesQuality: "Hội nhập tinh hoa." }
-    ],
-    "11": [
-        { indicatorCode: "11.A1.a", topic: "Chủ đề 1. Cách mạng tư sản và sự phát triển của CNTB", duration: "8 tiết", contextStudents: "Giai cấp tư sản.", contextSchool: "Video lịch sử.", objectivesKnowledge: "Tiền đề, kết quả CM Anh, Pháp, Mỹ.", objectivesCompetency: "Hiểu biết và so sánh các thời kì lịch", objectivesQuality: "Công tâm, khách quan với lịch sử nhân loại." },
-        { indicatorCode: "11.A2.a", topic: "Chủ đề 2. Chủ nghĩa xã hội từ 1917 đến nay", duration: "8 tiết", contextStudents: "Chiến tranh lạnh.", contextSchool: "Bản đồ Châu Âu.", objectivesKnowledge: "Sự ra đời hệ thống khối XHCN.", objectivesCompetency: "Xử lý thông tin chính trị.", objectivesQuality: "Khách quan phân tích lịch sử." }
-    ],
-    "12": [
-        { indicatorCode: "12.A1.a", topic: "Chủ đề 1. Lịch sử Việt Nam (1945 - 2000)", duration: "20 tiết", contextStudents: "Kháng chiến Pháp - Mỹ.", contextSchool: "Phòng truyền thống.", objectivesKnowledge: "Chiến dịch Điện Biên Phủ, Hồ Chí Minh.", objectivesCompetency: "Thuyết trình lịch sử Việt Nam.", objectivesQuality: "Ghi nhớ công ơn anh hùng." },
-        { indicatorCode: "12.A2.a", topic: "Chủ đề 2. Công cuộc đổi mới (1986 - nay)", duration: "10 tiết", contextStudents: "Thời đại kỹ thuật số hiện tại.", contextSchool: "Tài nguyên kinh tế hiện đại.", objectivesKnowledge: "Đại hội VI, đường lối kinh tế.", objectivesCompetency: "Đóng góp phát triển quốc gia.", objectivesQuality: "Sống có trách nhiệm dân tộc." }
-    ]
+  "10": [
+    {
+      subject: "Lịch sử",
+      grade: "10",
+      source: "PPCT Lịch sử 10 KNTT 2026-2027",
+      periodRange: "1,2",
+      order: "Tiết 1,2",
+      week: "Tuần 1",
+      lesson: "Bài 1. Hiện thực lịch sử và nhận thức lịch sử",
+      topic: "Chủ đề 1. Lịch sử và Sử học",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Phân biệt được hiện thực lịch sử và nhận thức lịch sử; Giải thích được vì sao nhận thức lịch sử có tính chủ quan và có thể thay đổi theo thời gian; Nêu được các chức năng, nhiệm vụ của Sử học.",
+      lessonGoal: "Hiểu phương pháp nghiên cứu lịch sử: phương pháp lịch sử và phương pháp logic, khai thác và kiểm chứng nguồn sử liệu.",
+      objectivesKnowledge: "Khái niệm hiện thực lịch sử, nhận thức lịch sử, sử liệu sơ cấp và thứ cấp.",
+      objectivesCompetency: "Thu thập và phân loại tư liệu lịch sử, tư duy phản biện trước các quan điểm lịch sử khác nhau.",
+      objectivesQuality: "Khách quan, trung thực, tôn trọng sự thật lịch sử.",
+      equipment: "Tranh ảnh hiện vật khảo cổ, các đoạn trích sử liệu Đại Việt sử ký toàn thư.",
+      digitalCompetencyTT02: "[1.2.NCa]: Đánh giá tính xác thực của các nguồn sử liệu trực tuyến và phân biệt sự kiện với suy diễn cá nhân.",
+      aiCompetency2422Integrated: "[10.A1.1]: Nhận biết giới hạn của AI khi tổng hợp tư liệu lịch sử và kiểm duyệt thông tin thiếu căn cứ.",
+      nlsCode: "1.2.NCa",
+      aiCode: "10.A1.1"
+    },
+    {
+      subject: "Lịch sử",
+      grade: "10",
+      source: "PPCT Lịch sử 10 KNTT 2026-2027",
+      periodRange: "3,4",
+      order: "Tiết 3,4",
+      week: "Tuần 2",
+      lesson: "Bài 4. Sử học với công tác bảo tồn và phát huy giá trị di sản văn hóa",
+      topic: "Chủ đề 1. Lịch sử và Sử học",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Giải thích được mối quan hệ giữa Sử học với công tác bảo tồn và phát huy giá trị di sản văn hóa, di sản thiên nhiên; Nêu được trách nhiệm của công dân trong việc bảo vệ di sản văn hóa dân tộc.",
+      lessonGoal: "Hiểu vai trò của công nghệ số (quét 3D, bảo tàng ảo VR) trong bảo tồn di sản Hoàng thành Thăng Long, Cố đô Huế.",
+      objectivesKnowledge: "Khái niệm di sản văn hóa vật thể, phi vật thể, di sản thiên nhiên thế giới, phát triển du lịch bền vững.",
+      objectivesCompetency: "Xây dựng kế hoạch tuyên truyền bảo vệ một di tích lịch sử - văn hóa tại địa phương.",
+      objectivesQuality: "Tự hào dân tộc, có ý thức giữ gìn và quảng bá bản sắc văn hóa Việt Nam ra thế giới.",
+      equipment: "Kính thực tế ảo VR (nếu có), video 3D tái hiện Hoàng thành Thăng Long thời Lê sơ.",
+      digitalCompetencyTT02: "[3.1.NCa]: Thiết kế ấn phẩm số (infographic/video ngắn) quảng bá di sản văn hóa phi vật thể quốc gia.",
+      aiCompetency2422Integrated: "[10.C3.2]: Prompt AI gợi ý kịch bản thuyết minh du lịch di sản đa ngôn ngữ và thẩm định tính chuẩn xác văn hóa.",
+      nlsCode: "3.1.NCa",
+      aiCode: "10.C3.2"
+    },
+    {
+      subject: "Lịch sử",
+      grade: "10",
+      source: "PPCT Lịch sử 10 KNTT 2026-2027",
+      periodRange: "5,6",
+      order: "Tiết 5,6",
+      week: "Tuần 3",
+      lesson: "Bài 11. Một số thành tựu cơ bản của văn minh Đại Việt",
+      topic: "Chủ đề 5. Văn minh Đại Việt",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Nêu được cơ sở hình thành nền văn minh Đại Việt; Trình bày được một số thành tựu tiêu biểu về chính trị, kinh tế, văn hóa, giáo dục, luật pháp (Bộ luật Hồng Đức) và quân sự; Nêu được ý nghĩa lịch sử của văn minh Đại Việt.",
+      lessonGoal: "Cảm nhận tinh thần tự chủ, độc lập và sức sáng tạo văn hóa bền bỉ của cha ông trong nghìn năm văn hiến.",
+      objectivesKnowledge: "Hệ thống thiết chế chính trị, Văn Miếu - Quốc Tử Giám, nghệ thuật kiến trúc điêu khắc Lý - Trần, luật pháp Hồng Đức.",
+      objectivesCompetency: "Khai thác tư liệu lịch sử, so sánh thành tựu văn minh Đại Việt với các nền văn minh cùng thời ở Đông Nam Á.",
+      objectivesQuality: "Lòng tự tôn dân tộc sâu sắc, trân trọng các giá trị nhân văn và tinh thần thượng võ.",
+      equipment: "Mô hình chùa Một Cột, bia Tiến sĩ Văn Miếu, bản dập sắc phong cổ.",
+      digitalCompetencyTT02: "[1.1.NCa]: Tra cứu hệ thống bia Tiến sĩ tại Văn Miếu - Quốc Tử Giám trên kho dữ liệu di sản số UNESCO.",
+      aiCompetency2422Integrated: "[10.A1.1]: Phản biện các nhận định sai lệch của AI về nguồn gốc và tính bản địa của văn minh Đại Việt.",
+      nlsCode: "1.1.NCa",
+      aiCode: "10.A1.1"
+    }
+  ],
+  "11": [
+    {
+      subject: "Lịch sử",
+      grade: "11",
+      source: "PPCT Lịch sử 11 KNTT 2026-2027",
+      periodRange: "1,2",
+      order: "Tiết 1,2",
+      week: "Tuần 1",
+      lesson: "Bài 7. Chiến tranh bảo vệ Tổ quốc trong lịch sử Việt Nam (trước năm 1945)",
+      topic: "Chủ đề 4. Chiến tranh bảo vệ Tổ quốc và chiến tranh giải phóng dân tộc",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Trình bày được bối cảnh lịch sử, diễn biến chính và ý nghĩa của các cuộc kháng chiến tiêu biểu: kháng chiến chống Tống (Lý), kháng chiến chống Mông - Nguyên (Trần), kháng chiến chống quân Thanh (Quang Trung); Đúc kết được nghệ thuật quân sự độc đáo.",
+      lessonGoal: "Hiểu tư tưởng lấy dân làm gốc, toàn dân đánh giặc, lấy ít địch nhiều, lấy yếu thắng mạnh.",
+      objectivesKnowledge: "Kế sách vườn không nhà trống, phòng tuyến Như Nguyệt, chiến thắng Bạch Đằng (1288), Ngọc Hồi - Đống Đa.",
+      objectivesCompetency: "Vẽ lược đồ các trận đánh lớn, thuyết trình về nghệ thuật quân sự Việt Nam truyền thống.",
+      objectivesQuality: "Lòng yêu nước quật cường, tri ân sâu sắc các vị anh hùng giải phóng dân tộc.",
+      equipment: "Lược đồ trận chiến Như Nguyệt, Bạch Đằng, tranh khắc gỗ trận Đống Đa.",
+      digitalCompetencyTT02: "[1.1.NCb]: Sử dụng bản đồ số tương tác để mô phỏng thế trận bãi cọc Bạch Đằng của Ngô Quyền và Trần Hưng Đạo.",
+      aiCompetency2422Integrated: "[11.C3.MR1]: Yêu cầu AI so sánh sự khác biệt về nghệ thuật hành quân thần tốc của Quang Trung với các chiến dịch quân sự trên thế giới.",
+      nlsCode: "1.1.NCb",
+      aiCode: "11.C3.MR1"
+    },
+    {
+      subject: "Lịch sử",
+      grade: "11",
+      source: "PPCT Lịch sử 11 KNTT 2026-2027",
+      periodRange: "3,4",
+      order: "Tiết 3,4",
+      week: "Tuần 2",
+      lesson: "Bài 12. Vị trí và tầm quan trọng của Biển Đông",
+      topic: "Chủ đề 6. Lịch sử bảo vệ chủ quyền, các quyền và lợi ích hợp pháp của Việt Nam ở Biển Đông",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Xác định được vị trí địa lí và tầm quan trọng chiến lược của Biển Đông về giao thông hàng hải, tài nguyên và an ninh quốc phòng; Trình bày được quá trình xác lập chủ quyền liên tục của Việt Nam đối với quần đảo Hoàng Sa và quần đảo Trường Sa.",
+      lessonGoal: "Cung cấp các chứng cứ lịch sử và pháp lý vững chắc (theo UNCLOS 1982) khẳng định chủ quyền biển đảo thiêng liêng của Tổ quốc.",
+      objectivesKnowledge: "Hải đội Hoàng Sa, Châu bản triều Nguyễn, bản đồ cổ Đại Nam nhất thống toàn đồ, Công ước Luật Biển 1982.",
+      objectivesCompetency: "Khai thác tư liệu bản đồ cổ, tranh biện bảo vệ chủ quyền quốc gia trên không gian số.",
+      objectivesQuality: "Ý thức công dân về chủ quyền biển đảo, quyết tâm bảo vệ toàn vẹn lãnh thổ đất nước.",
+      equipment: "Bản đồ Biển Đông, Châu bản triều Nguyễn về việc thực thi chủ quyền Hoàng Sa, Trường Sa.",
+      digitalCompetencyTT02: "[1.2.NCa]: Khai thác cơ sở dữ liệu số hóa các tư liệu cổ chứng minh chủ quyền Hoàng Sa, Trường Sa của Việt Nam.",
+      aiCompetency2422Integrated: "[11.C3.MR1]: Thẩm định và đối chiếu câu trả lời của AI với các văn bản pháp lý quốc tế về UNCLOS 1982 và Tuyên bố DOC.",
+      nlsCode: "1.2.NCa",
+      aiCode: "11.C3.MR1"
+    }
+  ],
+  "12": [
+    {
+      subject: "Lịch sử",
+      grade: "12",
+      source: "PPCT Lịch sử 12 KNTT 2026-2027",
+      periodRange: "1,2",
+      order: "Tiết 1,2",
+      week: "Tuần 1",
+      lesson: "Bài 1. Liên hợp quốc (Mục tiêu, nguyên tắc hoạt động và vai trò)",
+      topic: "Chủ đề 1. Thế giới trong và sau Chiến tranh lạnh",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Nêu được bối cảnh thành lập, mục tiêu và các nguyên tắc hoạt động cơ bản của Liên hợp quốc; Đánh giá được vai trò của Liên hợp quốc trong việc duy trì hòa bình, an ninh quốc tế và thúc đẩy phát triển.",
+      lessonGoal: "Phân tích đóng góp tích cực và vị thế ngày càng cao của Việt Nam khi tham gia Phái bộ gìn giữ hòa bình Liên hợp quốc.",
+      objectivesKnowledge: "Hiến chương Liên hợp quốc, Đại hội đồng, Hội đồng Bảo an, quyền phủ quyết, các cơ quan chuyên môn (UNESCO, WHO, UNICEF).",
+      objectivesCompetency: "Mô phỏng phiên họp giả định của Hội đồng Bảo an Liên hợp quốc về giải quyết xung đột khu vực.",
+      objectivesQuality: "Tinh thần yêu chuộng hòa bình, ý thức hợp tác quốc tế và giải quyết bất đồng bằng biện pháp hòa bình.",
+      equipment: "Biểu trưng Liên hợp quốc, video hoạt động của lực lượng Gìn giữ hòa bình Việt Nam tại Nam Sudan.",
+      digitalCompetencyTT02: "[1.1.NCa]: Khai thác cổng thông tin Liên hợp quốc (un.org) tra cứu các nghị quyết chính thức về gìn giữ hòa bình.",
+      aiCompetency2422Integrated: "[12.C4.MR1]: Nhập prompt yêu cầu AI tóm tắt các cải tổ cần thiết đối với Hội đồng Bảo an Liên hợp quốc trong thế kỷ 21.",
+      nlsCode: "1.1.NCa",
+      aiCode: "12.C4.MR1"
+    },
+    {
+      subject: "Lịch sử",
+      grade: "12",
+      source: "PPCT Lịch sử 12 KNTT 2026-2027",
+      periodRange: "3,4",
+      order: "Tiết 3,4",
+      week: "Tuần 2",
+      lesson: "Bài 7. Chiến dịch Điện Biên Phủ năm 1954",
+      topic: "Chủ đề 3. Cách mạng tháng Tám năm 1945 và các cuộc kháng chiến bảo vệ Tổ quốc",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Trình bày được âm mưu của thực dân Pháp với tập đoàn cứ điểm Điện Biên Phủ; Nêu được chủ trương chiến lược và quyết định chuyển phương châm tác chiến của Đại tướng Võ Nguyên Giáp; Đánh giá được ý nghĩa quốc tế to lớn của chiến thắng Điện Biên Phủ.",
+      lessonGoal: "Hiểu sâu sắc quyết định chuyển từ 'đánh nhanh, thắng nhanh' sang 'đánh chắc, tiến chắc' thể hiện bản lĩnh quân sự thiên tài.",
+      objectivesKnowledge: "Cứ điểm Him Lam, Độc Lập, đồi A1, sở chỉ huy Mường Phăng, Hiệp định Genève năm 1954.",
+      objectivesCompetency: "Thuyết trình lịch sử dựa trên hồi ký của các tướng lĩnh và cựu chiến binh Điện Biên Phủ.",
+      objectivesQuality: "Lòng biết ơn vô hạn đối với các anh hùng liệt sĩ đã hy sinh vì nền tự do của dân tộc.",
+      equipment: "Lược đồ tác chiến chiến dịch Điện Biên Phủ 1954, ảnh lịch sử lá cờ Quyết chiến Quyết thắng trên nóc hầm De Castries.",
+      digitalCompetencyTT02: "[1.1.NCb]: Khám phá bảo tàng số 3D Chiến thắng Điện Biên Phủ và bức tranh Panorama lịch sử.",
+      aiCompetency2422Integrated: "[12.C4.MR1]: Yêu cầu AI đối sánh các đánh giá của các nhà sử học phương Tây (Pháp, Mỹ) về nguyên nhân thất bại của Pháp tại Điện Biên Phủ.",
+      nlsCode: "1.1.NCb",
+      aiCode: "12.C4.MR1"
+    },
+    {
+      subject: "Lịch sử",
+      grade: "12",
+      source: "PPCT Lịch sử 12 KNTT 2026-2027",
+      periodRange: "5,6",
+      order: "Tiết 5,6",
+      week: "Tuần 3",
+      lesson: "Bài 14. Công cuộc Đổi mới ở Việt Nam từ năm 1986 đến nay",
+      topic: "Chủ đề 5. Công cuộc Đổi mới ở Việt Nam từ năm 1986 đến nay",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Trình bày được bối cảnh lịch sử và đường lối Đổi mới toàn diện đất nước của Đảng tại Đại hội VI (12/1986); Phân tích được những thành tựu kinh tế, xã hội, đối ngoại nổi bật sau gần 40 năm Đổi mới; Nêu được bài học kinh nghiệm cho tương lai.",
+      lessonGoal: "Nhận thức rõ bước chuyển mang tính lịch sử từ kinh tế tập trung quan liêu bao cấp sang kinh tế thị trường định hướng XHCN.",
+      objectivesKnowledge: "Đại hội VI, xóa bỏ cơ chế bao cấp, hội nhập kinh tế quốc tế (WTO, CPTPP, EVFTA), công nghiệp hóa - hiện đại hóa.",
+      objectivesCompetency: "Xử lý số liệu tăng trưởng GDP, giảm nghèo và chỉ số phát triển con người (HDI) của Việt Nam.",
+      objectivesQuality: "Niềm tin vững chắc vào con đường đi lên CNXH và khát vọng xây dựng đất nước phồn vinh, hạnh phúc.",
+      equipment: "Biểu đồ tăng trưởng kinh tế Việt Nam 1986 - 2026, video thành tựu phát triển hạ tầng đất nước.",
+      digitalCompetencyTT02: "[1.2.NCa]: Khai thác số liệu kinh tế - xã hội chính thức từ Tổng cục Thống kê và Ngân hàng Thế giới.",
+      aiCompetency2422Integrated: "[12.C4.MR1]: Prompt AI phân tích tác động của cuộc Cách mạng công nghiệp 4.0 và chuyển đổi số đối với công cuộc Đổi mới hiện nay.",
+      nlsCode: "1.2.NCa",
+      aiCode: "12.C4.MR1"
+    }
+  ]
 };

@@ -4,6 +4,15 @@ import { INDICATORS as KNOWN_NLS_INDICATORS } from '../components/NlsLookup';
 import { isNlsCodeValid, getNlsIndicatorByCode } from '../data/nlsIndicatorsDb';
 import { buildSocialIntegrationSelectionPrompt } from '../data/socialIntegrations';
 import { formatAiCode2422, getAiRequirementByCode, normalizeAiCode2422, AI_REQUIREMENTS_2422_DB } from '../data/aiRequirements2422Db';
+import {
+  NGU_VAN_NLS_AI_MASTER_V4_SYSTEM_INSTRUCTION,
+  NguVanMasterV4Result,
+  NguVanTaskMode,
+  NguVanLessonType,
+  NGU_VAN_LESSON_TYPES_META,
+  auditNguVanIntegrity,
+  NguVan8Components
+} from '../data/nguVanMasterV4';
 
 // --- Google AI Key Validation (per google-api skill) ---
 // Accepts both legacy AIzaSy... keys and new AQ... keys from Google AI Studio
@@ -3825,3 +3834,401 @@ Trả về JSON object đúng schema, không markdown, không giải thích ngo�
     requestedQuestionCount: input.questionCount || 8
   };
 };
+
+export type UniversalSubjectSkillKind = 
+  | "nls-ai-prompt"
+  | "subject-quiz"
+  | "subject-slides"
+  | "subject-exam"
+  | "stem-simulation"
+  | "digital-worksheet"
+  | "fact-check-rubric";
+
+export interface UniversalSubjectSkillInput {
+  kind: UniversalSubjectSkillKind;
+  subject: string;
+  grade: "10" | "11" | "12" | string;
+  topic: string;
+  lessonGoal?: string;
+  sourceText?: string;
+  nlsCode?: string;
+  aiCode?: string;
+  questionCount?: number;
+  offlineMode?: boolean;
+}
+
+export const generateUniversalSubjectSkill = async (input: UniversalSubjectSkillInput) => {
+  const kindLabels: Record<UniversalSubjectSkillKind, string> = {
+    "nls-ai-prompt": "Bộ sinh Câu lệnh Prompt Tích hợp NLS & NL AI cho Học sinh",
+    "subject-quiz": "Bộ câu hỏi Quiz tương tác có phản hồi giải thích",
+    "subject-slides": "Bộ slide trình chiếu sư phạm PPTX",
+    "subject-exam": "Đề kiểm tra phân hóa theo ma trận chuẩn",
+    "stem-simulation": "Kịch bản mô phỏng / Thí nghiệm ảo / Mô hình hóa",
+    "digital-worksheet": "Phiếu học tập số hóa tương tác",
+    "fact-check-rubric": "Quy trình kiểm chứng thông tin & Chống ảo giác AI"
+  };
+
+  const competencyGuardrails = getCompetencyGuardrails(input.subject, input.grade, input.lessonGoal);
+
+  const prompt = `
+Bạn là chuyên gia sư phạm hàng đầu về môn ${input.subject} cấp THPT theo Chương trình GDPT 2018 (bộ sách Kết nối tri thức với cuộc sống), đồng thời là chuyên gia về Khung năng lực số TT 02/2025/TT-BGDĐT và Khung giáo dục AI theo QĐ 2422/QĐ-BGDĐT ngày 18/8/2026.
+
+NHIỆM VỤ ĐANG THỰC HIỆN: ${kindLabels[input.kind]}
+MÔN HỌC: ${input.subject}
+LỚP: ${input.grade}
+BÀI/CHỦ ĐỀ: ${input.topic}
+YÊU CẦU CẦN ĐẠT CỦA BÀI HỌC:
+${input.lessonGoal || "Theo chương trình GDPT 2018 môn " + input.subject}
+MÃ NLS CHỈ ĐỊNH (nếu có): ${input.nlsCode || "Tự động chọn mã NC phù hợp (ví dụ: 1.1.NCa, 1.2.NCa, 2.2.NCa, 3.1.NCa, 6.2.NCa)"}
+MÃ AI CHỈ ĐỊNH (nếu có): ${input.aiCode || "Tự động chọn mã QĐ 2422 phù hợp (ví dụ: 10.A1.1, 10.C3.2, 11.C3.MR1, 12.C4.MR1)"}
+
+TƯ LIỆU THAM KHẢO TỪ GIÁO VIÊN (nếu có):
+"""
+${(input.sourceText || "").slice(0, 10000)}
+"""
+
+${competencyGuardrails}
+
+QUY TẮC BẮT BUỘC TUÂN THỦ:
+1. KHUNG PHÁP LÝ:
+   - Năng lực số (NLS): Áp dụng chuẩn TT 02/2025/TT-BGDĐT mức NC cho THPT. Cấu trúc mã bắt buộc: [miền].[NLTP].NC[chỉ báo]. TUYỆT ĐỐI KHÔNG dùng mức CB hay TC, không dùng dạng NC1a.
+   - Năng lực AI: Áp dụng QĐ 2422/QĐ-BGDĐT (4 thành phần NLa, NLb, NLc, NLd). Cấu trúc mã chuẩn: [Lớp].[Chủ đề].[Số TT]. TUYỆT ĐỐI CẤM mã cũ QĐ 3439 (như 10.A2.01, 10.C3.01).
+2. TẬP TRUNG VÀO CÂU LỆNH PROMPT SƯ PHẠM:
+   - Sinh ra câu lệnh Prompt mẫu chất lượng cao để học sinh nhập vào AI trong Bước 2 (Thực hiện nhiệm vụ) của KHBD CV 5512.
+   - Prompt phải có đủ: Vai trò, Ngữ cảnh, Nhiệm vụ cụ thể, Định dạng đầu ra và Ràng buộc chống sao chép vô thức.
+3. QUY TRÌNH KIỂM CHỨNG FACT-CHECK:
+   - Nêu rõ các bước để học sinh đối chiếu kết quả của AI với SGK, bảng số liệu hoặc thực nghiệm nhằm phát hiện ảo giác (hallucination).
+4. PHƯƠNG ÁN NGOẠI TUYẾN (OFFLINE FALLBACK):
+   - Luôn có phương án dự phòng khi lớp học mất mạng Internet hoặc không có thiết bị số cá nhân.
+
+Trả về duy nhất 1 JSON object đúng schema quy định, không kèm bất kỳ giải thích ngoài JSON.
+`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      kind: { type: Type.STRING },
+      title: { type: Type.STRING },
+      overview: { type: Type.STRING },
+      tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+      teacherNotes: { type: Type.ARRAY, items: { type: Type.STRING } },
+      nlsAiConnections: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            code: { type: Type.STRING },
+            description: { type: Type.STRING },
+            classroomUse: { type: Type.STRING }
+          },
+          required: ["code", "description", "classroomUse"]
+        }
+      },
+      studentPromptScaffold: {
+        type: Type.OBJECT,
+        properties: {
+          rolePersona: { type: Type.STRING },
+          contextDescription: { type: Type.STRING },
+          exactPromptText: { type: Type.STRING },
+          studentTaskStep: { type: Type.STRING },
+          expectedOutput: { type: Type.STRING },
+          verificationChecklist: { type: Type.ARRAY, items: { type: Type.STRING } },
+          rubricPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
+          offlineFallback: { type: Type.STRING }
+        },
+        required: ["rolePersona", "contextDescription", "exactPromptText", "studentTaskStep", "expectedOutput", "verificationChecklist", "rubricPoints", "offlineFallback"]
+      },
+      quiz: {
+        type: Type.OBJECT,
+        properties: {
+          questions: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                level: { type: Type.STRING },
+                question: { type: Type.STRING },
+                options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                answer: { type: Type.STRING },
+                explanation: { type: Type.STRING },
+                sourceHint: { type: Type.STRING }
+              },
+              required: ["level", "question", "options", "answer", "explanation", "sourceHint"]
+            }
+          }
+        },
+        required: ["questions"]
+      },
+      slides: {
+        type: Type.OBJECT,
+        properties: {
+          slides: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                subtitle: { type: Type.STRING },
+                bullets: { type: Type.ARRAY, items: { type: Type.STRING } },
+                speakerNotes: { type: Type.STRING },
+                classroomActivity: { type: Type.STRING }
+              },
+              required: ["title", "subtitle", "bullets", "speakerNotes", "classroomActivity"]
+            }
+          }
+        },
+        required: ["slides"]
+      },
+      exam: {
+        type: Type.OBJECT,
+        properties: {
+          matrix: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                topic: { type: Type.STRING },
+                recognition: { type: Type.INTEGER },
+                comprehension: { type: Type.INTEGER },
+                application: { type: Type.INTEGER },
+                totalPoints: { type: Type.NUMBER }
+              },
+              required: ["topic", "recognition", "comprehension", "application", "totalPoints"]
+            }
+          },
+          multipleChoice: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                question: { type: Type.STRING },
+                options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                answer: { type: Type.STRING },
+                explanation: { type: Type.STRING }
+              },
+              required: ["question", "options", "answer", "explanation"]
+            }
+          },
+          shortAnswer: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                question: { type: Type.STRING },
+                answer: { type: Type.STRING },
+                rubric: { type: Type.STRING }
+              },
+              required: ["question", "answer", "rubric"]
+            }
+          },
+          essay: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                question: { type: Type.STRING },
+                rubric: { type: Type.ARRAY, items: { type: Type.STRING } }
+              },
+              required: ["question", "rubric"]
+            }
+          },
+          answerKey: { type: Type.ARRAY, items: { type: Type.STRING } }
+        },
+        required: ["matrix", "multipleChoice", "shortAnswer", "essay", "answerKey"]
+      }
+    },
+    required: ["kind", "title", "overview", "tags", "teacherNotes", "nlsAiConnections", "studentPromptScaffold", "quiz", "slides", "exam"]
+  };
+
+  const output = await callGeminiWithFallback(prompt, schema);
+  return {
+    ...output,
+    kind: input.kind,
+    subject: input.subject,
+    grade: input.grade,
+    topic: input.topic,
+    requestedQuestionCount: input.questionCount || 8
+  };
+};
+
+export interface NguVanMasterV4Input {
+  taskMode: NguVanTaskMode;
+  lessonType: NguVanLessonType;
+  grade: "10" | "11" | "12";
+  topic: string;
+  period?: string;
+  yccd: string;
+  textbook?: string;
+  existingContent?: string;
+  nlsCode?: string;
+  aiCode?: string;
+}
+
+export const executeNguVanMasterV4 = async (input: NguVanMasterV4Input): Promise<NguVanMasterV4Result> => {
+  const lessonMeta = NGU_VAN_LESSON_TYPES_META[input.lessonType] || NGU_VAN_LESSON_TYPES_META.READ_LITERARY;
+  const nls = input.nlsCode || lessonMeta.defaultNlsCode;
+  const ai = input.aiCode || lessonMeta.defaultAiCode;
+  const tb = input.textbook || "Kết nối tri thức với cuộc sống";
+  const period = input.period || "Tiết 1, 2";
+
+  const prompt = `
+${NGU_VAN_NLS_AI_MASTER_V4_SYSTEM_INSTRUCTION}
+
+THỰC HIỆN TÁC VỤ CHUYÊN MÔN MÔN NGỮ VĂN:
+- CHẾ ĐỘ TÁC VỤ (TASK_MODE): ${input.taskMode}
+- THỂ LOẠI BÀI HỌC (LESSON_TYPE): ${input.lessonType} - ${lessonMeta.vietnameseTitle}
+- MÔN HỌC: Ngữ văn
+- KHỐI LỚP: ${input.grade}
+- TÊN BÀI HỌC / CHỦ ĐỀ: "${input.topic}"
+- PHÂN PHỐI TIẾT: ${period}
+- BỘ SÁCH GIÁO KHOA: ${tb}
+- YÊU CẦU CẦN ĐẠT (YCCĐ): "${input.yccd}"
+- MÃ NĂNG LỰC SỐ ĐỀ XUẤT (TT 02/2025 Mức NC): ${nls}
+- MÃ GIÁO DỤC AI ĐỀ XUẤT (QĐ 2422): ${ai}
+${input.existingContent ? `- NỘI DUNG TÀI LIỆU GỐC / GIÁO ÁN GỐC CẦN XỬ LÝ:\n${input.existingContent}\n` : ""}
+
+YÊU CẦU BẮT BUỘC THEO PROMPT MASTER V4.0:
+1. ĐÚNG ĐẶC THÙ THỂ LOẠI ${input.lessonType}:
+   - Nhiệm vụ học sinh phù hợp: ${lessonMeta.suitableTasks.join("; ")}
+   - Sản phẩm yêu cầu: ${lessonMeta.expectedProducts.join("; ")}
+   - Phương thức kiểm chứng: ${lessonMeta.verificationMethods.join("; ")}
+   - Lưu ý sư phạm & đạo đức: ${lessonMeta.caution}
+2. CHUẨN TÍCH HỢP 8 THÀNH PHẦN (M - H - C - L - S - K - T - Đ):
+   - M: Mã NLS hoặc NL AI hợp lệ
+   - H: Hành vi số cụ thể quan sát được của học sinh
+   - C: Công cụ số sử dụng
+   - L: Câu lệnh Prompt AI nếu dùng AI tạo sinh (nếu không dùng ghi "NOT_APPLICABLE")
+   - S: Sản phẩm học tập cụ thể
+   - K: Kiểm chứng (đối chiếu SGK/văn bản gốc)
+   - T: Tiêu chí đánh giá của GV
+   - Đ: Đánh giá và phản hồi
+3. ĐỊNH DẠNG MÀU ĐỎ: Trong output1_document, toàn bộ nội dung tích hợp NLS và NL AI mới bổ sung phải được thể hiện rõ ràng trong integratedContentRed hoặc bọc trong thẻ <span class="docx-ai-red" style="color: #FF0000; font-weight: bold;">...</span>.
+4. Trả về đúng cấu trúc JSON gồm: output1_document, output2_alignmentTable, output4_editLog, output5_pendingItems.
+`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      output1_document: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          overview: { type: Type.STRING },
+          sections: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                heading: { type: Type.STRING },
+                originalContent: { type: Type.STRING },
+                integratedContentRed: { type: Type.STRING },
+                eightComponents: {
+                  type: Type.OBJECT,
+                  properties: {
+                    codeM: { type: Type.STRING },
+                    actionH: { type: Type.STRING },
+                    toolC: { type: Type.STRING },
+                    promptL: { type: Type.STRING },
+                    productS: { type: Type.STRING },
+                    verificationK: { type: Type.STRING },
+                    criteriaT: { type: Type.STRING },
+                    evaluationD: { type: Type.STRING }
+                  },
+                  required: ["codeM", "actionH", "toolC", "promptL", "productS", "verificationK", "criteriaT", "evaluationD"]
+                }
+              },
+              required: ["heading", "originalContent", "integratedContentRed"]
+            }
+          },
+          fullHtml: { type: Type.STRING }
+        },
+        required: ["title", "overview", "sections", "fullHtml"]
+      },
+      output2_alignmentTable: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            grade: { type: Type.STRING },
+            lesson: { type: Type.STRING },
+            period: { type: Type.STRING },
+            activity: { type: Type.STRING },
+            subjectYccd: { type: Type.STRING },
+            nlsCode: { type: Type.STRING },
+            aiCode: { type: Type.STRING },
+            studentAction: { type: Type.STRING },
+            product: { type: Type.STRING },
+            evidence: { type: Type.STRING },
+            source: { type: Type.STRING },
+            status: { type: Type.STRING }
+          },
+          required: ["grade", "lesson", "period", "activity", "subjectYccd", "nlsCode", "aiCode", "studentAction", "product", "evidence", "source", "status"]
+        }
+      },
+      output4_editLog: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            location: { type: Type.STRING },
+            originalContent: { type: Type.STRING },
+            newContent: { type: Type.STRING },
+            legalBasis: { type: Type.STRING },
+            reason: { type: Type.STRING },
+            approvalStatus: { type: Type.STRING }
+          },
+          required: ["location", "originalContent", "newContent", "legalBasis", "reason", "approvalStatus"]
+        }
+      },
+      output5_pendingItems: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            missingItem: { type: Type.STRING },
+            reason: { type: Type.STRING },
+            neededDocument: { type: Type.STRING },
+            approver: { type: Type.STRING }
+          },
+          required: ["missingItem", "reason", "neededDocument", "approver"]
+        }
+      }
+    },
+    required: ["output1_document", "output2_alignmentTable", "output4_editLog", "output5_pendingItems"]
+  };
+
+  const rawOutput = await callGeminiWithFallback(prompt, schema);
+
+  // Thu thập các thành phần 8 thành phần nếu có
+  const extractedComponents: NguVan8Components[] = [];
+  if (rawOutput.output1_document?.sections) {
+    for (const sec of rawOutput.output1_document.sections) {
+      if (sec.eightComponents) {
+        extractedComponents.push(sec.eightComponents);
+      }
+    }
+  }
+
+  // Chạy kiểm định độc lập bằng TypeScript rule engine (Section XVI & XVII)
+  const auditReport = auditNguVanIntegrity({
+    grade: input.grade,
+    alignmentRows: rawOutput.output2_alignmentTable || [],
+    components: extractedComponents
+  });
+
+  return {
+    taskMode: input.taskMode,
+    lessonType: input.lessonType,
+    grade: input.grade,
+    topic: input.topic,
+    period,
+    yccd: input.yccd,
+    textbook: tb,
+    output1_document: rawOutput.output1_document,
+    output2_alignmentTable: rawOutput.output2_alignmentTable || [],
+    output3_auditReport: auditReport,
+    output4_editLog: rawOutput.output4_editLog || [],
+    output5_pendingItems: rawOutput.output5_pendingItems || []
+  };
+};
+

@@ -12,6 +12,7 @@ import { CongNghe } from './curriculum/congNghe';
 import { Others } from './curriculum/others';
 import { KhoaHocTuNhien } from './curriculum/khtn';
 import { LichSuDiaLy } from './curriculum/lichSuDiaLy';
+import { getStoredCustomCurriculums } from '../utils/curriculumIngestion';
 
 export const CURRICULUM_DB: Record<string, Record<string, any[]>> = {
     "Toán học": ToanHoc,
@@ -31,4 +32,40 @@ export const CURRICULUM_DB: Record<string, Record<string, any[]>> = {
     "Địa lí": DiaLy,
     "Giáo dục công dân": GDKTPL,
     ...Others
+};
+
+export const getCurriculumBySubjectAndGrade = (subject: string, grade: string): any[] => {
+    const cleanSub = (subject || "").trim();
+    const cleanGrade = (grade || "").trim();
+
+    // 1. Kiểm tra custom curriculum đã nạp
+    try {
+        const customDb = getStoredCustomCurriculums();
+        if (customDb[cleanSub]?.[cleanGrade]?.length) {
+            return customDb[cleanSub][cleanGrade];
+        }
+        // Thử tìm theo tên không dấu
+        const matchedCustomKey = Object.keys(customDb).find(k => 
+            k.toLowerCase() === cleanSub.toLowerCase()
+        );
+        if (matchedCustomKey && customDb[matchedCustomKey]?.[cleanGrade]?.length) {
+            return customDb[matchedCustomKey][cleanGrade];
+        }
+    } catch (e) {
+        console.error("Lỗi đọc custom curriculum", e);
+    }
+
+    // 2. Tìm trong CURRICULUM_DB chuẩn
+    if (CURRICULUM_DB[cleanSub]?.[cleanGrade]) {
+        return CURRICULUM_DB[cleanSub][cleanGrade];
+    }
+
+    const matchedKey = Object.keys(CURRICULUM_DB).find(k => 
+        k.toLowerCase() === cleanSub.toLowerCase()
+    );
+    if (matchedKey && CURRICULUM_DB[matchedKey]?.[cleanGrade]) {
+        return CURRICULUM_DB[matchedKey][cleanGrade];
+    }
+
+    return [];
 };

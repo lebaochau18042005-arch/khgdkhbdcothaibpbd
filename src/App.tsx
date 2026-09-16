@@ -55,6 +55,7 @@ import { parseDocxHtmlTable, parseExcelCurriculumTable, cleanSubjectYccd } from 
 
 const UpgradePlan = React.lazy(() => import("./components/UpgradePlan"));
 const SuDiaSkills = React.lazy(() => import("./components/SuDiaSkills"));
+const SubjectSkillsHub = React.lazy(() => import("./components/SubjectSkillsHub"));
 
 type CurriculumDatabase = Record<string, Record<string, any[]>>;
 
@@ -2381,7 +2382,7 @@ export default function App() {
     { mode: "dashboard", label: "Tổng quan", icon: <BookOpen className="w-4 h-4" /> },
     { mode: "khbd-gen", label: "KHBD", icon: <FileText className="w-4 h-4" /> },
     { mode: "upgrade-plan", label: "DOCX", icon: <Zap className="w-4 h-4" /> },
-    { mode: "su-dia-skills", label: "Sử-Địa", icon: <Map className="w-4 h-4" /> },
+    { mode: "su-dia-skills", label: "Skills & Văn V4.0", icon: <BrainCircuit className="w-4 h-4" /> },
     { mode: "nls-lookup", label: "NLS", icon: <Search className="w-4 h-4" /> },
     { mode: "history", label: "Đã lưu", icon: <Clock className="w-4 h-4" /> },
   ];
@@ -4666,8 +4667,8 @@ export default function App() {
                 sidebar
                 active={mode === "su-dia-skills"}
                 onClick={() => { setMode("su-dia-skills"); setResult(null); }}
-                icon={<Map className="w-4 h-4" />}
-                label="7. Sử-Địa Skills"
+                icon={<BrainCircuit className="w-4 h-4" />}
+                label="7. Kỹ Năng Đa Môn & Ngữ Văn V4.0"
               />
               <li className="my-2 border-t border-slate-700/50"></li>
                 <li>
@@ -5044,10 +5045,10 @@ export default function App() {
                     <React.Suspense fallback={
                       <div className="flex items-center justify-center gap-3 py-16 text-sm font-bold text-slate-500">
                         <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
-                        Đang tải bộ công cụ Sử - Địa...
+                        Đang tải bộ kỹ năng sư phạm đa môn học...
                       </div>
                     }>
-                    <SuDiaSkills
+                    <SubjectSkillsHub
                       apiKey={apiKey}
                       aiModel={aiModel}
                       isOnline={isOnline}
@@ -5260,10 +5261,10 @@ export default function App() {
 
                       <div className="md:col-span-2 lg:col-span-1 h-full">
                         <FeatureCard
-                          icon={<Map className="w-8 h-8 text-white" />}
-                          iconBg="bg-emerald-600"
-                          title="Sử-Địa Skills"
-                          desc="Tạo quiz, slide PPTX, phân tích bản đồ/GIS và đề kiểm tra cho bài học Sử-Địa."
+                          icon={<BrainCircuit className="w-8 h-8 text-white" />}
+                          iconBg="bg-indigo-600"
+                          title="Skills Sư Phạm Đa Môn"
+                          desc="Tạo câu lệnh prompt NLS & NL AI, quiz tương tác, slide PPTX và đề kiểm tra ma trận cho mọi môn học."
                           onClick={() => setMode("su-dia-skills")}
                         />
                       </div>

@@ -1,16 +1,193 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ * Phân phối chương trình & YCCĐ Môn Ngữ văn (Lớp 10, 11, 12)
+ * Bộ sách: Kết nối tri thức với cuộc sống - NXB Giáo dục Việt Nam
+ * Tích hợp chuẩn Năng lực số TT 02/2025 (Mức NC) & Năng lực AI QĐ 2422/QĐ-BGDĐT
+ */
+
 export const NguVan = {
-    "10": [
-        { indicatorCode: "10.A1.a", topic: "Bài 1. Sức hấp dẫn của truyện kể", duration: "8 tiết", contextStudents: "Thần thoại, truyền thuyết.", contextSchool: "Thư viện SGK.", objectivesKnowledge: "Hiểu đặc trưng thể loại.", objectivesCompetency: "Đọc hiểu văn bản truyện.", objectivesQuality: "Trân trọng di sản văn hoá." },
-        { indicatorCode: "10.A2.a", topic: "Bài 2. Vẻ đẹp của thơ ca", duration: "7 tiết", contextStudents: "Thơ hiện đại.", contextSchool: "Phòng học cơ bản.", objectivesKnowledge: "Tứ thơ, hình ảnh, vần nhịp.", objectivesCompetency: "Cảm thụ và viết đoạn văn.", objectivesQuality: "Yêu cái đẹp." },
-        { indicatorCode: "10.A3.a", topic: "Bài 3. Nghệ thuật thuyết phục trong văn nghị luận", duration: "8 tiết", contextStudents: "Nghị luận xã hội.", contextSchool: "Tra cứu báo chí.", objectivesKnowledge: "Luận điểm, luận cứ, luận chứng.", objectivesCompetency: "Viết bài tranh biện.", objectivesQuality: "Ý thức công dân." }
-    ],
-    "11": [
-        { indicatorCode: "11.A1.a", topic: "Bài 1. Câu chuyện và điểm nhìn trong truyện kể", duration: "8 tiết", contextStudents: "Truyện ngắn hiện đại.", contextSchool: "Tài liệu.", objectivesKnowledge: "Kĩ thuật tự sự, ngôi kể.", objectivesCompetency: "Phân tích tác phẩm tự sự.", objectivesQuality: "Cảm thông với thân phận con người." },
-        { indicatorCode: "11.A2.a", topic: "Bài 2. Cấu tứ và hình ảnh trong thơ trữ tình", duration: "7 tiết", contextStudents: "Thơ lãng mạn.", contextSchool: "Internet khảo sát.", objectivesKnowledge: "Luật thơ Đường, thơ tự do.", objectivesCompetency: "Thưởng thức thẩm mỹ.", objectivesQuality: "Bồi đắp tâm hồn sâu sắc." },
-        { indicatorCode: "11.A3.a", topic: "Bài 3. Cấu trúc của văn bản nghị luận", duration: "8 tiết", contextStudents: "Nghị luận văn học.", contextSchool: "Thiết bị chiếu.", objectivesKnowledge: "Khám phá quy trình lập bài viết.", objectivesCompetency: "Thuyết trình nghị luận hấp dẫn.", objectivesQuality: "Khách quan, chính trực." }
-    ],
-    "12": [
-        { indicatorCode: "12.A1.a", topic: "Bài 1. Những di sản văn hóa truyền thống", duration: "8 tiết", contextStudents: "Truyện thơ Nôm, sử thi.", contextSchool: "Văn hóa dân tộc.", objectivesKnowledge: "Nhận biết và phân tích vẻ đẹp truyền thống.", objectivesCompetency: "Bảo tồn giá trị văn học trung đại.", objectivesQuality: "Tự hào dân tộc." },
-        { indicatorCode: "12.A2.a", topic: "Bài 2. Sự dấn thân của thi ca", duration: "7 tiết", contextStudents: "Thơ ca kháng chiến và sau 1975.", contextSchool: "Tranh ảnh kháng chiến.", objectivesKnowledge: "Biết cách tác giả phản ánh thời đại.", objectivesCompetency: "Cảm thụ hình tượng thơ cách mạng.", objectivesQuality: "Sống có khát vọng, lí tưởng cống hiến." }
-    ]
+  "10": [
+    {
+      subject: "Ngữ văn",
+      grade: "10",
+      source: "PPCT Ngữ văn 10 KNTT 2026-2027",
+      periodRange: "1,2",
+      order: "Tiết 1,2",
+      week: "Tuần 1",
+      lesson: "Bài 1. Sức hấp dẫn của truyện kể: Thần thoại và Sử thi",
+      topic: "Chủ đề 1. Sức hấp dẫn của truyện kể",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Nhận biết và phân tích được một số yếu tố của truyện thần thoại và sử thi: không gian, thời gian, cốt truyện, nhân vật anh hùng, lời người kể chuyện và lời nhân vật; Nhận diện được vẻ đẹp tâm hồn người xưa qua thần thoại.",
+      lessonGoal: "Đọc hiểu văn bản Héc-to từ biệt Ăng-đrô-mác và Đăm Săn đi bắt Nữ Thần Mặt Trời, cảm nhận vẻ đẹp lý tưởng anh hùng.",
+      objectivesKnowledge: "Đặc trưng thể loại thần thoại, sử thi cổ đại, biện pháp tu từ so sánh phóng đại.",
+      objectivesCompetency: "Năng lực tiếp nhận văn bản tự sự, năng lực tạo lập bài viết phân tích nhân vật văn học.",
+      objectivesQuality: "Trân trọng các di sản văn hóa tinh thần của nhân loại và các dân tộc thiểu số Việt Nam.",
+      equipment: "Tranh minh họa sử thi Ê-đê, máy chiếu, bản đồ Hy Lạp cổ đại.",
+      digitalCompetencyTT02: "[1.1.NCa]: Khai thác kho tư liệu số văn học dân gian và bảo tàng ảo nhân chủng học.",
+      aiCompetency2422Integrated: "[10.A1.1]: So sánh cảm thụ thẩm mỹ của con người với lời bình giảng văn học khuôn mẫu do AI sinh ra.",
+      nlsCode: "1.1.NCa",
+      aiCode: "10.A1.1"
+    },
+    {
+      subject: "Ngữ văn",
+      grade: "10",
+      source: "PPCT Ngữ văn 10 KNTT 2026-2027",
+      periodRange: "3,4",
+      order: "Tiết 3,4",
+      week: "Tuần 2",
+      lesson: "Bài 2. Vẻ đẹp của thơ ca (Thơ Đường luật và Thơ hiện đại)",
+      topic: "Chủ đề 2. Vẻ đẹp của thơ ca",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Nhận biết và phân tích được cấu tứ, hình ảnh, vần nhịp, các biện pháp tu từ trong bài thơ Thu hứng (Đỗ Phủ) và Mùa xuân chín (Hàn Mặc Tử); Cảm nhận được sự hòa quyện giữa tình và cảnh trong thi ca.",
+      lessonGoal: "Hiểu quy tắc thi luật Đường thi (đối, niêm, vần) và nét phá cách giàu nhạc điệu của thơ mới hiện đại.",
+      objectivesKnowledge: "Thi pháp thơ Đường luật, cấu tứ thơ, thi liệu mùa thu, mùa xuân trong văn học trung - hiện đại.",
+      objectivesCompetency: "Cảm thụ thẩm mỹ, viết đoạn văn ghi lại cảm xúc về một câu thơ hay.",
+      objectivesQuality: "Nuôi dưỡng tâm hồn tinh tế, rung động trước vẻ đẹp thiên nhiên và tình đời.",
+      equipment: "Bản chữ Hán và phiên âm bài thơ Thu hứng, âm thanh ngâm thơ cổ điển.",
+      digitalCompetencyTT02: "[3.1.NCa]: Thiết kế podcast âm thanh đọc diễn cảm bài thơ kết hợp nhạc nền truyền thống.",
+      aiCompetency2422Integrated: "[10.C3.2]: Nhập prompt yêu cầu AI phân tích cặp câu đối 5-6 trong bài Thu hứng và kiểm chứng niêm luật.",
+      nlsCode: "3.1.NCa",
+      aiCode: "10.C3.2"
+    },
+    {
+      subject: "Ngữ văn",
+      grade: "10",
+      source: "PPCT Ngữ văn 10 KNTT 2026-2027",
+      periodRange: "5,6",
+      order: "Tiết 5,6",
+      week: "Tuần 3",
+      lesson: "Bài 6. Nguyễn Trãi - “Dành còn để trợ dân này”: Bình Ngô đại cáo",
+      topic: "Chủ đề 6. Tác gia Nguyễn Trãi",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Phân tích được tư tưởng nhân nghĩa vì dân trừ bạo; Thấy được nghệ thuật lập luận sắc bén, ngôn từ hào sảng, kết cấu chặt chẽ của bản tuyên ngôn độc lập thứ hai của dân tộc.",
+      lessonGoal: "Hiểu bối cảnh lịch sử cuộc khởi nghĩa Lam Sơn và tài năng chính trị, quân sự, văn chương lỗi lạc của Nguyễn Trãi.",
+      objectivesKnowledge: "Thể cáo, hệ thống luận điểm - luận cứ - luận chứng, tư tưởng nhân nghĩa thân dân.",
+      objectivesCompetency: "Thuyết trình về lòng yêu nước và tinh thần tự hào dân tộc, viết bài văn nghị luận xã hội.",
+      objectivesQuality: "Lòng yêu nước nồng nàn, niềm tự hào sâu sắc về truyền thống chống ngoại xâm của cha ông.",
+      equipment: "Bản đồ di tích Lam Sơn, tranh chân dung Nguyễn Trãi, video phim tư liệu lịch sử.",
+      digitalCompetencyTT02: "[1.2.NCa]: Thẩm định và đối chiếu các bản dịch văn bia Hán Nôm chữ Hán trên cổng Viện Nghiên cứu Hán Nôm.",
+      aiCompetency2422Integrated: "[10.A1.1]: Khẳng định tính độc đáo của tư tưởng nhân nghĩa Nguyễn Trãi mà mô hình AI không thể tự sáng tạo ra.",
+      nlsCode: "1.2.NCa",
+      aiCode: "10.A1.1"
+    }
+  ],
+  "11": [
+    {
+      subject: "Ngữ văn",
+      grade: "11",
+      source: "PPCT Ngữ văn 11 KNTT 2026-2027",
+      periodRange: "1,2",
+      order: "Tiết 1,2",
+      week: "Tuần 1",
+      lesson: "Bài 1. Câu chuyện và điểm nhìn trong truyện kể: Vợ nhặt (Kim Lân)",
+      topic: "Chủ đề 1. Câu chuyện và điểm nhìn trong truyện kể",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Nhận biết và phân tích được điểm nhìn trần thuật, tình huống truyện độc đáo; Phân tích tâm trạng của nhân vật Tràng, người vợ nhặt và bà cụ Tứ trong nạn đói năm 1945; Thấy được giá trị hiện thực và nhân đạo sâu sắc.",
+      lessonGoal: "Cảm nhận được khát vọng sống, niềm tin vào tương lai và tình thương gia đình giữa nạn đói khốc liệt.",
+      objectivesKnowledge: "Tình huống truyện éo le, nghệ thuật miêu tả tâm lý nhân vật tinh tế, ngôn ngữ đối thoại đậm đà Bắc Bộ.",
+      objectivesCompetency: "Phân tích tác phẩm văn xuôi hiện thực, tranh biện về giá trị con người.",
+      objectivesQuality: "Lòng trắc ẩn, sự đồng cảm và trân trọng tình người trong nghịch cảnh.",
+      equipment: "Bộ ảnh tư liệu nạn đói Ất Dậu 1945 của nghệ sĩ nhiếp ảnh Võ An Ninh.",
+      digitalCompetencyTT02: "[1.2.NCa]: Khai thác nguồn ảnh tư liệu lịch sử số để kiểm chứng bối cảnh hiện thực của tác phẩm Vợ nhặt.",
+      aiCompetency2422Integrated: "[11.C3.MR1]: Yêu cầu AI viết đoạn độc thoại nội tâm của nhân vật bà cụ Tứ và phản biện tính chân thực tâm lí.",
+      nlsCode: "1.2.NCa",
+      aiCode: "11.C3.MR1"
+    },
+    {
+      subject: "Ngữ văn",
+      grade: "11",
+      source: "PPCT Ngữ văn 11 KNTT 2026-2027",
+      periodRange: "3,4",
+      order: "Tiết 3,4",
+      week: "Tuần 2",
+      lesson: "Bài 6. Nguyễn Du: “Những điều trông thấy mà đau đớn lòng” (Truyện Kiều)",
+      topic: "Chủ đề 6. Tác gia Nguyễn Du",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Phân tích được bi kịch tình yêu và nỗi đau đớn giằng xé của Thúy Kiều trong đoạn trích Trao duyên; Thấy được nghệ thuật sử dụng từ ngữ tài tình và chiều sâu tâm lý nhân vật bậc thầy của Nguyễn Du.",
+      lessonGoal: "Cảm nhận đức hi sinh cao cả, chữ tình - chữ hiếu vẹn toàn của người phụ nữ trong xã hội phong kiến xưa.",
+      objectivesKnowledge: "Thể thơ lục bát truyền thống, nghệ thuật ước lệ tượng trưng và miêu tả nội tâm gián tiếp.",
+      objectivesCompetency: "Đọc diễn cảm, phân tích bi kịch thân phận người phụ nữ tài hoa bạc mệnh.",
+      objectivesQuality: "Lòng thương xót sâu sắc trước nỗi đau khổ của con người, trân trọng kiệt tác văn học dân tộc.",
+      equipment: "Ấn bản Truyện Kiều cổ bản, tranh minh họa dân gian, file âm thanh ngâm Kiều.",
+      digitalCompetencyTT02: "[3.1.NCa]: Tạo video diễn ngâm hoặc vẽ tranh minh họa kỹ thuật số cho đoạn trích Trao duyên.",
+      aiCompetency2422Integrated: "[11.C3.MR1]: Nhập prompt yêu cầu AI so sánh sự khác nhau giữa tình cảm Thúy Kiều dành cho Kim Trọng và Từ Hải.",
+      nlsCode: "3.1.NCa",
+      aiCode: "11.C3.MR1"
+    }
+  ],
+  "12": [
+    {
+      subject: "Ngữ văn",
+      grade: "12",
+      source: "PPCT Ngữ văn 12 KNTT 2026-2027",
+      periodRange: "1,2",
+      order: "Tiết 1,2",
+      week: "Tuần 1",
+      lesson: "Bài 1. Tuyên ngôn Độc lập (Hồ Chí Minh)",
+      topic: "Chủ đề 1. Văn học và lịch sử",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Phân tích được nghệ thuật lập luận chặt chẽ, luận cứ xác thực, ngôn từ đanh thép của bản Tuyên ngôn Độc lập; Hiểu rõ ý nghĩa lịch sử trọng đại khai sinh ra nước Việt Nam Dân chủ Cộng hòa.",
+      lessonGoal: "Thấy được phong cách văn chính luận mẫu mực của Chủ tịch Hồ Chí Minh: ngắn gọn, sắc sảo, thuyết phục.",
+      objectivesKnowledge: "Cấu trúc văn chính luận, nghệ thuật trích dẫn pháp lý quốc tế (Mỹ, Pháp), tính giai cấp và dân tộc.",
+      objectivesCompetency: "Năng lực đọc hiểu văn bản chính luận, năng lực viết bài nghị luận bảo vệ chủ quyền quốc gia.",
+      objectivesQuality: "Ý thức công dân, trách nhiệm bảo vệ nền độc lập tự do và toàn vẹn lãnh thổ của Tổ quốc.",
+      equipment: "Bản ghi âm giọng đọc Tuyên ngôn Độc lập của Bác Hồ ngày 2/9/1945 tại Quảng trường Ba Đình.",
+      digitalCompetencyTT02: "[1.1.NCa]: Khai thác bản lưu trữ âm thanh lịch sử số tại Trung tâm Lưu trữ Quốc gia.",
+      aiCompetency2422Integrated: "[12.C4.MR1]: Yêu cầu AI phân tích cấu trúc lập luận logic tam đoạn luận trong phần mở đầu của bản Tuyên ngôn Độc lập.",
+      nlsCode: "1.1.NCa",
+      aiCode: "12.C4.MR1"
+    },
+    {
+      subject: "Ngữ văn",
+      grade: "12",
+      source: "PPCT Ngữ văn 12 KNTT 2026-2027",
+      periodRange: "3,4",
+      order: "Tiết 3,4",
+      week: "Tuần 2",
+      lesson: "Bài 2. Vẻ đẹp thi ca thời kháng chiến: Tây Tiến (Quang Dũng)",
+      topic: "Chủ đề 2. Vẻ đẹp của thi ca kháng chiến",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Phân tích được vẻ đẹp hào hùng và hào hoa của người lính Tây Tiến; Cảm nhận được thiên nhiên miền Tây Bắc vừa hùng vĩ, dữ dội vừa thơ mộng, trữ tình; Thấy được nét đặc sắc của bút pháp lãng mạn kết hợp bi tráng.",
+      lessonGoal: "Cảm phục tinh thần xả thân vì Tổ quốc của thế hệ thanh niên trí thức Hà thành những năm đầu kháng chiến chống Pháp.",
+      objectivesKnowledge: "Bút pháp lãng mạn, cảm hứng bi tráng, từ ngữ Hán Việt cổ kính, hình ảnh thơ giàu tính tạo hình.",
+      objectivesCompetency: "Cảm thụ thơ ca cách mạng, viết bài văn nghị luận so sánh hình tượng người lính.",
+      objectivesQuality: "Lòng yêu nước, lí tưởng cống hiến tuổi trẻ cho sự nghiệp xây dựng và bảo vệ Tổ quốc.",
+      equipment: "Bản đồ hành quân của đoàn quân Tây Tiến dọc biên giới Việt - Lào, máy chiếu.",
+      digitalCompetencyTT02: "[1.1.NCb]: Số hóa hành trình hành quân Tây Tiến (Sài Khao, Mường Lát, Pha Luông, Mường Hịch) trên bản đồ Google Earth.",
+      aiCompetency2422Integrated: "[12.C4.MR1]: Prompt AI phân tích ý nghĩa thẩm mỹ của cụm từ 'gục lên súng mũ bỏ quên đời' và đối chiếu góc nhìn anh hùng ca.",
+      nlsCode: "1.1.NCb",
+      aiCode: "12.C4.MR1"
+    },
+    {
+      subject: "Ngữ văn",
+      grade: "12",
+      source: "PPCT Ngữ văn 12 KNTT 2026-2027",
+      periodRange: "5,6",
+      order: "Tiết 5,6",
+      week: "Tuần 3",
+      lesson: "Bài 3. Nghệ thuật tự sự hiện đại: Chiếc thuyền ngoài xa (Nguyễn Minh Châu)",
+      topic: "Chủ đề 3. Nghệ thuật tự sự hiện đại",
+      duration: "2 tiết",
+      periods: "2",
+      yccd: "Phân tích được hai phát hiện của nghệ sĩ nhiếp ảnh Phùng tại bờ biển miền Trung; Thấy được mối quan hệ phức tạp giữa nghệ thuật và cuộc đời; Thấu hiểu tấm lòng nhân đạo trĩu nặng của tác giả với số phận con người sau chiến tranh.",
+      lessonGoal: "Nhận thức sâu sắc bài học về cách nhìn nhận con người và cuộc sống: đa diện, nhiều chiều, không thể đơn giản, sơ lược.",
+      objectivesKnowledge: "Tình huống nhận thức, nhân vật tư tưởng, biểu tượng 'chiếc thuyền ngoài xa' và bức ảnh nghệ thuật.",
+      objectivesCompetency: "Tư duy phản biện, tranh biện xã hội về bạo lực gia đình và trách nhiệm của người nghệ sĩ.",
+      objectivesQuality: "Lòng thấu cảm sâu sắc với số phận con người, chống lại cái ác và sự vô cảm trong xã hội.",
+      equipment: "Ảnh chụp triển lãm nghệ thuật, đoạn trích phim chuyển thể 'Người đàn bà trên chuyến tàu tốc hành'.",
+      digitalCompetencyTT02: "[1.2.NCa]: Đánh giá đa chiều thông tin và kiểm chứng các bài phê bình văn học đăng tải trên không gian mạng.",
+      aiCompetency2422Integrated: "[12.C4.MR1]: Yêu cầu AI đưa ra góc nhìn pháp lý và xã hội học về câu chuyện của người đàn bà hàng chài ở Tòa án huyện.",
+      nlsCode: "1.2.NCa",
+      aiCode: "12.C4.MR1"
+    }
+  ]
 };

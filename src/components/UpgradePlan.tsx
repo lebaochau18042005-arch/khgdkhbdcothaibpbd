@@ -12,8 +12,8 @@ import { ExportGatekeeperModal } from "./ExportGatekeeperModal";
 import { validateGatekeeper } from "../utils/gatekeeperValidator";
 import { parseExcelFile } from "../utils/excelParser";
 import { saveAs } from "file-saver";
-import { formatAiCode2422, isAiCodeValid2422 } from "../data/aiRequirements2422Db";
-import { isNlsCodeValid } from "../data/nlsIndicatorsDb";
+import { formatAiCode2422, isAiCodeValid2422, getAiRequirementByCode } from "../data/aiRequirements2422Db";
+import { isNlsCodeValid, getNlsIndicatorByCode } from "../data/nlsIndicatorsDb";
 
 interface TextbookImage {
     mimeType: string;
@@ -484,6 +484,7 @@ export default function UpgradePlan({
     const hasValidNlsCode = (code?: string, grade = analysisResult?.grade) => {
         if (!code) return false;
         const clean = String(code).trim();
+        if (/không tích hợp|không gán mã|chưa có mã/i.test(clean)) return false;
         if (/^[1-6]\.\d+\.NC[a-z]$/i.test(clean)) return true;
         if (/^[1-6]\.\d+\.(CB1|CB2|TC1|TC2|NC1|NC2)[a-z]$/i.test(clean)) return true;
         return isNlsCodeValid(clean) || isNlsCodeValid(clean.replace(/\.NC1([a-z])/i, ".NC$1"));
@@ -492,6 +493,7 @@ export default function UpgradePlan({
     const hasValidAiCode = (code?: string, grade = analysisResult?.grade) => {
         if (!code) return false;
         const clean = String(code).trim();
+        if (/không tích hợp|không gán mã|chưa có mã/i.test(clean)) return false;
         const expectedGrade = getGradeNumber(grade);
         return isAiCodeValid2422(clean, expectedGrade || undefined)
             || isAiCodeValid2422(clean.replace(/^NL[abcd]-/i, ""), expectedGrade || undefined)
@@ -500,24 +502,49 @@ export default function UpgradePlan({
             || /^NL[abcd]-(?:10|11|12)\.[A-D]\d+\.(?:MR\d+|\d+)$/i.test(clean)
             || /^(?:10|11|12)\.[A-D]\d+\.(?:MR\d+|\d+)$/i.test(clean);
     };
+
     const getIntegrationDecision = (suggestion: any) => {
         const explicit = String(suggestion?.integrationDecision || "").trim();
-        if (explicit) return explicit;
-        const hasNls = hasValidNlsCode(suggestion?.suggestedNLS);
-        const hasAi = hasValidAiCode(suggestion?.suggestedAI)
-            || /NL[abcd]/i.test(String(suggestion?.aiCompetencyName || suggestion?.aiComponentName || ""));
+        const hasNls = hasValidNlsCode(suggestion?.suggestedNLS) && !/không tích hợp/i.test(String(suggestion?.nlsStudentBehavior || ""));
+        const hasAi = hasValidAiCode(suggestion?.suggestedAI) && !/không tích hợp/i.test(String(suggestion?.aiYccd || suggestion?.aiStudentBehavior || ""));
+        
+        if (explicit === "Chỉ NLS") return hasNls ? "Chỉ NLS" : "Không tích hợp";
+        if (explicit === "Chỉ NL AI") return hasAi ? "Chỉ NL AI" : "Không tích hợp";
+        if (explicit === "NLS và NL AI") {
+            if (hasNls && hasAi) return "NLS và NL AI";
+            if (hasNls) return "Chỉ NLS";
+            if (hasAi) return "Chỉ NL AI";
+            return "Không tích hợp";
+        }
         if (hasNls && hasAi) return "NLS và NL AI";
         if (hasNls) return "Chỉ NLS";
         if (hasAi) return "Chỉ NL AI";
-        return "NLS và NL AI";
+        return "Không tích hợp";
     };
-    const suggestionUsesNls = (suggestion: any) => /NLS/i.test(getIntegrationDecision(suggestion)) || Boolean(suggestion?.suggestedNLS);
-    const suggestionUsesAi = (suggestion: any) => /AI/i.test(getIntegrationDecision(suggestion)) || Boolean(suggestion?.suggestedAI);
+
+    const suggestionUsesNls = (suggestion: any) => {
+        const dec = getIntegrationDecision(suggestion);
+        if (dec === "Chỉ NL AI" || dec === "Không tích hợp") return false;
+        const code = String(suggestion?.suggestedNLS || "").trim();
+        if (/không tích hợp|không gán mã/i.test(code)) return false;
+        const behavior = plain(suggestion?.nlsStudentBehavior || suggestion?.action || "");
+        if (/^không tích hợp/i.test(behavior)) return false;
+        return hasValidNlsCode(code);
+    };
+
+    const suggestionUsesAi = (suggestion: any) => {
+        const dec = getIntegrationDecision(suggestion);
+        if (dec === "Chỉ NLS" || dec === "Không tích hợp") return false;
+        const code = String(suggestion?.suggestedAI || "").trim();
+        if (/không tích hợp|không gán mã/i.test(code)) return false;
+        const yccd = plain(suggestion?.aiYccd || "");
+        if (/^không tích hợp/i.test(yccd)) return false;
+        return hasValidAiCode(code);
+    };
+
     const hasUsableIntegration = (suggestion: any, grade = analysisResult?.grade) => {
         if (!suggestion) return false;
-        const hasNls = hasValidNlsCode(suggestion?.suggestedNLS, grade);
-        const hasAi = hasValidAiCode(suggestion?.suggestedAI, grade);
-        return hasNls || hasAi || Boolean(suggestion?.activityName);
+        return suggestionUsesNls(suggestion) || suggestionUsesAi(suggestion);
     };
 
     const plain = (value?: string) => (value || "").replace(/<bold>|<\/bold>|<ai>|<\/ai>|\*\*/gi, "").trim();
@@ -557,22 +584,45 @@ export default function UpgradePlan({
 
     const buildAiOrderedFields = (sug: any) => {
         const rawCode = plain(sug?.suggestedAI || sug?.aiIndicatorCode || "");
+        if (!rawCode || /không tích hợp|không gán mã/i.test(rawCode)) {
+            return {
+                competencyName: "",
+                componentCode: "",
+                grade: "",
+                topic: "",
+                indicatorCode: "",
+                behavior: "",
+                yccd: "",
+                code: "",
+                product: "",
+                criteria: "",
+                evidence: ""
+            };
+        }
         const formattedCode = formatAiCode2422(rawCode);
         const effectiveCode = formattedCode || rawCode;
+        const dbRequirement = getAiRequirementByCode(effectiveCode);
         const codeMatch = (effectiveCode || rawCode)?.match(/^(?:NL([abcd])[-:\s]*)?(\d{1,2})\.([ABCD]\d+)\.(MR\d+|\d+)$/i);
         const isValidCode = hasValidAiCode(effectiveCode) || hasValidAiCode(rawCode) || Boolean(formattedCode);
         const topicMatch = String(sug?.aiTopic || "").match(/\b([ABCD]\d+)\b/i);
 
-        const topic = plain(codeMatch?.[3]?.toUpperCase() || topicMatch?.[1]?.toUpperCase() || "");
-        const compLetter = codeMatch?.[1]?.toLowerCase() || (topic ? topic.charAt(0).toLowerCase() : "a");
+        const topic = dbRequirement?.topic || plain(codeMatch?.[3]?.toUpperCase() || topicMatch?.[1]?.toUpperCase() || "");
+        const compLetter = (dbRequirement?.component ? dbRequirement.component.replace(/^NL/i, "").toLowerCase() : "") || codeMatch?.[1]?.toLowerCase() || (topic ? topic.charAt(0).toLowerCase() : "a");
         const componentCode = isValidCode ? `NL${compLetter}` : "";
         const indicatorCode = (effectiveCode || rawCode) && isValidCode
             ? (effectiveCode || rawCode)
             : (effectiveCode || rawCode || "Mã NL AI không hợp lệ — không thể chèn");
-        const grade = plain(sug?.aiGrade || codeMatch?.[2] || analysisResult?.grade || "");
-        const competencyName = getAiCompetencyDisplayName(sug?.aiCompetencyName || sug?.aiComponentName, effectiveCode);
+        const grade = dbRequirement?.grade || plain(sug?.aiGrade || codeMatch?.[2] || analysisResult?.grade || "");
+        const competencyName = dbRequirement
+            ? `${dbRequirement.component} - ${dbRequirement.componentName}`
+            : getAiCompetencyDisplayName(sug?.aiCompetencyName || sug?.aiComponentName, effectiveCode);
         const behavior = plain(sug?.aiStudentBehavior || sug?.action || "Học sinh thực hiện nhiệm vụ học tập có sử dụng AI dưới sự hướng dẫn của giáo viên.");
-        const yccd = plain(sug?.aiYccd || sug?.yccdEvidence || sug?.reason || "Căn cứ YCCĐ cần được giáo viên đối chiếu trước khi sử dụng.");
+        
+        let yccd = plain(sug?.aiYccd || sug?.yccdEvidence || "");
+        if (!yccd || /không tích hợp/i.test(yccd)) {
+            yccd = dbRequirement?.requirementText || "Căn cứ YCCĐ cần được giáo viên đối chiếu trước khi sử dụng.";
+        }
+
         return {
             competencyName,
             componentCode,
@@ -593,6 +643,7 @@ export default function UpgradePlan({
 
     const buildAiOrderedText = (sug: any) => {
         const fields = buildAiOrderedFields(sug);
+        if (!fields.indicatorCode) return "";
         return [
             buildAiIdentityText(fields),
             `Hành vi học sinh: ${fields.behavior}`,
@@ -636,19 +687,41 @@ export default function UpgradePlan({
             return { ...snippet, text: `${snippet.text}\n\n${geoBlock}` };
         });
 
-    const buildNlsObjectiveLines = (suggestions = selectedIntegrations) =>
-        suggestions.filter((suggestion: any) => suggestionUsesNls(suggestion) && hasValidNlsCode(suggestion?.suggestedNLS)).map((sug: any, idx: number) => {
+    const buildNlsObjectiveLines = (suggestions = selectedIntegrations) => {
+        const seen = new Set<string>();
+        const lines: string[] = [];
+        suggestions.filter(suggestionUsesNls).forEach((sug: any) => {
             const code = sug.suggestedNLS;
-            const competencyName = plain(sug.nlsCompetencyName || `Năng lực số theo chỉ báo ${code}`);
-            const action = compactSentence(sug.nlsStudentBehavior || sug.action, 180);
-            return `${idx + 1}. Mã chỉ báo NLS: ${compactSentence(code, 80)}; Thành phần NLS: ${compactSentence(competencyName, 120)}; Hành vi học sinh: ${action}`;
+            if (!hasValidNlsCode(code)) return;
+            const known = getNlsIndicatorByCode(code);
+            const competencyName = (known as any)?.competencyName || plain(sug.nlsCompetencyName || `Năng lực số theo chỉ báo ${code}`);
+            const rawAction = plain(sug.nlsStudentBehavior || sug.action || "");
+            if (!rawAction || /không tích hợp/i.test(rawAction)) return;
+            const action = compactSentence(rawAction, 180);
+            const key = `${code}-${action}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                lines.push(`Mã chỉ báo NLS: ${compactSentence(code, 80)}; Thành phần NLS: ${compactSentence(competencyName, 120)}; Hành vi học sinh: ${action}`);
+            }
         });
+        return lines.map((line, idx) => `${idx + 1}. ${line}`);
+    };
 
-    const buildAiObjectiveLines = (suggestions = selectedIntegrations) =>
-        suggestions.filter(suggestionUsesAi).map((sug: any, idx: number) => {
+    const buildAiObjectiveLines = (suggestions = selectedIntegrations) => {
+        const seen = new Set<string>();
+        const lines: string[] = [];
+        suggestions.filter(suggestionUsesAi).forEach((sug: any) => {
             const fields = buildAiOrderedFields(sug);
-            return `${idx + 1}. ${buildAiIdentityText(fields)}; Yêu cầu cần đạt AI: ${compactSentence(fields.yccd, 190)}`;
+            if (!fields.indicatorCode || /không tích hợp|không hợp lệ|không gán mã/i.test(fields.indicatorCode)) return;
+            if (!fields.yccd || /không tích hợp/i.test(fields.yccd)) return;
+            const key = `${fields.indicatorCode}-${fields.yccd}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                lines.push(`${buildAiIdentityText(fields)}; Yêu cầu cần đạt AI: ${compactSentence(fields.yccd, 190)}`);
+            }
         });
+        return lines.map((line, idx) => `${idx + 1}. ${line}`);
+    };
 
     const buildObjectiveText = (suggestions = selectedIntegrations) => {
         const nlsLines = buildNlsObjectiveLines(suggestions);

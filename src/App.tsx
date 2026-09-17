@@ -3926,13 +3926,15 @@ export default function App() {
             new Paragraph({ children: [new TextRun({ text: t("3. Năng lực chung:"), bold: true })], spacing: { before: 100 } }),
             ...(d.objectives.general || []).flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
 
-            ...(d.objectives.digitalSpecific && d.objectives.digitalSpecific.length > 0 ? [
+            ...((d.objectives.digitalSpecific || []).filter((c: string) => c && !/không tích hợp|không gán mã/i.test(c.trim())).length > 0 ? [
               new Paragraph({ children: [new TextRun({ text: t("4. Năng lực số:"), bold: true, color: "FF0000" })], spacing: { before: 100 } }),
-              ...d.objectives.digitalSpecific.flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`))
+              ...(d.objectives.digitalSpecific || []).filter((c: string) => c && !/không tích hợp|không gán mã/i.test(c.trim())).flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`))
             ] : []),
 
-            new Paragraph({ children: [new TextRun({ text: t("5. Năng lực AI:"), bold: true, color: "FF0000" })], spacing: { before: 100 } }),
-            ...(d.objectives.aiSpecific || []).flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`)),
+            ...((d.objectives.aiSpecific || []).filter((c: string) => c && !/không tích hợp|không gán mã/i.test(c.trim())).length > 0 ? [
+              new Paragraph({ children: [new TextRun({ text: t("5. Năng lực AI:"), bold: true, color: "FF0000" })], spacing: { before: 100 } }),
+              ...(d.objectives.aiSpecific || []).filter((c: string) => c && !/không tích hợp|không gán mã/i.test(c.trim())).flatMap((c: string) => parseContentAndInsertDocx(`- ${c}`))
+            ] : []),
 
             new Paragraph({ children: [new TextRun({ text: t("6. Phẩm chất:"), bold: true })], spacing: { before: 100 } }),
             ...(d.objectives.qualities || []).flatMap((q: string) => parseContentAndInsertDocx(`- ${q}`)),
@@ -5828,7 +5830,7 @@ export default function App() {
                                 <div>
                                   <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">4. Năng lực số</span>
                                   <ul className="list-disc list-inside space-y-2 text-red-600 text-[12px] leading-relaxed font-medium">
-                                    {(result.data.objectives.digitalSpecific || []).map((c: string, i: number) => (
+                                    {(result.data.objectives.digitalSpecific || []).filter((c: string) => c && !/không tích hợp|không gán mã/i.test(c.trim())).map((c: string, i: number) => (
                                       <li key={i}>{c}</li>
                                     ))}
                                   </ul>
@@ -5836,7 +5838,7 @@ export default function App() {
                                 <div>
                                   <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">5. Năng lực AI đặc thù (2422)</span>
                                   <ul className="list-disc list-inside space-y-2 text-red-600 text-[12px] leading-relaxed italic font-medium">
-                                    {(result.data.objectives.aiSpecific || []).map((c: string, i: number) => (
+                                    {(result.data.objectives.aiSpecific || []).filter((c: string) => c && !/không tích hợp|không gán mã/i.test(c.trim())).map((c: string, i: number) => (
                                       <li key={i}>{c}</li>
                                     ))}
                                   </ul>

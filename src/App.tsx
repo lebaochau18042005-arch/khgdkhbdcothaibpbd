@@ -2250,11 +2250,11 @@ export default function App() {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
   const [aiModel, setAiModel] = useState(() => {
     const saved = localStorage.getItem("GEMINI_MODEL");
-    if (saved && (saved === "gemini-3.5-flash-preview" || saved === "gemini-3.1-pro-preview" || saved === "gemini-2.5-flash" || saved === "gemini-2.5-pro")) {
+    if (saved && (saved === "gemini-3.5-flash" || saved === "gemini-3.1-pro-preview" || saved === "gemini-2.5-flash" || saved === "gemini-2.5-pro" || saved === "gemini-2.0-flash")) {
       return saved;
     }
-    localStorage.setItem("GEMINI_MODEL", "gemini-3.5-flash-preview");
-    return "gemini-3.5-flash-preview";
+    localStorage.setItem("GEMINI_MODEL", "gemini-3.5-flash");
+    return "gemini-3.5-flash";
   });
   const [apiTestResult, setApiTestResult] = useState<string | null>(null);
   const [apiTesting, setApiTesting] = useState(false);
@@ -7231,10 +7231,16 @@ export default function App() {
                       <div className="grid grid-cols-1 gap-2.5">
                         {[
                           {
-                            id: "gemini-3.5-flash-preview",
-                            name: "gemini-3.5-flash-preview",
-                            badge: "Default • Tốc độ cao",
-                            desc: "⚡ Khuyên dùng: Phản hồi cực nhanh, thông minh, tối ưu hóa toàn diện cho CT 2018 & TT 02/2025."
+                            id: "gemini-3.5-flash",
+                            name: "gemini-3.5-flash",
+                            badge: "Mặc định • Thế hệ mới",
+                            desc: "⚡ Khuyên dùng: Tốc độ phản hồi cực nhanh, thông minh toàn diện cho CT 2018 & TT 02/2025."
+                          },
+                          {
+                            id: "gemini-2.0-flash",
+                            name: "gemini-2.0-flash",
+                            badge: "Quota Lớn • Ổn định",
+                            desc: "🚀 Hạn mức 1.500 lượt/ngày, 1 triệu token/phút, không lo hết quota khi tải giáo án dài."
                           },
                           {
                             id: "gemini-3.1-pro-preview",
@@ -7245,14 +7251,14 @@ export default function App() {
                           {
                             id: "gemini-2.5-pro",
                             name: "gemini-2.5-pro",
-                            badge: "Mạnh mẽ • Ổn định",
-                            desc: "🔬 Suy luận chuyên sâu, xử lý ngữ cảnh dài, độ chính xác cao cho nội dung phức tạp."
+                            badge: "Mạnh mẽ • Chi tiết",
+                            desc: "🔬 Suy luận chuyên sâu, phân tích ngữ cảnh dài cho nội dung bài học phức tạp."
                           },
                           {
                             id: "gemini-2.5-flash",
                             name: "gemini-2.5-flash",
-                            badge: "Cân bằng • Dự phòng",
-                            desc: "🛡️ Tốc độ nhanh, độ ổn định cao, dự phòng tin cậy khi các mô hình mới gặp quá tải."
+                            badge: "Dự phòng",
+                            desc: "🛡️ Tốc độ nhanh, dự phòng tin cậy khi các mô hình khác gặp quá tải."
                           }
                         ].map(model => (
                           <div

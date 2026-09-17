@@ -27,7 +27,7 @@ export const isValidGoogleAiApiKey = (key: string): boolean =>
  */
 const getModel = (apiKey?: string, modelName?: string) => {
   const key = apiKey || localStorage.getItem('GEMINI_API_KEY') || '';
-  const model = modelName || localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash-preview';
+  const model = modelName || localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const ai = new GoogleGenAI({ apiKey: key });
   return {
     generateContent: (params: Parameters<typeof ai.models.generateContent>[0]) =>
@@ -47,10 +47,13 @@ const stripMarkdownJson = (raw: string): string => {
 
 const getFallbackModels = (startModel: string) => {
   const models = [
-    'gemini-3.5-flash-preview',
+    'gemini-3.5-flash',
     'gemini-2.5-flash',
-    'gemini-2.5-pro',
+    'gemini-2.0-flash',
+    'gemini-3.1-flash-lite',
     'gemini-3.1-pro-preview',
+    'gemini-2.5-pro',
+    'gemini-2.0-flash-lite',
   ];
   const deduplicated = [startModel, ...models.filter(m => m !== startModel)];
   return deduplicated;
@@ -61,7 +64,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
   if (!apiKey) {
     throw new Error('API_KEY_REQUIRED');
   }
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash-preview';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
   // Build parts array for the request
@@ -2266,7 +2269,7 @@ export const robustParseCurriculumJson = (rawText: string): any[] | null => {
 export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: string) => {
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash-preview';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
   const instruction = `Bạn là chuyên gia bóc tách phân phối chương trình giáo dục phổ thông (CT GDPT 2018).
@@ -2911,7 +2914,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash-preview';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
   const parts = [{ text: prompt }];
@@ -3276,7 +3279,7 @@ export const analyzeLessonSource = async (
 ) => {
   const apiKey = options.apiKey || localStorage.getItem('GEMINI_API_KEY') || '';
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = options.aiModel || localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash-preview';
+  const startModel = options.aiModel || localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
   const promptText = `Bạn là một Chuyên gia Giáo dục và Thị giác máy tính (Computer Vision).
@@ -3458,7 +3461,7 @@ export const generateEducationalActivitiesPlan = async (subject: string, grade: 
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash-preview';
+  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
   const modelsToTry = getFallbackModels(startModel);
 
   const parts = [{ text: prompt }];

@@ -298,6 +298,18 @@ const NLS_LEVEL_BY_GRADE: Record<string, string> = {
   "10": "NC1", "11": "NC1", "12": "NC1",
 };
 
+export const getExpectedNlsLevel = (grade?: string): string | undefined => {
+  const g = extractGradeNumber(grade);
+  if (!g) return undefined;
+  if (["10", "11", "12"].includes(g)) return "NC";
+  return NLS_LEVEL_BY_GRADE[g] || undefined;
+};
+
+export interface GradeCandidate {
+  grade: string;
+  score: number;
+}
+
 export const buildGradeSpecificCompetencyPrompt = (gradeStr?: string) => {
   const g = extractGradeNumber(gradeStr) || "10";
   const gradeKey = (["10", "11", "12"].includes(g) ? g : "10") as "10" | "11" | "12";

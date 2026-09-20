@@ -18,6 +18,7 @@ export interface InjectionResult {
 export interface InjectionOptions {
     objectivesText?: string;
     assessmentText?: string;
+    isEnglish?: boolean;
 }
 
 export interface PreservationReport {
@@ -66,27 +67,41 @@ function matchScore(paragraphText: string, activityName: string): number {
     const normActivity = normalizeForMatch(activityName);
     
     // Exact contains
-    if (normPara.includes(normActivity)) return 100;
+    if (normPara.includes(normActivity) || normActivity.includes(normPara)) return 100;
     
     // Split activity into keywords, check how many appear
-    const keywords = normActivity.split(/\s+/).filter(k => k.length > 3);
+    const keywords = normActivity.split(/\s+/).filter(k => k.length > 2);
     if (keywords.length === 0) return 0;
     const matchedKeywords = keywords.filter(k => normPara.includes(k));
     const ratio = matchedKeywords.length / keywords.length;
     
-    // Require at least 60% keyword match
-    return ratio >= 0.6 ? Math.round(ratio * 80) : 0;
+    // Require at least 40% keyword match
+    return ratio >= 0.4 ? Math.round(ratio * 80) : 0;
 }
 
 function extractActivityNumber(text: string): string | null {
-    const match = normalizeVietnamese(text).match(/\b(?:hoat dong|hd)\s*(\d+)/i);
+    const match = normalizeVietnamese(text).match(/\b(?:hoat dong|hd|activity|act|task|lesson|stage|step|part|unit)\s*(\d+)/i);
     return match?.[1] || null;
+}
+
+function extractActivityStageKeyword(text: string): string | null {
+    const norm = normalizeVietnamese(text);
+    const stages = [
+        "warm up", "warm-up", "warmup", "lead in", "lead-in", "getting started",
+        "presentation", "practice", "production", "consolidation", "wrap up", "wrap-up",
+        "looking back", "project", "language", "reading", "speaking", "listening", "writing",
+        "khoi dong", "mo dau", "hinh thanh kien thuc", "kham pha", "luyen tap", "thuc hanh", "van dung", "mo rong"
+    ];
+    for (const stage of stages) {
+        if (norm.includes(stage)) return stage;
+    }
+    return null;
 }
 
 function looksLikeActivityHeading(text: string): boolean {
     const normalized = normalizeVietnamese(text);
-    return /\b(?:hoat dong|hd)\s*\d+/i.test(normalized) ||
-        /\b(khoi dong|hinh thanh kien thuc|luyen tap|van dung)\b/i.test(normalized);
+    return /\b(?:hoat dong|hd|activity|act|task|lesson|stage|step|part|unit)\s*\d+/i.test(normalized) ||
+        /\b(khoi dong|hinh thanh kien thuc|luyen tap|van dung|mo dau|kham pha|trai nghiem|thuc hanh|warm[\s-]?up|lead[\s-]?in|presentation|practice|production|consolidation|application|wrap[\s-]?up|procedure|getting started|language|reading|speaking|listening|writing|looking back|project)\b/i.test(normalized);
 }
 
 function activityAnchorScore(paragraphText: string, activityName: string): number {
@@ -97,6 +112,13 @@ function activityAnchorScore(paragraphText: string, activityName: string): numbe
     if (snippetActivityNumber && paragraphActivityNumber) {
         score += snippetActivityNumber === paragraphActivityNumber ? 60 : -50;
     }
+
+    const snippetStage = extractActivityStageKeyword(activityName);
+    const paragraphStage = extractActivityStageKeyword(paragraphText);
+    if (snippetStage && paragraphStage && snippetStage === paragraphStage) {
+        score += 50;
+    }
+
     if (looksLikeActivityHeading(paragraphText)) {
         score += 20;
     }
@@ -125,6 +147,26 @@ function findBestActivityParagraph(paragraphs: HTMLCollectionOf<Element>, activi
     return { paragraph: bestP, score: bestScore };
 }
 
+function getSectionSynonyms(targetSection?: string): string[] {
+    const norm = normalizeVietnamese(targetSection || "");
+    const synonyms: string[] = [norm];
+
+    if (norm.includes("noi dung") || norm.includes("content") || norm.includes("nhiem vu") || norm.includes("task") || norm.includes("aims") || norm.includes("muc tieu")) {
+        synonyms.push("noi dung", "content", "task", "aims", "muc tieu", "knowledge", "topic");
+    }
+    if (norm.includes("thuc hien") || norm.includes("to chuc") || norm.includes("procedure") || norm.includes("tien trinh") || norm.includes("steps") || norm.includes("implementation")) {
+        synonyms.push("to chuc thuc hien", "thuc hien", "tien trinh", "procedure", "implementation", "steps", "teacher", "student", "execution", "chuyen giao", "bao cao", "ket luan", "instruction");
+    }
+    if (norm.includes("san pham") || norm.includes("product") || norm.includes("ket qua") || norm.includes("outcome")) {
+        synonyms.push("san pham", "product", "products", "expected products", "expected outcomes", "outcome", "ket qua");
+    }
+    if (norm.includes("danh gia") || norm.includes("assessment") || norm.includes("evaluation") || norm.includes("criteria")) {
+        synonyms.push("danh gia", "assessment", "evaluation", "criteria", "feedback");
+    }
+
+    return Array.from(new Set(synonyms.filter(Boolean)));
+}
+
 function findPreciseTargetParagraph(
     paragraphs: HTMLCollectionOf<Element>,
     activityParagraph: Element,
@@ -133,7 +175,6 @@ function findPreciseTargetParagraph(
     targetSection?: string
 ): { paragraph: Element | null; score: number } {
     const normalizedTarget = normalizeForMatch(targetText || "");
-    if (!normalizedTarget) return { paragraph: null, score: 0 };
 
     const items = Array.from(paragraphs);
     const activityIndex = items.indexOf(activityParagraph);
@@ -148,15 +189,13 @@ function findPreciseTargetParagraph(
             rangeEnd = i;
             break;
         }
-        if (!activityNumber && looksLikeActivityHeading(candidateText) && matchScore(candidateText, activityName) < 60) {
+        if (!activityNumber && looksLikeActivityHeading(candidateText) && matchScore(candidateText, activityName) < 40) {
             rangeEnd = i;
             break;
         }
     }
 
-    const sectionKeywords = normalizeForMatch(targetSection || "")
-        .split(/\s+/)
-        .filter(keyword => keyword.length > 2);
+    const sectionKeywords = getSectionSynonyms(targetSection);
     let bestParagraph: Element | null = null;
     let bestScore = 0;
     let sectionFallback: Element | null = null;
@@ -165,48 +204,92 @@ function findPreciseTargetParagraph(
     for (let i = activityIndex; i < rangeEnd; i++) {
         const paragraphText = items[i].textContent || "";
         if (paragraphText.trim().length < 3) continue;
-        const normalizedParagraph = normalizeForMatch(paragraphText);
+        const normalizedParagraph = normalizeVietnamese(paragraphText);
 
         if (sectionKeywords.length > 0) {
-            const matchedSectionKeywords = sectionKeywords.filter(keyword => normalizedParagraph.includes(keyword));
-            const sectionRatio = matchedSectionKeywords.length / sectionKeywords.length;
-            const sectionScore = normalizedParagraph.includes(normalizeForMatch(targetSection || ""))
-                ? 100
-                : Math.round(sectionRatio * 60);
-            if (sectionScore > sectionFallbackScore) {
-                sectionFallbackScore = sectionScore;
-                sectionFallback = items[i];
+            const matched = sectionKeywords.some(keyword => normalizedParagraph.includes(keyword));
+            if (matched) {
+                const sectionScore = 80;
+                if (sectionScore > sectionFallbackScore) {
+                    sectionFallbackScore = sectionScore;
+                    sectionFallback = items[i];
+                }
             }
         }
 
-        // Word thường tách một câu qua nhiều w:p hoặc nhiều ô bảng; ghép tối đa 4 đoạn liền nhau để đối chiếu.
-        for (let windowSize = 1; windowSize <= 4 && i + windowSize <= rangeEnd; windowSize++) {
-            const windowEnd = i + windowSize - 1;
-            const combinedText = items
-                .slice(i, windowEnd + 1)
-                .map(item => item.textContent || "")
-                .join(" ");
-            const normalizedCombined = normalizeForMatch(combinedText);
-            let score = matchScore(combinedText, targetText || "");
-            if (normalizedCombined.includes(normalizedTarget)) score += 80;
-            if (sectionKeywords.length > 0) {
-                const matchedSectionKeywords = sectionKeywords.filter(keyword => normalizedCombined.includes(keyword));
-                score += Math.round((matchedSectionKeywords.length / sectionKeywords.length) * 35);
-            }
-            if (looksLikeActivityHeading(combinedText) && items[windowEnd] !== activityParagraph) score -= 15;
-            score -= (windowSize - 1) * 2;
-            if (score > bestScore) {
-                bestScore = score;
-                bestParagraph = items[windowEnd];
+        if (normalizedTarget) {
+            // Word thường tách một câu qua nhiều w:p hoặc nhiều ô bảng; ghép tối đa 4 đoạn liền nhau để đối chiếu.
+            for (let windowSize = 1; windowSize <= 4 && i + windowSize <= rangeEnd; windowSize++) {
+                const windowEnd = i + windowSize - 1;
+                const combinedText = items
+                    .slice(i, windowEnd + 1)
+                    .map(item => item.textContent || "")
+                    .join(" ");
+                const normalizedCombined = normalizeForMatch(combinedText);
+                let score = matchScore(combinedText, targetText || "");
+                if (normalizedCombined.includes(normalizedTarget)) score += 80;
+                if (sectionKeywords.length > 0) {
+                    const matchedSectionKeywords = sectionKeywords.filter(keyword => normalizedCombined.includes(keyword));
+                    score += Math.round((matchedSectionKeywords.length / sectionKeywords.length) * 35);
+                }
+                if (looksLikeActivityHeading(combinedText) && items[windowEnd] !== activityParagraph) score -= 15;
+                score -= (windowSize - 1) * 2;
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestParagraph = items[windowEnd];
+                }
             }
         }
     }
 
-    if (bestScore >= 70) return { paragraph: bestParagraph, score: bestScore };
+    if (bestScore >= 60) return { paragraph: bestParagraph, score: bestScore };
     if (sectionFallback && sectionFallbackScore >= 60) {
         return { paragraph: sectionFallback, score: sectionFallbackScore };
     }
     return { paragraph: null, score: Math.max(bestScore, sectionFallbackScore) };
+}
+
+function findActivityFallbackParagraph(
+    paragraphs: HTMLCollectionOf<Element>,
+    activityParagraph: Element,
+    activityName: string
+): Element {
+    const items = Array.from(paragraphs);
+    const activityIndex = items.indexOf(activityParagraph);
+    if (activityIndex < 0) return activityParagraph;
+
+    const activityNumber = extractActivityNumber(activityName) || extractActivityNumber(activityParagraph.textContent || "");
+    let rangeEnd = items.length;
+    for (let i = activityIndex + 1; i < items.length; i++) {
+        const candidateText = items[i].textContent || "";
+        const candidateNumber = extractActivityNumber(candidateText);
+        if (activityNumber && candidateNumber && candidateNumber !== activityNumber) {
+            rangeEnd = i;
+            break;
+        }
+        if (!activityNumber && looksLikeActivityHeading(candidateText) && matchScore(candidateText, activityName) < 40) {
+            rangeEnd = i;
+            break;
+        }
+    }
+
+    // Inside this activity range (activityIndex to rangeEnd - 1):
+    // 1. Try to find a paragraph related to procedure / content / students' tasks
+    const procedureSynonyms = ["thuc hien", "to chuc", "procedure", "implementation", "student", "teacher", "hoc sinh", "giao vien", "san pham", "product", "noi dung", "content"];
+    for (let i = rangeEnd - 1; i > activityIndex; i--) {
+        const text = normalizeVietnamese(items[i].textContent || "");
+        if (text.length >= 5 && procedureSynonyms.some(s => text.includes(s))) {
+            return items[i];
+        }
+    }
+
+    // 2. Otherwise, use the last paragraph before the next activity
+    if (rangeEnd - 1 > activityIndex) {
+        return items[rangeEnd - 1];
+    }
+
+    // 3. If the activity only has 1 heading paragraph, insert right after it
+    return activityParagraph;
 }
 
 function getPackageParts(zip: JSZip): string[] {
@@ -737,7 +820,10 @@ function insertObjectivesInCompetencySection(
     const body = xmlDoc.getElementsByTagName("w:body")[0];
     if (!body || !text.trim()) return false;
 
-    const objectiveKeywords = headingKeywords.length ? headingKeywords : ["mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu"];
+    const objectiveKeywords = headingKeywords.length ? headingKeywords : [
+        "mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu",
+        "objectives", "objective", "aims", "aims and objectives", "aims & objectives", "i. objectives", "i objectives", "1. objectives", "a. objectives"
+    ];
     const normalizedObjectiveKeywords = objectiveKeywords.map(normalizeVietnamese);
     const competencyKeywords = [
         "năng lực",
@@ -749,7 +835,19 @@ function insertObjectivesInCompetencySection(
         "năng lực chung",
         "năng lực đặc thù",
         "năng lực số",
-        "năng lực ai"
+        "năng lực ai",
+        "competences",
+        "competencies",
+        "competence",
+        "competency",
+        "general competences",
+        "specific competences",
+        "language competences",
+        "core competences",
+        "digital competences",
+        "ai competences",
+        "2. competences",
+        "b. competences"
     ];
     const requiredCompetencyKeywords = [
         "năng lực chung",
@@ -759,7 +857,11 @@ function insertObjectivesInCompetencySection(
         "năng lực môn học",
         "nang luc mon hoc",
         "năng lực đặc thù môn học",
-        "nang luc dac thu mon hoc"
+        "nang luc dac thu mon hoc",
+        "general competences",
+        "specific competences",
+        "language competences",
+        "core competences"
     ];
     const qualityKeywords = [
         "phẩm chất",
@@ -769,7 +871,13 @@ function insertObjectivesInCompetencySection(
         "3. phẩm chất",
         "3 phẩm chất",
         "6. phẩm chất",
-        "6 phẩm chất"
+        "6 phẩm chất",
+        "qualities",
+        "attitudes",
+        "characteristics",
+        "personal qualities",
+        "3. qualities",
+        "c. qualities"
     ];
     const normalizedQualityKeywords = qualityKeywords.map(normalizeVietnamese);
     const nextMajorSectionKeywords = [
@@ -780,7 +888,16 @@ function insertObjectivesInCompetencySection(
         "tiến trình dạy học",
         "tien trinh day hoc",
         "ii.",
-        "ii "
+        "ii ",
+        "teaching aids",
+        "preparations",
+        "materials",
+        "teaching equipment",
+        "procedure",
+        "lesson procedure",
+        "teaching procedure",
+        "iii.",
+        "iii "
     ];
     const normalizedNextMajorSectionKeywords = nextMajorSectionKeywords.map(normalizeVietnamese);
 
@@ -840,6 +957,8 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
     const paragraphs = xmlDoc.getElementsByTagName("w:p");
     const originalStats = await countWordXmlStructures(zip);
 
+    const isEnglish = options.isEnglish ?? snippets.some(s => /integrated objective|integrated content|implementation|level\/device|kahoot|quiz|warm-up|warm up/i.test(s.text));
+
     let injectedCount = 0;
     const skippedActivities: string[] = [];
     const previewItems: InjectionResult["previewItems"] = [];
@@ -848,13 +967,15 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
         const found = insertObjectivesInCompetencySection(
             xmlDoc,
             paragraphs,
-            ["mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu"],
+            ["mục tiêu", "muc tieu", "i. mục tiêu", "i mục tiêu", "objectives", "objective", "aims", "i. objectives"],
             "",
             options.objectivesText,
             "FF0000"
         );
         previewItems.push({
-            activityName: "I. MỤC TIÊU / NĂNG LỰC - bổ sung NLS/NL AI sau NL chung và NL đặc thù",
+            activityName: isEnglish
+                ? "I. OBJECTIVES / COMPETENCES - Added Digital & AI Competences after General and Specific Competences"
+                : "I. MỤC TIÊU / NĂNG LỰC - bổ sung NLS/NL AI sau NL chung và NL đặc thù",
             injectedText: options.objectivesText,
             found
         });
@@ -863,7 +984,7 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
 
     for (const snippet of snippets) {
         const { paragraph: activityParagraph, score: activityScore } = findBestActivityParagraph(paragraphs, snippet.activityName);
-        const preciseTarget = activityParagraph && activityScore >= 80
+        const preciseTarget = activityParagraph && activityScore >= 40
             ? findPreciseTargetParagraph(
                 paragraphs,
                 activityParagraph,
@@ -873,10 +994,16 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
             )
             : { paragraph: null, score: 0 };
 
-        if (activityParagraph && activityScore >= 80 && preciseTarget.paragraph) {
+        let targetParagraph: Element | null = preciseTarget.paragraph;
+        if (!targetParagraph && activityParagraph && activityScore >= 35) {
+            targetParagraph = findActivityFallbackParagraph(paragraphs, activityParagraph, snippet.activityName);
+        }
+
+        if (targetParagraph) {
+            const blockLabel = isEnglish ? "[DIGITAL & AI COMPETENCE INTEGRATION]" : "[TÍCH HỢP NLS/NL AI]";
             const inserted = insertElementsAfterReference(
-                preciseTarget.paragraph,
-                createStyledBlock(xmlDoc, "[TÍCH HỢP NLS/NL AI]", snippet.text, "FF0000")
+                targetParagraph,
+                createStyledBlock(xmlDoc, blockLabel, snippet.text, "FF0000")
             );
             if (!inserted) {
                 skippedActivities.push(snippet.activityName);
@@ -906,13 +1033,18 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
         const found = insertBlockNearHeading(
             xmlDoc,
             paragraphs,
-            ["iv. kế hoạch đánh giá", "kế hoạch đánh giá", "kiểm tra đánh giá", "đánh giá kết quả học tập"],
-            "[GỢI Ý ĐÁNH GIÁ NLS/NL AI]",
+            [
+                "iv. kế hoạch đánh giá", "kế hoạch đánh giá", "kiểm tra đánh giá", "đánh giá kết quả học tập",
+                "assessment", "assessment plan", "evaluation", "evaluation plan", "iv. assessment", "4. assessment"
+            ],
+            isEnglish ? "[ASSESSMENT DESIGN FOR DC/AI]" : "[GỢI Ý ĐÁNH GIÁ NLS/NL AI]",
             options.assessmentText,
             "FF0000"
         );
         previewItems.push({
-            activityName: "IV. KẾ HOẠCH ĐÁNH GIÁ / vị trí cuối nếu giáo án không có mục đánh giá",
+            activityName: isEnglish
+                ? "IV. ASSESSMENT PLAN / End of document if no assessment section exists"
+                : "IV. KẾ HOẠCH ĐÁNH GIÁ / vị trí cuối nếu giáo án không có mục đánh giá",
             injectedText: options.assessmentText,
             found
         });

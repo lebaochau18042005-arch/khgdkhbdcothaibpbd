@@ -14,6 +14,13 @@ import { parseExcelFile } from "../utils/excelParser";
 import { saveAs } from "file-saver";
 import { formatAiCode2422, isAiCodeValid2422, getAiRequirementByCode } from "../data/aiRequirements2422Db";
 import { isNlsCodeValid, getNlsIndicatorByCode } from "../data/nlsIndicatorsDb";
+import {
+    getNlsComponentNameEn,
+    getAiComponentNameEn,
+    translateIntegrationLevelEn,
+    translateDevicePlanEn,
+    checkIsEnglishSubject
+} from "../data/competencyTranslations";
 
 interface TextbookImage {
     mimeType: string;
@@ -395,7 +402,8 @@ export default function UpgradePlan({
 
             // 2. Inject into DOCX and get preview data
             const result = await injectSnippetsIntoDocx(file, snippets, {
-                objectivesText: objectiveText
+                objectivesText: objectiveText,
+                isEnglish: isEnglish
             });
             const preview = await buildDocxHtmlPreview(result.blob, result.previewItems);
 
@@ -638,12 +646,34 @@ export default function UpgradePlan({
         };
     };
 
-    const buildAiIdentityText = (fields: ReturnType<typeof buildAiOrderedFields>) =>
-        `Thành phần NL AI: ${fields.competencyName}; Khối lớp: ${fields.grade}; Chủ đề: ${fields.topic}; Mã chỉ báo NL AI: ${fields.indicatorCode}`;
+    const isEnglish = checkIsEnglishSubject(
+        analysisResult?.subject,
+        analysisResult?.topic,
+        rawText,
+        file?.name
+    );
+
+    const buildAiIdentityText = (fields: ReturnType<typeof buildAiOrderedFields>) => {
+        if (isEnglish) {
+            const compName = getAiComponentNameEn(fields.competencyName || fields.indicatorCode);
+            return `AI Component: ${compName}; Grade: ${fields.grade}; Topic: ${fields.topic}; AI Indicator: ${fields.indicatorCode}`;
+        }
+        return `Thành phần NL AI: ${fields.competencyName}; Khối lớp: ${fields.grade}; Chủ đề: ${fields.topic}; Mã chỉ báo NL AI: ${fields.indicatorCode}`;
+    };
 
     const buildAiOrderedText = (sug: any) => {
         const fields = buildAiOrderedFields(sug);
         if (!fields.indicatorCode) return "";
+        if (isEnglish) {
+            return [
+                buildAiIdentityText(fields),
+                `Student behavior: ${fields.behavior}`,
+                `AI Learning Outcome: ${fields.yccd}`,
+                `Product: ${fields.product}`,
+                `Criteria: ${fields.criteria}`,
+                `Evidence: ${fields.evidence}`
+            ].join("; ");
+        }
         return [
             buildAiIdentityText(fields),
             `Hành vi học sinh: ${fields.behavior}`,
@@ -694,14 +724,21 @@ export default function UpgradePlan({
             const code = sug.suggestedNLS;
             if (!hasValidNlsCode(code)) return;
             const known = getNlsIndicatorByCode(code);
-            const competencyName = (known as any)?.competencyName || plain(sug.nlsCompetencyName || `Năng lực số theo chỉ báo ${code}`);
+            const defaultViName = (known as any)?.competencyName || plain(sug.nlsCompetencyName || `Năng lực số theo chỉ báo ${code}`);
+            const competencyName = isEnglish
+                ? getNlsComponentNameEn(code, defaultViName)
+                : defaultViName;
             const rawAction = plain(sug.nlsStudentBehavior || sug.action || "");
-            if (!rawAction || /không tích hợp/i.test(rawAction)) return;
+            if (!rawAction || /không tích hợp|not integrated/i.test(rawAction)) return;
             const action = compactSentence(rawAction, 180);
             const key = `${code}-${action}`;
             if (!seen.has(key)) {
                 seen.add(key);
-                lines.push(`Mã chỉ báo NLS: ${compactSentence(code, 80)}; Thành phần NLS: ${compactSentence(competencyName, 120)}; Hành vi học sinh: ${action}`);
+                if (isEnglish) {
+                    lines.push(`DC Indicator: ${compactSentence(code, 80)}; Component: ${compactSentence(competencyName, 140)}; Student behavior: ${action}`);
+                } else {
+                    lines.push(`Mã chỉ báo NLS: ${compactSentence(code, 80)}; Thành phần NLS: ${compactSentence(competencyName, 120)}; Hành vi học sinh: ${action}`);
+                }
             }
         });
         return lines.map((line, idx) => `${idx + 1}. ${line}`);
@@ -712,12 +749,16 @@ export default function UpgradePlan({
         const lines: string[] = [];
         suggestions.filter(suggestionUsesAi).forEach((sug: any) => {
             const fields = buildAiOrderedFields(sug);
-            if (!fields.indicatorCode || /không tích hợp|không hợp lệ|không gán mã/i.test(fields.indicatorCode)) return;
-            if (!fields.yccd || /không tích hợp/i.test(fields.yccd)) return;
+            if (!fields.indicatorCode || /không tích hợp|không hợp lệ|không gán mã|not integrated|invalid/i.test(fields.indicatorCode)) return;
+            if (!fields.yccd || /không tích hợp|not integrated/i.test(fields.yccd)) return;
             const key = `${fields.indicatorCode}-${fields.yccd}`;
             if (!seen.has(key)) {
                 seen.add(key);
-                lines.push(`${buildAiIdentityText(fields)}; Yêu cầu cần đạt AI: ${compactSentence(fields.yccd, 190)}`);
+                if (isEnglish) {
+                    lines.push(`${buildAiIdentityText(fields)}; AI Learning Outcome: ${compactSentence(fields.yccd, 190)}`);
+                } else {
+                    lines.push(`${buildAiIdentityText(fields)}; Yêu cầu cần đạt AI: ${compactSentence(fields.yccd, 190)}`);
+                }
             }
         });
         return lines.map((line, idx) => `${idx + 1}. ${line}`);
@@ -727,18 +768,26 @@ export default function UpgradePlan({
         const nlsLines = buildNlsObjectiveLines(suggestions);
         const aiLines = buildAiObjectiveLines(suggestions);
         const sections: string[] = [];
-        if (nlsLines.length) sections.push("a) Năng lực số (NLS) bám sát YCCĐ môn học:", ...nlsLines);
-        if (aiLines.length) sections.push(`${nlsLines.length ? "b" : "a"}) Năng lực AI (NL AI) bám sát YCCĐ môn học:`, ...aiLines);
+        if (isEnglish) {
+            if (nlsLines.length) sections.push("a) Digital Competences (DC) aligned with subject learning outcomes:", ...nlsLines);
+            if (aiLines.length) sections.push(`${nlsLines.length ? "b" : "a"}) AI Competences (AI) aligned with subject learning outcomes:`, ...aiLines);
+        } else {
+            if (nlsLines.length) sections.push("a) Năng lực số (NLS) bám sát YCCĐ môn học:", ...nlsLines);
+            if (aiLines.length) sections.push(`${nlsLines.length ? "b" : "a"}) Năng lực AI (NL AI) bám sát YCCĐ môn học:`, ...aiLines);
+        }
         return sections.join("\n");
     };
 
     const buildAssessmentText = (suggestions = selectedIntegrations) => {
-        if (!suggestions.length) return "Chưa có hoạt động tích hợp được chọn để đề xuất đánh giá.";
-        const headers = ["Hoạt động tích hợp", "NLS", "NL AI", "Tiêu chí đánh giá", "Minh chứng"];
+        if (!suggestions.length) return isEnglish ? "No integrated activities selected for assessment." : "Chưa có hoạt động tích hợp được chọn để đề xuất đánh giá.";
+        const headers = isEnglish
+            ? ["Integrated Activity", "Digital Competence (DC)", "AI Competence", "Assessment Criteria", "Evidence"]
+            : ["Hoạt động tích hợp", "NLS", "NL AI", "Tiêu chí đánh giá", "Minh chứng"];
+        const notIntegrated = isEnglish ? "Not integrated" : "Không tích hợp";
         const rows = suggestions.map((sug: any) => {
             const usesNls = suggestionUsesNls(sug);
             const usesAi = suggestionUsesAi(sug);
-            const nls = usesNls && hasValidNlsCode(sug.suggestedNLS) ? sug.suggestedNLS : "Không tích hợp";
+            const nls = usesNls && hasValidNlsCode(sug.suggestedNLS) ? sug.suggestedNLS : notIntegrated;
             const aiFields = usesAi ? buildAiOrderedFields(sug) : null;
             const criteria = [
                 usesNls ? sug.nlsCriteria : "",
@@ -752,13 +801,13 @@ export default function UpgradePlan({
             return markdownTableRow([
                 compactSentence(sug.activityName, 110),
                 compactSentence(nls, 70),
-                compactSentence(aiFields ? buildAiIdentityText(aiFields) : "Không tích hợp", 230),
+                compactSentence(aiFields ? buildAiIdentityText(aiFields) : notIntegrated, 230),
                 compactSentence(criteria, 210),
                 compactSentence(evidence, 170)
             ]);
         });
         return [
-            "Bảng tóm tắt gợi ý đánh giá theo từng hoạt động tích hợp:",
+            isEnglish ? "Summary table of suggested assessments for integrated activities:" : "Bảng tóm tắt gợi ý đánh giá theo từng hoạt động tích hợp:",
             markdownTableRow(headers),
             markdownTableSeparator(headers.length),
             ...rows
@@ -1864,28 +1913,40 @@ export default function UpgradePlan({
                                 <section className="space-y-5">
                                     <h4 className="text-base font-extrabold text-brand-sidebar border-t border-slate-100 pt-4 uppercase tracking-tight flex items-center gap-3">
                                         <span className="w-1 h-6 bg-brand-accent rounded-full"></span>
-                                        I. MỤC TIÊU - THỨ TỰ THÀNH PHẦN NĂNG LỰC
+                                        {isEnglish ? "I. OBJECTIVES - COMPETENCY STRUCTURE" : "I. MỤC TIÊU - THỨ TỰ THÀNH PHẦN NĂNG LỰC"}
                                     </h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-2">
                                         <div className="space-y-4">
                                             <div>
-                                                <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-brand-muted uppercase mb-3 border border-slate-200">1. Năng lực chung</span>
-                                                <p className="text-xs leading-relaxed text-brand-dark">Giữ nguyên nội dung trong giáo án gốc.</p>
+                                                <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-brand-muted uppercase mb-3 border border-slate-200">
+                                                    {isEnglish ? "1. General competences" : "1. Năng lực chung"}
+                                                </span>
+                                                <p className="text-xs leading-relaxed text-brand-dark">
+                                                    {isEnglish ? "Preserved from original lesson plan." : "Giữ nguyên nội dung trong giáo án gốc."}
+                                                </p>
                                             </div>
                                             <div>
-                                                <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-emerald-700 uppercase mb-3 border border-slate-200">2. Năng lực đặc thù môn học</span>
-                                                <p className="text-xs leading-relaxed text-brand-dark">Giữ nguyên nội dung trong giáo án gốc.</p>
+                                                <span className="inline-block px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-emerald-700 uppercase mb-3 border border-slate-200">
+                                                    {isEnglish ? "2. Specific competences" : "2. Năng lực đặc thù môn học"}
+                                                </span>
+                                                <p className="text-xs leading-relaxed text-brand-dark">
+                                                    {isEnglish ? "Preserved from original lesson plan." : "Giữ nguyên nội dung trong giáo án gốc."}
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="space-y-4">
                                             <div>
-                                                <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">3. Năng lực số</span>
+                                                <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">
+                                                    {isEnglish ? "3. Digital competences (DC)" : "3. Năng lực số"}
+                                                </span>
                                                 <ul className="list-disc list-inside space-y-2 text-red-600 text-xs leading-relaxed font-medium">
                                                     {buildNlsObjectiveLines().map((line, idx) => <li key={idx}>{line.replace(/^\d+\.\s*/, "")}</li>)}
                                                 </ul>
                                             </div>
                                             <div>
-                                                <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">4. Năng lực AI đặc thù (2422)</span>
+                                                <span className="inline-block px-2 py-1 bg-red-50 rounded text-[10px] font-bold text-red-600 uppercase mb-3 border border-red-100">
+                                                    {isEnglish ? "4. AI Competences (QĐ 2422)" : "4. Năng lực AI đặc thù (2422)"}
+                                                </span>
                                                 <ul className="list-disc list-inside space-y-2 text-red-600 text-xs leading-relaxed italic font-medium">
                                                     {buildAiObjectiveLines().map((line, idx) => <li key={idx}>{line.replace(/^\d+\.\s*/, "")}</li>)}
                                                 </ul>
@@ -2205,7 +2266,9 @@ export default function UpgradePlan({
                                             <div className="flex items-start justify-between gap-2 mb-2">
                                                 <p className="text-sm font-semibold text-slate-800 flex-1">{item.activityName}</p>
                                                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${item.found ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                                                    {item.found ? "✓ Đã chèn đúng hoạt động và nội dung" : "⚠ Chưa chèn — chưa tìm được đoạn nguyên văn hoặc mục con trong hoạt động"}
+                                                    {item.found
+                                                        ? (isEnglish ? "✓ Injected accurately into activity" : "✓ Đã chèn đúng hoạt động và nội dung")
+                                                        : (isEnglish ? "⚠ Not injected — anchor snippet or subsection not found" : "⚠ Chưa chèn — chưa tìm được đoạn nguyên văn hoặc mục con trong hoạt động")}
                                                 </span>
                                             </div>
                                             <div className="bg-white rounded-lg border border-red-200 p-3">

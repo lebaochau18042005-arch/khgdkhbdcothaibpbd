@@ -13,6 +13,13 @@ import {
   auditNguVanIntegrity,
   NguVan8Components
 } from '../data/nguVanMasterV4';
+import {
+  getNlsComponentNameEn,
+  getAiComponentNameEn,
+  translateIntegrationLevelEn,
+  translateDevicePlanEn,
+  checkIsEnglishSubject
+} from '../data/competencyTranslations';
 
 // --- Google AI Key Validation (per google-api skill) ---
 // Accepts both legacy AIzaSy... keys and new AQ... keys from Google AI Studio
@@ -1785,6 +1792,17 @@ LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với P
   ]
 }`;
 
+  const isEnglishLesson = checkIsEnglishSubject("", "", fileText, fileName);
+  const englishLessonInstruction = isEnglishLesson
+    ? `\n\n==== LỆNH BẮT BUỘC ĐẶC BIỆT CHO MÔN TIẾNG ANH (ENGLISH SUBJECT) ====
+1. Giáo án này là môn TIẾNG ANH (English).
+2. "subject": "Tiếng Anh" (hoặc "English").
+3. "activityName": Phải trích xuất CHÍNH XÁC NGUYÊN VĂN theo tên hoạt động tiếng Anh trong giáo án gốc (ví dụ: "Lesson 5: Warm-up - Kahoot Quiz", "Activity 1: Listening", "Task 1", "Warm-up", "Lead-in", "Presentation", "Practice", "Production", "Consolidation"...).
+4. "targetSection": Tên mục con bằng TIẾNG ANH trong hoạt động (ví dụ: "Content", "Procedure", "Teacher's activities", "Students' activities", "Expected products", "Assessment").
+5. "targetContent": BẮT BUỘC chép nguyên văn liên tục 8-25 từ TIẾNG ANH từ đúng hoạt động trong giáo án gốc làm điểm neo chèn.
+6. TOÀN BỘ NỘI DUNG mô tả hành vi học sinh, sản phẩm, tiêu chí, YCCĐ AI ("nlsStudentBehavior", "nlsProduct", "nlsCriteria", "aiStudentBehavior", "aiYccd", "aiProduct", "aiCriteria", "aiEvidence", "action") BẮT BUỘC VIẾT BẰNG 100% TIẾNG ANH (ENGLISH). Tuyệt đối không dùng tiếng Việt trong các trường này.`
+    : "";
+
   let prompt: any;
   if (pdfBase64) {
     const textParts: any[] = [
@@ -1792,7 +1810,7 @@ LỆNH BẮT BUỘC: Hãy đối chiếu Tên bài học của Giáo án với P
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Rà soát cơ hội NLS theo TT 02 và NL AI theo QĐ 2422. Chỉ đưa vào aiSuggestions tối đa 6 điểm chạm có giá trị sư phạm rõ; nếu không có trả []. Với bài nhiều tiết, số mã theo số hành vi/YCCĐ AI độc lập chứ không theo số tiết: cùng hành vi và minh chứng có thể dùng một mã; hành vi hoặc sản phẩm/tiêu chí khác nhau phải có gợi ý và mã riêng, kèm Tiết trong activityName/targetSection để chèn đúng vị trí. Với từng hoạt động, bắt buộc chọn đúng một integrationDecision: Chỉ NLS, Chỉ NL AI hoặc NLS và NL AI. Không ép tích hợp cả hai. Mỗi năng lực được chọn phải có chuỗi YCCĐ -> hành vi HS -> sản phẩm -> tiêu chí; trường của năng lực không được chọn ghi rõ Không tích hợp. NLS đúng mức lớp. Với hoạt động có NL AI, bắt buộc xác định thành phần, chủ đề và mã cụ thể dạng NLa-12.A1.1 theo đúng lớp/YCCĐ; không ghi chung chung “Cần đối chiếu mã AI”. Mỗi activityName chỉ xuất hiện một lần; nếu cùng hoạt động có cả hai năng lực, dùng “NLS và NL AI” trong một gợi ý. Vẫn trả đủ trường theo JSON để hệ thống hậu kiểm.${detectedGradeInstruction}${AI_COMPETENCY_ORDER_RULE}${buildGradeSpecificCompetencyPrompt(detectedGrade)}${textbookSection}${pl1Section}
+3. Trọng tâm: Rà soát cơ hội NLS theo TT 02 và NL AI theo QĐ 2422. Chỉ đưa vào aiSuggestions tối đa 6 điểm chạm có giá trị sư phạm rõ; nếu không có trả []. Với bài nhiều tiết, số mã theo số hành vi/YCCĐ AI độc lập chứ không theo số tiết: cùng hành vi và minh chứng có thể dùng một mã; hành vi hoặc sản phẩm/tiêu chí khác nhau phải có gợi ý và mã riêng, kèm Tiết trong activityName/targetSection để chèn đúng vị trí. Với từng hoạt động, bắt buộc chọn đúng một integrationDecision: Chỉ NLS, Chỉ NL AI hoặc NLS và NL AI. Không ép tích hợp cả hai. Mỗi năng lực được chọn phải có chuỗi YCCĐ -> hành vi HS -> sản phẩm -> tiêu chí; trường của năng lực không được chọn ghi rõ Không tích hợp. NLS đúng mức lớp. Với hoạt động có NL AI, bắt buộc xác định thành phần, chủ đề và mã cụ thể dạng NLa-12.A1.1 theo đúng lớp/YCCĐ; không ghi chung chung “Cần đối chiếu mã AI”. Mỗi activityName chỉ xuất hiện một lần; nếu cùng hoạt động có cả hai năng lực, dùng “NLS và NL AI” trong một gợi ý. Vẫn trả đủ trường theo JSON để hệ thống hậu kiểm.${detectedGradeInstruction}${AI_COMPETENCY_ORDER_RULE}${buildGradeSpecificCompetencyPrompt(detectedGrade)}${textbookSection}${pl1Section}${englishLessonInstruction}
 4. RIÊNG MÔN ĐỊA LÍ: Nếu bài/hoạt động có bảng số liệu, biểu đồ, AQI, tài nguyên, dân số, kinh tế, khí hậu, diện tích, sản lượng, GRDP hoặc yêu cầu nhận xét - giải thích số liệu, trường geoDataRequirement BẮT BUỘC có bảng số liệu và biểu đồ. Không được chỉ ghi chung chung "phân tích dữ liệu"; phải nêu bảng, nguồn kiểm chứng, loại biểu đồ và nhiệm vụ HS.
 
 ${competencyGuardrails}
@@ -1816,7 +1834,7 @@ Dưới đây là nội dung văn bản bóc tách từ Giáo án của giáo vi
 Hãy rà soát và cho tôi biết:
 1. Thông tin chung của bài học (Môn, Lớp, Tên bài, Thời lượng, Đặc điểm học sinh, Điều kiện CSVC, Các mục tiêu hiện tại).
 2. Các hoạt động cốt yếu trong giáo án (Mở đầu, Hình thành kiến thức, Luyện tập, Vận dụng).
-3. Trọng tâm: Rà soát cơ hội NLS theo TT 02 và NL AI theo QĐ 2422. Chỉ đưa vào aiSuggestions tối đa 6 điểm chạm có giá trị sư phạm rõ; nếu không có trả []. Với bài nhiều tiết, số mã theo số hành vi/YCCĐ AI độc lập chứ không theo số tiết: cùng hành vi và minh chứng có thể dùng một mã; hành vi hoặc sản phẩm/tiêu chí khác nhau phải có gợi ý và mã riêng, kèm Tiết trong activityName/targetSection để chèn đúng vị trí. Với từng hoạt động, bắt buộc chọn đúng một integrationDecision: Chỉ NLS, Chỉ NL AI hoặc NLS và NL AI. Không ép tích hợp cả hai. Mỗi năng lực được chọn phải có chuỗi YCCĐ -> hành vi HS -> sản phẩm -> tiêu chí; trường của năng lực không được chọn ghi rõ Không tích hợp. NLS đúng mức lớp. Với hoạt động có NL AI, bắt buộc xác định thành phần, chủ đề và mã cụ thể dạng NLa-12.A1.1 theo đúng lớp/YCCĐ; không ghi chung chung “Cần đối chiếu mã AI”. Mỗi activityName chỉ xuất hiện một lần; nếu cùng hoạt động có cả hai năng lực, dùng “NLS và NL AI” trong một gợi ý. Vẫn trả đủ trường theo JSON để hệ thống hậu kiểm.${detectedGradeInstruction}${AI_COMPETENCY_ORDER_RULE}${buildGradeSpecificCompetencyPrompt(detectedGrade)}${textbookSection}${pl1Section}
+3. Trọng tâm: Rà soát cơ hội NLS theo TT 02 và NL AI theo QĐ 2422. Chỉ đưa vào aiSuggestions tối đa 6 điểm chạm có giá trị sư phạm rõ; nếu không có trả []. Với bài nhiều tiết, số mã theo số hành vi/YCCĐ AI độc lập chứ không theo số tiết: cùng hành vi và minh chứng có thể dùng một mã; hành vi hoặc sản phẩm/tiêu chí khác nhau phải có gợi ý và mã riêng, kèm Tiết trong activityName/targetSection để chèn đúng vị trí. Với từng hoạt động, bắt buộc chọn đúng một integrationDecision: Chỉ NLS, Chỉ NL AI hoặc NLS và NL AI. Không ép tích hợp cả hai. Mỗi năng lực được chọn phải có chuỗi YCCĐ -> hành vi HS -> sản phẩm -> tiêu chí; trường của năng lực không được chọn ghi rõ Không tích hợp. NLS đúng mức lớp. Với hoạt động có NL AI, bắt buộc xác định thành phần, chủ đề và mã cụ thể dạng NLa-12.A1.1 theo đúng lớp/YCCĐ; không ghi chung chung “Cần đối chiếu mã AI”. Mỗi activityName chỉ xuất hiện một lần; nếu cùng hoạt động có cả hai năng lực, dùng “NLS và NL AI” trong một gợi ý. Vẫn trả đủ trường theo JSON để hệ thống hậu kiểm.${detectedGradeInstruction}${AI_COMPETENCY_ORDER_RULE}${buildGradeSpecificCompetencyPrompt(detectedGrade)}${textbookSection}${pl1Section}${englishLessonInstruction}
 4. RIÊNG MÔN ĐỊA LÍ: Nếu bài/hoạt động có bảng số liệu, biểu đồ, AQI, tài nguyên, dân số, kinh tế, khí hậu, diện tích, sản lượng, GRDP hoặc yêu cầu nhận xét - giải thích số liệu, trường geoDataRequirement BẮT BUỘC có bảng số liệu và biểu đồ. Không được chỉ ghi chung chung "phân tích dữ liệu"; phải nêu bảng, nguồn kiểm chứng, loại biểu đồ và nhiệm vụ HS.
 
 ${competencyGuardrails}
@@ -2112,19 +2130,33 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON MẢNG:
 
       const codeParts: string[] = [];
       if (usesNls) {
-        const nlsCode = compact(suggestion?.suggestedNLS || "Không gán mã", 90);
-        const nlsName = compact(suggestion?.nlsCompetencyName || "Cần đối chiếu tên năng lực thành phần", 110);
-        codeParts.push(`Mã chỉ báo NLS: ${nlsCode}; Thành phần NLS: ${nlsName}`);
+        const nlsCode = compact(suggestion?.suggestedNLS || (isEnglish ? "Not assigned" : "Không gán mã"), 90);
+        const nlsName = isEnglish
+          ? getNlsComponentNameEn(nlsCode, suggestion?.nlsCompetencyName)
+          : compact(suggestion?.nlsCompetencyName || "Cần đối chiếu tên năng lực thành phần", 110);
+        codeParts.push(
+          isEnglish
+            ? `DC Indicator: ${nlsCode}; Component: ${nlsName}`
+            : `Mã chỉ báo NLS: ${nlsCode}; Thành phần NLS: ${nlsName}`
+        );
       }
       if (usesAi) {
-        const aiName = compact(suggestion?.aiCompetencyName || "", 110);
+        const aiName = isEnglish
+          ? getAiComponentNameEn(suggestion?.aiCompetencyName || suggestion?.suggestedAI)
+          : compact(suggestion?.aiCompetencyName || "", 110);
         const aiGrade = compact(suggestion?.aiGrade || grade || "", 40);
         const aiTopic = compact(suggestion?.aiTopic || "", 70);
         const aiIndicatorCode = compact(suggestion?.aiIndicatorCode || suggestion?.suggestedAI || "", 90);
-        codeParts.push(`Thành phần NL AI: ${aiName}; Khối lớp: ${aiGrade}; Chủ đề: ${aiTopic}; Mã chỉ báo NL AI: ${aiIndicatorCode}`);
+        codeParts.push(
+          isEnglish
+            ? `AI Component: ${aiName}; Grade: ${aiGrade}; Topic: ${aiTopic}; AI Indicator: ${aiIndicatorCode}`
+            : `Thành phần NL AI: ${aiName}; Khối lớp: ${aiGrade}; Chủ đề: ${aiTopic}; Mã chỉ báo NL AI: ${aiIndicatorCode}`
+        );
       }
-      const integrationLevel = compact(suggestion?.integrationLevel || "Mức vừa", 40);
-      const devicePlan = compact(suggestion?.devicePlan || "Phương án B/C; có học liệu ngoại tuyến khi thiếu Internet", 150);
+      const rawLevel = suggestion?.integrationLevel || (isEnglish ? "Moderate level" : "Mức vừa");
+      const integrationLevel = isEnglish ? translateIntegrationLevelEn(rawLevel) : compact(rawLevel, 40);
+      const rawPlan = suggestion?.devicePlan || (isEnglish ? "Option A/B; offline fallback: worksheets or printed cards" : "Phương án B/C; có học liệu ngoại tuyến khi thiếu Internet");
+      const devicePlan = isEnglish ? translateDevicePlanEn(rawPlan) : compact(rawPlan, 150);
       const labels = isEnglish
         ? {
           objective: "a) Integrated objective",
@@ -2153,7 +2185,7 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON MẢNG:
 
       return {
         activityName: sourceName,
-        targetSection: String(suggestion?.targetSection || "Nội dung").trim(),
+        targetSection: String(suggestion?.targetSection || (isEnglish ? "Content" : "Nội dung")).trim(),
         targetText: String(suggestion?.targetContent || "").trim(),
         text: [
           `${labels.objective}: ${objective}`,

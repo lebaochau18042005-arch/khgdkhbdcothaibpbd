@@ -1,3 +1,5 @@
+import { canFallbackGemini, classifyGeminiError, geminiHttpError, normalizeGeminiError } from './geminiErrors';
+import { getFallbackModels, getSavedGeminiModel, normalizeGeminiModel } from './geminiModels';
 import { GoogleGenAI, Type } from "@google/genai";
 import { DiaLy } from '../data/curriculum/diaLy';
 import { INDICATORS as KNOWN_NLS_INDICATORS } from '../components/NlsLookup';
@@ -34,11 +36,20 @@ export const isValidGoogleAiApiKey = (key: string): boolean =>
  */
 const getModel = (apiKey?: string, modelName?: string) => {
   const key = apiKey || localStorage.getItem('GEMINI_API_KEY') || '';
-  const model = modelName || localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const model = normalizeGeminiModel(modelName || getSavedGeminiModel());
   const ai = new GoogleGenAI({ apiKey: key });
   return {
-    generateContent: (params: Parameters<typeof ai.models.generateContent>[0]) =>
-      ai.models.generateContent({ ...params, model }),
+    generateContent: async (params: Parameters<typeof ai.models.generateContent>[0]) => {
+      const candidates = getFallbackModels(model);
+      for (let index = 0; index < candidates.length; index++) {
+        try {
+          return await ai.models.generateContent({ ...params, model: candidates[index] });
+        } catch (error: any) {
+          if (!canFallbackGemini(error) || index === candidates.length - 1) throw normalizeGeminiError(error);
+        }
+      }
+      throw new Error('Không có model AI khả dụng.');
+    },
   };
 };
 
@@ -52,26 +63,12 @@ const stripMarkdownJson = (raw: string): string => {
   return raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
 };
 
-const getFallbackModels = (startModel: string) => {
-  const models = [
-    'gemini-3.5-flash',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-3.1-pro-preview',
-    'gemini-2.5-pro',
-    'gemini-2.0-flash-lite',
-  ];
-  const deduplicated = [startModel, ...models.filter(m => m !== startModel)];
-  return deduplicated;
-};
-
 const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) {
     throw new Error('API_KEY_REQUIRED');
   }
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const startModel = getSavedGeminiModel();
   const modelsToTry = getFallbackModels(startModel);
 
   // Build parts array for the request
@@ -92,7 +89,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
   for (let i = 0; i < modelsToTry.length; i++) {
     const currentModel = modelsToTry[i];
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent`;
       const body: any = {
         contents: [{ role: 'user', parts }],
         generationConfig: {
@@ -108,7 +105,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
       try {
         res = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
           body: JSON.stringify(body),
           signal: controller.signal,
         });
@@ -116,23 +113,7 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
         clearTimeout(timeoutId);
       }
 
-      if (!res.ok) {
-        const errText = await res.text();
-        if (res.status === 429 || errText.includes('RESOURCE_EXHAUSTED') || errText.toLowerCase().includes('quota')) {
-          throw new Error('QUOTA_EXHAUSTED');
-        }
-        if (res.status === 503 || errText.includes('UNAVAILABLE') || errText.toLowerCase().includes('overloaded') || errText.toLowerCase().includes('high demand')) {
-          throw new Error('MODEL_OVERLOADED');
-        }
-        if (res.status === 401 || res.status === 403) {
-          throw new Error(`API_KEY_INVALID: ${errText}`);
-        }
-        if (res.status === 400 && (errText.includes('API_KEY') || errText.includes('API key'))) {
-          throw new Error(`API_KEY_INVALID: ${errText}`);
-        }
-        // 400 from invalid model name → try next model
-        throw new Error(`HTTP ${res.status}: ${errText}`);
-      }
+      if (!res.ok) throw geminiHttpError(res.status, await res.text());
 
       const json = await res.json();
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -144,25 +125,9 @@ const callGeminiWithFallback = async (prompt: any, responseSchema: any) => {
         throw new Error(`Lỗi phân tích JSON từ AI (phản hồi có thể bị cắt ngắn). Vui lòng thử lại.`);
       }
     } catch (err: any) {
-      console.error(`Lỗi với model ${currentModel}:`, err);
-
-      const isAbortError = err.name === 'AbortError' || (err.message && err.message.toLowerCase().includes('aborted'));
-      const isQuotaExhausted = err.message && (err.message.includes('QUOTA_EXHAUSTED') || err.message.includes('429') || err.message.toLowerCase().includes('quota'));
-      const isApiKeyInvalid = err.message && (err.message.startsWith('API_KEY_INVALID') || err.message.includes('401'));
-      const isModelOverloaded = err.message && (err.message.includes('MODEL_OVERLOADED') || err.message.includes('503') || err.message.toLowerCase().includes('overloaded'));
-      const isLastModel = i === modelsToTry.length - 1;
-
-      // Auth failures: stop immediately — key rotation won't help
-      if (isApiKeyInvalid) throw new Error('API_KEY_INVALID');
-      // Quota exhausted or aborted: try next model or fail gracefully
-      if (isLastModel) {
-        if (isQuotaExhausted) throw new Error('QUOTA_EXHAUSTED');
-        if (isModelOverloaded) throw new Error('MODEL_OVERLOADED');
-        if (isAbortError) throw new Error('Yêu cầu tạo kế hoạch vượt quá thời gian chờ (90s). Vui lòng thử lại.');
-        throw err;
-      }
-      // Model overloaded or timed out: try next model
-      await new Promise(r => setTimeout(r, isModelOverloaded || isAbortError ? 500 : 1000));
+      console.warn('[Gemini]', currentModel, classifyGeminiError(err));
+      if (!canFallbackGemini(err) || i === modelsToTry.length - 1) throw normalizeGeminiError(err);
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
 };
@@ -1654,7 +1619,6 @@ export const suggestNlsIndicators = async (
   grade: string,
   config: { apiKey: string; aiModel: string }
 ) => {
-  const ai = new GoogleGenAI({ apiKey: config.apiKey });
   const competencyGuardrails = getCompetencyGuardrails("môn học đang xét", grade, objectives);
   const prompt = `Bạn là chuyên gia rà soát cơ hội tích hợp NLS/NL AI trong kế hoạch bài dạy.
 - Tên bài học: ${topic}
@@ -1673,12 +1637,24 @@ Trả về duy nhất JSON array, mỗi object gồm:
 - "code": mã NLS đã kiểm tra hoặc mã NL AI đầy đủ như NLa-${extractGradeNumber(grade)}.A1.1.
 - "rationale": dưới 35 từ, nêu YCCĐ, hành vi học sinh và bằng chứng.`;
 
-  const result = await ai.models.generateContent({ model: config.aiModel, contents: prompt });
-  const text = stripMarkdownJson(result.text ?? "");
   try {
-    const parsed = JSON.parse(text) as { code: string; rationale: string }[];
+    if (config.apiKey) localStorage.setItem('GEMINI_API_KEY', config.apiKey);
+    if (config.aiModel) localStorage.setItem('GEMINI_MODEL', normalizeGeminiModel(config.aiModel));
+
+    const parsed = await callGeminiWithFallback(prompt, {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          code: { type: Type.STRING },
+          rationale: { type: Type.STRING }
+        },
+        required: ["code", "rationale"]
+      }
+    });
+
     if (!Array.isArray(parsed)) return [];
-    const cleaned = parsed.flatMap((item) => {
+    const cleaned = parsed.flatMap((item: any) => {
       const rawCode = String(item?.code || "").trim();
       if (AI_CODE_PATTERN.test(rawCode)) {
         const sanitized = sanitizeAiCodeForGrade(rawCode, grade);
@@ -1703,7 +1679,7 @@ Trả về duy nhất JSON array, mỗi object gồm:
     });
     return cleaned.slice(0, 3);
   } catch (err) {
-    console.error("Failed to parse suggested indicators JSON", text);
+    console.error("Failed to suggest indicators:", err);
     throw new Error("Lỗi khi AI đề xuất chỉ báo.");
   }
 };
@@ -2346,7 +2322,7 @@ export const robustParseCurriculumJson = (rawText: string): any[] | null => {
 export const parseCurriculumAppendix = async (rawText: string, pdfBase64?: string) => {
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const startModel = getSavedGeminiModel();
   const modelsToTry = getFallbackModels(startModel);
 
   const instruction = `Bạn là chuyên gia bóc tách phân phối chương trình giáo dục phổ thông (CT GDPT 2018).
@@ -2403,19 +2379,14 @@ Trả về mảng JSON thuần túy theo đúng JSON Schema đã khai báo.`;
   for (let i = 0; i < modelsToTry.length; i++) {
     const currentModel = modelsToTry[i];
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent`;
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        if (res.status === 429 || errText.includes('RESOURCE_EXHAUSTED')) throw new Error('QUOTA_EXHAUSTED');
-        if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
-        throw new Error(`HTTP ${res.status}: ${errText}`);
-      }
+      if (!res.ok) throw geminiHttpError(res.status, await res.text());
 
       const json = await res.json();
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -2428,16 +2399,9 @@ Trả về mảng JSON thuần túy theo đúng JSON Schema đã khai báo.`;
       }
       return parsed;
     } catch (err: any) {
-      console.error(`[parseCurriculum] Lỗi với model ${currentModel}:`, err);
-      const isApiKeyInvalid = err.message?.startsWith('API_KEY_INVALID') || err.message?.includes('401');
-      const isQuota = err.message?.includes('QUOTA_EXHAUSTED');
-      const isLast = i === modelsToTry.length - 1;
-      if (isApiKeyInvalid) throw new Error('API_KEY_INVALID');
-      if (isLast) {
-        if (isQuota) throw new Error('QUOTA_EXHAUSTED');
-        throw err;
-      }
-      await new Promise(r => setTimeout(r, 1000));
+      console.warn('[Gemini]', currentModel, classifyGeminiError(err));
+      if (!canFallbackGemini(err) || i === modelsToTry.length - 1) throw normalizeGeminiError(err);
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
   throw new Error('Tất cả models đều thất bại.');
@@ -2994,7 +2958,7 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const startModel = getSavedGeminiModel();
   const modelsToTry = getFallbackModels(startModel);
 
   const parts = [{ text: prompt }];
@@ -3026,19 +2990,14 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
   for (let i = 0; i < modelsToTry.length; i++) {
     const currentModel = modelsToTry[i];
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent`;
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
-        if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
-        throw new Error(`HTTP ${res.status}: ${errText}`);
-      }
+      if (!res.ok) throw geminiHttpError(res.status, await res.text());
 
       const json = await res.json();
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -3088,20 +3047,9 @@ LƯU Ý VỀ YÊU CẦU CẦN ĐẠT: Nếu trong mảng dữ liệu trên có c
       return sanitizeGeneratedCompetencyRows(parsed, grade, departmentAuthorizedAiCodes, departmentAuthorizedNlsCodes);
 
     } catch (err: any) {
-      console.error(`[generateDepartmentPlan] Lỗi với model ${currentModel}:`, err);
-      const isApiKeyInvalid = err.message?.startsWith('API_KEY_INVALID') || err.message?.includes('401');
-      const isQuota = err.message?.includes('QUOTA_EXHAUSTED');
-      const isJsonError = err.message?.includes('Không trích xuất được kế hoạch');
-      const isLast = i === modelsToTry.length - 1;
-
-      if (isApiKeyInvalid) throw new Error('API_KEY_INVALID');
-      if (isJsonError) throw err; // Ngừng ngay nếu AI trả về JSON lỗi/cắt cụt, chuyển model yếu hơn không giải quyết được
-
-      if (isLast) {
-        if (isQuota) throw new Error('QUOTA_EXHAUSTED');
-        throw err;
-      }
-      await new Promise(r => setTimeout(r, 1500));
+      console.warn('[Gemini]', currentModel, classifyGeminiError(err));
+      if (!canFallbackGemini(err) || i === modelsToTry.length - 1) throw normalizeGeminiError(err);
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
   throw new Error('Tất cả models đều thất bại.');
@@ -3359,7 +3307,7 @@ export const analyzeLessonSource = async (
 ) => {
   const apiKey = options.apiKey || localStorage.getItem('GEMINI_API_KEY') || '';
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = options.aiModel || localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const startModel = options.aiModel || getSavedGeminiModel();
   const modelsToTry = getFallbackModels(startModel);
 
   const promptText = `Bạn là một Chuyên gia Giáo dục và Thị giác máy tính (Computer Vision).
@@ -3377,7 +3325,7 @@ Trả về JSON hợp lệ: {"topic": "Tên bài học", "objectives": "Yêu c�
   for (let i = 0; i < modelsToTry.length; i++) {
     const currentModel = modelsToTry[i];
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent`;
       const parts: any[] = isRawText
         ? [{ text: `${promptText}\n\nNỘI DUNG TÀI LIỆU:\n${options.rawText || fileBase64}` }]
         : [
@@ -3406,17 +3354,11 @@ Trả về JSON hợp lệ: {"topic": "Tên bài học", "objectives": "Yêu c�
 
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        if (res.status === 429 || errText.includes('RESOURCE_EXHAUSTED')) throw new Error('QUOTA_EXHAUSTED');
-        if (res.status === 503 || errText.toLowerCase().includes('overloaded') || errText.toLowerCase().includes('high demand')) throw new Error('MODEL_OVERLOADED');
-        if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
-        throw new Error(`HTTP ${res.status}: ${errText}`);
-      }
+      if (!res.ok) throw geminiHttpError(res.status, await res.text());
 
       const json = await res.json();
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -3424,19 +3366,9 @@ Trả về JSON hợp lệ: {"topic": "Tên bài học", "objectives": "Yêu c�
       return JSON.parse(stripMarkdownJson(text));
 
     } catch (err: any) {
-      console.error(`[analyzeLessonSource] Lỗi với model ${currentModel}:`, err);
-      const isApiKeyInvalid = err.message?.includes('API_KEY_INVALID') || err.message?.includes('401');
-      const isOverloaded = err.message?.includes('MODEL_OVERLOADED') || err.message?.includes('503') || err.message?.toLowerCase().includes('high demand');
-      const isQuota = err.message?.includes('QUOTA_EXHAUSTED');
-      const isLast = i === modelsToTry.length - 1;
-
-      if (isApiKeyInvalid) throw new Error('API Key không hợp lệ. Vui lòng kiểm tra lại Cài đặt.');
-      if (isLast) {
-        if (isQuota) throw new Error('API Key đã hết quota. Vui lòng thử lại vào ngày mai.');
-        if (isOverloaded) throw new Error('Model AI đang quá tải. Vui lòng thử lại sau 30 giây.');
-        throw err;
-      }
-      await new Promise(r => setTimeout(r, isOverloaded ? 500 : 1000));
+      console.warn('[Gemini]', currentModel, classifyGeminiError(err));
+      if (!canFallbackGemini(err) || i === modelsToTry.length - 1) throw normalizeGeminiError(err);
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
   throw new Error('Tất cả models đều thất bại khi phân tích ảnh/PDF.');
@@ -3541,7 +3473,7 @@ export const generateEducationalActivitiesPlan = async (subject: string, grade: 
 
   const apiKey = localStorage.getItem('GEMINI_API_KEY');
   if (!apiKey) throw new Error('API_KEY_REQUIRED');
-  const startModel = localStorage.getItem('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const startModel = getSavedGeminiModel();
   const modelsToTry = getFallbackModels(startModel);
 
   const parts = [{ text: prompt }];
@@ -3576,13 +3508,9 @@ export const generateEducationalActivitiesPlan = async (subject: string, grade: 
   for (let i = 0; i < modelsToTry.length; i++) {
     const currentModel = modelsToTry[i];
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
-      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!res.ok) {
-        if (res.status === 429) throw new Error('QUOTA_EXHAUSTED');
-        if (res.status === 401 || res.status === 403) throw new Error('API_KEY_INVALID');
-        throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-      }
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent`;
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify(body) });
+      if (!res.ok) throw geminiHttpError(res.status, await res.text());
       const json = await res.json();
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error('AI trả về rỗng.');
@@ -3597,7 +3525,9 @@ export const generateEducationalActivitiesPlan = async (subject: string, grade: 
       if (!Array.isArray(parsed)) throw new Error('Not an array');
       return sanitizeGeneratedCompetencyRows(parsed, grade);
     } catch (err: any) {
-      if (i === modelsToTry.length - 1) throw err;
+      console.warn('[Gemini]', currentModel, classifyGeminiError(err));
+      if (!canFallbackGemini(err) || i === modelsToTry.length - 1) throw normalizeGeminiError(err);
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
 };

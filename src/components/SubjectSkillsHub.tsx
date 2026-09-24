@@ -588,7 +588,7 @@ export default function SubjectSkillsHub({
             {/* Action Bar */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
               <div className="text-xs text-slate-500">
-                Mô hình AI: <span className="font-semibold text-indigo-600">{aiModel || "gemini-2.5-flash"}</span>
+                Mô hình AI: <span className="font-semibold text-indigo-600">{aiModel || "gemini-3.5-flash"}</span>
               </div>
 
               <button

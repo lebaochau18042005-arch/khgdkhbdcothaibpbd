@@ -1,3 +1,4 @@
+import { GEMINI_MODELS, getSavedGeminiModel, checkGeminiModelAvailability } from "./services/geminiModels";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -2248,14 +2249,7 @@ export default function App() {
   const [councilEvaluation, setCouncilEvaluation] = useState<any>(null);
   const [showSettings, setShowSettings] = useState(() => !localStorage.getItem("GEMINI_API_KEY"));
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
-  const [aiModel, setAiModel] = useState(() => {
-    const saved = localStorage.getItem("GEMINI_MODEL");
-    if (saved && (saved === "gemini-3.5-flash" || saved === "gemini-3.1-pro-preview" || saved === "gemini-2.5-flash" || saved === "gemini-2.5-pro" || saved === "gemini-2.0-flash")) {
-      return saved;
-    }
-    localStorage.setItem("GEMINI_MODEL", "gemini-3.5-flash");
-    return "gemini-3.5-flash";
-  });
+  const [aiModel, setAiModel] = useState(getSavedGeminiModel);
   const [apiTestResult, setApiTestResult] = useState<string | null>(null);
   const [apiTesting, setApiTesting] = useState(false);
   const [isOnline, setIsOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
@@ -2748,7 +2742,7 @@ export default function App() {
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
-        alert("❌ API Key đã hết hạn mức sử dụng miễn phí hôm nay.\n\n💡 Giải pháp:\n1. Dùng API key của tài khoản Gmail khác (vào https://aistudio.google.com/api-keys để lấy key mới)\n2. Hoặc chờ đến ngày mai để dùng tiếp key hiện tại.");
+        alert("❌ Đã hết hạn mức hoặc vượt giới hạn tốc độ API. Vui lòng đợi một lúc rồi thử lại; kiểm tra hạn mức trong Google AI Studio.");
         setShowSettings(true);
       } else if (msg.includes("MODEL_OVERLOADED")) {
         alert("⚠️ Model Gemini đang quá tải tạm thời.\n\n💡 Hệ thống đã thử các model dự phòng. Vui lòng:\n1. Thử lại sau 30 giây\n2. Hoặc chọn model nhẹ hơn (Flash Lite) trong Cài đặt");
@@ -2787,7 +2781,7 @@ export default function App() {
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
-        alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+        alert("❌ Đã hết hạn mức hoặc vượt giới hạn tốc độ API. Vui lòng đợi một lúc rồi thử lại; kiểm tra hạn mức trong Google AI Studio.");
         setShowSettings(true);
       } else if (msg.includes("MODEL_OVERLOADED")) {
         alert("⚠️ Model Gemini đang quá tải. Vui lòng thử lại sau 30 giây.");
@@ -2955,7 +2949,7 @@ export default function App() {
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
-        alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+        alert("❌ Đã hết hạn mức hoặc vượt giới hạn tốc độ API. Vui lòng đợi một lúc rồi thử lại; kiểm tra hạn mức trong Google AI Studio.");
         setShowSettings(true);
       } else if (msg.includes("MODEL_OVERLOADED")) {
         alert("⚠️ Model Gemini đang quá tải tạm thời. Vui lòng thử lại sau 30 giây.");
@@ -3001,7 +2995,7 @@ export default function App() {
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
-        alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+        alert("❌ Đã hết hạn mức hoặc vượt giới hạn tốc độ API. Vui lòng đợi một lúc rồi thử lại; kiểm tra hạn mức trong Google AI Studio.");
         setShowSettings(true);
       } else if (msg.includes("MODEL_OVERLOADED")) {
         alert("⚠️ Model Gemini đang quá tải tạm thời. Vui lòng thử lại sau 30 giây.");
@@ -3043,7 +3037,7 @@ export default function App() {
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
-        alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+        alert("❌ Đã hết hạn mức hoặc vượt giới hạn tốc độ API. Vui lòng đợi một lúc rồi thử lại; kiểm tra hạn mức trong Google AI Studio.");
         setShowSettings(true);
       } else if (msg.includes("MODEL_OVERLOADED")) {
         alert("⚠️ Model Gemini đang quá tải tạm thời. Vui lòng thử lại sau 30 giây.");
@@ -3078,7 +3072,7 @@ export default function App() {
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("QUOTA_EXHAUSTED")) {
-        alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+        alert("❌ Đã hết hạn mức hoặc vượt giới hạn tốc độ API. Vui lòng đợi một lúc rồi thử lại; kiểm tra hạn mức trong Google AI Studio.");
         setShowSettings(true);
       } else if (msg.includes("MODEL_OVERLOADED")) {
         alert("⚠️ Model Gemini đang quá tải tạm thời. Vui lòng thử lại sau 30 giây.");
@@ -4965,7 +4959,7 @@ export default function App() {
                         } catch (err: any) {
                           const msg = err?.message || "";
                           if (msg.includes("QUOTA_EXHAUSTED")) {
-                            alert("❌ API Key đã hết quota hôm nay.\n💡 Vào https://aistudio.google.com/api-keys lấy key khác hoặc chờ ngày mai.");
+                            alert("❌ Đã hết hạn mức hoặc vượt giới hạn tốc độ API. Vui lòng đợi một lúc rồi thử lại; kiểm tra hạn mức trong Google AI Studio.");
                             setShowSettings(true);
                           } else if (msg.includes("MODEL_OVERLOADED")) {
                             alert("⚠️ Model Gemini đang quá tải tạm thời. Vui lòng thử lại sau 30 giây.");
@@ -7184,12 +7178,12 @@ export default function App() {
                       <li>
                         Mở liên kết:{" "}
                         <a
-                          href="https://aistudio.google.com/api-keys"
+                          href="https://aistudio.google.com/apikey"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-indigo-600 font-bold underline hover:text-indigo-800"
                         >
-                          https://aistudio.google.com/api-keys
+                          https://aistudio.google.com/apikey
                         </a>
                       </li>
                       <li>Đăng nhập bằng tài khoản <strong>Gmail</strong> của bạn.</li>
@@ -7231,38 +7225,7 @@ export default function App() {
                         Chọn Model AI Ưu tiên (Tự động Fallback khi lỗi)
                       </label>
                       <div className="grid grid-cols-1 gap-2.5">
-                        {[
-                          {
-                            id: "gemini-3.5-flash",
-                            name: "gemini-3.5-flash",
-                            badge: "Mặc định • Thế hệ mới",
-                            desc: "⚡ Khuyên dùng: Tốc độ phản hồi cực nhanh, thông minh toàn diện cho CT 2018 & TT 02/2025."
-                          },
-                          {
-                            id: "gemini-2.0-flash",
-                            name: "gemini-2.0-flash",
-                            badge: "Quota Lớn • Ổn định",
-                            desc: "🚀 Hạn mức 1.500 lượt/ngày, 1 triệu token/phút, không lo hết quota khi tải giáo án dài."
-                          },
-                          {
-                            id: "gemini-3.1-pro-preview",
-                            name: "gemini-3.1-pro-preview",
-                            badge: "Chất lượng cao",
-                            desc: "🧠 Suy luận sâu sắc, hội đồng phản biện AI và thẩm định kế hoạch giáo dục đa tầng."
-                          },
-                          {
-                            id: "gemini-2.5-pro",
-                            name: "gemini-2.5-pro",
-                            badge: "Mạnh mẽ • Chi tiết",
-                            desc: "🔬 Suy luận chuyên sâu, phân tích ngữ cảnh dài cho nội dung bài học phức tạp."
-                          },
-                          {
-                            id: "gemini-2.5-flash",
-                            name: "gemini-2.5-flash",
-                            badge: "Dự phòng",
-                            desc: "🛡️ Tốc độ nhanh, dự phòng tin cậy khi các mô hình khác gặp quá tải."
-                          }
-                        ].map(model => (
+                        {GEMINI_MODELS.map(model => (
                           <div
                             key={model.id}
                             onClick={() => setAiModel(model.id)}
@@ -7297,12 +7260,15 @@ export default function App() {
                         if (!isOnline) { setApiTestResult('⚠️ Đang ngoại tuyến. Vui lòng kết nối Internet để kiểm tra API.'); return; }
                         setApiTesting(true); setApiTestResult(null);
                         try {
-                          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}&pageSize=10`);
-                          const json = await res.json();
-                          if (!res.ok) { setApiTestResult(`❌ Lỗi: ${json?.error?.message || res.status}`); return; }
-                          const names = (json.models || []).map((m: any) => m.name.replace('models/', ''));
-                          setApiTestResult(`✅ Kết nối thành công! Key hợp lệ. Models: ${names.slice(0, 5).join(', ')}`);
-                        } catch (e: any) { setApiTestResult(`❌ Lỗi mạng: ${e.message}`); }
+                          const names = await checkGeminiModelAvailability(key);
+                          if (!names.length) {
+                            setApiTestResult('❌ Key kết nối được nhưng không có model nào của app hỗ trợ tạo nội dung. Kiểm tra quyền truy cập trong Google AI Studio.');
+                          } else if (!names.includes(aiModel)) {
+                            setApiTestResult('⚠️ Model đang chọn (' + aiModel + ') không khả dụng với key này. Hãy chọn: ' + names.join(', '));
+                          } else {
+                            setApiTestResult('✅ Google liệt kê model đang chọn (' + aiModel + ') hỗ trợ tạo nội dung. Models: ' + names.join(', ') + '. Hạn mức được kiểm tra khi thực hiện tác vụ.');
+                          }
+                        } catch (e: any) { setApiTestResult('❌ Không thể kiểm tra model: ' + e.message); }
                         finally { setApiTesting(false); }
                       }}
                       className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors flex items-center justify-center gap-2"

@@ -957,7 +957,8 @@ export async function injectSnippetsIntoDocx(file: File, snippets: Snippet[], op
     const paragraphs = xmlDoc.getElementsByTagName("w:p");
     const originalStats = await countWordXmlStructures(zip);
 
-    const isEnglish = options.isEnglish ?? snippets.some(s => /integrated objective|integrated content|implementation|level\/device|kahoot|quiz|warm-up|warm up/i.test(s.text));
+    // The caller determines the language from the subject; tool names are not language signals.
+    const isEnglish = options.isEnglish ?? false;
 
     let injectedCount = 0;
     const skippedActivities: string[] = [];

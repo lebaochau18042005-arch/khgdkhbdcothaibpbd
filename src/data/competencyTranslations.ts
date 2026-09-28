@@ -132,16 +132,21 @@ export const translateDevicePlanEn = (plan?: string): string => {
  * Check if the subject or text indicates an English language lesson plan
  */
 export const checkIsEnglishSubject = (subject?: string, topic?: string, text?: string, fileName?: string): boolean => {
-  const combined = `${subject || ""} ${topic || ""} ${text || ""} ${fileName || ""}`.toLowerCase();
-  return (
-    combined.includes("tiếng anh") ||
-    combined.includes("tieng anh") ||
-    combined.includes("english") ||
-    combined.includes("global success") ||
-    combined.includes("friends global") ||
-    combined.includes("bright") ||
-    combined.includes("smart world") ||
-    combined.includes("ilearn smart") ||
-    /\b(?:unit\s*\d+|getting started|looking back|language focus|reading comprehension)\b/i.test(combined)
-  );
+  const normalize = (value: string = "") => String(value || "").toLowerCase().normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
+  const englishSubject = /^(?:(?:mon(?:\s+hoc)?|subject)\s*[:：-]?\s*)?(?:tieng\s+anh|english)\b/;
+  // An identified subject takes priority over incidental words in lesson materials.
+  const selectedSubject = normalize(subject).trim();
+  if (selectedSubject) return englishSubject.test(selectedSubject);
+
+  const source = normalize(text);
+  const declaredSubject = source.match(/(?:^|[\n\r\t|;])\s*(?:mon(?:\s+hoc)?|subject)\s*(?:[:：-]\s*|[\t|]\s*)([^\n\r\t|;]+)/);
+  if (declaredSubject) return englishSubject.test(declaredSubject[1]);
+
+  const metadata = normalize(`${topic || ""} ${fileName || ""}`).replace(/[_-]/g, " ");
+  if (/\bngu\s*van\b/.test(metadata) || /\bngu\s+van\b/.test(source)) return false;
+  if (/\b(?:tieng\s+anh|english)\b/.test(metadata)) return true;
+  // Require several textbook signals when there is no explicit subject.
+  return /\bunit\s*\d+\b/.test(source) &&
+    /\b(?:getting started|looking back|language focus|global success|friends global|ilearn smart world)\b/.test(source);
 };
